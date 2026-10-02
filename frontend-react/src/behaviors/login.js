@@ -54,7 +54,22 @@ export default function initialize() {
     });
   }
 
+  /** Khu khách (/account) chỉ cho tài khoản khách: phiên nhân viên còn hạn không được tự vào, khách đăng nhập lại. */
+  function wrongAccountFor(user) {
+    const next = safeNext();
+    return Boolean(next && next.startsWith("/account") && !user.roles.some((role) => role.code === "CUSTOMER"));
+  }
+
   function proceed(user) {
+    if (wrongAccountFor(user)) {
+      form.hidden = false;
+      choiceList.hidden = true;
+      changeForm.hidden = true;
+      show(errorBox, `Bạn đang đăng nhập bằng tài khoản nhân viên ${user.displayName || user.username}. ` +
+        "Trang này chỉ dành cho tài khoản khách hàng — vui lòng đăng nhập bằng số điện thoại khách hàng.");
+      document.getElementById("login-username").focus();
+      return;
+    }
     if (user.mustChangePassword) {
       form.hidden = true;
       choiceList.hidden = true;

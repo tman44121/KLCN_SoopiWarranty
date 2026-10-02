@@ -16,6 +16,7 @@ import { legacyRoutes } from './navigation';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
+import './styles/brand.css';
 import './styles/customer.css';
 
 function LegacyRedirect({ to }: { to: string }) {

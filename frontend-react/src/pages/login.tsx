@@ -1,5 +1,5 @@
 import { usePage } from "../usePage";
-import { Icon, PasswordInput, STEP_LABELS } from "../customer";
+import { BrandLogo, Icon, PasswordInput, STEP_LABELS } from "../customer";
 
 /* Giao diện đăng nhập của web khách KLCN; id/name và data-* giữ nguyên vì login.js (nhân viên + khách) gắn vào đó. */
 export default function LoginPage() {
@@ -9,11 +9,7 @@ export default function LoginPage() {
       <aside className="auth-banner">
         <div className="banner-header">
           <a href="/portal" className="banner-logo">
-            <span className="banner-logo-icon" aria-hidden="true">S</span>
-            <span className="banner-logo-text">
-              <span className="banner-logo-title">Soopi</span>
-              <span className="banner-logo-sub">KHÁCH HÀNG / BẢO HÀNH ĐIỆN TỬ</span>
-            </span>
+            <BrandLogo light={true} />
           </a>
           <a href="/portal" className="banner-home-link"><Icon glyph="search" />Tra cứu không cần đăng nhập</a>
         </div>

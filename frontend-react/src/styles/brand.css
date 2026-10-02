@@ -1,0 +1,90 @@
+/* ==========================================================================
+   Bộ màu soopiwarranty cho các màn nội bộ — chỉ ghi đè token của tokens.css
+   (tokens/base/components.css giữ nguyên byte với bản gốc, scripts/check.mjs).
+   Nạp sau components.css; giao diện khách dùng cùng bộ màu trong customer.css.
+   ========================================================================== */
+
+:root {
+  /* ---- Surfaces ---- */
+  --surface-page: #f8f7f2; /* Kem sữa */
+  --surface-utility: #f8f7f2;
+  --surface-inverse: #29354a; /* Xanh chim cánh cụt */
+
+  /* ---- Borders ---- */
+  --border-universal: #d9e3db;
+  --border-divider: #eaefe9;
+
+  /* ---- Primary: Xanh rừng ---- */
+  --color-primary: #244c43;
+  --color-primary-hover: #1b3c35;
+  --color-primary-focus-ring: #244c43;
+  --color-primary-tint: #ddefe4; /* Mint dịu */
+  --color-primary-on-tint: #244c43; /* 8:1 trên Mint dịu */
+  --color-primary-border: #b9d5c3;
+  --color-primary-wash: #f4faf6;
+
+  /* ---- Destructive: tông "Đã hết hạn" ---- */
+  --color-destructive: #8b4248;
+  --color-destructive-hover: #6f3439;
+  --color-destructive-tint: #fbe7e8;
+  --color-destructive-border: #f2c5bf; /* Hồng đào */
+
+  /* ---- Trạng thái theo thẻ bảo hành mẫu ---- */
+  --status-success-text: #244c43;
+  --status-success-bg: #ddefe4;
+  --status-success-border: #c3e2cf;
+
+  --status-warning-text: #795b18;
+  --status-warning-bg: #fff1ce;
+  --status-warning-border: #f3d58a;
+
+  --status-danger-text: #8b4248;
+  --status-danger-bg: #fbe7e8;
+  --status-danger-border: #f2c5bf;
+
+  --status-processing-text: #29354a;
+  --status-processing-bg: #dcd8ed; /* Tím sương */
+  --status-processing-border: #c9c3e2;
+
+  --status-neutral-text: #62716c;
+  --status-neutral-bg: #f8f7f2;
+  --status-neutral-border: #d9e3db;
+
+  /* ---- Chữ: Xanh chim cánh cụt + chữ phụ #62716C ---- */
+  --text-strong: #29354a;
+  --text-default: #364257;
+  --text-quiet: #4a5853;
+  --text-muted: #62716c; /* 4,9:1 trên trắng, 4,7:1 trên Kem sữa */
+  --text-faint: #b8c4bc; /* chỉ trang trí */
+
+  /* ---- Biểu đồ: Xanh rừng + Vàng mật ong ---- */
+  --chart-series-2: #efb952;
+
+  /* ---- Bo góc gần thẻ mẫu, vẫn gọn cho màn nhiều dữ liệu ---- */
+  --radius-button: 8px;
+  --radius-input: 8px;
+  --radius-badge: 999px;
+  --radius-card: 12px;
+  --radius-table: 12px;
+  --radius-modal: 12px;
+  --radius-drawer: 12px;
+
+  --shadow-flyout: 0 6px 16px rgba(41, 53, 74, 0.1);
+}
+
+/* Logo soopiwarranty trên sidebar (ảnh trong public/images/brand). */
+.sidebar-brand__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-brand__logo .brand-mark {
+  width: 36px;
+  height: 36px;
+}
+
+.sidebar-brand__logo .brand-wordmark {
+  height: 22px;
+  width: auto;
+}

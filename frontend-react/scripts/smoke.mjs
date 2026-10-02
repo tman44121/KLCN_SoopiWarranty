@@ -100,6 +100,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     assert.equal(await s.page.getByText('Không thể tải trang. Vui lòng tải lại.', { exact: true }).count(), 0); assertions++;
     assert.deepEqual(s.errors, [], `${route}: browser errors`); assertions++;
     assert(s.calls.includes('/auth/me'), `${route}: auth not initialized`); assertions++;
+    await s.page.screenshot({ path: fileURLToPath(new URL(`staff-${route}.png`, output)) });
     if (route === 'warehouse') {
       await s.page.goto(base + '/pages/warehouse.html?station=ST01#stockout');
       await s.page.waitForURL(base + '/warehouse?station=ST01#stockout');
@@ -132,6 +133,18 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
   assert(staff.calls.includes('/auth/refresh') && staff.calls.includes('/auth/logout')); assertions++;
   assert.deepEqual(staff.errors, []); assertions++;
   await staff.context.close();
+  const admin = await session('ADMIN', '/admin');
+  await login(admin.page);
+  await admin.page.waitForURL(base + '/admin');
+  await admin.page.goto(base + '/portal');
+  await admin.page.locator('.nav-menu').getByRole('link', { name: 'Lịch sử bảo hành' }).click();
+  await admin.page.waitForURL(base + '/login?next=' + encodeURIComponent('/account#lich-su'));
+  await admin.page.getByText(/tài khoản nhân viên Tài khoản kiểm tra/).waitFor(); assertions++;
+  await admin.page.goto(base + '/account#ho-so');
+  await admin.page.waitForURL(/\/login\?next=/);
+  await admin.page.getByText(/chỉ dành cho tài khoản khách hàng/).waitFor(); assertions++;
+  assert.deepEqual(admin.errors, [], 'staff on customer area: browser errors'); assertions++;
+  await admin.context.close();
   console.log('PASS required password change, confirmation validation, multiple roles and logout');
   const s = await session('CUSTOMER', '/portal', 390);
   await s.page.goto(base + '/login');
@@ -164,6 +177,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
   await s.context.close();
   for (const width of [1440, 390]) {
     const c = await session('CUSTOMER', '/account', width);
+    await c.page.goto(base + '/portal');
+    const nav = c.page.locator('.nav-menu');
+    await nav.getByRole('link', { name: 'Gửi yêu cầu bảo hành' }).click();
+    await c.page.locator('[data-register-section]').waitFor({ state: 'visible' }); assertions++;
+    await nav.getByRole('link', { name: 'Lịch sử bảo hành' }).click();
+    await c.page.waitForURL(base + '/login?next=' + encodeURIComponent('/account#lich-su')); assertions++;
     await c.page.goto(base + '/register');
     await c.page.click('button[type="submit"]');
     await c.page.getByText('Vui lòng nhập họ và tên.', { exact: true }).waitFor(); assertions++;
@@ -181,6 +200,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     for (const path of ['/auth/mobile/register', '/auth/mobile/logout', '/auth/login']) assert(c.calls.includes(path), path);
     assertions++;
     await c.page.getByRole('heading', { name: 'Xin chào, Nguyễn Văn Khách' }).waitFor(); assertions++;
+    await c.page.goto(base + '/portal');
+    await c.page.locator('.user-profile-trigger').waitFor(); assertions++;
+    assert.equal(await c.page.locator('.nav-menu a').first().getAttribute('href'), '/account'); assertions++;
+    await c.page.goto(base + '/account');
+    await c.page.getByRole('heading', { name: 'Xin chào, Nguyễn Văn Khách' }).waitFor();
     await c.page.screenshot({ path: fileURLToPath(new URL(`account-${width}.png`, output)), fullPage: true });
     assert.equal(await c.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `overview ${width}: horizontal scroll`); assertions++;
     await c.page.goto(base + '/account#lich-su');

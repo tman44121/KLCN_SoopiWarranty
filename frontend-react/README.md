@@ -104,3 +104,10 @@ smoke và axe-core có sẵn trong repo Java, không ghi DB hoặc cài dependen
 `src/customer.tsx`). `/login` và `/portal` vẫn do `login.js`/`customer-portal.js` điều khiển (giữ id/name); `/register`
 và `/account` dựng bằng React state, không có controller trong `src/behaviors`. Mục con của `/account` theo hash:
 `#lich-su`, `#phieu/<mã>`, `#yeu-cau-moi[/<serial>]`, `#ho-so`, `#doi-mat-khau`. `node scripts/smoke.mjs` kiểm cả luồng khách.
+
+Bộ màu soopiwarranty khai báo ở đầu `customer.css` (`--kh-forest`, `--kh-navy`, `--kh-cream`, `--kh-mint-soft`,
+`--kh-lilac`, `--kh-honey`, `--kh-peach`, trạng thái bảo hành `--kh-warn-*`/`--kh-bad-*`). Logo nằm ở
+`public/images/brand/` (`logo-mark.png`, `wordmark.png`, `wordmark-light.png` cho nền tối, `favicon.png`).
+Màn nội bộ dùng cùng bộ màu qua `src/styles/brand.css` (nạp sau components.css, chỉ ghi đè token của tokens.css);
+không sửa tokens/base/components.css vì `scripts/check.mjs` so byte với bản gốc. Class mới của giao diện khách
+nên có tiền tố `kh-` để không trùng class của màn nội bộ.

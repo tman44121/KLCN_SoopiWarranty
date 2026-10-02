@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { usePage } from "../usePage";
-import { Icon, PasswordInput, api, errorText, useBusy } from "../customer";
+import { BrandLogo, Icon, PasswordInput, api, errorText, useBusy } from "../customer";
 
 type Field = "fullName" | "phone" | "email" | "otp" | "password" | "confirm";
 const EMPTY: Record<Field, string> = { fullName: "", phone: "", email: "", otp: "", password: "", confirm: "" };
@@ -80,11 +80,7 @@ export default function RegisterPage() {
       <aside className="auth-banner">
         <div className="banner-header">
           <a href="/portal" className="banner-logo">
-            <span className="banner-logo-icon" aria-hidden="true">S</span>
-            <span className="banner-logo-text">
-              <span className="banner-logo-title">Soopi</span>
-              <span className="banner-logo-sub">KHÁCH HÀNG / BẢO HÀNH ĐIỆN TỬ</span>
-            </span>
+            <BrandLogo light={true} />
           </a>
           <a href="/portal" className="banner-home-link"><Icon glyph="search" />Tra cứu không cần đăng nhập</a>
         </div>

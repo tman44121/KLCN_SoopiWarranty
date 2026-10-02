@@ -217,7 +217,14 @@ export default function initialize() {
     el.submit.addEventListener("click", lookup);
     el.lookupPhone.addEventListener("keydown", (event) => { if (event.key === "Enter") lookup(); });
     el.openRegister.addEventListener("click", () => { el.register.hidden = false; el.register.scrollIntoView({ behavior: window.LML_UI.scrollBehavior() }); });
-    el.closeRegister.addEventListener("click", () => { el.register.hidden = true; });
+    // #dang-ky (link "Gửi yêu cầu bảo hành" của header khi chưa đăng nhập) mở sẵn form yêu cầu.
+    const openFromHash = () => { if (location.hash === "#dang-ky") el.openRegister.click(); };
+    window.addEventListener("hashchange", openFromHash);
+    openFromHash();
+    el.closeRegister.addEventListener("click", () => {
+      el.register.hidden = true;
+      if (location.hash === "#dang-ky") history.replaceState(null, "", location.pathname + location.search);
+    });
     el.category.addEventListener("change", updateSerialLabel);
     el.registerSubmit.addEventListener("click", register);
   };

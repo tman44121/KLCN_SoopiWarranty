@@ -280,19 +280,19 @@ function History({ data }: { data: Data }) {
   ];
   return (
     <div className="page-container">
-      <div className="page-title-row">
+      <div className="kh-page-title-row">
         <div>
-          <h1 className="page-title">Lịch sử bảo hành &amp; sửa chữa</h1>
-          <p className="page-subtitle">Theo dõi tiến độ xử lý mọi thiết bị của bạn.</p>
+          <h1 className="kh-page-title">Lịch sử bảo hành &amp; sửa chữa</h1>
+          <p className="kh-page-subtitle">Theo dõi tiến độ xử lý mọi thiết bị của bạn.</p>
         </div>
         <a href="#yeu-cau-moi" className="btn-primary-teal"><Icon glyph="plus" />Gửi yêu cầu bảo hành mới</a>
       </div>
 
       <div className="history-stats-grid">
         <div className="history-stat"><div className="history-stat-label">Tổng số phiếu</div><div className="history-stat-num">{data.tickets.length}</div></div>
-        <div className="history-stat"><div className="history-stat-label" style={{ color: "#0369a1" }}>Đang xử lý</div><div className="history-stat-num" style={{ color: "#0369a1" }}>{count("PROCESSING")}</div></div>
-        <div className="history-stat"><div className="history-stat-label" style={{ color: "#b45309" }}>Chờ linh kiện / xác nhận</div><div className="history-stat-num" style={{ color: "#b45309" }}>{count("WAITING")}</div></div>
-        <div className="history-stat"><div className="history-stat-label" style={{ color: "#047857" }}>Hoàn thành</div><div className="history-stat-num" style={{ color: "#047857" }}>{count("COMPLETED")}</div></div>
+        <div className="history-stat"><div className="history-stat-label" style={{ color: "var(--kh-navy)" }}>Đang xử lý</div><div className="history-stat-num" style={{ color: "var(--kh-navy)" }}>{count("PROCESSING")}</div></div>
+        <div className="history-stat"><div className="history-stat-label" style={{ color: "var(--kh-warn-text)" }}>Chờ linh kiện / xác nhận</div><div className="history-stat-num" style={{ color: "var(--kh-warn-text)" }}>{count("WAITING")}</div></div>
+        <div className="history-stat"><div className="history-stat-label" style={{ color: "var(--kh-forest)" }}>Hoàn thành</div><div className="history-stat-num" style={{ color: "var(--kh-forest)" }}>{count("COMPLETED")}</div></div>
       </div>
 
       <div className="history-filters-bar">
@@ -421,7 +421,7 @@ function TicketDetail({ code, onChanged }: { code: string; onChanged: () => void
             <h2 className="card-heading-title" style={{ marginBottom: 12 }}>Thông tin phiếu</h2>
             <div className="kv-list">
               <div className="kv-row"><span>Ngày tiếp nhận</span><strong>{fmt().dateTime(ticket.receivedAt)}</strong></div>
-              <div className="kv-row"><span>Hẹn trả máy</span><strong style={{ color: "#0f766e" }}>{fmt().dateTime(ticket.promisedReturnAt)}</strong></div>
+              <div className="kv-row"><span>Hẹn trả máy</span><strong style={{ color: "var(--kh-forest)" }}>{fmt().dateTime(ticket.promisedReturnAt)}</strong></div>
               {ticket.handedOverAt && <div className="kv-row"><span>Đã bàn giao</span><strong>{fmt().dateTime(ticket.handedOverAt)}</strong></div>}
             </div>
           </section>

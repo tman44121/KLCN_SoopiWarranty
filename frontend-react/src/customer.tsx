@@ -33,6 +33,8 @@ const PATHS: Record<string, ReactNode> = {
   calendar: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
   pin: <><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></>,
   check: <path d="M20 6 9 17l-5-5" />,
+  checkCircle: <><circle cx="12" cy="12" r="10" /><path d="m8.5 12 2.5 2.5 4.5-5" /></>,
+  xCircle: <><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6M9 9l6 6" /></>,
   arrowLeft: <path d="M19 12H5M12 19l-7-7 7-7" />,
   chevron: <path d="m6 9 6 6 6-6" />,
   file: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M16 13H8M16 17H8" /></>,
@@ -52,19 +54,56 @@ const TONE_CLASS: Record<string, string> = {
 };
 
 /** Badge trạng thái theo bảng nhãn của labels.js (TICKET_STATUS, WARRANTY_REQUEST_STATUS, WARRANTY_STATUS). */
+const TONE_ICON: Record<string, string> = { success: 'checkCircle', warning: 'clock', danger: 'xCircle' };
+
 export function StatusBadge({ table, code }: { table: string; code: string | null | undefined }) {
   const entry = labels()[table]?.[code || ''];
-  return <span className={'badge ' + TONE_CLASS[entry?.tone || 'neutral']}>{entry?.label || code || '—'}</span>;
+  const tone = entry?.tone || 'neutral';
+  const icon = TONE_ICON[tone];
+  return (
+    <span className={'badge ' + TONE_CLASS[tone] + (icon ? ' has-icon' : '')}>
+      {icon && <Icon glyph={icon} />}{entry?.label || code || '—'}
+    </span>
+  );
 }
 
 export const initial = (name?: string | null) => (name || '?').trim().charAt(0).toUpperCase() || '?';
 
-const NAV = [
+/** Khách đã đăng nhập đi vào /account; khách vãng lai dùng tra cứu và form yêu cầu công khai trên /portal,
+    lịch sử cần đăng nhập nên dẫn qua /login rồi quay lại đúng mục. */
+const NAV_SIGNED_IN = [
   { key: 'home', href: '/account', label: 'Trang chủ' },
   { key: 'request', href: '/account#yeu-cau-moi', label: 'Gửi yêu cầu bảo hành' },
   { key: 'history', href: '/account#lich-su', label: 'Lịch sử bảo hành' },
   { key: 'lookup', href: '/portal', label: 'Tra cứu tiến độ' },
 ];
+const NAV_GUEST = [
+  { key: 'lookup', href: '/portal', label: 'Tra cứu tiến độ' },
+  { key: 'request', href: '/portal#dang-ky', label: 'Gửi yêu cầu bảo hành' },
+  { key: 'history', href: '/login?next=' + encodeURIComponent('/account#lich-su'), label: 'Lịch sử bảo hành' },
+];
+
+/** Tên khách của phiên đang mở (token + thông tin phiên do api.js lưu); tài khoản nhân viên coi như khách vãng lai. */
+export function useCustomerName(name?: string | null) {
+  const [sessionName, setSessionName] = useState<string | null>(null);
+  useEffect(() => {
+    if (name || !api()?.tokens.get()) return;
+    const user = api().session.user();
+    if (user?.roles?.some((role: Json) => role.code === 'CUSTOMER')) setSessionName(user.displayName || user.username);
+  }, [name]);
+  return name || sessionName;
+}
+
+async function logout() {
+  if (w.LML_AUTH) return w.LML_AUTH.logout();
+  try {
+    await api().auth.logout(false);
+  } catch {
+    /* vẫn xóa phiên phía trình duyệt */
+  }
+  api().tokens.clear();
+  window.location.href = '/login';
+}
 
 const MENU = [
   { key: 'profile', href: '/account#ho-so', icon: 'user', label: 'Thông tin cá nhân' },
@@ -72,16 +111,18 @@ const MENU = [
   { key: 'history', href: '/account#lich-su', icon: 'list', label: 'Lịch sử bảo hành' },
 ];
 
-export function Brand({ href }: { href: string }) {
+/** Logo soopiwarranty: mascot + chữ; light = chữ trắng cho nền tối. */
+export function BrandLogo({ light = false }: { light?: boolean }) {
   return (
-    <a href={href} className="nav-brand">
-      <span className="brand-icon-box" aria-hidden="true">S</span>
-      <span className="brand-text">
-        <span className="brand-title">Soopi</span>
-        <span className="brand-subtitle">BẢO HÀNH ĐIỆN TỬ</span>
-      </span>
-    </a>
+    <>
+      <img src="/images/brand/logo-mark.png" className="brand-mark" width={44} height={44} alt="" />
+      <img src={`/images/brand/${light ? 'wordmark-light' : 'wordmark'}.png`} className="brand-wordmark" width={162} height={26} alt="soopiwarranty" />
+    </>
   );
+}
+
+export function Brand({ href }: { href: string }) {
+  return <a href={href} className="nav-brand"><BrandLogo /></a>;
 }
 
 function UserMenu({ name, active }: { name: string; active: string }) {
@@ -119,7 +160,7 @@ function UserMenu({ name, active }: { name: string; active: string }) {
               <Icon glyph={item.icon} />{item.label}
             </a>
           ))}
-          <button type="button" className="profile-dropdown-item logout-item" onClick={() => w.LML_AUTH?.logout()}>
+          <button type="button" className="profile-dropdown-item logout-item" onClick={() => void logout()}>
             <Icon glyph="logout" />Đăng xuất
           </button>
         </div>
@@ -129,13 +170,15 @@ function UserMenu({ name, active }: { name: string; active: string }) {
 }
 
 /** Header khách. Có tên → menu tài khoản; chưa đăng nhập → nút Đăng nhập/Đăng ký. */
-export function CustomerHeader({ name, active }: { name?: string | null; active: string }) {
+export function CustomerHeader({ name: pageName, active }: { name?: string | null; active: string }) {
+  const name = useCustomerName(pageName);
+  const nav = name ? NAV_SIGNED_IN : NAV_GUEST;
   return (
     <header className="navbar-header">
       <nav className="nav-container" aria-label="Điều hướng khách hàng">
         <Brand href={name ? '/account' : '/portal'} />
         <ul className="nav-menu">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <li key={item.key}>
               <a href={item.href} className={'nav-link' + (active === item.key ? ' active' : '')}
                 aria-current={active === item.key ? 'page' : undefined}>{item.label}</a>
@@ -162,6 +205,7 @@ export function CustomerHeader({ name, active }: { name?: string | null; active:
 
 /** Footer khách: trạm dịch vụ lấy từ danh mục công khai thay cho địa chỉ/hotline cố định của bản cũ. */
 export function CustomerFooter() {
+  const name = useCustomerName();
   const [stations, setStations] = useState<Json[]>([]);
   useEffect(() => {
     api().portal.catalog().then((catalog: Json) => setStations(catalog.stations || [])).catch(() => setStations([]));
@@ -170,10 +214,7 @@ export function CustomerFooter() {
     <footer className="footer-main">
       <div className="footer-container">
         <div>
-          <div className="footer-brand">
-            <span className="brand-icon-box" aria-hidden="true">S</span>
-            <span className="footer-brand-title">Soopi Service</span>
-          </div>
+          <div className="footer-brand"><BrandLogo light={true} /></div>
           <p className="footer-desc">Trung tâm bảo hành và sửa chữa thiết bị điện tử, điện máy. Theo dõi phiếu sửa chữa và gửi yêu cầu bảo hành trực tuyến.</p>
           {stations.length > 0 && (
             <ul className="footer-contact-info">
@@ -186,21 +227,29 @@ export function CustomerFooter() {
         <div>
           <h4 className="footer-col-title">Dịch vụ</h4>
           <ul className="footer-links-ul">
-            <li><a href="/account#yeu-cau-moi">Gửi yêu cầu bảo hành</a></li>
-            <li><a href="/account#lich-su">Lịch sử bảo hành</a></li>
-            <li><a href="/portal">Tra cứu tiến độ</a></li>
+            {(name ? NAV_SIGNED_IN : NAV_GUEST).filter((item) => item.key !== 'home').map((item) => (
+              <li key={item.key}><a href={item.href}>{item.label}</a></li>
+            ))}
           </ul>
         </div>
         <div>
           <h4 className="footer-col-title">Tài khoản</h4>
           <ul className="footer-links-ul">
-            <li><a href="/account#ho-so">Thông tin cá nhân</a></li>
-            <li><a href="/account#doi-mat-khau">Đổi mật khẩu</a></li>
-            <li><a href="/register">Đăng ký tài khoản</a></li>
+            {name ? (
+              <>
+                <li><a href="/account#ho-so">Thông tin cá nhân</a></li>
+                <li><a href="/account#doi-mat-khau">Đổi mật khẩu</a></li>
+              </>
+            ) : (
+              <>
+                <li><a href="/login">Đăng nhập</a></li>
+                <li><a href="/register">Đăng ký tài khoản</a></li>
+              </>
+            )}
           </ul>
         </div>
       </div>
-      <div className="footer-bottom-strip">© {new Date().getFullYear()} Soopi Service.</div>
+      <div className="footer-bottom-strip">© {new Date().getFullYear()} soopiwarranty — Soopi Service.</div>
     </footer>
   );
 }

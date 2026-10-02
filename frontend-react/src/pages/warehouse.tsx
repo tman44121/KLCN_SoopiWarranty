@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
+import { BrandLogo } from "../customer";
 
 export default function WarehousePage() {
   usePage("warehouse", {"data-roles": "WAREHOUSE_KEEPER"}, "Soopi — Kho vật tư");
@@ -8,11 +9,8 @@ export default function WarehousePage() {
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">
         <div className="sidebar-brand">
-          <div className="sidebar-brand__name">
-            {"Soopi"}
-          </div>
-          <div className="sidebar-brand__sub">
-            {"Service Center"}
+          <div className="sidebar-brand__logo" aria-label="soopiwarranty">
+            <BrandLogo />
           </div>
           <div className="sidebar-brand__system">
             {"Hệ thống quản lý bảo hành & sửa chữa nội bộ"}

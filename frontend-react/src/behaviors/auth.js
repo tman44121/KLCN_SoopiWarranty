@@ -52,7 +52,9 @@ export default function initialize() {
     const codes = roleCodes(user);
     const pageRoles = listAttr(document.body, "data-roles");
     if (pageRoles.length > 0 && !pageRoles.some((r) => codes.includes(r))) {
-      window.location.replace(resolveLanding(user.landing || "index.html"));
+      // Khu khách: tài khoản nhân viên được mời đăng nhập bằng tài khoản khách thay vì bị đưa về màn nội bộ.
+      if (pageRoles.length === 1 && pageRoles[0] === "CUSTOMER") window.LML_API.redirectToLogin();
+      else window.location.replace(resolveLanding(user.landing || "index.html"));
       return false;
     }
 
