@@ -10,10 +10,13 @@ import Tickets from './pages/tickets';
 import Reports from './pages/reports';
 import Admin from './pages/admin';
 import Portal from './pages/portal';
+import Register from './pages/register';
+import Account from './pages/account';
 import { legacyRoutes } from './navigation';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
+import './styles/customer.css';
 
 function LegacyRedirect({ to }: { to: string }) {
   const { search, hash } = useLocation();
@@ -34,6 +37,8 @@ createRoot(document.getElementById('root')!).render(
       <Route path="/reports" element={<Reports />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/portal" element={<Portal />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/account" element={<Account />} />
       {Object.entries(legacyRoutes).map(([from, to]) =>
         <Route key={from} path={from} element={<LegacyRedirect to={to} />} />)}
       <Route path="*" element={<main><p role="alert">Không tìm thấy trang.</p><Link to="/login" reloadDocument>Đăng nhập</Link></main>} />

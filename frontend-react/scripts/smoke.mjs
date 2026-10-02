@@ -11,6 +11,23 @@ mkdirSync(output, { recursive: true });
 const permissions = [...new Set(readdirSync(new URL('../src/pages/', import.meta.url)).flatMap(file =>
   [...readFileSync(new URL(`../src/pages/${file}`, import.meta.url), 'utf8').matchAll(/data-perm="([^"]+)"/g)].flatMap(m => m[1].split(','))))];
 const catalog = { categories: [{ code: 'PHONE', name: 'Điện thoại', deviceTypes: [{ code: 'PHONE', identifierType: 'IMEI' }] }], stations: [{ code: 'ST01', name: 'Trạm thử', address: 'Địa chỉ thử' }] };
+const steps = (current) => ['RECEIVED', 'DIAGNOSIS', 'AWAITING_PARTS', 'REPAIRING', 'QC', 'READY'].map((key, i) =>
+  ({ key, label: ['Tiếp nhận', 'Chẩn đoán', 'Chờ linh kiện', 'Đang sửa', 'QC', 'Sẵn sàng nhận máy'][i], state: i < current ? 'DONE' : i === current ? 'CURRENT' : 'UPCOMING' }));
+const customer = {
+  profile: { customerCode: 'KH0001', fullName: 'Nguyễn Văn Khách', phone: '0900000000', email: null, address: null, username: '0900000000' },
+  tickets: [
+    { code: 'TN-2026-1002-00001', productName: 'Galaxy S24', serialOrImei: '356000000000001', receivedAt: '2026-10-01T02:00:00Z', status: 'AWAITING_CUSTOMER_CONFIRMATION', stopped: false, currentStep: 1 },
+    { code: 'TN-2026-0920-00007', productName: 'MacBook Air M2', serialOrImei: 'C02G789X01', receivedAt: '2026-09-20T03:00:00Z', status: 'DELIVERED', stopped: false, currentStep: 6 },
+  ],
+  requests: [{ code: 'YC-2026-0001', status: 'PENDING_INTAKE', createdAt: '2026-10-01T01:00:00Z', brandModel: 'Samsung Inverter RT35K5982', serialOrImei: 'RT35-001', ticketCode: null }],
+  devices: [{ code: 'TB0001', productName: 'Galaxy S24', brandName: 'Samsung', identifierType: 'IMEI', serialOrImei: '356000000000001', warrantyActivatedOn: '2025-10-01', warrantyExpiresOn: '2027-10-01', warrantyStatus: 'IN_WARRANTY' }],
+};
+const ticketView = (quoted) => ({ code: 'TN-2026-1002-00001', productName: 'Galaxy S24', brandName: 'Samsung', serialOrImei: '356000000000001',
+  receivedAt: '2026-10-01T02:00:00Z', promisedReturnAt: '2026-10-04T10:00:00Z', status: quoted ? 'AWAITING_CUSTOMER_CONFIRMATION' : 'REPAIRING', stopped: false,
+  steps: steps(quoted ? 1 : 3), customerNotes: [{ at: '2026-10-01T05:00:00Z', text: 'Máy cần thay màn hình.' }], handedOverAt: null,
+  costs: { inWarrantyAmount: 0, outOfWarrantyParts: 2500000, serviceFee: 200000, vat: 216000, total: 2916000, paymentStatus: 'UNPAID' },
+  pendingQuotation: quoted ? { code: 'BG-1', validUntil: '2026-10-09', vatRate: 0.08, partsTotal: 2500000, laborTotal: 200000, grandTotal: 2916000,
+    lines: [{ lineNo: 1, description: 'Màn hình AMOLED', quantity: 1, lineTotal: 2500000 }, { lineNo: 2, description: 'Công thay', quantity: 1, lineTotal: 200000 }] } : null });
 export const browser = await chromium.launch({ channel: 'msedge', headless: true });
 let assertions = 0;
 let mockedWrites = 0;
@@ -50,6 +67,14 @@ export async function session(role, landing, width = 1440) {
     else if (path === '/tickets' || path === '/quotations' || path === '/audit-logs') data = { items: [], total: 0, page: 0, size: 25 };
     else if (path === '/catalog/stations') data = [{ _id: 'ST01', name: 'Trạm thử' }];
     else if (path === '/portal/warranty-requests' && request.method() === 'POST') data = { code: 'YC-MOCK' };
+    else if (path.startsWith('/portal/my/') && request.method() === 'GET') data = customer[path.split('/')[3].replace('warranty-requests', 'requests')];
+    else if (path === '/portal/my/profile') data = { ...customer.profile, ...JSON.parse(request.postData()) };
+    else if (path === '/portal/my/warranty-requests') data = { code: 'YC-OWN-MOCK' };
+    else if (path === '/portal/tickets/TN-2026-1002-00001') data = ticketView(true);
+    else if (path.endsWith('/quotation-decision')) data = ticketView(false);
+    else if (path === '/auth/mobile/otp') data = { expiresIn: 300, resendAfter: 60 };
+    else if (path === '/auth/mobile/register') data = { accessToken: 'mock-mobile', refreshToken: 'mock-mobile-rt', user };
+    else if (path === '/auth/mobile/logout') return route.fulfill({ status: 204 });
     else if (path === '/portal/lookup') {
       expectedResource404++;
       return route.fulfill({ status: 404, contentType: 'application/problem+json', body: JSON.stringify({ code: 'NOT_FOUND', detail: 'Không tìm thấy mã tra cứu thử.' }) });
@@ -137,5 +162,69 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
   assert.equal(await s.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false); assertions++;
   await s.page.screenshot({ path: fileURLToPath(new URL('portal-mobile.png', output)), fullPage: true });
   await s.context.close();
-  console.log(`PASS: 10 pages, ${assertions} checks, ${mockedWrites} mocked write requests, no live database writes`);
+  for (const width of [1440, 390]) {
+    const c = await session('CUSTOMER', '/account', width);
+    await c.page.goto(base + '/register');
+    await c.page.click('button[type="submit"]');
+    await c.page.getByText('Vui lòng nhập họ và tên.', { exact: true }).waitFor(); assertions++;
+    assert(!c.calls.includes('/auth/mobile/register')); assertions++;
+    if (width === 1440) await c.page.screenshot({ path: fileURLToPath(new URL('register-desktop.png', output)) });
+    await c.page.fill('#fullName', 'Nguyễn Văn Khách');
+    await c.page.fill('#phone', '0900000000');
+    await c.page.click('.btn-otp');
+    await c.page.getByText(/Gửi lại sau \d+s/).waitFor(); assertions++;
+    await c.page.fill('#otp', '123456');
+    await c.page.fill('#password', 'Khach-mat-khau-1');
+    await c.page.fill('#confirm', 'Khach-mat-khau-1');
+    await c.page.click('button[type="submit"]');
+    await c.page.waitForURL(base + '/account');
+    for (const path of ['/auth/mobile/register', '/auth/mobile/logout', '/auth/login']) assert(c.calls.includes(path), path);
+    assertions++;
+    await c.page.getByRole('heading', { name: 'Xin chào, Nguyễn Văn Khách' }).waitFor(); assertions++;
+    await c.page.screenshot({ path: fileURLToPath(new URL(`account-${width}.png`, output)), fullPage: true });
+    assert.equal(await c.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `overview ${width}: horizontal scroll`); assertions++;
+    await c.page.goto(base + '/account#lich-su');
+    await c.page.getByRole('button', { name: /^Hoàn thành/ }).click();
+    assert.equal(await c.page.locator('.ticket-card-box').count(), 1); assertions++;
+    await c.page.screenshot({ path: fileURLToPath(new URL(`history-${width}.png`, output)), fullPage: true });
+    await c.page.goto(base + '/account#phieu/TN-2026-1002-00001');
+    await c.page.getByRole('button', { name: 'Đồng ý báo giá' }).click();
+    await c.page.getByText('Đã xác nhận báo giá.').waitFor(); assertions++;
+    await c.page.screenshot({ path: fileURLToPath(new URL(`ticket-${width}.png`, output)), fullPage: true });
+    await c.page.goto(base + '/account#yeu-cau-moi/356000000000001');
+    await c.page.waitForSelector('#req-category option[value="PHONE"]', { state: 'attached' });
+    assert.equal(await c.page.inputValue('#req-brand-model'), 'Samsung Galaxy S24'); assertions++;
+    await c.page.selectOption('#req-category', 'PHONE');
+    await c.page.selectOption('#req-station', 'ST01');
+    await c.page.fill('#req-symptom', 'Màn hình sọc');
+    await c.page.fill('#req-time', '2030-10-02T10:00');
+    await c.page.click('form.form-card-panel button[type="submit"]');
+    await c.page.getByText('YC-OWN-MOCK', { exact: true }).waitFor(); assertions++;
+    await c.page.screenshot({ path: fileURLToPath(new URL(`request-${width}.png`, output)), fullPage: true });
+    await c.page.goto(base + '/account#ho-so');
+    await c.page.fill('#pf-email', 'khach@example.com');
+    await c.page.getByRole('button', { name: 'Lưu thay đổi' }).click();
+    await c.page.getByText('Đã cập nhật thông tin liên hệ.').waitFor(); assertions++;
+    await c.page.screenshot({ path: fileURLToPath(new URL(`profile-${width}.png`, output)), fullPage: true });
+    await c.page.goto(base + '/account#doi-mat-khau');
+    await c.page.fill('#pw-current', 'Khach-mat-khau-1');
+    await c.page.fill('#pw-new', 'Khach-mat-khau-2');
+    await c.page.fill('#pw-confirm', 'khac');
+    await c.page.getByRole('button', { name: 'Đổi mật khẩu' }).click();
+    await c.page.getByText('Mật khẩu xác nhận không khớp.').waitFor(); assertions++;
+    assert.equal(await c.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `account ${width}: horizontal scroll`); assertions++;
+    if (width === 1440) {
+      await c.page.goto(base + '/portal');
+      await c.page.waitForLoadState('networkidle');
+      await c.page.screenshot({ path: fileURLToPath(new URL('portal-desktop.png', output)), fullPage: true });
+      await c.page.evaluate(() => sessionStorage.clear());
+      await c.page.goto(base + '/login');
+      await c.page.waitForLoadState('networkidle');
+      await c.page.screenshot({ path: fileURLToPath(new URL('login-desktop.png', output)) });
+    }
+    assert.deepEqual(c.errors, [], `customer ${width}: browser errors`); assertions++;
+    await c.context.close();
+  }
+  console.log('PASS customer register, account, history, quotation, request, profile and password');
+  console.log(`PASS: 12 pages, ${assertions} checks, ${mockedWrites} mocked write requests, no live database writes`);
 } finally { await browser.close(); } }

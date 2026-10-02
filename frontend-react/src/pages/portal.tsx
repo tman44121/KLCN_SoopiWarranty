@@ -1,208 +1,134 @@
-import type { CSSProperties } from "react";
-import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
+import { CustomerFooter, CustomerHeader, Icon } from "../customer";
 
+/* Tra cứu công khai theo giao diện trang Tra cứu của web khách KLCN. id và data-* giữ nguyên vì customer-portal.js gắn vào. */
 export default function PortalPage() {
   usePage("portal", {"class": "is-fluid"}, "Soopi — Tra cứu sửa chữa");
-  return (<>
-    <header className="portal-header">
-      <div>
-        <div className="portal-header__brand-name">
-          {"Soopi"}
-        </div>
-        <div className="portal-header__brand-sub">
-          {"Tra cứu sửa chữa"}
-        </div>
-      </div>
-    </header>
-    <main className="portal-main">
-      <section className="card" data-lookup-section="">
-        <div className="card__header">
-          <div>
-            <h2 className="card__title">
-              {"Tra cứu tiến độ sửa chữa"}
-            </h2>
-            <div className="card__title-meta">
-              {"Nhập mã phiếu (TN- hoặc YC-) và số điện thoại đã đăng ký để xem tiến độ"}
-            </div>
-          </div>
-          <button type="button" className="btn btn--secondary btn--sm" data-open-register="">
-            {"Đăng ký yêu cầu bảo hành mới"}
-          </button>
-        </div>
-        <div className="card__body stack">
-          <div className="form-row">
-            <div className="form-field" data-field="lookupId">
-              <label htmlFor="lookupId">
-                {"Mã phiếu"}
-                <span className="required-mark">
-                  {"*"}
-                </span>
-              </label>
-              <input type="text" id="lookupId" className="mono" autoCapitalize="characters" autoComplete="off" spellCheck="false" placeholder="VD: TN-2026-0917-00421" />
+  return (
+    <div className="kh-app">
+      <CustomerHeader active="lookup" />
+      <main className="kh-main">
+        <section className="warranty-hero-banner lookup-hero" data-lookup-section="">
+          <h1 className="warranty-title">Tra cứu tiến độ sửa chữa</h1>
+          <p className="warranty-subtitle">Nhập mã phiếu (TN- hoặc YC-) và số điện thoại đã đăng ký để xem tiến độ, ghi chú và báo giá.</p>
+          <div className="lookup-form">
+            <div className="form-row-group" data-field="lookupId">
+              <label htmlFor="lookupId">Mã phiếu</label>
+              <input type="text" id="lookupId" className="regular-input mono" autoCapitalize="characters" autoComplete="off" spellCheck="false" placeholder="VD: TN-2026-0917-00421" />
               <span className="form-field__error" hidden={true}>
               </span>
             </div>
-            <div className="form-field" data-field="lookupPhone">
-              <label htmlFor="lookupPhone">
-                {"Số điện thoại"}
-                <span className="required-mark">
-                  {"*"}
-                </span>
-              </label>
-              <input type="tel" id="lookupPhone" inputMode="tel" autoComplete="tel" placeholder="09xx xxx xxx" />
+            <div className="form-row-group" data-field="lookupPhone">
+              <label htmlFor="lookupPhone">Số điện thoại</label>
+              <input type="tel" id="lookupPhone" className="regular-input" inputMode="tel" autoComplete="tel" placeholder="09xx xxx xxx" />
               <span className="form-field__error" hidden={true}>
               </span>
             </div>
-          </div>
-          <div>
-            <button type="button" className="btn btn--primary" data-lookup-submit="">
-              {"Tra cứu tiến độ"}
+            <button type="button" className="btn-primary-teal" data-lookup-submit="">
+              <Icon glyph="search" />Tra cứu
             </button>
           </div>
-          <div data-lookup-error="" hidden={true}>
+        </section>
+
+        <div className="page-container lookup-body">
+          <div className="kh-alert kh-alert--error" data-lookup-error="" role="alert" hidden={true}>
           </div>
-        </div>
-      </section>
-      <section className="card" data-register-section="" hidden={true}>
-        <div className="card__header">
-          <div>
-            <h2 className="card__title">
-              {"Đăng ký yêu cầu bảo hành trực tuyến"}
-            </h2>
-            <div className="card__title-meta">
-              {"Khai báo trước thông tin thiết bị — mang máy tới trung tâm theo thời gian đã chọn"}
+          <div className="content-stack" data-lookup-result="" hidden={true}>
+          </div>
+
+          <div className="lookup-cta">
+            <div>
+              <h2 className="card-heading-title">Thiết bị cần sửa chữa?</h2>
+              <p className="card-heading-desc">Gửi yêu cầu trước khi mang máy tới trạm. Có tài khoản? <a className="dispatch-link" href="/login">Đăng nhập</a> để theo dõi mọi phiếu của bạn.</p>
             </div>
-          </div>
-          <button type="button" className="btn btn--secondary btn--sm" data-close-register="">
-            {"Đóng"}
-          </button>
-        </div>
-        <div className="card__body stack">
-          <div className="form-row">
-            <div className="form-field" data-field="regName">
-              <label htmlFor="reg-name">
-                {"Họ và tên"}
-                <span className="required-mark">
-                  {"*"}
-                </span>
-              </label>
-              <input type="text" id="reg-name" />
-              <span className="form-field__error" hidden={true}>
-              </span>
-            </div>
-            <div className="form-field" data-field="regPhone">
-              <label htmlFor="reg-phone">
-                {"Số điện thoại"}
-                <span className="required-mark">
-                  {"*"}
-                </span>
-              </label>
-              <input type="tel" id="reg-phone" inputMode="tel" autoComplete="tel" placeholder="09xx xxx xxx" />
-              <span className="form-field__error" hidden={true}>
-              </span>
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-field" data-field="regCategory">
-              <label htmlFor="reg-category">
-                {"Loại thiết bị"}
-                <span className="required-mark">
-                  {"*"}
-                </span>
-              </label>
-              <select id="reg-category">
-                <option value="">
-                  {"— Chọn loại thiết bị —"}
-                </option>
-              </select>
-              <span className="form-field__error" hidden={true}>
-              </span>
-            </div>
-            <div className="form-field" data-field="regBrandModel">
-              <label htmlFor="reg-brand-model">
-                {"Hãng/Model"}
-                <span className="required-mark">
-                  {"*"}
-                </span>
-              </label>
-              <input type="text" id="reg-brand-model" placeholder="VD: Samsung Inverter RT35K5982" />
-              <span className="form-field__error" hidden={true}>
-              </span>
-            </div>
-          </div>
-          <div className="form-field" data-field="regSerial">
-            <label htmlFor="reg-serial" data-reg-serial-label="">
-              {"Serial Number"}
-              <span className="required-mark">
-                {"*"}
-              </span>
-            </label>
-            <input type="text" id="reg-serial" className="mono" />
-            <span className="form-field__error" hidden={true}>
-            </span>
-          </div>
-          <div className="form-field" data-field="regSymptom">
-            <label htmlFor="reg-symptom">
-              {"Mô tả lỗi khách hàng"}
-              <span className="required-mark">
-                {"*"}
-              </span>
-            </label>
-            <textarea id="reg-symptom" placeholder="Mô tả chi tiết hiện tượng lỗi…">
-            </textarea>
-            <span className="form-field__error" hidden={true}>
-            </span>
-          </div>
-          <div className="form-field">
-            <label htmlFor="reg-media">
-              {"Ảnh/video lỗi (tối đa 3 tệp)"}
-            </label>
-            <input type="file" id="reg-media" accept="image/*,video/*" multiple={true} />
-            <span className="form-field__helper">
-              {"Không bắt buộc — giúp kỹ thuật viên hình dung lỗi trước khi khách mang máy tới."}
-            </span>
-          </div>
-          <div className="form-row">
-            <div className="form-field" data-field="regStation">
-              <label htmlFor="reg-station">
-                {"Trạm dịch vụ"}
-                <span className="required-mark">
-                  {"*"}
-                </span>
-              </label>
-              <select id="reg-station">
-                <option>
-                  {"Trạm HCM"}
-                </option>
-                <option>
-                  {"Trạm Hà Nội"}
-                </option>
-              </select>
-            </div>
-            <div className="form-field" data-field="regTime">
-              <label htmlFor="reg-time">
-                {"Thời gian mong muốn mang máy tới"}
-                <span className="required-mark">
-                  {"*"}
-                </span>
-              </label>
-              <input type="text" id="reg-time" placeholder="VD: 19/09/2026 14:00 - 16:00" />
-              <span className="form-field__error" hidden={true}>
-              </span>
-            </div>
-          </div>
-          <div>
-            <button type="button" className="btn btn--primary" data-register-submit="">
-              {"Gửi yêu cầu"}
+            <button type="button" className="btn-secondary-white" data-open-register="">
+              <Icon glyph="plus" />Đăng ký yêu cầu bảo hành mới
             </button>
           </div>
-          <div data-register-success="" hidden={true}>
-          </div>
+
+          <section className="content-panel-card" data-register-section="" hidden={true}>
+            <div className="panel-head">
+              <div>
+                <h2 className="card-heading-title">Đăng ký yêu cầu bảo hành trực tuyến</h2>
+                <p className="card-heading-desc">Khai báo trước thông tin thiết bị — mang máy tới trung tâm theo thời gian đã chọn.</p>
+              </div>
+              <button type="button" className="btn-secondary-white btn-sm" data-close-register="">Đóng</button>
+            </div>
+            <div data-register-success="" hidden={true}>
+            </div>
+            <h3 className="form-section-title"><span className="form-section-num">1</span>Thông tin liên hệ</h3>
+            <div className="two-inputs-grid form-row-group">
+              <div className="form-row-group" data-field="regName">
+                <label htmlFor="reg-name">Họ và tên *</label>
+                <input type="text" id="reg-name" className="regular-input" autoComplete="name" />
+                <span className="form-field__error" hidden={true}>
+                </span>
+              </div>
+              <div className="form-row-group" data-field="regPhone">
+                <label htmlFor="reg-phone">Số điện thoại *</label>
+                <input type="tel" id="reg-phone" className="regular-input" inputMode="tel" autoComplete="tel" placeholder="09xx xxx xxx" />
+                <span className="form-field__error" hidden={true}>
+                </span>
+              </div>
+            </div>
+            <h3 className="form-section-title"><span className="form-section-num">2</span>Thông tin thiết bị</h3>
+            <div className="two-inputs-grid form-row-group">
+              <div className="form-row-group" data-field="regCategory">
+                <label htmlFor="reg-category">Loại thiết bị *</label>
+                <select id="reg-category" className="regular-input">
+                  <option value="">
+                    {"— Chọn loại thiết bị —"}
+                  </option>
+                </select>
+                <span className="form-field__error" hidden={true}>
+                </span>
+              </div>
+              <div className="form-row-group" data-field="regBrandModel">
+                <label htmlFor="reg-brand-model">Hãng / Model *</label>
+                <input type="text" id="reg-brand-model" className="regular-input" placeholder="VD: Samsung Inverter RT35K5982" />
+                <span className="form-field__error" hidden={true}>
+                </span>
+              </div>
+            </div>
+            <div className="form-row-group" data-field="regSerial">
+              <label htmlFor="reg-serial" data-reg-serial-label="">Serial Number<span className="required-mark">*</span></label>
+              <input type="text" id="reg-serial" className="regular-input mono" />
+              <span className="form-field__error" hidden={true}>
+              </span>
+            </div>
+            <div className="form-row-group" data-field="regSymptom">
+              <label htmlFor="reg-symptom">Mô tả lỗi *</label>
+              <textarea id="reg-symptom" className="regular-input" placeholder="Mô tả chi tiết hiện tượng lỗi…">
+              </textarea>
+              <span className="form-field__error" hidden={true}>
+              </span>
+            </div>
+            <div className="form-row-group">
+              <label htmlFor="reg-media">Ảnh / video lỗi (tối đa 3 tệp)</label>
+              <input type="file" id="reg-media" className="regular-input" accept="image/*,video/*" multiple={true} />
+              <div className="input-subnote">Không bắt buộc — giúp kỹ thuật viên hình dung lỗi trước khi khách mang máy tới.</div>
+            </div>
+            <div className="two-inputs-grid form-row-group">
+              <div className="form-row-group" data-field="regStation">
+                <label htmlFor="reg-station">Trạm dịch vụ *</label>
+                <select id="reg-station" className="regular-input">
+                  <option value="">— Chọn trạm —</option>
+                </select>
+                <span className="form-field__error" hidden={true}>
+                </span>
+              </div>
+              <div className="form-row-group" data-field="regTime">
+                <label htmlFor="reg-time">Thời gian mong muốn mang máy tới *</label>
+                <input type="text" id="reg-time" className="regular-input" placeholder="VD: 19/09/2026 14:00 - 16:00" />
+                <span className="form-field__error" hidden={true}>
+                </span>
+              </div>
+            </div>
+            <button type="button" className="btn-primary-teal" data-register-submit="">Gửi yêu cầu</button>
+          </section>
         </div>
-      </section>
-      <div className="stack stack--loose" data-lookup-result="" hidden={true}>
-      </div>
-    </main>
-  </>);
+      </main>
+      <CustomerFooter />
+    </div>
+  );
 }

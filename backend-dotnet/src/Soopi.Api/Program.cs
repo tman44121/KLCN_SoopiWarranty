@@ -165,6 +165,8 @@ var pages = new Dictionary<string, string>
     ["/pages/warehouse.html"] = "/warehouse", ["/pages/cashier.html"] = "/cashier",
     ["/pages/tickets.html"] = "/tickets", ["/pages/reports.html"] = "/reports",
     ["/pages/admin.html"] = "/admin", ["/pages/customer-portal.html"] = "/portal",
+    // URL cũ của web khách KLCN (Thymeleaf).
+    ["/Account/Register"] = "/register", ["/Account/Profile"] = "/account",
 };
 
 app.UseMiddleware<CorrelationIdMiddleware>();

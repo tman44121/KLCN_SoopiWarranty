@@ -97,3 +97,10 @@ Tên hiển thị đã đổi thành Soopi; CSS/layout và luồng nghiệp vụ
 `../docs/UI_AUDIT.md`: 13/20, 1 P1/4 P2/1 P3 cần xem xét; các finding chưa tự sửa.
 Có thể chạy lại `node scripts/audit.mjs` khi Vite đang chạy. Script tái dùng browser/mock API của
 smoke và axe-core có sẵn trong repo Java, không ghi DB hoặc cài dependency.
+
+## Giao diện khách hàng (KLCN) — 2026-10-02
+
+`/login`, `/register`, `/account`, `/portal` dùng giao diện web khách KLCN (`src/styles/customer.css`, phần dùng chung
+`src/customer.tsx`). `/login` và `/portal` vẫn do `login.js`/`customer-portal.js` điều khiển (giữ id/name); `/register`
+và `/account` dựng bằng React state, không có controller trong `src/behaviors`. Mục con của `/account` theo hash:
+`#lich-su`, `#phieu/<mã>`, `#yeu-cau-moi[/<serial>]`, `#ho-so`, `#doi-mat-khau`. `node scripts/smoke.mjs` kiểm cả luồng khách.

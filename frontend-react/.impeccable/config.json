@@ -1,0 +1,20 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-10-02T06:29:17.798Z",
+        "reason": "User chose to port the KLCN customer UI; Inter is the font of KLCN home.css and of Soopi tokens.css"
+      },
+      {
+        "rule": "overused-font",
+        "value": "plus jakarta sans",
+        "createdAt": "2026-10-02T06:29:18.044Z",
+        "reason": "User chose to port the KLCN customer UI; Plus Jakarta Sans is the font of KLCN auth.css (login/register)"
+      }
+    ]
+  }
+}

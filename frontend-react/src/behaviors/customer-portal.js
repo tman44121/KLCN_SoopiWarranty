@@ -20,13 +20,20 @@ export default function initialize() {
     serialLabel: document.querySelector("[data-reg-serial-label]"),
   };
   let catalog = null;
+  const TONE = { processing: "badge-processing", warning: "badge-waiting", success: "badge-completed", neutral: "badge-received", danger: "badge-danger" };
+
+  /** Badge theo giao diện khách (customer.css); cùng bảng nhãn/tone với LML_LABELS. */
+  function badge(table, code) {
+    const entry = table[code];
+    return html`<span class="badge ${TONE[entry ? entry.tone : "neutral"]}">${entry ? entry.label : code || "—"}</span>`;
+  }
 
   function field(name) {
     return document.querySelector(`[data-field="${name}"]`);
   }
 
   function clearErrors() {
-    document.querySelectorAll(".form-field.has-error").forEach((node) => node.classList.remove("has-error"));
+    document.querySelectorAll("[data-field].has-error").forEach((node) => node.classList.remove("has-error"));
     document.querySelectorAll(".form-field__error").forEach((node) => node.setAttribute("hidden", ""));
     el.error.hidden = true;
     el.error.textContent = "";
@@ -49,35 +56,40 @@ export default function initialize() {
   }
 
   function renderTicket(ticket) {
+    const costs = ticket.costs;
     el.result.innerHTML = html`
-      <section class="card">
-        <div class="card__header"><h2 class="card__title">Thông tin thiết bị</h2>${fmt.badgeOf(labels.TICKET_STATUS, ticket.status)}</div>
-        <div class="card__body"><div class="detail-grid">
-          <div class="detail-grid__item"><span class="kv-key">Mã phiếu</span><span class="mono">${ticket.code}</span></div>
-          <div class="detail-grid__item"><span class="kv-key">Thiết bị</span><span>${ticket.brandName} ${ticket.productName}</span></div>
-          <div class="detail-grid__item"><span class="kv-key">Serial/IMEI</span><span class="mono">${ticket.serialOrImei}</span></div>
-          <div class="detail-grid__item"><span class="kv-key">Ngày tiếp nhận</span><span>${fmt.dateTime(ticket.receivedAt)}</span></div>
-          <div class="detail-grid__item"><span class="kv-key">Ngày dự kiến trả</span><span>${fmt.dateTime(ticket.promisedReturnAt)}</span></div>
-        </div></div>
-      </section>
-      <section class="card"><div class="card__header"><h2 class="card__title">Tiến độ sửa chữa</h2></div>
-        <div class="card__body"><div class="progress-stepper">${ticket.steps.map((step, index) => html`
-          <div class="progress-step ${step.state === "DONE" ? "is-done" : ""} ${step.state === "CURRENT" ? "is-current" : ""}">
-            <div class="progress-step__track"><div class="progress-step__line progress-step__line--left"></div><div class="progress-step__circle">${step.state === "DONE" ? "✓" : index + 1}</div><div class="progress-step__line progress-step__line--right"></div></div>
-            <div class="progress-step__label">${step.label}</div><div class="progress-step__state">${step.state === "DONE" ? "Hoàn tất" : step.state === "CURRENT" ? "Đang xử lý" : "Chưa tới"}</div>
-          </div>`)}</div></div>
-      </section>
-      <section class="card"><div class="card__header"><h2 class="card__title">Ghi chú từ trung tâm sửa chữa</h2></div>
-        <div class="card__body">${ticket.customerNotes.length ? ticket.customerNotes.map((note) => html`<p><span class="cell-muted">${fmt.dateTime(note.at)}</span> — ${note.text}</p>`) : html`<div class="empty-selection-hint">Chưa có ghi chú mới.</div>`}</div>
-      </section>
-      <section class="card"><div class="card__header"><h2 class="card__title">Chi phí dự kiến</h2></div><div class="card__body">
-        <div class="billing-row"><span class="kv-key">Chi phí trong bảo hành</span><span>${fmt.money(ticket.costs.inWarrantyAmount)}</span></div>
-        <div class="billing-row"><span class="kv-key">Linh kiện ngoài bảo hành</span><span>${fmt.money(ticket.costs.outOfWarrantyParts)}</span></div>
-        <div class="billing-row"><span class="kv-key">Phí dịch vụ</span><span>${fmt.money(ticket.costs.serviceFee)}</span></div>
-        <div class="billing-row"><span class="kv-key">VAT</span><span>${fmt.money(ticket.costs.vat)}</span></div>
-        <div class="billing-total-row"><span class="kv-key">Tổng thanh toán</span><span>${fmt.money(ticket.costs.total)}</span></div>
-      </div></section>
-      ${ticket.pendingQuotation ? quotation(ticket) : ""}`;
+      <div class="ticket-hero-card">
+        <div><h2 style="font-size:26px;font-weight:900;line-height:1.2;margin-bottom:8px;">${ticket.brandName} ${ticket.productName}</h2>
+          <div class="ticket-hero-meta"><span>Mã phiếu: <strong class="mono">${ticket.code}</strong></span><span>Serial/IMEI: <strong class="mono">${ticket.serialOrImei}</strong></span></div></div>
+        ${badge(labels.TICKET_STATUS, ticket.status)}
+      </div>
+      ${ticket.pendingQuotation ? quotation(ticket) : ""}
+      <div class="detail-grid-2">
+        <section class="content-panel-card"><h2 class="card-heading-title">Tiến độ sửa chữa</h2>
+          <ol class="timeline-stepper">${ticket.steps.map((step, index) => html`
+            <li class="timeline-node-item ${step.state === "DONE" ? "is-done" : ""} ${step.state === "CURRENT" ? "active" : ""}">
+              <span class="timeline-dot">${step.state === "DONE" ? "✓" : index + 1}</span>
+              <div class="timeline-title">${step.label}</div>
+              <div class="timeline-desc">${step.state === "DONE" ? "Hoàn tất" : step.state === "CURRENT" ? "Đang xử lý" : "Chưa tới"}</div>
+            </li>`)}</ol>
+        </section>
+        <div class="content-stack">
+          <section class="content-panel-card"><h2 class="card-heading-title" style="margin-bottom:12px;">Thông tin phiếu</h2><div class="kv-list">
+            <div class="kv-row"><span>Ngày tiếp nhận</span><strong>${fmt.dateTime(ticket.receivedAt)}</strong></div>
+            <div class="kv-row"><span>Ngày dự kiến trả</span><strong>${fmt.dateTime(ticket.promisedReturnAt)}</strong></div>
+          </div></section>
+          <section class="content-panel-card"><h2 class="card-heading-title" style="margin-bottom:12px;">Chi phí dự kiến</h2><div class="kv-list">
+            <div class="kv-row"><span>Chi phí trong bảo hành</span><span>${fmt.money(costs.inWarrantyAmount)}</span></div>
+            <div class="kv-row"><span>Linh kiện ngoài bảo hành</span><span>${fmt.money(costs.outOfWarrantyParts)}</span></div>
+            <div class="kv-row"><span>Phí dịch vụ</span><span>${fmt.money(costs.serviceFee)}</span></div>
+            <div class="kv-row"><span>VAT</span><span>${fmt.money(costs.vat)}</span></div>
+            <div class="kv-row is-total"><span>Tổng thanh toán</span><span>${fmt.money(costs.total)}</span></div>
+          </div></section>
+        </div>
+      </div>
+      <section class="content-panel-card"><h2 class="card-heading-title" style="margin-bottom:16px;">Ghi chú từ trung tâm sửa chữa</h2>
+        ${ticket.customerNotes.length ? html`<ul class="note-list">${ticket.customerNotes.map((note) => html`<li><time>${fmt.dateTime(note.at)}</time>${note.text}</li>`)}</ul>` : html`<p class="card-heading-desc">Chưa có ghi chú mới.</p>`}
+      </section>`;
     el.result.hidden = false;
     const accept = el.result.querySelector("[data-quote-accept]");
     const decline = el.result.querySelector("[data-quote-decline]");
@@ -95,11 +107,11 @@ export default function initialize() {
 
   function quotation(ticket) {
     const quote = ticket.pendingQuotation;
-    return html`<section class="card"><div class="card__header"><div><h2 class="card__title">Xác nhận báo giá sửa chữa</h2><div class="card__title-meta">Có hiệu lực đến ${fmt.date(quote.validUntil)}</div></div>${fmt.badge("warning", "Chờ khách xác nhận")}</div>
-      <div class="card__body">${quote.lines.map((line) => html`<div class="billing-row"><span>${line.description} × ${line.quantity}</span><span>${fmt.money(line.lineTotal)}</span></div>`)}
-        <div class="billing-total-row"><span class="kv-key">Tổng khách phải trả</span><span>${fmt.money(quote.grandTotal)}</span></div>
-        <div class="action-bar" style="margin-top:14px;"><button type="button" class="btn btn--destructive" data-quote-decline>Từ chối báo giá</button><button type="button" class="btn btn--primary" data-quote-accept>Xác nhận báo giá</button></div>
-      </div></section>`;
+    return html`<section class="content-panel-card quote-card"><div class="panel-head"><div><h2 class="card-heading-title">Xác nhận báo giá sửa chữa</h2><p class="card-heading-desc">Có hiệu lực đến ${fmt.date(quote.validUntil)}</p></div><span class="badge badge-waiting">Chờ khách xác nhận</span></div>
+      <div class="kv-list">${quote.lines.map((line) => html`<div class="kv-row"><span>${line.description} × ${line.quantity}</span><span>${fmt.money(line.lineTotal)}</span></div>`)}
+        <div class="kv-row is-total"><span>Tổng khách phải trả</span><span>${fmt.money(quote.grandTotal)}</span></div></div>
+      <div class="quote-actions"><button type="button" class="btn-secondary-white btn-danger-outline" data-quote-decline>Từ chối báo giá</button><button type="button" class="btn-primary-teal" data-quote-accept>Xác nhận báo giá</button></div>
+    </section>`;
   }
 
   async function decide(code, decision, reason, button) {
@@ -113,13 +125,13 @@ export default function initialize() {
   }
 
   function renderRequest(request) {
-    el.result.innerHTML = html`<section class="card"><div class="card__header"><h2 class="card__title">Yêu cầu bảo hành trực tuyến</h2>${fmt.badgeOf(labels.WARRANTY_REQUEST_STATUS, request.status)}</div><div class="card__body"><div class="detail-grid">
-      <div class="detail-grid__item"><span class="kv-key">Mã yêu cầu</span><span class="mono">${request.code}</span></div>
-      <div class="detail-grid__item"><span class="kv-key">Thiết bị</span><span>${request.brandModel}</span></div>
-      <div class="detail-grid__item"><span class="kv-key">Serial/IMEI</span><span class="mono">${request.serialOrImei}</span></div>
-      <div class="detail-grid__item"><span class="kv-key">Thời gian mong muốn</span><span>${fmt.dateTime(request.preferredFrom)}</span></div>
-      ${request.ticketCode ? html`<div class="detail-grid__item"><span class="kv-key">Phiếu tiếp nhận</span><span class="mono">${request.ticketCode}</span></div>` : ""}
-    </div></div></section>`;
+    el.result.innerHTML = html`<section class="content-panel-card"><div class="panel-head"><h2 class="card-heading-title">Yêu cầu bảo hành trực tuyến</h2>${badge(labels.WARRANTY_REQUEST_STATUS, request.status)}</div><div class="kv-list">
+      <div class="kv-row"><span>Mã yêu cầu</span><strong class="mono">${request.code}</strong></div>
+      <div class="kv-row"><span>Thiết bị</span><strong>${request.brandModel}</strong></div>
+      <div class="kv-row"><span>Serial/IMEI</span><strong class="mono">${request.serialOrImei}</strong></div>
+      <div class="kv-row"><span>Thời gian mong muốn</span><strong>${fmt.dateTime(request.preferredFrom)}</strong></div>
+      ${request.ticketCode ? html`<div class="kv-row"><span>Phiếu tiếp nhận</span><strong class="mono">${request.ticketCode}</strong></div>` : ""}
+    </div></section>`;
     el.result.hidden = false;
   }
 
@@ -193,7 +205,7 @@ export default function initialize() {
     };
     try {
       const created = await window.LML_UI.busy(el.registerSubmit, () => api.portal.submitRequest(data, files));
-      el.registerSuccess.innerHTML = html`<div class="success-banner">Gửi yêu cầu thành công — Mã yêu cầu: <span class="mono">${created.code}</span>. Vui lòng lưu lại mã này để tra cứu.</div>`;
+      el.registerSuccess.innerHTML = html`<div class="kh-alert kh-alert--success" role="status">Gửi yêu cầu thành công — Mã yêu cầu: <span class="mono">${created.code}</span>. Vui lòng lưu lại mã này để tra cứu.</div>`;
       el.registerSuccess.hidden = false;
     } catch (error) {
       showError(error);

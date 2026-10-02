@@ -9,6 +9,8 @@ export const legacyRoutes: Record<string, string> = {
   '/pages/reports.html': '/reports',
   '/pages/admin.html': '/admin',
   '/pages/customer-portal.html': '/portal',
+  '/Account/Register': '/register',
+  '/Account/Profile': '/account',
 };
 
 export function internalRoute(value: string | null): string | null {

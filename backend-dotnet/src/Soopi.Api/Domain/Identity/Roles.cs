@@ -67,7 +67,7 @@ public static class Roles
         [Role.TECHNICIAN] = ("Kỹ thuật viên", "/technician"),
         [Role.WAREHOUSE_KEEPER] = ("Quản lý kho vật tư", "/warehouse"),
         [Role.CASHIER] = ("Thu ngân & Bàn giao", "/cashier"),
-        [Role.CUSTOMER] = ("Khách hàng", "/portal"),
+        [Role.CUSTOMER] = ("Khách hàng", "/account"),
     };
 
     public static string Label(this Role role) => Info[role].Label;
