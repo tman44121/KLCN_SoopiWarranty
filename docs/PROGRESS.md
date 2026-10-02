@@ -90,6 +90,7 @@ dotnet run --project src/Soopi.Api --launch-profile http   # http://localhost:80
 | 2026-10-02 | Bộ màu và logo soopiwarranty cho 8 màn nội bộ: `src/styles/brand.css` chỉ ghi đè token `:root` của tokens.css (3 CSS gốc giữ nguyên byte), logo thay chữ "Soopi" trên sidebar. Sửa class `page-title*` của customer.css trùng với màn nội bộ (đổi thành `kh-page-title*`). Lint, 7/7 test, smoke 77 kiểm tra đạt; smoke chụp thêm mỗi màn nội bộ. |
 | 2026-10-02 | Sửa điều hướng header/footer khách: khách đã đăng nhập (cả trên `/portal`) thấy menu tài khoản và link `/account`; khách vãng lai/nhân viên dùng `/portal`, `/portal#dang-ky` (mở form yêu cầu công khai) và `/login?next=/account#lich-su`. Smoke 85 kiểm tra đạt. |
 | 2026-10-02 | Phiên nhân viên không còn được tự vào khu khách: `login.js` không tự tiếp tục khi `next` là `/account*` mà tài khoản không có vai trò CUSTOMER (hiện form + thông báo); `auth.js` đưa nhân viên mở `/account` về `/login?next=` thay vì màn nội bộ. Smoke 88 kiểm tra đạt. |
+| 2026-10-02 | Chạy trọn luồng nghiệp vụ trên DB `_Dev` thật qua giao diện (`frontend-react/scripts/screenshots.mjs`, 70 ảnh trong `docs/screenshots/`): tiếp nhận → phân công → chẩn đoán → báo giá → duyệt → khách đồng ý → xuất kho → QC → thu tiền → bàn giao (TN-2026-1002-00001). **Sửa lỗi** tạo báo giá: INSERT `PhieuBaoGia` lệch thứ tự cột so với giá trị (mã dịch vụ vào cột tiền → 500; không chọn dịch vụ thì ghi sai cột mà không báo lỗi); INSERT/UPDATE nay dựng từ cùng danh sách cột. Backend 45/45 test. |
 
 ## Giai đoạn 3 — kiểm chứng và giới hạn
 
