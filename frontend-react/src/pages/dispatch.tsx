@@ -49,7 +49,7 @@ export default function DispatchPage() {
               </svg>
               {"\n          Tiếp nhận\n        "}
             </Link>
-            <Link to="/tickets" reloadDocument className="sidebar-nav__item" data-roles="DISPATCHER">
+            <Link to="/tickets" reloadDocument className="sidebar-nav__item" data-roles="DISPATCHER,TECHNICIAN">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M6 3h5l3 3v11H6z">
                 </path>

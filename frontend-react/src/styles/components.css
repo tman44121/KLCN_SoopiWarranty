@@ -419,6 +419,7 @@
   border: 1px solid transparent;
   transition: background-color 0.12s ease, border-color 0.12s ease;
   white-space: nowrap;
+  text-decoration: none; /* nút dạng <a> (vd. "Mở trong màn Kỹ thuật") */
 }
 
 .btn:disabled {
@@ -706,6 +707,11 @@
 .data-table th.is-sorted-desc .sort-caret {
   opacity: 1;
   color: var(--color-primary);
+}
+
+/* Lịch sử phiếu của kỹ thuật viên: cột kỹ thuật viên luôn là chính họ. */
+.data-table.is-own-only .col-technician {
+  display: none;
 }
 
 .data-table tbody td {
