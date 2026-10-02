@@ -1,15 +1,16 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
+import controller from "../behaviors/receptionist.js";
 import { BrandLogo } from "../customer";
 
 export default function ReceptionistPage() {
-  usePage("receptionist", {"data-roles": "RECEPTIONIST"}, "Soopi — Tiếp nhận");
+  usePage("receptionist", {"data-roles": "RECEPTIONIST"}, "Soopi — Tiếp nhận", controller);
   return (<>
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">
         <div className="sidebar-brand">
-          <div className="sidebar-brand__logo" aria-label="soopiwarranty">
+          <div className="sidebar-brand__logo">
             <BrandLogo />
           </div>
           <div className="sidebar-brand__system">
@@ -239,8 +240,8 @@ export default function ReceptionistPage() {
                 {"Khách đăng ký trước trên Cổng khách hàng hoặc app. Nhập mã YC- để tự điền biểu mẫu tiếp nhận."}
               </div>
             </div>
-            <div style={{"display": "flex", "gap": "8px", "alignItems": "center"} as CSSProperties}>
-              <input type="text" className="text-field mono" data-yc-code="" placeholder="YC-2026-0917-00095" aria-label="Mã yêu cầu trực tuyến" style={{"width": "210px"} as CSSProperties} />
+            <div className="inline-lookup">
+              <input type="text" className="text-field mono" data-yc-code="" placeholder="VD: YC-2026-0917-00095" aria-label="Mã yêu cầu trực tuyến" />
               <button type="button" className="btn btn--secondary btn--sm" data-yc-load="">
                 {"Tự điền từ mã YC"}
               </button>
@@ -729,8 +730,8 @@ export default function ReceptionistPage() {
                 {"Dùng khi khách có mặt tại trung tâm. Báo giá phải đã được điều phối phê duyệt."}
               </div>
             </div>
-            <div style={{"display": "flex", "gap": "8px", "alignItems": "center"} as CSSProperties}>
-              <input type="text" className="text-field mono" data-counter-ticket="" placeholder="TN-2026-0917-00423" aria-label="Mã phiếu tiếp nhận" style={{"width": "210px"} as CSSProperties} />
+            <div className="inline-lookup">
+              <input type="text" className="text-field mono" data-counter-ticket="" placeholder="VD: TN-2026-0917-00423" aria-label="Mã phiếu tiếp nhận" />
               <button type="button" className="btn btn--secondary btn--sm" data-counter-load="">
                 {"Tải báo giá"}
               </button>

@@ -1,15 +1,16 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
+import controller from "../behaviors/admin.js";
 import { BrandLogo } from "../customer";
 
 export default function AdminPage() {
-  usePage("admin", {"data-roles": "ADMIN"}, "Soopi — Quản trị viên");
+  usePage("admin", {"data-roles": "ADMIN"}, "Soopi — Quản trị viên", controller);
   return (<>
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">
         <div className="sidebar-brand">
-          <div className="sidebar-brand__logo" aria-label="soopiwarranty">
+          <div className="sidebar-brand__logo">
             <BrandLogo />
           </div>
           <div className="sidebar-brand__system">

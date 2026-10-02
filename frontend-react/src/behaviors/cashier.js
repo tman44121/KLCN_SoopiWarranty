@@ -36,7 +36,10 @@ export default function initialize() {
         <div class="queue-item__symptom">${ticket.customer ? `${ticket.customer.fullName} · ${ticket.customer.phone}` : "—"}</div>
       </button>`)}`;
     queue.querySelectorAll("[data-ticket]").forEach((button) =>
-      button.addEventListener("click", () => selectTicket(button.getAttribute("data-ticket")))
+      button.addEventListener("click", () => {
+        selectTicket(button.getAttribute("data-ticket"));
+        ui.revealDetail(detail);
+      })
     );
   }
 
@@ -56,7 +59,7 @@ export default function initialize() {
   function renderDetail() {
     const ticket = state.selected;
     if (!ticket) {
-      ui.blockState(detail, "empty", { desc: "Chọn một phiếu trong danh sách bên trái để thu ngân và bàn giao." });
+      ui.blockState(detail, "empty", { desc: "Chọn một phiếu trong danh sách “Sẵn sàng bàn giao” để thu tiền và bàn giao." });
       return;
     }
     const billing = state.billing;

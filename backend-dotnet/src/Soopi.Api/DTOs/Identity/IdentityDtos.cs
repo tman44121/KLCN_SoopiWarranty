@@ -62,6 +62,8 @@ public sealed record RegisterBody(
 
 public sealed record PasswordResetBody([NotBlank] string Phone, [NotBlank] string Otp, [NotBlank] string NewPassword);
 
+public sealed record PasswordResetVerifyBody([NotBlank] string Phone, [NotBlank] string Otp);
+
 public sealed record EmployeeCreateRequest(
     [NotBlank] string FullName,
     [NotBlank] string Phone,

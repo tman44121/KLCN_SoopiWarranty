@@ -4,7 +4,7 @@
    Mọi màn hình so sánh theo mã enum, không so chuỗi tiếng Việt.
    ========================================================================== */
 
-export default function initialize(global = window) {
+export default function initialize() {
 
   /** Bảng 7.1: trạng thái phiếu → nhãn UI (badge) + tone mục 4. */
   const TICKET_STATUS = {
@@ -206,7 +206,7 @@ export default function initialize(global = window) {
 
   /** Badge chuẩn mục 4 — luôn có ● + nhãn tiếng Việt, không chỉ dựa vào màu. */
   function badge(tone, label) {
-    return global.html`<span class="status-badge status-badge--${tone}"><span class="status-badge__dot">●</span>${label}</span>`;
+    return window.html`<span class="status-badge status-badge--${tone}"><span class="status-badge__dot">●</span>${label}</span>`;
   }
 
   function badgeOf(table, code) {
@@ -214,7 +214,7 @@ export default function initialize(global = window) {
     return entry ? badge(entry.tone, entry.label) : badge("neutral", code || "—");
   }
 
-  global.LML_LABELS = {
+  window.LML_LABELS = {
     TICKET_STATUS,
     CATEGORY,
     SLA_LEVEL,
@@ -240,5 +240,5 @@ export default function initialize(global = window) {
     ACCESSORIES,
   };
 
-  global.LML_FMT = { dateTime, date, money, countdown, badge, badgeOf };
+  window.LML_FMT = { dateTime, date, money, countdown, badge, badgeOf };
 }

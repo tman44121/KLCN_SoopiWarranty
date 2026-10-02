@@ -1,15 +1,16 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
+import controller from "../behaviors/warehouse.js";
 import { BrandLogo } from "../customer";
 
 export default function WarehousePage() {
-  usePage("warehouse", {"data-roles": "WAREHOUSE_KEEPER"}, "Soopi — Kho vật tư");
+  usePage("warehouse", {"data-roles": "WAREHOUSE_KEEPER"}, "Soopi — Kho vật tư", controller);
   return (<>
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">
         <div className="sidebar-brand">
-          <div className="sidebar-brand__logo" aria-label="soopiwarranty">
+          <div className="sidebar-brand__logo">
             <BrandLogo />
           </div>
           <div className="sidebar-brand__system">

@@ -1,15 +1,15 @@
-import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
+import controller from "../behaviors/cashier.js";
 import { BrandLogo } from "../customer";
 
 export default function CashierPage() {
-  usePage("cashier", {"data-roles": "CASHIER"}, "Soopi — Thu ngân &amp; Bàn giao");
+  usePage("cashier", {"data-roles": "CASHIER"}, "Soopi — Thu ngân & Bàn giao", controller);
   return (<>
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">
         <div className="sidebar-brand">
-          <div className="sidebar-brand__logo" aria-label="soopiwarranty">
+          <div className="sidebar-brand__logo">
             <BrandLogo />
           </div>
           <div className="sidebar-brand__system">
@@ -229,7 +229,7 @@ export default function CashierPage() {
             </div>
           </div>
         </div>
-        <div style={{"display": "grid", "gridTemplateColumns": "340px minmax(0, 1fr)", "gap": "20px", "alignItems": "start"} as CSSProperties}>
+        <div className="master-detail">
           <section className="card" aria-labelledby="handover-queue-title">
             <div className="card__header">
               <div>
@@ -247,7 +247,7 @@ export default function CashierPage() {
           <div className="stack stack--loose" data-handover-detail="">
             <div className="card">
               <div className="card__body empty-selection-hint">
-                {"\n            Chọn một phiếu trong danh sách bên trái để thu ngân và bàn giao.\n          "}
+                {"\n            Chọn một phiếu trong danh sách “Sẵn sàng bàn giao” để thu tiền và bàn giao.\n          "}
               </div>
             </div>
           </div>

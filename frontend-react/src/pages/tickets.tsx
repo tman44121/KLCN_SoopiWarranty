@@ -1,15 +1,16 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
+import controller from "../behaviors/tickets.js";
 import { BrandLogo } from "../customer";
 
 export default function TicketsPage() {
-  usePage("tickets", {"data-roles": "DISPATCHER,RECEPTIONIST,CASHIER"}, "Soopi — Phiếu sửa chữa");
+  usePage("tickets", {"data-roles": "DISPATCHER,RECEPTIONIST,CASHIER"}, "Soopi — Phiếu sửa chữa", controller);
   return (<>
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">
         <div className="sidebar-brand">
-          <div className="sidebar-brand__logo" aria-label="soopiwarranty">
+          <div className="sidebar-brand__logo">
             <BrandLogo />
           </div>
           <div className="sidebar-brand__system">

@@ -1,15 +1,16 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
+import controller from "../behaviors/technician.js";
 import { BrandLogo } from "../customer";
 
 export default function TechnicianPage() {
-  usePage("technician", {"data-roles": "TECHNICIAN"}, "Soopi — Kỹ thuật viên");
+  usePage("technician", {"data-roles": "TECHNICIAN"}, "Soopi — Kỹ thuật viên", controller);
   return (<>
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">
         <div className="sidebar-brand">
-          <div className="sidebar-brand__logo" aria-label="soopiwarranty">
+          <div className="sidebar-brand__logo">
             <BrandLogo />
           </div>
           <div className="sidebar-brand__system">
@@ -229,7 +230,7 @@ export default function TechnicianPage() {
             </div>
           </div>
         </div>
-        <div style={{"display": "grid", "gridTemplateColumns": "340px minmax(0, 1fr)", "gap": "20px", "alignItems": "start"} as CSSProperties}>
+        <div className="master-detail">
           <section className="card" aria-labelledby="queue-title">
             <div className="card__header">
               <div>
@@ -247,7 +248,7 @@ export default function TechnicianPage() {
           <div className="stack stack--loose" data-detail-column="">
             <div className="card">
               <div className="card__body empty-selection-hint">
-                {"\n            Chọn một phiếu trong hàng đợi bên trái để xem chi tiết, chẩn đoán và kiểm tra QC.\n          "}
+                {"\n            Chọn một phiếu trong “Hàng đợi của tôi” để xem chi tiết, chẩn đoán và kiểm tra QC.\n          "}
               </div>
             </div>
           </div>

@@ -366,10 +366,103 @@ export default function initialize() {
     };
   }
 
+  /* ---------------------------------------------------------------------- */
+  /* Khung trên điện thoại/tablet (D-046)                                    */
+  /* ---------------------------------------------------------------------- */
+
+  /** Dưới 1024px sidebar thành ngăn kéo: nút menu trên header, nền mờ, Esc/chạm ngoài để đóng. */
+  function initResponsiveShell() {
+    const sidebar = document.querySelector(".app-sidebar");
+    const header = document.querySelector(".app-header");
+    const main = document.querySelector(".app-main");
+    if (!sidebar || !header || !main) return;
+
+    if (!main.id) main.id = "main-content";
+    main.tabIndex = -1;
+    const skip = document.createElement("a");
+    skip.className = "skip-link";
+    skip.href = `#${main.id}`;
+    skip.textContent = "Bỏ qua tới nội dung chính";
+    document.body.prepend(skip);
+
+    sidebar.id = sidebar.id || "app-sidebar";
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "icon-button app-menu-toggle";
+    toggle.setAttribute("aria-controls", sidebar.id);
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Mở menu điều hướng");
+    toggle.innerHTML = window.html`<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"/></svg>`;
+    header.prepend(toggle);
+
+    const backdrop = document.createElement("div");
+    backdrop.className = "app-sidebar-backdrop";
+    backdrop.hidden = true;
+    sidebar.after(backdrop);
+
+    const compact = window.matchMedia("(max-width: 1023px)");
+
+    function setOpen(open, { restoreFocus = false } = {}) {
+      document.body.classList.toggle("is-nav-open", open);
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.setAttribute("aria-label", open ? "Đóng menu điều hướng" : "Mở menu điều hướng");
+      backdrop.hidden = !open;
+      sidebar.inert = compact.matches && !open;
+      main.inert = open;
+      document.body.style.overflow = open ? "hidden" : "";
+      if (open) {
+        const first = sidebar.querySelector(".sidebar-nav__item.is-active:not([hidden])") || sidebar.querySelector(".sidebar-nav__item:not([hidden])");
+        if (first) first.focus();
+      } else if (restoreFocus) {
+        toggle.focus();
+      }
+    }
+
+    toggle.addEventListener("click", () => setOpen(!document.body.classList.contains("is-nav-open")));
+    backdrop.addEventListener("click", () => setOpen(false, { restoreFocus: true }));
+    sidebar.addEventListener("click", (e) => {
+      if (compact.matches && e.target.closest(".sidebar-nav__item")) setOpen(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && document.body.classList.contains("is-nav-open")) setOpen(false, { restoreFocus: true });
+    });
+    compact.addEventListener("change", () => setOpen(false));
+    setOpen(false);
+  }
+
+  /**
+   * Bảng dữ liệu trên điện thoại hiển thị thành thẻ: mỗi ô mang nhãn cột (data-label) lấy từ thead.
+   * Hàng do controller vẽ lại liên tục nên gắn nhãn mỗi khi tbody đổi.
+   */
+  function initTableLabels() {
+    document.querySelectorAll("table.data-table").forEach((table) => {
+      const labels = Array.from(table.querySelectorAll("thead th")).map((th) => {
+        const copy = th.cloneNode(true);
+        copy.querySelectorAll(".sort-caret").forEach((caret) => caret.remove());
+        return copy.textContent.trim();
+      });
+      const label = () => {
+        table.querySelectorAll("tbody tr").forEach((row) => {
+          let column = 0;
+          Array.from(row.cells).forEach((cell) => {
+            const span = cell.colSpan || 1;
+            if (span === 1 && labels[column]) cell.setAttribute("data-label", labels[column]);
+            else cell.removeAttribute("data-label");
+            column += span;
+          });
+        });
+      };
+      label();
+      new MutationObserver(label).observe(table, { childList: true, subtree: true });
+    });
+  }
+
   // Toast phải sẵn sàng trước mọi script khác (kể cả khi auth lỗi sớm).
   initToast();
 
   return () => {
+    initResponsiveShell();
+    initTableLabels();
     initNotificationBell();
     initGlobalSearch();
     initStationBadge();

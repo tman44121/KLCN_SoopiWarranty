@@ -96,7 +96,10 @@ export default function initialize() {
         <div style="display:flex; gap:6px; flex-wrap:wrap;">${fmt.badgeOf(L.TICKET_STATUS, t.status)}${t.sla.status === "BREACHED" && t.status !== "COMPLETED" ? fmt.badge("danger", "Trễ hẹn SLA") : ""}</div>
       </div>`)}`;
     el.queueList.querySelectorAll("[data-ticket-id]").forEach((item) => {
-      const open = () => selectTicket(item.getAttribute("data-ticket-id"));
+      const open = () => {
+        selectTicket(item.getAttribute("data-ticket-id"));
+        ui.revealDetail(el.detail);
+      };
       item.addEventListener("click", open);
       item.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {

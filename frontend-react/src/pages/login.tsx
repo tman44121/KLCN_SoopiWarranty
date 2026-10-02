@@ -1,11 +1,13 @@
 import { usePage } from "../usePage";
-import { BrandLogo, Icon, PasswordInput, STEP_LABELS } from "../customer";
+import controller from "../behaviors/login.js";
+import { BrandLogo, Icon, PasswordInput, STEP_LABELS, useAuthScale } from "../customer";
 
 /* Giao diện đăng nhập của web khách KLCN; id/name và data-* giữ nguyên vì login.js (nhân viên + khách) gắn vào đó. */
 export default function LoginPage() {
-  usePage("login", {"class": "is-fluid"}, "Đăng nhập — Soopi");
+  usePage("login", {}, "Đăng nhập — Soopi", controller);
+  const scaled = useAuthScale();
   return (
-    <div className="kh-app kh-auth">
+    <div className="kh-app kh-auth" ref={scaled}>
       <aside className="auth-banner">
         <div className="banner-header">
           <a href="/portal" className="banner-logo">
@@ -45,7 +47,6 @@ export default function LoginPage() {
           <form data-login-form="" noValidate={true}>
             <div className="form-header">
               <h1>Đăng nhập tài khoản</h1>
-              <p>Khách hàng đăng nhập bằng số điện thoại đã đăng ký; nhân viên dùng tên đăng nhập được cấp.</p>
             </div>
             <div className="validation-summary-errors" data-login-error="" role="alert" hidden={true}>
             </div>
@@ -65,6 +66,7 @@ export default function LoginPage() {
                 <input type="checkbox" id="login-remember" name="remember" />
                 Ghi nhớ đăng nhập
               </label>
+              <a href="/forgot-password" className="forgot-link">Quên mật khẩu?</a>
             </div>
             <button type="submit" className="btn-submit">Đăng nhập</button>
             <div className="form-switch-text">

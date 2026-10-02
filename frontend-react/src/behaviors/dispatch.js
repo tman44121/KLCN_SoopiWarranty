@@ -475,8 +475,12 @@ export default function initialize() {
         const key = th.getAttribute("data-sort-key");
         state.sortDir = state.sortKey === key && state.sortDir === "asc" ? "desc" : "asc";
         state.sortKey = key;
-        document.querySelectorAll("[data-sort-key]").forEach((h) => h.classList.remove("is-sorted-asc", "is-sorted-desc"));
+        document.querySelectorAll("[data-sort-key]").forEach((h) => {
+          h.classList.remove("is-sorted-asc", "is-sorted-desc");
+          h.removeAttribute("aria-sort");
+        });
         th.classList.add(state.sortDir === "asc" ? "is-sorted-asc" : "is-sorted-desc");
+        th.setAttribute("aria-sort", state.sortDir === "asc" ? "ascending" : "descending");
         render();
       });
     });

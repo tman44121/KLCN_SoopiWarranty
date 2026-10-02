@@ -58,6 +58,8 @@ Login, refresh, logout và đổi mật khẩu ghi tài khoản/token/audit; kh�
 ## Mobile và portal
 
 Mobile dùng `/api/v1/auth/mobile`: login, refresh, logout, change-password, otp, register, password-reset.
+Riêng Soopi (D-047): `POST /auth/mobile/password-reset/verify` `{phone, otp}` kiểm OTP đặt lại mật khẩu mà không tiêu mã
+(204 hoặc 422 `OTP_INVALID`); trang web `/forgot-password` gọi nó trước khi hiện ô mật khẩu mới.
 Login chỉ nhận tài khoản khách; response thêm `refreshToken,refreshExpiresIn`, refresh gửi token trong JSON body.
 OTP purpose là `REGISTER` hoặc `RESET_PASSWORD`; SMS hiện chỉ `log`, không gửi thật.
 

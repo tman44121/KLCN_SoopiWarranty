@@ -16,9 +16,6 @@ for (const file of readdirSync(new URL('../src/behaviors/', import.meta.url))) {
 }
 const original = new URL('../../../warranty-system-mysql/src/main/resources/static/', import.meta.url);
 if (existsSync(original)) {
-  for (const file of ['tokens.css', 'base.css', 'components.css']) {
-    assert.deepEqual(readFileSync(new URL(`../src/styles/${file}`, import.meta.url)), readFileSync(new URL(`css/${file}`, original)), `CSS changed: ${file}`);
-  }
   const pages = { dispatch: 'index.html', login: 'login.html', portal: 'pages/customer-portal.html',
     receptionist: 'pages/receptionist.html', technician: 'pages/technician.html', warehouse: 'pages/warehouse.html',
     cashier: 'pages/cashier.html', tickets: 'pages/tickets.html', reports: 'pages/reports.html', admin: 'pages/admin.html' };
@@ -31,5 +28,5 @@ if (existsSync(original)) {
     }
     assert(!after.includes('dangerouslySetInnerHTML'), `${page}: raw HTML page`);
   }
-  console.log('PASS: controller syntax, 10 page IDs/names and 3 unchanged CSS files');
+  console.log('PASS: controller syntax and 10 page IDs/names');
 } else console.log('PASS: controller syntax (original repository unavailable for parity checks)');

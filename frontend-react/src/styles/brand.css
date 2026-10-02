@@ -1,6 +1,6 @@
 /* ==========================================================================
    Bộ màu soopiwarranty cho các màn nội bộ — chỉ ghi đè token của tokens.css
-   (tokens/base/components.css giữ nguyên byte với bản gốc, scripts/check.mjs).
+   (D-046: tokens/base/components.css được sửa trực tiếp khi cần; file này giữ phần ghi đè thương hiệu).
    Nạp sau components.css; giao diện khách dùng cùng bộ màu trong customer.css.
    ========================================================================== */
 
@@ -60,14 +60,14 @@
   /* ---- Biểu đồ: Xanh rừng + Vàng mật ong ---- */
   --chart-series-2: #efb952;
 
-  /* ---- Bo góc gần thẻ mẫu, vẫn gọn cho màn nhiều dữ liệu ---- */
+  /* ---- Bo góc: điều khiển 8px, khung chứa 10px — DESIGN.md "Thẻ bảo hành" ---- */
   --radius-button: 8px;
   --radius-input: 8px;
-  --radius-badge: 999px;
-  --radius-card: 12px;
-  --radius-table: 12px;
-  --radius-modal: 12px;
-  --radius-drawer: 12px;
+  --radius-badge: 8px;
+  --radius-card: 10px;
+  --radius-table: 10px;
+  --radius-modal: 10px;
+  --radius-drawer: 10px;
 
   --shadow-flyout: 0 6px 16px rgba(41, 53, 74, 0.1);
 }

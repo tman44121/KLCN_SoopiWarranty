@@ -1,15 +1,16 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
+import controller from "../behaviors/dispatch.js";
 import { BrandLogo } from "../customer";
 
 export default function DispatchPage() {
-  usePage("dispatch", {"data-roles": "DISPATCHER"}, "Soopi — Điều phối viên");
+  usePage("dispatch", {"data-roles": "DISPATCHER"}, "Soopi — Điều phối viên", controller);
   return (<>
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">
         <div className="sidebar-brand">
-          <div className="sidebar-brand__logo" aria-label="soopiwarranty">
+          <div className="sidebar-brand__logo">
             <BrandLogo />
           </div>
           <div className="sidebar-brand__system">
@@ -299,10 +300,12 @@ export default function DispatchPage() {
                     {"Mã phiếu"}
                   </th>
                   <th className="is-sortable" data-sort-key="receivedAt">
-                    {"Thời gian tiếp nhận"}
-                    <span className="sort-caret">
-                      {"▲"}
-                    </span>
+                    <button type="button" className="sort-button">
+                      {"Thời gian tiếp nhận"}
+                      <span className="sort-caret" aria-hidden="true">
+                        {"▲"}
+                      </span>
+                    </button>
                   </th>
                   <th>
                     {"Khách hàng"}
@@ -319,17 +322,21 @@ export default function DispatchPage() {
                   <th>
                     {"Mức SLA"}
                   </th>
-                  <th className="is-sortable is-sorted-asc" data-sort-key="deadline">
-                    {"Thời gian còn lại"}
-                    <span className="sort-caret">
-                      {"▲"}
-                    </span>
+                  <th className="is-sortable is-sorted-asc" data-sort-key="deadline" aria-sort="ascending">
+                    <button type="button" className="sort-button">
+                      {"Thời gian còn lại"}
+                      <span className="sort-caret" aria-hidden="true">
+                        {"▲"}
+                      </span>
+                    </button>
                   </th>
                   <th className="is-sortable" data-sort-key="status">
-                    {"Trạng thái"}
-                    <span className="sort-caret">
-                      {"▲"}
-                    </span>
+                    <button type="button" className="sort-button">
+                      {"Trạng thái"}
+                      <span className="sort-caret" aria-hidden="true">
+                        {"▲"}
+                      </span>
+                    </button>
                   </th>
                   <th>
                     {"Kỹ thuật viên"}
@@ -423,7 +430,7 @@ export default function DispatchPage() {
         <div className="modal__body">
           <div className="candidate-list" data-candidate-list="">
           </div>
-          <div style={{"display": "grid", "gridTemplateColumns": "200px 1fr", "gap": "12px", "marginTop": "14px"} as CSSProperties}>
+          <div className="assign-fields">
             <div className="form-field" data-assign-priority-field="">
               <label htmlFor="assign-priority">
                 {"Mức độ ưu tiên"}

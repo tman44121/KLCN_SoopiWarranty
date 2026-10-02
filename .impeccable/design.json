@@ -1,0 +1,544 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-02T11:50:32+00:00",
+  "title": "Design System: Soopi",
+  "extensions": {
+    "colorMeta": {
+      "forest": {
+        "role": "primary",
+        "displayName": "Xanh rừng",
+        "canonical": "#244c43",
+        "tonalRamp": [
+          "#19342e",
+          "#29574c",
+          "#39796b",
+          "#4a9c89",
+          "#6ebaa9",
+          "#9ed1c6",
+          "#cbe6e0",
+          "#eef7f5"
+        ]
+      },
+      "forest-deep": {
+        "role": "primary",
+        "displayName": "Xanh rừng sâu",
+        "canonical": "#1b3c35",
+        "tonalRamp": [
+          "#18352f",
+          "#28584e",
+          "#377b6d",
+          "#479e8c",
+          "#6bbdab",
+          "#9dd3c7",
+          "#cae7e1",
+          "#edf7f5"
+        ]
+      },
+      "mint-soft": {
+        "role": "primary",
+        "displayName": "Mint dịu",
+        "canonical": "#ddefe4",
+        "tonalRamp": [
+          "#183423",
+          "#29573b",
+          "#397952",
+          "#499c6a",
+          "#6dba8b",
+          "#9ed1b2",
+          "#cbe7d6",
+          "#eef7f1"
+        ]
+      },
+      "mint-border": {
+        "role": "primary",
+        "displayName": "Viền mint",
+        "canonical": "#b9d5c3",
+        "tonalRamp": [
+          "#1d3024",
+          "#30503b",
+          "#437053",
+          "#568f6b",
+          "#79af8c",
+          "#a6c9b2",
+          "#cfe2d6",
+          "#eff5f1"
+        ]
+      },
+      "mint-wash": {
+        "role": "primary",
+        "displayName": "Mint phủ",
+        "canonical": "#f4faf6",
+        "tonalRamp": [
+          "#183521",
+          "#285838",
+          "#387b4e",
+          "#489e64",
+          "#6cbc87",
+          "#9dd2af",
+          "#cae7d4",
+          "#edf7f1"
+        ]
+      },
+      "honey": {
+        "role": "secondary",
+        "displayName": "Vàng mật ong",
+        "canonical": "#efb952",
+        "tonalRamp": [
+          "#463006",
+          "#75500b",
+          "#a3700f",
+          "#d29013",
+          "#edb03b",
+          "#f3ca7c",
+          "#f9e3b9",
+          "#fdf6e8"
+        ]
+      },
+      "mist-lilac": {
+        "role": "secondary",
+        "displayName": "Tím sương",
+        "canonical": "#dcd8ed",
+        "tonalRamp": [
+          "#1e1834",
+          "#312857",
+          "#45387a",
+          "#59489d",
+          "#7b6cbb",
+          "#a79dd2",
+          "#d0cbe7",
+          "#efeef7"
+        ]
+      },
+      "peach": {
+        "role": "secondary",
+        "displayName": "Hồng đào",
+        "canonical": "#f2c5bf",
+        "tonalRamp": [
+          "#40130d",
+          "#6a1f16",
+          "#942c1e",
+          "#bf3927",
+          "#db5e4d",
+          "#e79388",
+          "#f2c5bf",
+          "#fbecea"
+        ]
+      },
+      "expired-wine": {
+        "role": "tertiary",
+        "displayName": "Đỏ rượu \"Đã hết hạn\"",
+        "canonical": "#8b4248",
+        "tonalRamp": [
+          "#34191b",
+          "#56292d",
+          "#79393f",
+          "#9c4a51",
+          "#ba6e74",
+          "#d19ea2",
+          "#e6cbcd",
+          "#f7eeee"
+        ]
+      },
+      "expired-wine-deep": {
+        "role": "tertiary",
+        "displayName": "Đỏ rượu sâu",
+        "canonical": "#6f3439",
+        "tonalRamp": [
+          "#34181b",
+          "#57292d",
+          "#7a393e",
+          "#9c4950",
+          "#bb6d74",
+          "#d19ea2",
+          "#e7cbcd",
+          "#f7eeee"
+        ]
+      },
+      "expired-tint": {
+        "role": "tertiary",
+        "displayName": "Đỏ nhạt",
+        "canonical": "#fbe7e8",
+        "tonalRamp": [
+          "#420b0e",
+          "#6d1217",
+          "#991920",
+          "#c52129",
+          "#e0474f",
+          "#eb858a",
+          "#f4bdc0",
+          "#fbe9ea"
+        ]
+      },
+      "honey-text": {
+        "role": "tertiary",
+        "displayName": "Mật ong đậm",
+        "canonical": "#795b18",
+        "tonalRamp": [
+          "#40300d",
+          "#6a5015",
+          "#95701e",
+          "#c09026",
+          "#dcaf4c",
+          "#e7ca88",
+          "#f2e3bf",
+          "#fbf6ea"
+        ]
+      },
+      "honey-tint": {
+        "role": "tertiary",
+        "displayName": "Mật ong nhạt",
+        "canonical": "#fff1ce",
+        "tonalRamp": [
+          "#4c3700",
+          "#805b00",
+          "#b27f00",
+          "#e6a400",
+          "#ffc229",
+          "#ffd670",
+          "#ffe9b2",
+          "#fff8e5"
+        ]
+      },
+      "honey-border": {
+        "role": "tertiary",
+        "displayName": "Viền mật ong",
+        "canonical": "#f3d58a",
+        "tonalRamp": [
+          "#453407",
+          "#74560c",
+          "#a27811",
+          "#d09b15",
+          "#ebb93d",
+          "#f2d17d",
+          "#f8e6ba",
+          "#fdf7e8"
+        ]
+      },
+      "penguin-navy": {
+        "role": "neutral",
+        "displayName": "Xanh chim cánh cụt",
+        "canonical": "#29354a",
+        "tonalRamp": [
+          "#1b2331",
+          "#2d3b52",
+          "#405273",
+          "#526a94",
+          "#758cb3",
+          "#a3b2cc",
+          "#ced6e4",
+          "#eff1f6"
+        ]
+      },
+      "navy-body": {
+        "role": "neutral",
+        "displayName": "Xanh than thân bài",
+        "canonical": "#364257",
+        "tonalRamp": [
+          "#1d242f",
+          "#313c4f",
+          "#44546e",
+          "#586b8e",
+          "#7b8dad",
+          "#a7b3c8",
+          "#d0d6e2",
+          "#eff1f5"
+        ]
+      },
+      "slate-quiet": {
+        "role": "neutral",
+        "displayName": "Xám đá",
+        "canonical": "#4a5853",
+        "tonalRamp": [
+          "#232a27",
+          "#3a4541",
+          "#52615b",
+          "#697d76",
+          "#8b9d97",
+          "#b1beb9",
+          "#d5dcda",
+          "#f1f3f3"
+        ]
+      },
+      "sage-muted": {
+        "role": "neutral",
+        "displayName": "Xám lá xô thơm",
+        "canonical": "#62716c",
+        "tonalRamp": [
+          "#242927",
+          "#3b4441",
+          "#53605b",
+          "#6b7b75",
+          "#8c9c96",
+          "#b3bdb9",
+          "#d6dbda",
+          "#f1f3f3"
+        ]
+      },
+      "sage-faint": {
+        "role": "neutral",
+        "displayName": "Xám nhạt (trang trí)",
+        "canonical": "#b8c4bc",
+        "tonalRamp": [
+          "#232a25",
+          "#3a463e",
+          "#516157",
+          "#687d6f",
+          "#8a9e91",
+          "#b1beb5",
+          "#d5dcd8",
+          "#f1f3f2"
+        ]
+      },
+      "milk-cream": {
+        "role": "neutral",
+        "displayName": "Kem sữa",
+        "canonical": "#f8f7f2",
+        "tonalRamp": [
+          "#322e1b",
+          "#534d2d",
+          "#746b3e",
+          "#958a50",
+          "#b4a974",
+          "#cdc6a2",
+          "#e4e0cd",
+          "#f6f5ee"
+        ]
+      },
+      "paper-white": {
+        "role": "neutral",
+        "displayName": "Giấy trắng",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#b8b8b8",
+          "#d9d9d9",
+          "#f2f2f2"
+        ]
+      },
+      "sage-border": {
+        "role": "neutral",
+        "displayName": "Viền lá",
+        "canonical": "#d9e3db",
+        "tonalRamp": [
+          "#202c23",
+          "#36493a",
+          "#4c6751",
+          "#618468",
+          "#84a48a",
+          "#adc2b1",
+          "#d3dfd5",
+          "#f0f4f1"
+        ]
+      },
+      "sage-divider": {
+        "role": "neutral",
+        "displayName": "Vạch chia",
+        "canonical": "#eaefe9",
+        "tonalRamp": [
+          "#222c20",
+          "#394a36",
+          "#50674b",
+          "#678561",
+          "#89a583",
+          "#b0c3ac",
+          "#d5dfd3",
+          "#f1f4f0"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Tiêu đề hero cổng tra cứu khách."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Tiêu đề form/trang khách, khẩu hiệu banner."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Tiêu đề trang nhân viên."
+      },
+      "title-section": {
+        "displayName": "Section title",
+        "purpose": "Tiêu đề thẻ, hộp thoại, ngăn kéo."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Nội dung màn nhân viên trên desktop."
+      },
+      "body-mobile": {
+        "displayName": "Body (mobile)",
+        "purpose": "Nội dung dưới 768px."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Đầu cột bảng, nhãn khóa, nhóm điều hướng (viết hoa)."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Mã phiếu, serial/IMEI, tiền, đồng hồ SLA."
+      }
+    },
+    "shadows": [
+      {
+        "name": "flyout",
+        "value": "0 6px 16px rgba(41, 53, 74, 0.1)",
+        "purpose": "Menu thả, popover, hộp thoại, ngăn kéo, toast, sidebar mở trên di động."
+      },
+      {
+        "name": "submit-glow",
+        "value": "0 4px 12px rgba(36, 76, 67, 0.25)",
+        "purpose": "Nút gửi chính trang khách (hover: 0 6px 16px rgba(36, 76, 67, 0.35))."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-fast",
+        "value": "0.12s ease",
+        "purpose": "Đổi màu nút khi rê chuột."
+      },
+      {
+        "name": "drawer",
+        "value": "0.22s cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Ngăn kéo điều hướng trượt vào; tắt khi prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "767px"
+      },
+      {
+        "name": "tablet",
+        "value": "1023px"
+      },
+      {
+        "name": "compact-desktop",
+        "value": "1279px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Hành động chính của thẻ hoặc trang; một nút đặc mỗi màn.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Tiếp nhận thiết bị</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 14px;font:600 12.5px/1 var(--font-sans,Inter,system-ui,sans-serif);border:1px solid transparent;border-radius:8px;cursor:pointer;transition:background-color .12s ease,border-color .12s ease}.ds-btn:focus-visible{outline:2px solid var(--color-primary,#244c43);outline-offset:1px}.ds-btn-primary{background:var(--color-primary,#244c43);color:#fff}.ds-btn-primary:hover{background:var(--color-primary-hover,#1b3c35)}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Hành động phụ: làm mới, tra cứu, hủy không phá hủy.",
+      "html": "<button class=\"ds-btn ds-btn-secondary\">Tra cứu khách hàng</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 14px;font:600 12.5px/1 var(--font-sans,Inter,system-ui,sans-serif);border:1px solid transparent;border-radius:8px;cursor:pointer;transition:background-color .12s ease,border-color .12s ease}.ds-btn:focus-visible{outline:2px solid var(--color-primary,#244c43);outline-offset:1px}.ds-btn-secondary{background:#fff;color:var(--text-default,#364257);border-color:var(--border-universal,#d9e3db)}.ds-btn-secondary:hover{background:var(--surface-utility,#f8f7f2)}"
+    },
+    {
+      "name": "Destructive Button",
+      "kind": "button",
+      "refersTo": "button-destructive",
+      "description": "Từ chối báo giá, hủy yêu cầu, khóa tài khoản.",
+      "html": "<button class=\"ds-btn ds-btn-danger\">Từ chối</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 14px;font:600 12.5px/1 var(--font-sans,Inter,system-ui,sans-serif);border:1px solid transparent;border-radius:8px;cursor:pointer;transition:background-color .12s ease,border-color .12s ease}.ds-btn:focus-visible{outline:2px solid var(--color-primary,#244c43);outline-offset:1px}.ds-btn-danger{background:#fff;color:var(--color-destructive,#8b4248);border-color:var(--color-destructive-border,#f2c5bf)}.ds-btn-danger:hover{background:var(--color-destructive-tint,#fbe7e8);border-color:var(--color-destructive-hover,#6f3439);color:var(--color-destructive-hover,#6f3439)}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Ô nhập màn nhân viên; mã nghiệp vụ dùng mono.",
+      "html": "<label class=\"ds-field\"><span>Mã phiếu</span><input class=\"ds-input\" placeholder=\"VD: TN-2026-0917-00423\"></label>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:5px;font:600 12px/1.3 var(--font-sans,Inter,sans-serif);color:var(--text-default,#364257)}.ds-input{height:30px;padding:0 10px;border:1px solid var(--border-universal,#d9e3db);border-radius:8px;background:#fff;font:500 12px var(--font-mono,'JetBrains Mono',monospace);color:var(--text-strong,#29354a)}.ds-input::placeholder{color:var(--text-muted,#62716c)}.ds-input:focus{outline:none;border-color:var(--color-primary,#244c43)}.ds-input:focus-visible{outline:2px solid var(--color-primary,#244c43);outline-offset:1px}"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge-success",
+      "description": "Con dấu trạng thái phiếu: cặp nền nhạt + chữ đậm cùng sắc.",
+      "html": "<span class=\"ds-badge ds-ok\">Sẵn sàng nhận máy</span> <span class=\"ds-badge ds-warn\">Chờ linh kiện</span> <span class=\"ds-badge ds-proc\">Đang sửa</span> <span class=\"ds-badge ds-bad\">Trễ hẹn SLA</span>",
+      "css": ".ds-badge{display:inline-flex;align-items:center;padding:3px 8px;border:1px solid;border-radius:8px;font:500 12px/16px var(--font-sans,Inter,sans-serif);white-space:nowrap}.ds-ok{background:#ddefe4;color:#244c43;border-color:#c3e2cf}.ds-warn{background:#fff1ce;color:#795b18;border-color:#f3d58a}.ds-proc{background:#dcd8ed;color:#29354a;border-color:#c9c3e2}.ds-bad{background:#fbe7e8;color:#8b4248;border-color:#f2c5bf}"
+    },
+    {
+      "name": "Choice Group",
+      "kind": "chip",
+      "refersTo": "nav-item-active",
+      "description": "Nhóm lựa chọn một (kênh tiếp nhận, mức SLA).",
+      "html": "<div class=\"ds-choices\"><button class=\"ds-choice is-on\" aria-pressed=\"true\">Tiêu chuẩn (48h)</button><button class=\"ds-choice\" aria-pressed=\"false\">Ưu tiên (24h)</button></div>",
+      "css": ".ds-choices{display:flex;flex-wrap:wrap;gap:6px}.ds-choice{height:30px;padding:0 12px;border:1px solid var(--border-universal,#d9e3db);border-radius:8px;background:#fff;font:500 12.5px var(--font-sans,Inter,sans-serif);color:var(--text-default,#364257);cursor:pointer}.ds-choice:hover{background:var(--surface-utility,#f8f7f2)}.ds-choice.is-on{border-color:#244c43;background:#ddefe4;color:#244c43;font-weight:600}.ds-choice:focus-visible{outline:2px solid #244c43;outline-offset:1px}"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Khung chứa phẳng, viền lá, đầu thẻ ngăn bằng 1px.",
+      "html": "<section class=\"ds-card\"><header class=\"ds-card-h\"><h2>Thông tin khách hàng</h2><p>Nhập số điện thoại để tra cứu hồ sơ</p></header><div class=\"ds-card-b\">Nội dung thẻ</div></section>",
+      "css": ".ds-card{background:#fff;border:1px solid var(--border-universal,#d9e3db);border-radius:10px;overflow:hidden;font-family:var(--font-sans,Inter,sans-serif)}.ds-card-h{padding:14px 16px;border-bottom:1px solid var(--border-universal,#d9e3db)}.ds-card-h h2{margin:0;font-size:15px;font-weight:600;line-height:20px;color:#29354a}.ds-card-h p{margin:1px 0 0;font-size:12px;color:#62716c}.ds-card-b{padding:16px;font-size:13px;color:#29354a}"
+    },
+    {
+      "name": "Sidebar Navigation",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Điều hướng theo vai trò; thành ngăn kéo dưới 1024px.",
+      "html": "<nav class=\"ds-nav\"><div class=\"ds-nav-g\">Xử lý phiếu</div><a class=\"ds-nav-i is-on\" href=\"#\">Điều phối</a><a class=\"ds-nav-i\" href=\"#\">Phiếu sửa chữa</a></nav>",
+      "css": ".ds-nav{width:240px;background:#fff;font-family:var(--font-sans,Inter,sans-serif);padding:8px 0}.ds-nav-g{padding:8px 20px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#62716c}.ds-nav-i{display:block;padding:8px 20px 8px 17px;border-left:3px solid transparent;font-size:13px;font-weight:500;line-height:18px;color:#364257;text-decoration:none}.ds-nav-i:hover{background:#f8f7f2}.ds-nav-i.is-on{background:#ddefe4;border-left-color:#244c43;color:#244c43;font-weight:600}.ds-nav-i:focus-visible{outline:2px solid #244c43;outline-offset:1px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Thẻ bảo hành",
+    "overview": "Mọi màn hình của Soopi được dựng như một tấm thẻ bảo hành tốt: giấy kem sữa, mực xanh chim cánh cụt, một dấu xanh rừng cho việc quan trọng nhất, và những ô trạng thái bo góc gọn như con dấu đóng lên phiếu. Bảng màu lấy trực tiếp từ thẻ bảo hành mẫu của thương hiệu. Hệ thống không trang trí cho đẹp: nó cho người cầm phiếu biết máy đang ở đâu, việc gì đến lượt mình, và ai chịu trách nhiệm.\n\nCảm giác chủ đạo là **bình tĩnh, tin cậy, gọn**. Màn nhân viên dày thông tin (chữ thân 13px, hàng bảng 38px) nhưng thở được nhờ nền kem, viền mảnh và khoảng cách đều. Trang khách (đăng nhập, cổng tra cứu, tài khoản) dùng cùng bảng màu nhưng chữ lớn hơn và có tiêu đề Plus Jakarta Sans đậm, vì khách đọc trên điện thoại và ít khi quay lại.\n\nMọi thành phần **bo góc vừa phải**, như góc của một tấm thẻ cầm tay: nút, ô nhập, badge và tab bo 8px; thẻ, bảng, hộp thoại và ngăn kéo bo 10px. Chỉ những thứ vốn tròn (chấm trạng thái, spinner, avatar, vòng bước tiến độ) mới tròn hẳn. Bề mặt phẳng; chiều sâu đến từ viền và sắc độ nền, không từ bóng đổ.",
+    "keyCharacteristics": [
+      "Nền kem sữa ấm, chữ xanh chim cánh cụt, một màu hành động duy nhất là xanh rừng.",
+      "Bo góc thống nhất: điều khiển 8px, khung chứa 10px; không có góc vuông sắc hay dạng viên thuốc.",
+      "Trạng thái nói bằng cặp nền nhạt + chữ đậm cùng sắc (mint, mật ong, tím sương, đỏ rượu), không bằng màu bão hòa.",
+      "Mã nghiệp vụ (TN-, YC-, BG-, serial/IMEI, tiền, SLA) luôn dùng font mono với số cân cột.",
+      "Một bố cục co giãn từ 360px đến desktop; trên màn cảm ứng vùng chạm tối thiểu 44px."
+    ],
+    "rules": [
+      {
+        "name": "The One Ink Rule",
+        "body": "Xanh rừng là màu hành động duy nhất trên một màn hình. Nếu hai nút cùng màu đặc, một trong hai phải là nút phụ.",
+        "section": "colors"
+      },
+      {
+        "name": "The Stamp Pair Rule",
+        "body": "Mỗi trạng thái là một cặp nền nhạt + chữ đậm cùng sắc, đạt ≥ 4,5:1. Không dùng màu bão hòa làm nền cho chữ trạng thái.",
+        "section": "colors"
+      },
+      {
+        "name": "The Data Wears Mono Rule",
+        "body": "Chỉ mã nghiệp vụ, số tiền và thời gian đếm ngược mới dùng mono; nhãn, tiêu đề và văn bản thì không bao giờ.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Desk Rule",
+        "body": "Thẻ, bảng và ô nhập không đổ bóng khi ở trạng thái nghỉ. Chỉ lớp nổi trên nội dung mới có bóng.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Card Corner Rule",
+        "body": "Chỉ có ba bán kính: 8px cho điều khiển, 10px cho khung chứa, 50% cho hình tròn thật. Không góc vuông sắc, không dạng viên thuốc 999px.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "**Do** dùng token `var(--color-primary)`, `var(--text-strong)`, `var(--surface-page)`… thay vì mã hex. Trang khách dùng các biến `--kh-*`, vốn trỏ về cùng token.",
+      "**Do** bo 8px cho điều khiển và 10px cho khung chứa, qua token `--radius-*`. Chỉ chấm, spinner, avatar và vòng bước mới tròn (50%).",
+      "**Do** hiển thị mã phiếu, serial/IMEI, tiền và SLA bằng font mono 12px với số cân cột.",
+      "**Do** biểu đạt trạng thái bằng cặp nền nhạt + chữ đậm cùng sắc, đạt ≥ 4,5:1.",
+      "**Do** kiểm mọi màn ở 390px, 768px và 1280px. Không được cuộn ngang; vùng chạm 44px trên màn cảm ứng."
+    ],
+    "donts": [
+      "**Don't** dùng bán kính khác 8px, 10px hoặc 50% (The Card Corner Rule).",
+      "**Don't** đặt hai nút xanh rừng đặc cạnh nhau (The One Ink Rule).",
+      "**Don't** đổ bóng cho thẻ, bảng hay ô nhập ở trạng thái nghỉ.",
+      "**Don't** dùng xám nhạt (sage-faint) cho chữ, hay chữ dưới 12px cho nội dung cần đọc.",
+      "**Don't** đưa số liệu, lời chứng thực, hotline hay huy hiệu không có thật vào giao diện."
+    ]
+  }
+}

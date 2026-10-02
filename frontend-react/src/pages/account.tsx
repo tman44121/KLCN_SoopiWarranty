@@ -60,7 +60,7 @@ function useAccountData(enabled: boolean) {
 }
 
 export default function AccountPage() {
-  usePage("account", {"class": "is-fluid", "data-roles": "CUSTOMER"}, "Tài khoản khách hàng — Soopi");
+  usePage("account", {"data-roles": "CUSTOMER"}, "Tài khoản khách hàng — Soopi");
   const [user, setUser] = useState<Json>(null);
   const [route, setRoute] = useState<Route>(() => parseHash(location.hash));
   const { data, error, reload } = useAccountData(Boolean(user));
