@@ -73,6 +73,13 @@ phù hợp các thao tác được chủ dự án cho phép; tài liệu này kh
 
 ## 3. Chạy backend và React khi phát triển
 
+Cách nhanh: chạy `run.bat` ở thư mục gốc. Script kiểm tra và cài nếu thiếu .NET SDK 10, Node.js 22+ (qua `winget`)
+và dependency frontend (`npm ci`), kiểm tra đã đặt `ConnectionStrings:Default` (không in giá trị), rồi mở API, Vite
+và trình duyệt; API/Vite đang chạy sẵn thì dùng lại. `run.bat check` chỉ kiểm tra, `run.bat build` chạy bản build
+cùng origin ở cổng 8080. SQL Server và database không được tự cài. Tài khoản demo: [TAI_KHOAN_DEMO.md](TAI_KHOAN_DEMO.md).
+
+Chạy thủ công:
+
 Terminal backend, tại `backend-dotnet`:
 
 ```powershell
