@@ -1,0 +1,329 @@
+{
+  "POST login empty object": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "username",
+          "message": "must not be blank"
+        },
+        {
+          "field": "password",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login malformed JSON": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login null body": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login array body": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login string coercion": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "password",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login property case": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "password",
+          "message": "must not be blank"
+        },
+        {
+          "field": "username",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login boolean coercion": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "username",
+          "message": "must not be blank"
+        },
+        {
+          "field": "password",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login invalid boolean": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login NBSP": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "password",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login em space": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "username",
+          "message": "must not be blank"
+        },
+        {
+          "field": "password",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST OTP empty object": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/mobile/otp",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "purpose",
+          "message": "must not be null"
+        },
+        {
+          "field": "phone",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST OTP enum case": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/mobile/otp",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST OTP enum ordinal": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/mobile/otp",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "phone",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST register invalid email": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/mobile/register",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "phone",
+          "message": "must not be blank"
+        },
+        {
+          "field": "otp",
+          "message": "must not be blank"
+        },
+        {
+          "field": "password",
+          "message": "must not be blank"
+        },
+        {
+          "field": "email",
+          "message": "must be a well-formed email address"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST register quoted email": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/mobile/register",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "password",
+          "message": "must not be blank"
+        },
+        {
+          "field": "phone",
+          "message": "must not be blank"
+        },
+        {
+          "field": "otp",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST password reset empty object": {
+    "status": 400,
+    "body": {
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/mobile/password-reset",
+      "status": 400,
+      "title": "Yêu cầu không hợp lệ",
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "otp",
+          "message": "must not be blank"
+        },
+        {
+          "field": "newPassword",
+          "message": "must not be blank"
+        },
+        {
+          "field": "phone",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  }
+}

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thông Tin Cá Nhân – LongManLoc E-WARRANTY BASE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/css/home.css}" />
+</head>
+<body>
+
+    <!-- ============================================================================
+         HEADER & NAVBAR
+         ============================================================================ -->
+    <header class="navbar-header">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <div class="brand-icon-box">LML</div>
+                <div class="brand-text">
+                    <span class="brand-title">LongManLoc</span>
+                    <span class="brand-subtitle">E-WARRANTY BASE</span>
+                </div>
+            </a>
+
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Trang chủ</a></li>
+                <li><a th:href="@{/Warranty/Register}" class="nav-link">Đăng ký bảo hành</a></li>
+                <li><a th:href="@{/Warranty/History}" class="nav-link">Lịch sử bảo hành</a></li>
+                <li><a th:href="@{/Warranty/Lookup}" class="nav-link">Tra cứu tiến độ</a></li>
+            </ul>
+
+            <div class="nav-right-actions">
+                <div class="phone-contact-pill">
+                    <span>📞</span> 0339.477.939
+                </div>
+                <a th:href="@{/Warranty/Register}" class="btn-primary-teal">
+                    Đăng ký bảo hành
+                </a>
+
+                <!-- User Profile Dropdown -->
+                <div class="user-profile-menu" id="userProfileMenu" onclick="toggleProfileDropdown(event)" sec:authorize="isAuthenticated()">
+                    <div class="user-avatar-circle" th:text="${userFullName != null ? #strings.substring(userFullName, 0, 1).toUpperCase() : #strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="user-name-text" th:text="${userFullName != null ? userFullName : #authentication.name}">Nguyễn Văn A</span>
+                    <span style="font-size: 10px; color: #64748b;">▼</span>
+
+                    <div class="profile-dropdown-content" onclick="event.stopPropagation()">
+                        <div class="profile-dropdown-header">
+                            <div class="user-avatar-circle" style="width: 38px; height: 38px; font-size: 15px;" th:text="${userFullName != null ? #strings.substring(userFullName, 0, 1).toUpperCase() : #strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                            <div>
+                                <div class="dropdown-user-name" th:text="${userFullName != null ? userFullName : #authentication.name}">Nguyễn Văn A</div>
+                                <div class="dropdown-user-role">Khách hàng thành viên</div>
+                            </div>
+                        </div>
+
+                        <a th:href="@{/Account/Profile}" class="profile-dropdown-item active-drop">
+                            <span>👤</span> Thông tin cá nhân
+                        </a>
+                        <a th:href="@{/Account/ChangePassword}" class="profile-dropdown-item">
+                            <span>🔑</span> Đổi mật khẩu
+                        </a>
+                        <a th:href="@{/Warranty/History}" class="profile-dropdown-item">
+                            <span>📋</span> Lịch sử bảo hành
+                        </a>
+                        
+                        <div style="height: 1px; background: #f1f5f9; margin: 6px 0;"></div>
+
+                        <form th:action="@{/Account/Logout}" method="post" style="margin: 0;">
+                            <button type="submit" class="profile-dropdown-item logout-item">
+                                <span>🚪</span> Đăng xuất
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============================================================================
+         PAGE CONTENT
+         ============================================================================ -->
+    <main class="page-container">
+        
+        <!-- Breadcrumb -->
+        <div style="font-size: 13px; color: #94a3b8; margin-bottom: 24px;">
+            <a href="/" style="color: #0d9488; font-weight: 600;">Trang chủ</a> / <span>Thông tin tài khoản</span>
+        </div>
+
+        <!-- Success/Error Alerts -->
+        <div th:if="${successMessage}" style="background: #ecfdf5; color: #047857; padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; margin-bottom: 24px; border: 1px solid #a7f3d0; display: flex; align-items: center; gap: 10px;">
+            <span>✅</span> <span th:text="${successMessage}">Cập nhật thành công!</span>
+        </div>
+
+        <div th:if="${errorMessage}" style="background: #fef2f2; color: #b91c1c; padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; margin-bottom: 24px; border: 1px solid #fecaca; display: flex; align-items: center; gap: 10px;">
+            <span>⚠️</span> <span th:text="${errorMessage}">Đã có lỗi xảy ra!</span>
+        </div>
+
+        <div class="profile-layout-grid">
+            
+            <!-- Left Sidebar -->
+            <aside class="user-sidebar-card">
+                <div class="user-big-avatar" th:text="${profileModel.hoTen != null ? #strings.substring(profileModel.hoTen, 0, 1).toUpperCase() : 'U'}">
+                    U
+                </div>
+                <h3 class="user-card-fullname" th:text="${profileModel.hoTen}">Nguyễn Văn A</h3>
+                <div class="user-card-phone">
+                    <span>📞</span> <span th:text="${profileModel.sdt}">0339477939</span>
+                </div>
+                <div>
+                    <span class="user-badge-role">🛡️ Khách Hàng Thành Viên</span>
+                </div>
+
+                <div class="sidebar-stats-row">
+                    <div class="stat-box-mini">
+                        <div class="stat-box-num" th:text="${profileModel.soThietBi}">2</div>
+                        <div class="stat-box-label">Thiết Bị</div>
+                    </div>
+                    <div class="stat-box-mini">
+                        <div class="stat-box-num" th:text="${profileModel.soPhieuBaoHanh}">3</div>
+                        <div class="stat-box-label">Phiếu Xử Lý</div>
+                    </div>
+                </div>
+
+                <nav class="sidebar-nav-links">
+                    <a th:href="@{/Account/Profile}" class="sidebar-nav-btn active">
+                        <span>👤</span> Hồ sơ cá nhân
+                    </a>
+                    <a th:href="@{/Account/ChangePassword}" class="sidebar-nav-btn">
+                        <span>🔑</span> Đổi mật khẩu
+                    </a>
+                    <a th:href="@{/Warranty/History}" class="sidebar-nav-btn">
+                        <span>📋</span> Lịch sử bảo hành
+                    </a>
+                    <a th:href="@{/Warranty/Register}" class="sidebar-nav-btn">
+                        <span>➕</span> Đăng ký thiết bị mới
+                    </a>
+                </nav>
+            </aside>
+
+            <!-- Right Content Form -->
+            <div style="display: flex; flex-direction: column; gap: 30px;">
+                
+                <!-- Profile Edit Card -->
+                <section class="content-panel-card">
+                    <h2 class="card-heading-title">Hồ Sơ Cá Nhân</h2>
+                    <p class="card-heading-desc">Quản lý và cập nhật thông tin liên hệ nhận thông báo bảo hành của bạn.</p>
+
+                    <form th:action="@{/Account/Profile}" th:object="${profileModel}" method="post">
+                        
+                        <div class="two-inputs-grid form-row-group">
+                            <div>
+                                <label for="hoTen" style="font-size: 12px; font-weight: 800; color: #334155; margin-bottom: 6px; display: block; text-transform: uppercase;">Họ và tên *</label>
+                                <input type="text" id="hoTen" th:field="*{hoTen}" class="regular-input" placeholder="Nhập họ và tên đầy đủ" required />
+                                <div th:if="${#fields.hasErrors('hoTen')}" style="color: #dc2626; font-size: 12px; margin-top: 4px;" th:errors="*{hoTen}"></div>
+                            </div>
+                            <div>
+                                <label for="sdt" style="font-size: 12px; font-weight: 800; color: #334155; margin-bottom: 6px; display: block; text-transform: uppercase;">Số điện thoại (Tên đăng nhập)</label>
+                                <input type="text" id="sdt" th:field="*{sdt}" class="regular-input" style="background: #f1f5f9; cursor: not-allowed;" readonly />
+                            </div>
+                        </div>
+
+                        <div class="two-inputs-grid form-row-group">
+                            <div>
+                                <label for="email" style="font-size: 12px; font-weight: 800; color: #334155; margin-bottom: 6px; display: block; text-transform: uppercase;">Địa chỉ Email</label>
+                                <input type="email" id="email" th:field="*{email}" class="regular-input" placeholder="example@email.com" />
+                                <div th:if="${#fields.hasErrors('email')}" style="color: #dc2626; font-size: 12px; margin-top: 4px;" th:errors="*{email}"></div>
+                            </div>
+                            <div>
+                                <label for="maKH" style="font-size: 12px; font-weight: 800; color: #334155; margin-bottom: 6px; display: block; text-transform: uppercase;">Mã khách hàng</label>
+                                <input type="text" id="maKH" th:field="*{maKH}" class="regular-input" style="background: #f1f5f9; cursor: not-allowed; font-weight: 700; color: #0284c7;" readonly />
+                            </div>
+                        </div>
+
+                        <div class="form-row-group">
+                            <label for="diaChi" style="font-size: 12px; font-weight: 800; color: #334155; margin-bottom: 6px; display: block; text-transform: uppercase;">Địa chỉ nhận trả thiết bị tận nơi</label>
+                            <input type="text" id="diaChi" th:field="*{diaChi}" class="regular-input" placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố" />
+                            <div th:if="${#fields.hasErrors('diaChi')}" style="color: #dc2626; font-size: 12px; margin-top: 4px;" th:errors="*{diaChi}"></div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+                            <div style="font-size: 12px; color: #94a3b8;">
+                                Ngày tham gia: <strong style="color: #475569;" th:text="${profileModel.ngayThamGia}">01/09/2026</strong>
+                            </div>
+                            <button type="submit" class="btn-primary-teal" style="padding: 10px 24px; font-size: 14px;">
+                                💾 Lưu Thay Đổi
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Registered Devices Section -->
+                <section class="content-panel-card">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                        <div>
+                            <h2 class="card-heading-title" style="margin-bottom: 2px;">Thiết Bị Của Bạn</h2>
+                            <p class="card-heading-desc" style="margin-bottom: 0;">Danh sách thiết bị điện tử đã kích hoạt gắn liền với tài khoản của bạn.</p>
+                        </div>
+                        <a th:href="@{/Warranty/Register}" class="btn-primary-teal" style="font-size: 12px; padding: 8px 16px;">
+                            ➕ Kích Hoạt Thiết Bị Mới
+                        </a>
+                    </div>
+
+                    <div class="devices-list-grid">
+                        <div th:each="dev : ${customerDevices}" class="device-item-card">
+                            <div class="device-info-col">
+                                <div class="device-avatar-box">💻</div>
+                                <div>
+                                    <div class="device-title-name" th:text="${dev.tenSP}">MacBook Air M2 13.6 inch</div>
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+                                        <span class="device-serial-pill" th:text="${dev.soSerial}">SN: C02G789X01</span>
+                                        <span style="font-size: 12px; color: #64748b;" th:text="${dev.hangSanXuat}">Apple</span>
+                                    </div>
+                                    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                                        Hạn bảo hành: <strong th:text="${dev.ngayHetHanStr}">15/01/2028</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                                <span class="badge" th:classappend="${dev.trangThaiBadgeClass}" th:text="${dev.trangThaiBadgeText}">Còn hạn</span>
+                                <a th:href="@{/Warranty/Register(mode='ONLINE_REQUEST', serial=${dev.soSerial})}" class="btn-secondary-white" style="font-size: 11px; padding: 5px 12px;">
+                                    🔧 Yêu cầu sửa chữa
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- ============================================================================
+         FOOTER
+         ============================================================================ -->
+    <footer class="footer-section">
+        <div class="footer-container">
+            <div class="footer-col-about">
+                <div class="footer-brand">
+                    <div class="brand-icon-box">LML</div>
+                    <span class="footer-brand-title">LongManLoc Service</span>
+                </div>
+                <p class="footer-desc">
+                    Hệ thống trạm dịch vụ bảo hành và sửa chữa điện tử, điện máy tiêu chuẩn quốc tế.
+                </p>
+                <div class="footer-contact-info">
+                    <span>📍 Trụ sở chính: 123 CMT8, Quận 10, TP. Hồ Chí Minh</span>
+                    <span>📞 Hotline CSKH: 0339.477.939 (8:00 - 20:00)</span>
+                    <span>✉️ Email hỗ trợ: support@longmanloc.vn</span>
+                </div>
+            </div>
+
+            <div class="footer-col-links">
+                <h4 class="footer-col-title">Dịch Vụ</h4>
+                <ul class="footer-links-ul">
+                    <li><a th:href="@{/Warranty/Register}">Đăng ký bảo hành</a></li>
+                    <li><a th:href="@{/Warranty/History}">Lịch sử bảo hành</a></li>
+                    <li><a th:href="@{/Warranty/Lookup}">Tra cứu tiến độ</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col-links">
+                <h4 class="footer-col-title">Tài Khoản</h4>
+                <ul class="footer-links-ul">
+                    <li><a th:href="@{/Account/Profile}">Thông tin cá nhân</a></li>
+                    <li><a th:href="@{/Account/ChangePassword}">Đổi mật khẩu</a></li>
+                    <li><a th:href="@{/Account/Login}">Đăng nhập</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom-strip">
+            <div>© 2026 LongManLoc E-Warranty. All rights reserved.</div>
+            <div>Bảo mật chứng nhận SSL 256-bit</div>
+        </div>
+    </footer>
+
+    <script th:src="@{/js/main.js}"></script>
+</body>
+</html>

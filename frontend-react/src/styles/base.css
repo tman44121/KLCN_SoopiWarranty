@@ -1,0 +1,142 @@
+/* ==========================================================================
+   Base reset & global layout shell (sidebar cố định + header cố định)
+   Nguồn: CLAUDE.md mục 2 (nguyên tắc), 8 (sidebar), 9 (header), 10 (workspace),
+   11 (responsive), 12 (z-index)
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Thuộc tính hidden phải thắng mọi display của class/inline style (banner, lỗi form, khối kết quả…). */
+[hidden] {
+  display: none !important;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Màn nội bộ chỉ nhắm máy tính từ 1280px; trang công khai (Đăng nhập, Cổng khách hàng) dùng .is-fluid. */
+body {
+  margin: 0;
+  min-width: 1280px;
+  overflow-x: auto;
+  background: var(--surface-page);
+  color: var(--text-body-color);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-line);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, p, ul, ol {
+  margin: 0;
+}
+
+ul, ol {
+  padding: 0;
+  list-style: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+/* Visible keyboard focus — mục 24: không hy sinh accessibility vì mật độ cao */
+:focus-visible {
+  outline: 2px solid var(--color-primary-focus-ring);
+  outline-offset: 1px;
+  border-radius: var(--radius-input);
+}
+
+::selection {
+  background: var(--color-primary-tint);
+  color: var(--color-primary-on-tint);
+}
+
+/* Số liệu (SLA, tồn kho, tiền tệ) giữ độ rộng cố định khi thay đổi theo thời gian thực */
+.mono,
+.data-table td,
+.billing-row span,
+.billing-total-row span,
+.receipt__row span {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Giảm chuyển động: không tắt đồng loạt. Chuyển màu/độ mờ (nút, tooltip) vẫn giữ vì không dịch chuyển;
+   vòng xoay và dải shimmer có tín hiệu tĩnh riêng trong components.css; cuộn trang nhảy thẳng. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body.is-fluid {
+  min-width: 0;
+  overflow-x: visible;
+}
+
+/* ---- App shell layout ---- */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  background: var(--surface-sidebar);
+  border-right: 1px solid var(--border-universal);
+  z-index: var(--z-sidebar);
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  height: var(--header-height);
+  background: var(--surface-header);
+  border-bottom: 1px solid var(--border-universal);
+  z-index: var(--z-header);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 var(--page-padding);
+}
+
+.app-main {
+  margin-left: var(--sidebar-width);
+  margin-top: var(--header-height);
+  padding: var(--page-padding);
+  width: calc(100% - var(--sidebar-width));
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-spacing);
+}
+
+@media (max-width: 1280px) {
+  .app-main {
+    padding: 20px;
+  }
+}

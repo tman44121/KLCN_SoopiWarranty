@@ -1,0 +1,63 @@
+# DECISIONS — warranty-system-soopi
+
+Quyết định kỹ thuật khi chuyển LongManLoc Service Center từ Spring Boot (`warranty-system-mysql`, nhánh `azure-sql`) sang
+ASP.NET Core Web API + React. Định dạng như `docs/DECISIONS.md` của bản Java. D-001 → D-017 chốt trong phiên hỏi đáp
+2026-10-01 (xem `MIGRATION_PLAN.md` mục 8.3); từ D-018 là quyết định phát sinh khi viết code.
+
+| Mã | Bối cảnh | Quyết định | Lý do |
+|---|---|---|---|
+| D-001 | Chỗ đặt code mới | Repo riêng `warranty-system-soopi/` (`backend-dotnet/`, `frontend-react/`, `docs/`), git riêng, chỉ commit khi chủ dự án yêu cầu. Repo Java chỉ đọc và sẽ ngừng dùng | Không đụng project gốc; tách lịch sử |
+| D-002 | App di động do bên khác làm | Giữ nguyên hợp đồng API: REST `/api/v1`, RFC 9457 + `code`/`correlationId`/`fieldErrors`, mô tả ở `docs/MOBILE_API.md` của bản Java. Không cần giữ phiên đăng nhập liên tục khi chuyển | API hiện tại đã chuẩn và có tài liệu; không redesign |
+| D-003 | Phạm vi | Port đủ 114 endpoint. OTP SMS và push FCM chỉ ở chế độ `log`; cấu hình `esms`/`fcm` thì app dừng khi khởi động | Hợp đồng đầy đủ cho app; tích hợp ngoài làm khi có khóa thật, không âm thầm "tưởng đã gửi" |
+| D-004 | Xác thực | Phương án A: JWT RS256 (access 15', claim như Java: `sub, username, roles, principalType, displayName, ver, typ, employeeId/customerId`), refresh token ngẫu nhiên lưu SHA-256 hex, xoay vòng theo họ, dùng lại → thu hồi cả họ; web dùng cookie `LML_RT` (HttpOnly, Secure, SameSite=Strict, Path `/api/v1/auth`), mobile dùng body; portal token `typ=portal` 30'. Dev không cấu hình khóa thì tự sinh khóa tạm, Production bắt buộc PEM | Giống bản Java, app không phải sửa; cookie/session của ASP.NET làm hỏng mobile, ASP.NET Identity đòi đổi schema |
+| D-005 | Mật khẩu cũ dạng `{bcrypt}$2a$12$…` | Gói `BCrypt.Net-Next`; lưu/kiểm với tiền tố `{bcrypt}` (CHECK `CK_TaiKhoan_Hash`); so hash thật khi sai tên đăng nhập | .NET không có BCrypt; đã test hash do Spring tạo |
+| D-006 | Map EF Core vào schema có sẵn | Map tay chỉ các bảng bản Java dùng JPA; các bảng còn lại dùng helper `Sql` với câu T-SQL giữ nguyên (`?` theo vị trí). Không migration, không gói EF Design | Dễ đối chiếu từng câu SQL; không entity thừa |
+| D-007 | Cấu trúc | .NET 10, một project `Soopi.Api` + `Soopi.Tests`; thư mục `Controllers/ Services/ Domain/ Data/(Entities, Stores) DTOs/ Infrastructure/` chia module bên trong; `[ApiController]` | Theo đề bài; `Domain/` để luật nghiệp vụ test được không cần DB |
+| D-008 | Test | Unit test không chạm DB (xUnit; bỏ `coverlet.collector` của template vì không nằm trong danh sách duyệt). Integration test đồng thời để giai đoạn 4, trên database `_IT` riêng | Mọi thao tác ghi DB phải hỏi trước |
+| D-009 | Kiểm chứng | Connection string `TrungTamBaoHanhDB_Dev` do chủ dự án đặt vào User Secrets (không đọc `.env`). Chạy bản Java **một lần** bằng biến môi trường (không profile `dev`) để lưu JSON mẫu vào `contract-snapshots/` | Biết chắc định dạng JSON thật thay vì suy từ code |
+| D-010 | Triển khai | Cùng origin: .NET phục vụ bản build React. Dev: Vite (5173) proxy `/api` + CORS cho `http://localhost:5173` | Giữ cookie SameSite=Strict, CSP như cũ |
+| D-011 | Route React | `/login /dispatch /receptionist /technician /warehouse /cashier /tickets /reports /admin /portal` (+ hash). `UserView.landing` trả route mới; thông báo mới lưu route mới; link `*.html` cũ trong DB được frontend dịch, server 301 | Không sửa dữ liệu cũ |
+| D-012 | `Security:DefaultResetPassword` (Java mặc định `LML@123`) | Không có giá trị mặc định trong code; thiếu cấu hình thì "Đặt lại mật khẩu" trả 500 (Java: không khởi động) | Không ghi bí mật vào code |
+| D-013 | Swagger | Không Swagger UI; chỉ `/openapi/v1.json` ở Development | Không thêm gói |
+| D-014 | Frontend | React + Vite + TypeScript; CSS cũ dùng nguyên văn; không thêm tính năng (khách đăng nhập web chỉ tra cứu như cũ; lễ tân vẫn nhận 403 ở phần thanh toán) | Không redesign |
+| D-015 | Nhịp làm | Dừng duyệt sau đợt 3 (khung, hạ tầng chung, identity), sau đó làm đợt 4–8 | Khuôn sai phát hiện muộn thì sửa lại ~110 endpoint |
+| D-016 | Ví dụ Swagger `priority: "HIGH"` | Giữ enum `URGENT/NORMAL/LOW` | Web chỉ dùng ba giá trị này; ví dụ tài liệu sai |
+| D-017 | Gói NuGet | Chỉ: `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.AspNetCore.Authentication.JwtBearer`, `Microsoft.AspNetCore.OpenApi`, `BCrypt.Net-Next`; test: `xunit`, `xunit.runner.visualstudio`, `Microsoft.NET.Test.Sdk` | Đã duyệt; gói khác phải hỏi |
+| D-018 | `Microsoft.AspNetCore.OpenApi` 10.0.10 kéo `Microsoft.OpenApi` 2.0.0 có lỗ hổng cao (NU1903) | Nâng lên 10.0.12 (`Microsoft.OpenApi` 2.12.0) | Vá lỗ hổng, cùng gói đã duyệt |
+| D-019 | Kiểm quyền | Ở tầng service bằng `CurrentActor.Require(Permission…)` / `RequireOrPortal(…)` / `RequireSignedIn()`, không dùng `[Authorize(Policy)]`; controller chỉ `[Authorize]` + `[AllowAnonymous]` cho endpoint công khai. Thiếu quyền → 403 `ACCESS_DENIED` | Như `@PreAuthorize` trên service của Java; một service có nhiều controller gọi |
+| D-020 | Ràng buộc DTO | Thuộc tính đặt tên như Bean Validation (`NotBlank, NotNull, NotEmpty, Positive, PositiveOrZero, Size, Email, Min, Max, DecimalMin, DecimalMax, Pattern`), thông điệp tiếng Anh mặc định của Hibernate Validator; đặt trên tham số record (không `property:`); tắt Required ngầm cho kiểu không-null. `fieldErrors[].field` camelCase dạng `customer.newCustomer.phone` | Hibernate Validator không có bản tiếng Việt → Java đang trả tiếng Anh; port DTO thành chép annotation |
+| D-021 | JSON — giả định ban đầu, đã được D-043 hiệu chỉnh | camelCase, thời điểm UTC `…Z`, bool primitive null=false, UTF-8 không thoát. Giả định “enum không nhận số” đã bị oracle Java bác bỏ; xem D-043 | Không giữ test/giả định trái hành vi bản Java |
+| D-022 | Thông điệp lỗi | Đọc `messages_vi.properties` (nhúng vào assembly) và định dạng như `java.text.MessageFormat`: `{i}` thiếu đối số giữ nguyên | `string.Format` ném lỗi khi thiếu đối số |
+| D-023 | `SET LOCK_TIMEOUT 10000` (Java: init-sql của Hikari) | Interceptor gắn vào đầu mỗi lệnh (cả lệnh EF lẫn helper `Sql`) | Không tốn thêm một vòng mạng tới DB ở xa |
+| D-024 | Transaction | `TransactionRunner`: READ COMMITTED, gọi lồng thì tham gia transaction ngoài, thử lại 3 lần khi `DbUpdateConcurrencyException`/SQL 1205/1222 rồi báo `CONCURRENT_MODIFICATION`; `AfterCommit` cho việc chạy sau commit (push) | Như `TransactionRunner` + `TransactionSynchronization` của Java |
+| D-025 | `Account.employeeId/customerId` là `@Formula` | EF map thêm tối thiểu `NhanVien(MaNV, MaTaiKhoan)`; `KhachHang` map đủ cột kể cả `MaTaiKhoan`; tài khoản + vai trò + mã NV/KH tải trong một truy vấn chiếu (projection) | Một lượt DB cho đăng nhập và `/auth/me` |
+| D-026 | `ConcurrentReads` (D-075 của Java) | Không port: các lượt đọc trên cùng `DbContext` chạy tuần tự | `DbContext` không an toàn đa luồng; đo được chậm thì mới thêm context riêng |
+| D-027 | Rate limit | `RateLimiter` cửa sổ cố định trên `IMemoryCache`, một khóa chung (`ponytail:` ghi trong code) | Khóa theo tên đăng nhập/mã phiếu/SĐT, middleware RateLimiter của ASP.NET không làm được |
+| D-028 | Thời gian | `TimeProvider`; cột `DATETIME2(0)` lưu giờ Việt Nam (+07:00 cố định) không phần lẻ giây qua converter chung `VietnamTimeConverter`/`DbTime` | Như `DbTime` của Java, không phụ thuộc múi giờ máy chủ |
+| D-029 | Làm tròn tiền | `Money.Round` = `MidpointRounding.AwayFromZero` | .NET mặc định làm tròn kiểu ngân hàng ≠ HALF_UP |
+| D-030 | Cổng dev | API chạy `http://localhost:8080` như bản Java | Origin mặc định trong cấu hình cũ |
+| D-031 | Aggregate phiếu (PhieuTiepNhan + 8 bảng con): Java dùng các `*Row` JPA như DTO, logic diff tự viết (đếm dòng lịch sử, khóa phiên bản thủ công) | `TicketStore` dùng SQL: `UPDATE PhieuTiepNhan … PhienBan = PhienBan + 1 WHERE MaPhieuTN = ? AND PhienBan = ?` (0 dòng → `DbUpdateConcurrencyException` → thử lại), bảng con chỉ thêm phần mới. Điều chỉnh D-006 cho riêng aggregate này | Đúng y logic Java, ít mã hơn EF tracking 9 bảng, kiểm phiên bản tường minh |
+| D-032 | Nạp phiếu: Java đọc 11 bảng song song (`ConcurrentReads`) | `Sql.ReadBatchAsync`: 11 câu SELECT trong một lệnh, một vòng mạng, đọc lần lượt từng result set | Nhanh như bản Java với DB ở xa mà không cần nhiều `DbContext` (thay D-026 cho chỗ này) |
+| D-033 | `/search` cần truy vấn phiếu; `/portal/tickets/*` cần báo giá | Dời `/search`, `/customers/{code}/tickets` sang đợt 6; `/portal/tickets/*`, `/portal/my/tickets`, `/customers/{code}/payments` sang đợt 7 | Port theo thứ tự phụ thuộc |
+| D-034 | Tra cứu portal theo mã `TN-` (Java nạp cả aggregate phiếu) | Một câu SQL so SĐT hồ sơ khách của phiếu | Cùng kết quả, không cần nạp aggregate |
+| D-035 | Multipart `data` (JSON) của portal | `MultipartJson`: nhận part dạng tệp (Blob từ web) hoặc trường văn bản (app); ràng buộc đặt trên thuộc tính (`[property: NotBlank]`), kiểm cả record lồng; lỗi → 400 kèm `fieldErrors` | DTO không qua model binding nên không dùng ràng buộc trên tham số record |
+| D-036 | Java `synchronized` quanh việc giữ tồn khi tạo yêu cầu xuất | `SemaphoreSlim(1,1)` tĩnh (ghi chú `ponytail:`); nhiều máy chủ thì vẫn an toàn nhờ UPDATE có điều kiện | Giữ đúng hành vi xếp hàng trong một tiến trình |
+| D-037 | `@JsonInclude(NON_NULL)` ở `PartView`, `StockViews.Issue/IssueLine` | `[property: JsonIgnore(Condition = WhenWritingNull)]` trên đúng các trường có thể null của các view đó | Giữ hình dạng JSON (giá vốn biến mất khi không có quyền) |
+| D-038 | Chuỗi số trong nhật ký/thông báo (vd. tổng báo giá) | `CultureInfo.DefaultThreadCurrentCulture = InvariantCulture`; định dạng tiền "2.160.000 đ" vẫn dùng vi-VN như `String.format(vi-VN)` | Không phụ thuộc culture máy chủ |
+| D-039 | `BigDecimal.setScale(2/1, HALF_UP)` trong báo cáo (giữ số chữ số thập phân: 4.50, 50.0) | `Math.Round(…, AwayFromZero) + 0.00m/0.0m` | `decimal` .NET giữ scale khi cộng, JSON ra đúng 4.50 |
+| D-040 | Hộp thông báo: Java đọc danh sách và số chưa đọc song song | Một lô hai câu (`ReadBatchAsync`) | Một vòng mạng |
+| D-041 | Link trong thông báo mới | Route React: `/dispatch`, `/dispatch#quotes`, `/dispatch#<mã>`, `/receptionist[#<mã>]`, `/technician[#<mã>]`, `/cashier#<mã>`, `/warehouse#stockout`, `/warehouse#parts`, `/portal` | Theo D-011; thông báo cũ (`*.html`) frontend tự dịch |
+| D-042 | Giai đoạn 4 thấy health/route sai/Actuator và HTTP security boundary khác Java; chủ dự án yêu cầu “sửa cho khớp tất cả” | `SpringSecurityBoundaryMiddleware` giữ hai SecurityFilterChain: public API theo URL/method, authentication trước dispatch, static denyAll, bearer chỉ `/api/**`, prefix case-sensitive; health có groups. Giữ Soopi/React routes/assets và OpenAPI dev đã chốt | 28 GET contract status/body/Content-Type khớp Java; chưa cho phép login/ghi DB để nghiệm thu toàn bộ |
+| D-043 | Đối chiếu sâu JSON/validation/Payment bằng thư viện trong WAR, không DB | Dùng tên field/enum case-sensitive và ordinal enum hợp lệ như Jackson; giữ scalar coercion/nullable/date đã kiểm, Instant ghi nhóm 3/6/9 chữ số. Port Java isBlank/trim ở domain và báo giá/thu tiền/yêu cầu; Email theo Hibernate 9.1.3; Pattern full-match. Payment constructor giữ scale/tiền lẻ, chuẩn hóa note; EF read converter chỉ bỏ scale số nguyên như @PostLoad | 100 quan sát oracle + 45 unit test đạt. Không đổi schema/package/xác thực. DateTimeOffset 100ns/decimal có giới hạn kiểu, chưa tuyên bố tương đương mọi giá trị |
+| D-044 | Raw fieldErrors đổi thứ tự giữa framework và giữa hai lần khởi động Java | Giữ raw snapshot/diff; chỉ checker so fieldErrors của VALIDATION_FAILED/400 theo multiset, giữ duplicates và mọi field/message; không sort JSON app hoặc mảng nghiệp vụ. Body null trả fieldErrors rỗng như Java | Chứng minh 6/16 case Java tự đổi thứ tự; self-check bắt thiếu/thừa lỗi, đổi message/status/trường khác. 44 HTTP case đạt nội dung; 4 raw order-only diff ở lần cuối |
+
+## Giai đoạn 3 — cách triển khai theo yêu cầu Ponytail
+
+- React Router + 10 trang TSX giữ markup và CSS cũ; module JavaScript giữ xử lý bảng/form động.
+  Điều hướng giữa trang tải lại tài liệu như cũ, tab giữ hash. Chưa chuyển các bảng động sang React state.
+- Trình xử lý trang được nạp sẵn và gắn đồng bộ trước paint để form không submit GET khi module tới trễ.
+  Hồi quy tải chậm login và browser 49 kiểm tra đã đạt. Giới hạn: bundle JS 601,57 kB (gzip 149,51 kB).
+- `fetch` dùng base URL từ `VITE_API_BASE_URL`, credentials include; auth vẫn theo phương án đã chốt.
+  Không thêm thư viện UI/state/HTTP hay thay đổi nghiệp vụ.
+- ASP.NET phục vụ build cùng origin và chỉ fallback HTML cho 10 route UI; URL API sai vẫn trả Problem Details.
+- Kiểm tra ghi ở frontend dùng API giả lập; DB thật chỉ GET. Không phải xác nhận tương đương giai đoạn 4.

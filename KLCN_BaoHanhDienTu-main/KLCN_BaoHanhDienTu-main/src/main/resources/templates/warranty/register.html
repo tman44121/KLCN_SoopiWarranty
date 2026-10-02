@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng Ký & Kích Hoạt Bảo Hành – LongManLoc</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/css/home.css}" />
+    <style>
+        .warranty-hero-banner {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0d9488 100%);
+            color: #ffffff;
+            padding: 50px 24px 70px 24px;
+            text-align: center;
+        }
+
+        .breadcrumb-text {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+        .breadcrumb-text a {
+            color: #38bdf8;
+        }
+
+        .warranty-title {
+            font-size: 38px;
+            font-weight: 900;
+            margin-bottom: 14px;
+            letter-spacing: -0.5px;
+        }
+
+        .warranty-subtitle {
+            font-size: 15px;
+            color: #cbd5e1;
+            max-width: 680px;
+            margin: 0 auto 24px auto;
+            line-height: 1.6;
+        }
+
+        .hero-badges-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .hero-badge-pill {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .method-cards-section {
+            max-width: 1200px;
+            margin: -40px auto 40px auto;
+            padding: 0 24px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .method-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            cursor: pointer;
+        }
+
+        .method-card:hover {
+            transform: translateY(-4px);
+            border-color: #0d9488;
+        }
+
+        .method-card.active-method {
+            border: 2px solid #0d9488;
+            box-shadow: 0 10px 30px rgba(13, 148, 136, 0.15);
+        }
+
+        .method-card-badge {
+            align-self: flex-start;
+            background: #0d9488;
+            color: #ffffff;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .method-icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: #ccfbf1;
+            color: #0d9488;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 14px;
+        }
+
+        .method-card-title {
+            font-size: 17px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        .method-card-desc {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .btn-method-action {
+            width: 100%;
+            padding: 10px;
+            border-radius: 50px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #0f172a;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-method-action.primary {
+            background: #0d9488;
+            color: #ffffff;
+            border: none;
+        }
+
+        .register-main-container {
+            max-width: 1200px;
+            margin: 0 auto 60px auto;
+            padding: 0 24px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .form-card-panel {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 32px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+        }
+
+        .tab-switcher-pills {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 50px;
+            margin-bottom: 28px;
+            width: fit-content;
+            gap: 4px;
+        }
+
+        .tab-pill-btn {
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #64748b;
+            border: none;
+            background: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .tab-pill-btn.active {
+            background: #ffffff;
+            color: #0f172a;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        .sidebar-benefits-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 28px;
+            height: fit-content;
+        }
+
+        .sidebar-title {
+            font-size: 17px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        .benefit-item-row {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .benefit-icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .benefit-text h5 {
+            font-size: 13px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 2px;
+        }
+
+        .benefit-text p {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .support-box-white {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .support-box-title {
+            font-size: 11px;
+            font-weight: 800;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .support-phone-num {
+            font-size: 20px;
+            font-weight: 900;
+            color: #0d9488;
+            margin-bottom: 6px;
+        }
+
+        @media (max-width: 900px) {
+            .method-cards-section {
+                grid-template-columns: 1fr;
+            }
+            .register-main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================================
+         HEADER & NAVBAR
+         ============================================================================ -->
+    <header class="navbar-header">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <div class="brand-icon-box">LML</div>
+                <div class="brand-text">
+                    <span class="brand-title">LongManLoc</span>
+                    <span class="brand-subtitle">E-WARRANTY BASE</span>
+                </div>
+            </a>
+
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Trang chủ</a></li>
+                <li><a th:href="@{/Warranty/Register}" class="nav-link active">Đăng ký bảo hành</a></li>
+                <li><a th:href="@{/Warranty/History}" class="nav-link">Lịch sử bảo hành</a></li>
+                <li><a th:href="@{/Warranty/Lookup}" class="nav-link">Tra cứu tiến độ</a></li>
+            </ul>
+
+            <div class="nav-right-actions">
+                <div class="phone-contact-pill">
+                    <span>📞</span> 0339.477.939
+                </div>
+                <a th:href="@{/Warranty/Register}" class="btn-primary-teal">
+                    Đăng ký bảo hành
+                </a>
+
+                <!-- User Authenticated Profile Widget -->
+                <div class="user-profile-menu" id="userProfileMenu" onclick="toggleProfileDropdown(event)" sec:authorize="isAuthenticated()">
+                    <div class="user-avatar-circle" th:text="${userFullName != null ? #strings.substring(userFullName, 0, 1).toUpperCase() : #strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="user-name-text" th:text="${userFullName != null ? userFullName : #authentication.name}">Nguyễn Văn A</span>
+                    <span style="font-size: 10px; color: #64748b;">▼</span>
+
+                    <div class="profile-dropdown-content" onclick="event.stopPropagation()">
+                        <div class="profile-dropdown-header">
+                            <div class="user-avatar-circle" style="width: 38px; height: 38px; font-size: 15px;" th:text="${userFullName != null ? #strings.substring(userFullName, 0, 1).toUpperCase() : #strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                            <div>
+                                <div class="dropdown-user-name" th:text="${userFullName != null ? userFullName : #authentication.name}">Nguyễn Văn A</div>
+                                <div class="dropdown-user-role">Khách hàng thành viên</div>
+                            </div>
+                        </div>
+
+                        <a th:href="@{/Account/Profile}" class="profile-dropdown-item">
+                            <span>👤</span> Thông tin cá nhân
+                        </a>
+                        <a th:href="@{/Account/ChangePassword}" class="profile-dropdown-item">
+                            <span>🔑</span> Đổi mật khẩu
+                        </a>
+                        <a th:href="@{/Warranty/History}" class="profile-dropdown-item">
+                            <span>📋</span> Lịch sử bảo hành
+                        </a>
+                        
+                        <div style="height: 1px; background: #f1f5f9; margin: 6px 0;"></div>
+
+                        <form th:action="@{/Account/Logout}" method="post" style="margin: 0;">
+                            <button type="submit" class="profile-dropdown-item logout-item">
+                                <span>🚪</span> Đăng xuất
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- If Anonymous: Login link -->
+                <a th:href="@{/Account/Login}" class="btn-secondary-white" sec:authorize="isAnonymous()">
+                    Đăng nhập
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============================================================================
+         HERO BANNER SECTION
+         ============================================================================ -->
+    <section class="warranty-hero-banner">
+        <div class="breadcrumb-text">
+            <a href="/">Trang chủ</a> / <span>Đăng Ký & Kích Hoạt Bảo Hành</span>
+        </div>
+        <h1 class="warranty-title">Đăng Ký & Kích Hoạt Bảo Hành Điện Tử</h1>
+        <p class="warranty-subtitle">
+            Kích hoạt thời hạn bảo hành chính hãng, yêu cầu sửa chữa và quản lý lịch sử bảo trì thiết bị 100% trực tuyến nhanh chóng, bảo mật.
+        </p>
+        <div class="hero-badges-row">
+            <div class="hero-badge-pill">🛡️ Bảo hành chính hãng 100%</div>
+            <div class="hero-badge-pill">⚡ Kích hoạt tức thì sau 30 giây</div>
+            <div class="hero-badge-pill">☁️ Quản lý đám mây trọn đời</div>
+        </div>
+    </section>
+
+    <!-- ============================================================================
+         3 METHOD CARDS
+         ============================================================================ -->
+    <div class="method-cards-section">
+        <div class="method-card" th:classappend="${warrantyRegisterModel.formMode == 'ACTIVATE' ? 'active-method' : ''}" onclick="window.location.href='/Warranty/Register?mode=ACTIVATE'">
+            <div>
+                <span class="method-card-badge">⚡ Kích hoạt mới</span>
+                <div class="method-icon-box">🏷️</div>
+                <h3 class="method-card-title">Kích Hoạt Serial / IMEI</h3>
+                <p class="method-card-desc">Nhập số Serial/IMEI in trên vỏ hộp hoặc thân máy để kích hoạt hạn bảo hành chính hãng cho thiết bị mới mua.</p>
+            </div>
+            <a th:href="@{/Warranty/Register(mode='ACTIVATE')}" class="btn-method-action primary">📝 Kích hoạt thiết bị</a>
+        </div>
+
+        <div class="method-card" th:classappend="${warrantyRegisterModel.formMode == 'ONLINE_REQUEST' ? 'active-method' : ''}" onclick="window.location.href='/Warranty/Register?mode=ONLINE_REQUEST'">
+            <div>
+                <span class="method-card-badge" style="background: #0284c7;">🔧 Yêu cầu trực tuyến</span>
+                <div class="method-icon-box" style="background: #e0f2fe; color: #0284c7;">🛠️</div>
+                <h3 class="method-card-title">Gửi Yêu Cầu Sửa Chữa</h3>
+                <p class="method-card-desc">Thiết bị gặp sự cố kỹ thuật? Gửi yêu cầu kiểm tra trực tuyến để trạm dịch vụ điều phối kỹ thuật viên tiếp nhận xử lý ngay.</p>
+            </div>
+            <a th:href="@{/Warranty/Register(mode='ONLINE_REQUEST')}" class="btn-method-action">🔧 Gửi yêu cầu sửa chữa</a>
+        </div>
+
+        <div class="method-card" onclick="window.location.href='/Warranty/Lookup'">
+            <div>
+                <div class="method-icon-box" style="background: #fef3c7; color: #d97706;">🔍</div>
+                <h3 class="method-card-title">Tra Cứu Tiến Độ</h3>
+                <p class="method-card-desc">Tra cứu tình trạng bảo hành hoặc theo dõi tiến độ phiếu tiếp nhận sửa chữa theo thời gian thực.</p>
+            </div>
+            <a th:href="@{/Warranty/Lookup}" class="btn-method-action">🔍 Tra cứu ngay</a>
+        </div>
+    </div>
+
+    <!-- ============================================================================
+         MAIN FORM & SIDEBAR SECTION
+         ============================================================================ -->
+    <main class="register-main-container">
+        
+        <!-- Left Form Card -->
+        <div class="form-card-panel">
+            
+            <div class="tab-switcher-pills">
+                <a th:href="@{/Warranty/Register(mode='ACTIVATE')}" class="tab-pill-btn" th:classappend="${warrantyRegisterModel.formMode == 'ACTIVATE' ? 'active' : ''}">
+                    📝 Kích Hoạt Bảo Hành Mới
+                </a>
+                <a th:href="@{/Warranty/Register(mode='ONLINE_REQUEST')}" class="tab-pill-btn" th:classappend="${warrantyRegisterModel.formMode == 'ONLINE_REQUEST' ? 'active' : ''}">
+                    🔧 Yêu Cầu Bảo Hành / Sửa Chữa
+                </a>
+                <a th:href="@{/Warranty/Lookup}" class="tab-pill-btn">
+                    🔍 Tra Cứu
+                </a>
+            </div>
+
+            <!-- Success / Error Alert -->
+            <div th:if="${successMessage}" style="background: #ecfdf5; color: #047857; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 600; margin-bottom: 24px; border: 1px solid #a7f3d0; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <span>✅</span> <span th:text="${successMessage}">Đăng ký thành công!</span>
+                </div>
+                <a th:href="@{/Warranty/History}" class="btn-primary-teal" style="font-size: 11px; padding: 5px 12px;">
+                    Xem lịch sử →
+                </a>
+            </div>
+
+            <div th:if="${errorMessage}" style="background: #fef2f2; color: #b91c1c; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 600; margin-bottom: 24px; border: 1px solid #fecaca; display: flex; align-items: center; gap: 8px;">
+                <span>⚠️</span> <span th:text="${errorMessage}">Đã có lỗi xảy ra!</span>
+            </div>
+
+            <!-- Form Inputs -->
+            <form th:action="@{/Warranty/Register}" th:object="${warrantyRegisterModel}" method="post">
+                <input type="hidden" th:field="*{formMode}" id="formModeInput" />
+
+                <!-- SECTION 1: THÔNG TIN SẢN PHẨM -->
+                <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span style="background: #0d9488; color: #ffffff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;">1</span>
+                    <span>Thông Tin Thiết Bị & Sản Phẩm</span>
+                </div>
+
+                <div class="form-row-group">
+                    <label for="serialNumber">Số Serial / IMEI *</label>
+                    <div class="input-with-button">
+                        <input type="text" id="serialNumber" th:field="*{serialNumber}" placeholder="Ví dụ: LML-88939-2026VN hoặc 354812109876540" required />
+                    </div>
+                    <div th:if="${#fields.hasErrors('serialNumber')}" style="color: #dc2626; font-size: 12px; margin-top: 4px;" th:errors="*{serialNumber}"></div>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Mã Serial/IMEI in trên thân máy, tem niêm phong hoặc vỏ hộp sản phẩm.</div>
+                </div>
+
+                <div class="two-inputs-grid form-row-group">
+                    <div>
+                        <label for="productName">Tên sản phẩm / Model *</label>
+                        <input type="text" id="productName" th:field="*{productName}" class="regular-input" placeholder="Ví dụ: Máy Lọc Nước RO Thông Minh LML Prime" required />
+                    </div>
+                    <div>
+                        <label for="maHang">Hãng sản xuất</label>
+                        <select id="maHang" th:field="*{maHang}" class="regular-input" style="background: #f8fafc;">
+                            <option value="">-- Chọn Hãng Sản Xuất --</option>
+                            <option th:each="h : ${hangList}" th:value="${h.id}" th:text="${h.name}">Apple</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- CHẾ ĐỘ 1: KÍCH HOẠT (ACTIVATE) -->
+                <div th:if="${warrantyRegisterModel.formMode == 'ACTIVATE'}">
+                    <div class="two-inputs-grid form-row-group">
+                        <div>
+                            <label for="purchaseDate">Ngày mua hàng *</label>
+                            <input type="date" id="purchaseDate" th:field="*{purchaseDate}" class="regular-input" />
+                        </div>
+                        <div>
+                            <label for="dealerName">Đại lý / Điểm bán ủy quyền</label>
+                            <input type="text" id="dealerName" th:field="*{dealerName}" class="regular-input" placeholder="Ví dụ: Cửa hàng LML Store hoặc Điện Máy Xanh" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHẾ ĐỘ 2: YÊU CẦU SỬA CHỮA (ONLINE_REQUEST) -->
+                <div th:if="${warrantyRegisterModel.formMode == 'ONLINE_REQUEST'}">
+                    <div class="form-row-group">
+                        <label for="moTaLoi">Mô tả triệu chứng hư hỏng / Yêu cầu xử lý *</label>
+                        <textarea id="moTaLoi" th:field="*{moTaLoi}" class="regular-input" rows="3" placeholder="Mô tả cụ thể hiện tượng: ví dụ máy không lên nguồn, màn hình sọc, máy lọc nước rò rỉ..."></textarea>
+                    </div>
+
+                    <div class="two-inputs-grid form-row-group">
+                        <div>
+                            <label for="maTram">Trạm dịch vụ mong muốn tiếp nhận</label>
+                            <select id="maTram" th:field="*{maTram}" class="regular-input">
+                                <option th:each="tr : ${tramList}" th:value="${tr.id}" th:text="${tr.name}">Trạm TP.HCM</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="thoiGianMongMuon">Khung giờ mong muốn</label>
+                            <input type="text" id="thoiGianMongMuon" th:field="*{thoiGianMongMuon}" class="regular-input" placeholder="Ví dụ: Sáng thứ 7 (9:00 - 11:30)" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: THÔNG TIN KHÁCH HÀNG -->
+                <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 24px 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                    <span style="background: #0d9488; color: #ffffff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;">2</span>
+                    <span>Thông Tin Chủ Sở Hữu (Tài Khoản)</span>
+                </div>
+
+                <div class="two-inputs-grid form-row-group">
+                    <div>
+                        <label for="fullName">Họ và tên khách hàng *</label>
+                        <input type="text" id="fullName" th:field="*{fullName}" class="regular-input" placeholder="Nguyễn Văn A" required />
+                    </div>
+                    <div>
+                        <label for="phone">Số điện thoại liên hệ *</label>
+                        <input type="text" id="phone" th:field="*{phone}" class="regular-input" placeholder="0339477939" required />
+                    </div>
+                </div>
+
+                <div class="two-inputs-grid form-row-group">
+                    <div>
+                        <label for="email">Email nhận chứng nhận điện tử</label>
+                        <input type="email" id="email" th:field="*{email}" class="regular-input" placeholder="example@email.com" />
+                    </div>
+                    <div>
+                        <label for="address">Địa chỉ giao nhận tận nơi</label>
+                        <input type="text" id="address" th:field="*{address}" class="regular-input" placeholder="Số nhà, đường, phường, quận, TP" />
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary-teal" style="width: 100%; font-size: 15px; padding: 14px; margin-top: 16px; border-radius: 12px;">
+                    <span th:if="${warrantyRegisterModel.formMode == 'ONLINE_REQUEST'}">🚀 Gửi Yêu Cầu Sửa Chữa Ngay</span>
+                    <span th:unless="${warrantyRegisterModel.formMode == 'ONLINE_REQUEST'}">🛡️ Kích Hoạt Bảo Hành Điện Tử Ngay</span>
+                </button>
+
+            </form>
+
+        </div>
+
+        <!-- Right Sidebar Benefits -->
+        <aside class="sidebar-benefits-card">
+            <h4 class="sidebar-title">🛡️ Quyền Lợi Bảo Hành LML</h4>
+            <p style="font-size: 12px; color: #64748b; margin-bottom: 20px; line-height: 1.5;">
+                Nền tảng bảo hành điện tử tiêu chuẩn bảo mật đám mây giúp bạn quản lý bảo hành thiết bị tiện lợi nhất.
+            </p>
+
+            <div class="benefit-item-row">
+                <div class="benefit-icon-box">⏱️</div>
+                <div class="benefit-text">
+                    <h5>Kích hoạt tức thì</h5>
+                    <p>Chứng nhận số có hiệu lực ngay lập tức, lưu trữ đám mây an toàn.</p>
+                </div>
+            </div>
+
+            <div class="benefit-item-row">
+                <div class="benefit-icon-box">🛡️</div>
+                <div class="benefit-text">
+                    <h5>Linh kiện chính hãng 100%</h5>
+                    <p>Cam kết phụ tùng thay thế nguồn gốc xuất xứ minh bạch từ nhà máy.</p>
+                </div>
+            </div>
+
+            <div class="benefit-item-row">
+                <div class="benefit-icon-box">📄</div>
+                <div class="benefit-text">
+                    <h5>Theo dõi tiến độ trực tiếp</h5>
+                    <p>Cập nhật trạng thái từng bước kiểm tra, sửa chữa và hẹn trả máy.</p>
+                </div>
+            </div>
+
+            <div class="support-box-white">
+                <div class="support-box-title">TỔNG ĐÀI HỖ TRỢ KÍCH HOẠT</div>
+                <div class="support-phone-num">📞 0339.477.939</div>
+                <div style="font-size: 11px; color: #64748b; margin-bottom: 12px;">Làm việc: 8:00 - 17:30 (Thứ 2 đến Thứ 7)</div>
+                <a href="tel:0339477939" class="btn-primary-teal" style="width: 100%; font-size: 13px; padding: 8px;">
+                    💬 Gọi Hỗ Trợ Ngay
+                </a>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- ============================================================================
+         FOOTER
+         ============================================================================ -->
+    <footer class="footer-section">
+        <div class="footer-container">
+            <div class="footer-col-about">
+                <div class="footer-brand">
+                    <div class="brand-icon-box">LML</div>
+                    <span class="footer-brand-title">LongManLoc Service</span>
+                </div>
+                <p class="footer-desc">
+                    Hệ thống trạm dịch vụ bảo hành và sửa chữa điện tử, điện máy tiêu chuẩn quốc tế.
+                </p>
+            </div>
+            <div class="footer-col-links">
+                <h4 class="footer-col-title">Dịch Vụ</h4>
+                <ul class="footer-links-ul">
+                    <li><a th:href="@{/Warranty/Register}">Đăng ký bảo hành</a></li>
+                    <li><a th:href="@{/Warranty/History}">Lịch sử bảo hành</a></li>
+                    <li><a th:href="@{/Warranty/Lookup}">Tra cứu tiến độ</a></li>
+                </ul>
+            </div>
+            <div class="footer-col-links">
+                <h4 class="footer-col-title">Tài Khoản</h4>
+                <ul class="footer-links-ul">
+                    <li><a th:href="@{/Account/Profile}">Thông tin cá nhân</a></li>
+                    <li><a th:href="@{/Account/ChangePassword}">Đổi mật khẩu</a></li>
+                    <li><a th:href="@{/Account/Login}">Đăng nhập</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom-strip">
+            <div>© 2026 LongManLoc E-Warranty. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script th:src="@{/js/main.js}"></script>
+</body>
+</html>

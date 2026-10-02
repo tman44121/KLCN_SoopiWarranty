@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trang chủ – LongManLoc E-WARRANTY BASE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/css/home.css}" />
+</head>
+<body>
+
+    <!-- ============================================================================
+         HEADER & NAVBAR
+         ============================================================================ -->
+    <header class="navbar-header">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <div class="brand-icon-box">LML</div>
+                <div class="brand-text">
+                    <span class="brand-title">LongManLoc</span>
+                    <span class="brand-subtitle">E-WARRANTY BASE</span>
+                </div>
+            </a>
+
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link active">Trang chủ</a></li>
+                <li><a th:href="@{/Warranty/Register}" class="nav-link">Đăng ký bảo hành</a></li>
+                <li><a th:href="@{/Warranty/History}" class="nav-link">Lịch sử bảo hành</a></li>
+                <li><a th:href="@{/Warranty/Lookup}" class="nav-link">Tra cứu tiến độ</a></li>
+                <li><a href="#about" class="nav-link">Giới thiệu</a></li>
+                <li><a href="#contact" class="nav-link">Liên hệ</a></li>
+            </ul>
+
+            <div class="nav-right-actions">
+                <div class="phone-contact-pill">
+                    <span>📞</span> 0339.477.939
+                </div>
+                <a th:href="@{/Warranty/Register}" class="btn-primary-teal">
+                    Đăng ký bảo hành
+                </a>
+
+                <!-- User Authenticated Profile Widget with Click Dropdown Window -->
+                <div class="user-profile-menu" id="userProfileMenu" onclick="toggleProfileDropdown(event)" sec:authorize="isAuthenticated()">
+                    <div class="user-avatar-circle" th:text="${userFullName != null ? #strings.substring(userFullName, 0, 1).toUpperCase() : #strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="user-name-text" th:text="${userFullName != null ? userFullName : #authentication.name}">Nguyễn Văn A</span>
+                    <span style="font-size: 10px; color: #64748b;">▼</span>
+
+                    <!-- Dropdown Popup Window -->
+                    <div class="profile-dropdown-content" onclick="event.stopPropagation()">
+                        <div class="profile-dropdown-header">
+                            <div class="user-avatar-circle" style="width: 38px; height: 38px; font-size: 15px;" th:text="${userFullName != null ? #strings.substring(userFullName, 0, 1).toUpperCase() : #strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                            <div>
+                                <div class="dropdown-user-name" th:text="${userFullName != null ? userFullName : #authentication.name}">Nguyễn Văn A</div>
+                                <div class="dropdown-user-role">Khách hàng thành viên</div>
+                            </div>
+                        </div>
+
+                        <a th:href="@{/Account/Profile}" class="profile-dropdown-item">
+                            <span>👤</span> Thông tin cá nhân
+                        </a>
+                        <a th:href="@{/Account/ChangePassword}" class="profile-dropdown-item">
+                            <span>🔑</span> Đổi mật khẩu
+                        </a>
+                        <a th:href="@{/Warranty/History}" class="profile-dropdown-item">
+                            <span>📋</span> Lịch sử bảo hành
+                        </a>
+                        
+                        <div style="height: 1px; background: #f1f5f9; margin: 6px 0;"></div>
+
+                        <form th:action="@{/Account/Logout}" method="post" style="margin: 0;">
+                            <button type="submit" class="profile-dropdown-item logout-item">
+                                <span>🚪</span> Đăng xuất
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- If Anonymous: Login link -->
+                <a th:href="@{/Account/Login}" class="btn-secondary-white" sec:authorize="isAnonymous()">
+                    Đăng nhập
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============================================================================
+         HERO BANNER SECTION
+         ============================================================================ -->
+    <section class="hero-section">
+        <div class="hero-bg-glow"></div>
+        <div class="hero-grid-container">
+            
+            <!-- Left Column: Copy & CTA for Retail Customers -->
+            <div class="hero-left-content">
+                <div class="hero-badge-tag">
+                    ● THẺ BẢO HÀNH ĐIỆN TỬ DÀNH CHO KHÁCH HÀNG
+                </div>
+                <h1 class="hero-headline">
+                    Tra Cứu & Quản Lý Bảo Hành Sản Phẩm
+                </h1>
+                <p class="hero-description">
+                    Dễ dàng theo dõi thời hạn bảo hành, lịch sử sửa chữa, tiến độ thay thế linh kiện và nhận hỗ trợ kỹ thuật trực tiếp cho các thiết bị cá nhân của bạn.
+                </p>
+
+                <a th:href="@{/Account/Register}" class="btn-primary-teal" style="font-size: 15px; padding: 14px 28px;">
+                    📅 Kích hoạt bảo hành ngay
+                </a>
+
+                <div class="hero-stats-row">
+                    <div class="hero-stat-item">
+                        <h3 th:text="${totalCustomers != null ? #numbers.formatInteger(totalCustomers, 1, 'COMMA') : '500,000'}">500,000</h3>
+                        <p>Khách hàng tin dùng</p>
+                    </div>
+                    <div class="hero-stat-item">
+                        <h3>99.8%</h3>
+                        <p>Độ hài lòng dịch vụ</p>
+                    </div>
+                    <div class="hero-stat-item">
+                        <h3>80%</h3>
+                        <p>Tiết kiệm thời gian tra cứu</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Personal Device Repair Tracking Board (REPLACED DISPATCH BOARD) -->
+            <div class="hero-dashboard-card" id="tracking">
+                <div class="card-top-bar">
+                    <div class="dots-wrapper">
+                        <span class="dot-red"></span>
+                        <span class="dot-yellow"></span>
+                        <span class="dot-green"></span>
+                    </div>
+                    <div class="sla-pill-badge">SLA Đúng Hạn 98.4%</div>
+                </div>
+
+                <div class="dash-stats-grid">
+                    <div class="dash-stat-box">
+                        <div class="dash-stat-label">Tổng sản phẩm đã lưu</div>
+                        <div class="dash-stat-val" th:text="${#numbers.formatInteger(totalTickets != null ? totalTickets : 1428, 1, 'COMMA')}">1,428</div>
+                        <div class="dash-stat-sub">✓ Đã kích hoạt</div>
+                    </div>
+                    <div class="dash-stat-box">
+                        <div class="dash-stat-label">Mã QR quét 24h</div>
+                        <div class="dash-stat-val">3,892</div>
+                        <div class="dash-stat-sub">↗ Tra cứu nhanh</div>
+                    </div>
+                    <div class="dash-stat-box">
+                        <div class="dash-stat-label">Thời gian xử lý TB</div>
+                        <div class="dash-stat-val">3.2 Giờ</div>
+                        <div class="dash-stat-sub">✓ Nhanh chóng</div>
+                    </div>
+                </div>
+
+                <div class="dispatch-section-header">
+                    <div>
+                        <span class="dispatch-title">🛠️ TIẾN ĐỘ SỬA CHỮA THIẾT BỊ CỦA BẠN</span>
+                        <div style="font-size: 10px; color: #64748b; font-weight: 500;">Theo dõi trực tiếp theo thời gian thực</div>
+                    </div>
+                    <a th:href="@{/Warranty/History}" class="dispatch-link">Xem tất cả thiết bị →</a>
+                </div>
+
+                <!-- Customer Device Tickets List -->
+                <div class="dispatch-ticket-list">
+                    <div th:each="ticket, iterStat : ${customerTickets}" class="ticket-item-row" style="align-items: flex-start;">
+                        <div class="ticket-info-left" style="flex: 1;">
+                            <div class="ticket-type-icon" th:classappend="${iterStat.index == 0 ? 'type-qr' : (iterStat.index == 1 ? 'type-sr' : 'type-ok')}"
+                                 th:text="${iterStat.index == 0 ? 'QR' : (iterStat.index == 1 ? 'SR' : 'OK')}">QR</div>
+                            <div style="flex: 1;">
+                                <div class="ticket-title">
+                                    <span th:text="${ticket.maPhieu}">#TN-2026-0908-001</span> – <strong th:text="${ticket.tenThietBi}">MacBook Air M2 2023</strong>
+                                </div>
+                                <div class="ticket-meta" style="margin-top: 2px;">
+                                    <span th:text="${ticket.soSerial}">SN: C02G789X01</span> • <span th:text="${ticket.tenTram}">Trạm LML TP.HCM</span>
+                                </div>
+                                <div style="font-size: 10px; color: #475569; margin-top: 3px; font-weight: 500;">
+                                    📝 <span th:text="${ticket.moTaLoi}">Yêu cầu: Thay pin chính hãng & vệ sinh máy</span>
+                                </div>
+                                <div style="font-size: 10px; color: #0d9488; margin-top: 2px; font-weight: 600;">
+                                    📅 Tiếp nhận: <span th:text="${ticket.ngayTiepNhanStr}">08/09/2026</span> | Hẹn trả: <span th:text="${ticket.ngayHenTraStr}">10/09/2026</span>
+                                </div>
+                            </div>
+                        </div>
+                        <span th:class="${ticket.trangThaiClass}" th:text="${ticket.trangThaiBadgeText}" style="margin-top: 4px;">Đang sửa chữa</span>
+                    </div>
+                </div>
+
+                <div class="qr-scan-spark-card">
+                    <div>
+                        <div class="qr-spark-title">Lượt quét tem QR bảo hành cá nhân</div>
+                        <div class="qr-spark-val">30 lượt/tuần</div>
+                    </div>
+                    <svg width="100" height="28" viewBox="0 0 100 28" fill="none">
+                        <path d="M0 24C15 24 25 18 35 14C45 10 55 16 65 10C75 4 85 8 100 2" stroke="#10b981" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ============================================================================
+         BRANDS RIBBON SECTION
+         ============================================================================ -->
+    <section class="brands-ribbon-section">
+        <div class="brands-header-text">
+            SẢN PHẨM CHÍNH HÃNG ĐƯỢC BẢO HÀNH TẠI CÁC THƯƠNG HIỆU LỚN
+        </div>
+        <div class="brands-flex-container">
+            <div class="brand-pill">PETROLIMEX</div>
+            <div class="brand-pill">ELMICH</div>
+            <div class="brand-pill">TÂM DƯỢC</div>
+            <div class="brand-pill">BWELL PHARMA</div>
+            <div class="brand-pill">CAO HÙNG ELEC</div>
+            <div class="brand-pill">HÙNG VIỆT TECH</div>
+            <div class="brand-pill">BIGFARM</div>
+            <div class="brand-pill">HOÀ THIÊN PHÚ</div>
+        </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION: DÀNH CHO KHÁCH HÀNG
+         ============================================================================ -->
+    <section class="management-section">
+        <div class="section-container">
+            <h2 class="section-title">Dành Cho Khách Hàng Tra Cứu & Bảo Hành</h2>
+            <p class="section-subtitle">
+                Hệ thống tra cứu điện tử thông minh giúp người tiêu dùng theo dõi minh bạch tiến độ sửa chữa và chính sách bảo hành chính hãng.
+            </p>
+
+            <div class="management-grid">
+                
+                <!-- Left Column: Feature Cards -->
+                <div class="management-left-cards">
+                    <div class="feature-info-card">
+                        <div class="card-icon-circle">⚠️</div>
+                        <h3 class="feature-card-heading">Ghi nhận sự cố & Yêu cầu bảo hành online</h3>
+                        <p class="feature-card-body">
+                            Ghi nhận đầy đủ lịch sử hỏng hóc theo mã serial/QR sản phẩm. Tự động kiểm tra thời hạn bảo hành và đề xuất phương án xử lý nhanh chóng, minh bạch.
+                        </p>
+                        <div class="card-tags-flex">
+                            <span>✓ Tra cứu mã QR</span>
+                            <span>✓ Nhật ký sửa chữa</span>
+                        </div>
+                    </div>
+
+                    <div class="feature-info-card">
+                        <div class="card-icon-circle">📈</div>
+                        <h3 class="feature-card-heading">Theo dõi tiến độ & Chi phí rõ ràng</h3>
+                        <p class="feature-card-body">
+                            Cập nhật trạng thái từng bước xử lý ca sửa chữa, thông báo báo giá linh kiện rõ ràng và hẹn ngày trả máy chính xác.
+                        </p>
+                        <div class="card-tags-flex">
+                            <span>✓ Minh bạch chi phí</span>
+                            <span>✓ Nhắc lịch tự động</span>
+                        </div>
+                    </div>
+
+                    <a th:href="@{/Account/Register}" class="btn-primary-teal" style="align-self: flex-start; margin-top: 10px;">
+                        🌐 Kích hoạt thẻ bảo hành ngay
+                    </a>
+                </div>
+
+                <!-- Right Column: Real-time Dark Monitoring Panel -->
+                <div class="dark-monitoring-panel">
+                    <div class="dark-panel-header">
+                        <div class="dark-panel-tag">GIÁM SÁT TRUNG TÂM</div>
+                        <h3 class="dark-panel-title">Tiến độ phục vụ thời gian thực</h3>
+                    </div>
+
+                    <div class="sla-progress-box">
+                        <div class="sla-progress-label">
+                            <span>Tỷ lệ sửa chữa đúng hạn (SLA)</span>
+                            <span style="color:#34d399; font-weight:800;">96.6%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: 96.6%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="dark-metrics-grid">
+                        <div class="dark-metric-card">
+                            <div class="dark-metric-title">Số lượt tra cứu tháng</div>
+                            <div class="dark-metric-num">124.5k</div>
+                            <div class="dark-metric-sub">↗ Tăng trưởng tra cứu</div>
+                        </div>
+                        <div class="dark-metric-card">
+                            <div class="dark-metric-title">Độ hài lòng (CSAT)</div>
+                            <div class="dark-metric-num">4.9 / 5.0</div>
+                            <div class="dark-metric-sub">Dựa trên 2.4k phản hồi</div>
+                        </div>
+                    </div>
+
+                    <div class="repair-breakdown-box">
+                        <div class="breakdown-title">PHÂN LUỒNG TÌNH TRẠNG THIẾT BỊ ĐANG XỬ LÝ</div>
+                        <div class="multi-color-bar">
+                            <div class="bar-seg-delivered">55%</div>
+                            <div class="bar-seg-operating">30%</div>
+                            <div class="bar-seg-received">15%</div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:10px; color:#94a3b8;">
+                            <span>● Đã hoàn thành</span>
+                            <span>● Đang sửa chữa</span>
+                            <span>● Mới tiếp nhận</span>
+                        </div>
+                    </div>
+
+                    <div class="dark-panel-footer">
+                        <span>Cập nhật tự động mỗi 10 giây</span>
+                        <span style="color:#34d399;">🟢 Trực tuyến</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION: CÁC CHỨC NĂNG CHÍNH FOR CUSTOMERS
+         ============================================================================ -->
+    <section class="features-main-section" id="features">
+        <div class="section-container">
+            <div class="center-header">
+                <h2 class="section-title">Tiện Ích Bảo Hành Cho Bạn</h2>
+                <p class="section-subtitle" style="margin: 0 auto;">
+                    Dễ dàng theo dõi tiến độ sửa chữa, bảo trì và tra cứu linh kiện chính hãng.
+                </p>
+            </div>
+
+            <div class="three-cols-grid">
+                
+                <!-- Card 1 -->
+                <div class="main-feature-card">
+                    <div class="main-feature-icon">📇</div>
+                    <h3 class="feature-title-h3">Thẻ bảo hành điện tử QR</h3>
+                    <p class="feature-desc-p">
+                        Quét mã QR tem dán trên thiết bị để xem thông tin bảo hành mọi lúc mọi nơi mà không cần lưu giữ giấy tờ hay hóa đơn mua hàng.
+                    </p>
+                    <ul class="checklist-ul">
+                        <li><span class="check-mark">✓</span> Tra cứu ngay bằng camera điện thoại</li>
+                        <li><span class="check-mark">✓</span> Gửi thông báo Zalo/SMS tiến độ ca sửa</li>
+                        <li><span class="check-mark">✓</span> Lưu trữ thông tin thẻ bảo hành trọn đời</li>
+                    </ul>
+                    <a href="#" class="card-action-link">Tìm hiểu thẻ bảo hành →</a>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="main-feature-card">
+                    <div class="main-feature-icon">📦</div>
+                    <h3 class="feature-title-h3">Lịch sử thay thế linh kiện</h3>
+                    <p class="feature-desc-p">
+                        Xem chi tiết danh mục phụ tùng, linh kiện đã được kỹ thuật viên thay thế với đầy đủ tem nhãn chính hãng và mã serial kiểm định.
+                    </p>
+                    <ul class="checklist-ul">
+                        <li><span class="check-mark">✓</span> Linh kiện 100% chính hãng</li>
+                        <li><span class="check-mark">✓</span> Minh bạch bảng giá sửa chữa</li>
+                        <li><span class="check-mark">✓</span> Kiểm tra Serial/Lot phụ tùng thay mới</li>
+                    </ul>
+                    <a href="#" class="card-action-link">Xem mẫu lịch sử →</a>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="main-feature-card">
+                    <div class="main-feature-icon">🏢</div>
+                    <h3 class="feature-title-h3">Mạng lưới trạm toàn quốc</h3>
+                    <p class="feature-desc-p">
+                        Được hỗ trợ tại hơn 63 trạm dịch vụ ủy quyền trên toàn quốc. Đăng ký bảo hành tại trạm hoặc gửi nhận thiết bị tận nhà.
+                    </p>
+                    <ul class="checklist-ul">
+                        <li><span class="check-mark">✓</span> Tìm trạm bảo hành gần bạn nhất</li>
+                        <li><span class="check-mark">✓</span> Tiếp nhận thiết bị tận nơi</li>
+                        <li><span class="check-mark">✓</span> Kỹ thuật viên hỗ trợ nhiệt tình 24/7</li>
+                    </ul>
+                    <a href="#" class="card-action-link">Tìm trạm gần nhất →</a>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION: MỞ RỘNG CÁC TÍNH NĂNG THEO YÊU CẦU
+         ============================================================================ -->
+    <section class="extend-features-section">
+        <div class="section-container">
+            <div class="center-header">
+                <h2 class="section-title">Trải Nghiệm Dịch Vụ Thông Minh</h2>
+                <p class="section-subtitle" style="margin: 0 auto;">
+                    Tích hợp các kênh chăm sóc khách hàng tiện lợi qua Zalo OA, Web App và Tem QR chống giả.
+                </p>
+            </div>
+
+            <div class="three-cols-grid">
+                
+                <div class="main-feature-card" style="background:#ffffff;">
+                    <div class="main-feature-icon">📱</div>
+                    <h3 class="feature-title-h3">Tra Cứu Qua Zalo / Web App</h3>
+                    <p class="feature-desc-p">
+                        Nhận tin nhắn tự động khi thiết bị được tiếp nhận, bắt đầu sửa chữa hoặc sẵn sàng bàn giao ngay trên ứng dụng Zalo cá nhân.
+                    </p>
+                    <div class="card-tags-flex">
+                        <span>📍 Thông báo nhắc lịch tự động</span>
+                    </div>
+                </div>
+
+                <div class="main-feature-card" style="background:#ffffff;">
+                    <div class="main-feature-icon">🔳</div>
+                    <h3 class="feature-title-h3">Kích Hoạt Bảo Hành Tem QR</h3>
+                    <p class="feature-desc-p">
+                        Chỉ cần mở camera điện thoại quét mã QR dán trên thân máy để kích hoạt ngay gói bảo hành chính hãng từ 12 - 36 tháng.
+                    </p>
+                    <div class="card-tags-flex">
+                        <span>🛡️ Tem chống hàng giả công nghệ cao</span>
+                    </div>
+                </div>
+
+                <div class="main-feature-card" style="background:#ffffff;">
+                    <div class="main-feature-icon">👨‍🔧</div>
+                    <h3 class="feature-title-h3">Đánh Giá Phục Vụ KTV</h3>
+                    <p class="feature-desc-p">
+                        Trực tiếp chấm điểm 5 sao và để lại phản hồi về thái độ phục vụ, chất lượng sửa chữa của kỹ thuật viên sau khi nhận lại thiết bị.
+                    </p>
+                    <div class="card-tags-flex">
+                        <span>📊 Minh bạch & Lắng nghe ý kiến</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION: QUY TRÌNH TRIỂN KHAI 4 BƯỚC FOR CUSTOMERS
+         ============================================================================ -->
+    <section class="process-steps-section">
+        <div class="section-container">
+            <div class="center-header">
+                <h2 class="section-title">Quy Trình Bảo Hành Dễ Dàng 4 Bước</h2>
+                <p class="section-subtitle" style="margin: 0 auto;">
+                    Minh bạch từng bước từ lúc tiếp nhận tới khi nhận lại sản phẩm hoàn chỉnh.
+                </p>
+            </div>
+
+            <div class="steps-four-grid">
+                
+                <div class="step-process-card">
+                    <div>
+                        <div class="step-top-head">
+                            <span class="step-num-big">01</span>
+                            <div class="step-icon-bg">🎧</div>
+                        </div>
+                        <h4 class="step-card-title">Đăng ký / Kích hoạt</h4>
+                        <p class="step-card-desc">Nhập số điện thoại, mã serial hoặc quét mã QR dán trên sản phẩm để mở thẻ bảo hành.</p>
+                    </div>
+                    <div class="step-time-tag">Thực hiện: 1 phút</div>
+                </div>
+
+                <div class="step-process-card">
+                    <div>
+                        <div class="step-top-head">
+                            <span class="step-num-big">02</span>
+                            <div class="step-icon-bg">💻</div>
+                        </div>
+                        <h4 class="step-card-title">Gửi thiết bị bảo hành</h4>
+                        <p class="step-card-desc">Mang máy đến trạm ủy quyền gần nhất hoặc yêu cầu nhận máy tận nhà.</p>
+                    </div>
+                    <div class="step-time-tag">Tiếp nhận nhanh chóng</div>
+                </div>
+
+                <div class="step-process-card">
+                    <div>
+                        <div class="step-top-head">
+                            <span class="step-num-big">03</span>
+                            <div class="step-icon-bg">🚀</div>
+                        </div>
+                        <h4 class="step-card-title">Theo dõi tiến độ online</h4>
+                        <p class="step-card-desc">Kiểm tra trực tiếp từng công đoạn chẩn đoán, thay linh kiện và test máy trên web app.</p>
+                    </div>
+                    <div class="step-time-tag">Cập nhật 24/7</div>
+                </div>
+
+                <div class="step-process-card">
+                    <div>
+                        <div class="step-top-head">
+                            <span class="step-num-big">04</span>
+                            <div class="step-icon-bg">⚙️</div>
+                        </div>
+                        <h4 class="step-card-title">Nhận lại máy & Nghiệm thu</h4>
+                        <p class="step-card-desc">Kiểm tra thiết bị, ký biên bản nghiệm thu điện tử và tiếp tục bảo hành trọn đời.</p>
+                    </div>
+                    <div class="step-time-tag">An tâm sử dụng</div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION: FAQ ACCORDION FOR RETAIL CUSTOMERS
+         ============================================================================ -->
+    <section class="faq-accordion-section">
+        <div class="section-container">
+            <div class="center-header">
+                <h2 class="section-title">Vấn Đề Thường Gặp Của Khách Hàng</h2>
+                <p class="section-subtitle" style="margin: 0 auto;">
+                    Giải đáp các thắc mắc về tra cứu bảo hành, thời gian sửa chữa và chính sách linh kiện.
+                </p>
+            </div>
+
+            <div class="faq-max-width">
+                
+                <div class="faq-item-card active">
+                    <button class="faq-question-btn" onclick="toggleFaq(this)">
+                        <span>Tôi có bắt buộc phải giữ lại hóa đơn giấy để bảo hành không?</span>
+                        <span class="faq-arrow">▲</span>
+                    </button>
+                    <div class="faq-answer-body">
+                        Không cần thiết. Bạn chỉ cần quét mã QR tem bảo hành dán trên sản phẩm hoặc cung cấp số điện thoại đã đăng ký. Hệ thống e-Warranty của LongManLoc đã lưu trữ đầy đủ thông tin bảo hành điện tử của bạn.
+                    </div>
+                </div>
+
+                <div class="faq-item-card">
+                    <button class="faq-question-btn" onclick="toggleFaq(this)">
+                        <span>Làm sao để tôi theo dõi tiến độ sửa chữa thiết bị của mình?</span>
+                        <span class="faq-arrow">▼</span>
+                    </button>
+                    <div class="faq-answer-body">
+                        Ngay sau khi đăng nhập tài khoản, bạn sẽ thấy ngay bảng "Tiến độ sửa chữa thiết bị của bạn" ngay tại trang chủ với đầy đủ chi tiết mã phiếu, tình trạng xử lý và ngày hẹn trả máy.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================================
+         CTA DARK BANNER FOR CUSTOMERS
+         ============================================================================ -->
+    <section class="cta-banner-section">
+        <div class="cta-dark-card">
+            <div class="cta-tag-pill">🛡️ An tâm sử dụng sản phẩm chính hãng</div>
+            <h2 class="cta-heading">Bảo Vệ Quyền Lợi Bảo Hành Sản Phẩm Của Bạn Trọn Đời</h2>
+            <p class="cta-subtitle">
+                Kích hoạt thẻ bảo hành điện tử ngay hôm nay để theo dõi tiến độ sửa chữa dễ dàng và không lo thất lạc hóa đơn giấy.
+            </p>
+
+            <div class="cta-buttons-row">
+                <a th:href="@{/Account/Register}" class="btn-primary-teal" style="font-size: 15px; padding: 14px 28px;">
+                    🟢 Kích hoạt bảo hành ngay
+                </a>
+                <a href="tel:0339477939" class="btn-secondary-glass">
+                    📞 Hotline hỗ trợ 0339.477.939
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================================
+         FOOTER
+         ============================================================================ -->
+    <footer class="footer-main">
+        <div class="footer-container">
+            
+            <div class="footer-brand-col">
+                <a href="/" class="nav-brand">
+                    <div class="brand-icon-box">LML</div>
+                    <div class="brand-text">
+                        <span class="brand-title" style="color:#fff;">LongManLoc</span>
+                        <span class="brand-subtitle">E-WARRANTY BASE</span>
+                    </div>
+                </a>
+                <p>Nền tảng quản lý Bảo hành điện tử thông minh, toàn diện cho người tiêu dùng và khách hàng cá nhân.</p>
+                <div class="footer-contact-info">
+                    <div>📍 140 Lê Trọng Tấn, Tây Thạnh, Hồ Chí Minh</div>
+                    <div>📞 0339.477.939</div>
+                    <div>✉️ info@gmail.com</div>
+                    <div>⏰ Thứ 2 - Thứ 6: 8:30 - 17:30 | Thứ 7: 8:30 - 12:00</div>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="footer-col-title">VỀ LONGMANLOC</h4>
+                <ul class="footer-links-ul">
+                    <li><a href="#">Giới thiệu</a></li>
+                    <li><a href="#">Tính năng</a></li>
+                    <li><a href="#tracking">Tra cứu tiến độ</a></li>
+                    <li><a href="#">Tin tức</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="footer-col-title">DỊCH VỤ KHÁCH HÀNG</h4>
+                <ul class="footer-links-ul">
+                    <li><a href="#">Tra cứu thẻ QR thông minh</a></li>
+                    <li><a href="#">Tin nhắn Zalo OA chăm sóc</a></li>
+                    <li><a href="#">Kiểm tra tem chống giả</a></li>
+                    <li><a href="#">Gửi yêu cầu bảo hành tận nơi</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="footer-col-title">HỖ TRỢ & PHÁP LÝ</h4>
+                <ul class="footer-links-ul">
+                    <li><a href="#">Chính sách bảo mật</a></li>
+                    <li><a href="#">Điều khoản sử dụng</a></li>
+                    <li><a href="#">Trung tâm hỗ trợ kỹ thuật</a></li>
+                    <li><a href="#">Hướng dẫn kích hoạt QR</a></li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="footer-bottom-strip">
+            <div>© 2026 LongManLoc Platform. All rights reserved.</div>
+            <div>Powered by LongManLoc Platform</div>
+        </div>
+    </footer>
+
+    <!-- Interactive JS for Accordion and Profile Dropdown -->
+    <script th:src="@{/js/main.js}"></script>
+    <script>
+        function toggleFaq(btn) {
+            const card = btn.parentElement;
+            const arrow = btn.querySelector('.faq-arrow');
+            const isActive = card.classList.contains('active');
+            
+            document.querySelectorAll('.faq-item-card').forEach(item => {
+                item.classList.remove('active');
+                const a = item.querySelector('.faq-arrow');
+                if (a) a.textContent = '▼';
+            });
+
+            if (!isActive) {
+                card.classList.add('active');
+                arrow.textContent = '▲';
+            }
+        }
+    </script>
+</body>
+</html>

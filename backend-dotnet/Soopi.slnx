@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Soopi.Api/Soopi.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Soopi.Tests/Soopi.Tests.csproj" />
+  </Folder>
+</Solution>

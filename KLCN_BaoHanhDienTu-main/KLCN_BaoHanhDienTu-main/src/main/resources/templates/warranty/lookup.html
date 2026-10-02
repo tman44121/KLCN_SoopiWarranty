@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tra Cứu Bảo Hành & Tiến Độ Sửa Chữa – LongManLoc</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/css/home.css}" />
+</head>
+<body>
+
+    <!-- ============================================================================
+         HEADER & NAVBAR
+         ============================================================================ -->
+    <header class="navbar-header">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <div class="brand-icon-box">LML</div>
+                <div class="brand-text">
+                    <span class="brand-title">LongManLoc</span>
+                    <span class="brand-subtitle">E-WARRANTY BASE</span>
+                </div>
+            </a>
+
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Trang chủ</a></li>
+                <li><a th:href="@{/Warranty/Register}" class="nav-link">Đăng ký bảo hành</a></li>
+                <li><a th:href="@{/Warranty/History}" class="nav-link">Lịch sử bảo hành</a></li>
+                <li><a th:href="@{/Warranty/Lookup}" class="nav-link active">Tra cứu tiến độ</a></li>
+            </ul>
+
+            <div class="nav-right-actions">
+                <div class="phone-contact-pill">
+                    <span>📞</span> 0339.477.939
+                </div>
+                <a th:href="@{/Warranty/Register}" class="btn-primary-teal">
+                    Đăng ký bảo hành
+                </a>
+
+                <!-- If Authenticated: Dropdown -->
+                <div class="user-profile-menu" id="userProfileMenu" onclick="toggleProfileDropdown(event)" sec:authorize="isAuthenticated()">
+                    <div class="user-avatar-circle" th:text="${userFullName != null ? #strings.substring(userFullName, 0, 1).toUpperCase() : #strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="user-name-text" th:text="${userFullName != null ? userFullName : #authentication.name}">Nguyễn Văn A</span>
+                    <span style="font-size: 10px; color: #64748b;">▼</span>
+
+                    <div class="profile-dropdown-content" onclick="event.stopPropagation()">
+                        <div class="profile-dropdown-header">
+                            <div class="user-avatar-circle" style="width: 38px; height: 38px; font-size: 15px;" th:text="${userFullName != null ? #strings.substring(userFullName, 0, 1).toUpperCase() : #strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                            <div>
+                                <div class="dropdown-user-name" th:text="${userFullName != null ? userFullName : #authentication.name}">Nguyễn Văn A</div>
+                                <div class="dropdown-user-role">Khách hàng thành viên</div>
+                            </div>
+                        </div>
+
+                        <a th:href="@{/Account/Profile}" class="profile-dropdown-item">
+                            <span>👤</span> Thông tin cá nhân
+                        </a>
+                        <a th:href="@{/Account/ChangePassword}" class="profile-dropdown-item">
+                            <span>🔑</span> Đổi mật khẩu
+                        </a>
+                        <a th:href="@{/Warranty/History}" class="profile-dropdown-item">
+                            <span>📋</span> Lịch sử bảo hành
+                        </a>
+                        
+                        <div style="height: 1px; background: #f1f5f9; margin: 6px 0;"></div>
+
+                        <form th:action="@{/Account/Logout}" method="post" style="margin: 0;">
+                            <button type="submit" class="profile-dropdown-item logout-item">
+                                <span>🚪</span> Đăng xuất
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- If Anonymous: Login link -->
+                <a th:href="@{/Account/Login}" class="btn-secondary-white" sec:authorize="isAnonymous()">
+                    Đăng nhập
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============================================================================
+         LOOKUP HERO SECTION
+         ============================================================================ -->
+    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0d9488 100%); color: #ffffff; padding: 60px 24px; text-align: center;">
+        <h1 style="font-size: 36px; font-weight: 900; margin-bottom: 12px; letter-spacing: -0.5px;">
+            Tra Cứu Bảo Hành & Tiến Độ Sửa Chữa
+        </h1>
+        <p style="font-size: 15px; color: #cbd5e1; max-width: 600px; margin: 0 auto 30px auto;">
+            Nhập số Serial, IMEI hoặc Mã phiếu tiếp nhận để kiểm tra thời hạn bảo hành chính hãng và tiến độ xử lý.
+        </p>
+
+        <!-- Search Form -->
+        <form th:action="@{/Warranty/Lookup}" method="get" style="max-width: 600px; margin: 0 auto; display: flex; gap: 10px;">
+            <input type="text" name="keyword" th:value="${keyword}" placeholder="Ví dụ: LML-88939-2026VN hoặc #TN-2026-0917-00421" 
+                   style="flex: 1; padding: 14px 20px; border-radius: 12px; border: none; font-size: 15px; outline: none;" required />
+            <button type="submit" class="btn-primary-teal" style="padding: 14px 28px; font-size: 15px; border-radius: 12px; white-space: nowrap;">
+                🔍 Tra Cứu Ngay
+            </button>
+        </form>
+    </div>
+
+    <!-- ============================================================================
+         PAGE CONTENT: RESULT
+         ============================================================================ -->
+    <main class="page-container" style="margin-top: -30px;">
+        
+        <!-- Result Card -->
+        <div th:if="${lookupResult}" class="content-panel-card" style="box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+            
+            <div th:if="${lookupResult.found}">
+                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 18px; margin-bottom: 24px;">
+                    <div>
+                        <span style="font-size: 12px; font-weight: 800; color: #0d9488; text-transform: uppercase;">
+                            KẾT QUẢ TRA CỨU HỆ THỐNG
+                        </span>
+                        <h2 style="font-size: 22px; font-weight: 900; color: #0f172a; margin-top: 4px;" th:text="${lookupResult.productName}">
+                            Máy Lọc Nước RO Thông Minh LongManLoc
+                        </h2>
+                    </div>
+                    <span class="badge" th:classappend="${lookupResult.warrantyBadgeClass}" style="font-size: 13px; padding: 6px 16px;" th:text="${lookupResult.warrantyStatusBadge}">
+                        Chính hãng - Còn bảo hành
+                    </span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px;">
+                    <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Mã Serial / IMEI</div>
+                        <div style="font-size: 16px; font-weight: 800; color: #0f172a; font-family: monospace; margin-top: 4px;" th:text="${lookupResult.serialOrCode}">LML-88939-2026VN</div>
+                    </div>
+                    <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Hãng Sản Xuất</div>
+                        <div style="font-size: 16px; font-weight: 800; color: #0284c7; margin-top: 4px;" th:text="${lookupResult.brandName}">Panasonic</div>
+                    </div>
+                    <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Hạn Bảo Hành / Hẹn Trả</div>
+                        <div style="font-size: 16px; font-weight: 800; color: #0d9488; margin-top: 4px;" th:text="${lookupResult.expiryDate}">15/01/2028</div>
+                    </div>
+                </div>
+
+                <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 14px 20px; color: #065f46; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span>✅</span> <span th:text="${lookupResult.message}">Sản phẩm đã được xác thực bảo hành chính hãng trên hệ thống.</span>
+                    </div>
+                    <a th:href="@{/Warranty/Register(mode='ONLINE_REQUEST', serial=${lookupResult.serialOrCode})}" class="btn-primary-teal" style="font-size: 12px; padding: 6px 14px;">
+                        🔧 Yêu cầu bảo hành / sửa chữa
+                    </a>
+                </div>
+            </div>
+
+            <!-- Not Found -->
+            <div th:unless="${lookupResult.found}" style="text-align: center; padding: 40px 20px;">
+                <div style="font-size: 40px; margin-bottom: 12px;">🔍</div>
+                <h3 style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Không tìm thấy kết quả</h3>
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;" th:text="${lookupResult.message}">
+                    Không tìm thấy thông tin thiết bị hoặc phiếu tiếp nhận với mã đã nhập.
+                </p>
+                <a th:href="@{/Warranty/Register}" class="btn-primary-teal" style="font-size: 13px; padding: 10px 22px;">
+                    📝 Đăng Ký / Kích Hoạt Thiết Bị Mới
+                </a>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- ============================================================================
+         FOOTER
+         ============================================================================ -->
+    <footer class="footer-section">
+        <div class="footer-container">
+            <div class="footer-col-about">
+                <div class="footer-brand">
+                    <div class="brand-icon-box">LML</div>
+                    <span class="footer-brand-title">LongManLoc Service</span>
+                </div>
+                <p class="footer-desc">
+                    Hệ thống trạm dịch vụ bảo hành và sửa chữa điện tử, điện máy tiêu chuẩn quốc tế.
+                </p>
+            </div>
+            <div class="footer-col-links">
+                <h4 class="footer-col-title">Dịch Vụ</h4>
+                <ul class="footer-links-ul">
+                    <li><a th:href="@{/Warranty/Register}">Đăng ký bảo hành</a></li>
+                    <li><a th:href="@{/Warranty/History}">Lịch sử bảo hành</a></li>
+                    <li><a th:href="@{/Warranty/Lookup}">Tra cứu tiến độ</a></li>
+                </ul>
+            </div>
+            <div class="footer-col-links">
+                <h4 class="footer-col-title">Tài Khoản</h4>
+                <ul class="footer-links-ul">
+                    <li><a th:href="@{/Account/Profile}">Thông tin cá nhân</a></li>
+                    <li><a th:href="@{/Account/ChangePassword}">Đổi mật khẩu</a></li>
+                    <li><a th:href="@{/Account/Login}">Đăng nhập</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom-strip">
+            <div>© 2026 LongManLoc E-Warranty. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script th:src="@{/js/main.js}"></script>
+</body>
+</html>

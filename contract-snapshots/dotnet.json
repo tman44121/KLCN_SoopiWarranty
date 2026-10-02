@@ -1,0 +1,864 @@
+{
+  "/actuator/health": {
+    "status": 200,
+    "body": {
+      "groups": [
+        "liveness",
+        "readiness"
+      ],
+      "status": "UP"
+    },
+    "content_type": "application/json"
+  },
+  "/api/v1/portal/catalog": {
+    "status": 200,
+    "body": {
+      "categories": [
+        {
+          "code": "PHONE",
+          "name": "Điện thoại",
+          "deviceTypes": [
+            {
+              "code": "SMARTPHONE",
+              "name": "Điện thoại",
+              "identifierType": "IMEI"
+            }
+          ]
+        },
+        {
+          "code": "LAPTOP_TABLET",
+          "name": "Laptop/Tablet",
+          "deviceTypes": [
+            {
+              "code": "LAPTOP",
+              "name": "Laptop",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "TABLET",
+              "name": "Tablet",
+              "identifierType": "SERIAL"
+            }
+          ]
+        },
+        {
+          "code": "TV_MONITOR",
+          "name": "TV/Monitor",
+          "deviceTypes": [
+            {
+              "code": "MONITOR",
+              "name": "Monitor",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "TV",
+              "name": "TV",
+              "identifierType": "SERIAL"
+            }
+          ]
+        },
+        {
+          "code": "AUDIO_WEARABLE",
+          "name": "Audio/Wearables",
+          "deviceTypes": [
+            {
+              "code": "SMARTWATCH",
+              "name": "Smartwatch",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "TWS_EARBUDS",
+              "name": "Tai nghe TWS",
+              "identifierType": "SERIAL"
+            }
+          ]
+        },
+        {
+          "code": "HOME_APPLIANCE",
+          "name": "Thiết bị gia dụng",
+          "deviceTypes": [
+            {
+              "code": "AIR_CONDITIONER",
+              "name": "Máy lạnh",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "FRIDGE_INVERTER",
+              "name": "Tủ lạnh inverter",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "WASHER_FRONT",
+              "name": "Máy giặt lồng ngang",
+              "identifierType": "SERIAL"
+            }
+          ]
+        },
+        {
+          "code": "SMALL_ELECTRONICS",
+          "name": "Điện tử nhỏ",
+          "deviceTypes": [
+            {
+              "code": "GAME_CONSOLE",
+              "name": "Máy chơi game",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "PRINTER",
+              "name": "Máy in",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "ROUTER",
+              "name": "Router",
+              "identifierType": "SERIAL"
+            }
+          ]
+        }
+      ],
+      "identifierTypes": [
+        "IMEI",
+        "SERIAL"
+      ],
+      "stations": [
+        {
+          "code": "HCM",
+          "name": "Trạm HCM",
+          "address": "TP. Hồ Chí Minh"
+        }
+      ]
+    },
+    "content_type": "application/json"
+  },
+  "/api/v1/auth/me": {
+    "status": 401,
+    "body": {
+      "type": "https://longmanloc.vn/errors/AUTH_TOKEN_INVALID",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 401,
+      "detail": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "instance": "/api/v1/auth/me",
+      "code": "AUTH_TOKEN_INVALID",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/api/v1/customers": {
+    "status": 401,
+    "body": {
+      "type": "https://longmanloc.vn/errors/AUTH_TOKEN_INVALID",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 401,
+      "detail": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "instance": "/api/v1/customers",
+      "code": "AUTH_TOKEN_INVALID",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/api/v1/portal/my/profile": {
+    "status": 401,
+    "body": {
+      "type": "https://longmanloc.vn/errors/AUTH_TOKEN_INVALID",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 401,
+      "detail": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "instance": "/api/v1/portal/my/profile",
+      "code": "AUTH_TOKEN_INVALID",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/api/v1/tickets": {
+    "status": 401,
+    "body": {
+      "type": "https://longmanloc.vn/errors/AUTH_TOKEN_INVALID",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 401,
+      "detail": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "instance": "/api/v1/tickets",
+      "code": "AUTH_TOKEN_INVALID",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/api/v1/files/1": {
+    "status": 401,
+    "body": {
+      "type": "https://longmanloc.vn/errors/AUTH_TOKEN_INVALID",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 401,
+      "detail": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "instance": "/api/v1/files/1",
+      "code": "AUTH_TOKEN_INVALID",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/api/v1/migration-not-found": {
+    "status": 401,
+    "body": {
+      "type": "https://longmanloc.vn/errors/AUTH_TOKEN_INVALID",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 401,
+      "detail": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "instance": "/api/v1/migration-not-found",
+      "code": "AUTH_TOKEN_INVALID",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/actuator/info": {
+    "status": 403,
+    "body": null,
+    "content_type": ""
+  },
+  "/actuator/health/liveness": {
+    "status": 403,
+    "body": null,
+    "content_type": ""
+  },
+  "/actuator/health/readiness": {
+    "status": 403,
+    "body": null,
+    "content_type": ""
+  },
+  "/api/v1/auth/login": {
+    "status": 405,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 405,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/api/v1/portal/lookup": {
+    "status": 405,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 405,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/portal/lookup",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/api/v1/portal/warranty-requests": {
+    "status": 401,
+    "body": {
+      "type": "https://longmanloc.vn/errors/AUTH_TOKEN_INVALID",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 401,
+      "detail": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "instance": "/api/v1/portal/warranty-requests",
+      "code": "AUTH_TOKEN_INVALID",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/api/v1/auth/mobile/otp": {
+    "status": 405,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 405,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/mobile/otp",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/migration-not-found": {
+    "status": 403,
+    "body": null,
+    "content_type": ""
+  },
+  "/js/migration-not-found.js": {
+    "status": 404,
+    "body": {
+      "type": "https://longmanloc.vn/errors/NOT_FOUND",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 404,
+      "detail": "Không tìm thấy dữ liệu yêu cầu.",
+      "instance": "/js/migration-not-found.js",
+      "code": "NOT_FOUND",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/API/v1/portal/catalog": {
+    "status": 403,
+    "body": null,
+    "content_type": ""
+  },
+  "/JS/migration-not-found.js": {
+    "status": 403,
+    "body": null,
+    "content_type": ""
+  },
+  "/actuator/health [invalid bearer]": {
+    "status": 200,
+    "body": {
+      "groups": [
+        "liveness",
+        "readiness"
+      ],
+      "status": "UP"
+    },
+    "content_type": "application/json"
+  },
+  "/actuator/info [invalid bearer]": {
+    "status": 403,
+    "body": null,
+    "content_type": ""
+  },
+  "/api/v1/portal/catalog [invalid bearer]": {
+    "status": 401,
+    "body": {
+      "type": "https://longmanloc.vn/errors/AUTH_TOKEN_INVALID",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 401,
+      "detail": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "instance": "/api/v1/portal/catalog",
+      "code": "AUTH_TOKEN_INVALID",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/api/v1/migration-not-found [invalid bearer]": {
+    "status": 401,
+    "body": {
+      "type": "https://longmanloc.vn/errors/AUTH_TOKEN_INVALID",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 401,
+      "detail": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "instance": "/api/v1/migration-not-found",
+      "code": "AUTH_TOKEN_INVALID",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/api/v1/portal/catalog [bare bearer]": {
+    "status": 401,
+    "body": {
+      "type": "https://longmanloc.vn/errors/AUTH_TOKEN_INVALID",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 401,
+      "detail": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "instance": "/api/v1/portal/catalog",
+      "code": "AUTH_TOKEN_INVALID",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/api/v1/portal/catalog [empty bearer]": {
+    "status": 401,
+    "body": {
+      "type": "https://longmanloc.vn/errors/AUTH_TOKEN_INVALID",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 401,
+      "detail": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "instance": "/api/v1/portal/catalog",
+      "code": "AUTH_TOKEN_INVALID",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/api/v1/portal/catalog [malformed bearer]": {
+    "status": 401,
+    "body": {
+      "type": "https://longmanloc.vn/errors/AUTH_TOKEN_INVALID",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 401,
+      "detail": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "instance": "/api/v1/portal/catalog",
+      "code": "AUTH_TOKEN_INVALID",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "/api/v1/portal/catalog [non-bearer]": {
+    "status": 200,
+    "body": {
+      "categories": [
+        {
+          "code": "PHONE",
+          "name": "Điện thoại",
+          "deviceTypes": [
+            {
+              "code": "SMARTPHONE",
+              "name": "Điện thoại",
+              "identifierType": "IMEI"
+            }
+          ]
+        },
+        {
+          "code": "LAPTOP_TABLET",
+          "name": "Laptop/Tablet",
+          "deviceTypes": [
+            {
+              "code": "LAPTOP",
+              "name": "Laptop",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "TABLET",
+              "name": "Tablet",
+              "identifierType": "SERIAL"
+            }
+          ]
+        },
+        {
+          "code": "TV_MONITOR",
+          "name": "TV/Monitor",
+          "deviceTypes": [
+            {
+              "code": "MONITOR",
+              "name": "Monitor",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "TV",
+              "name": "TV",
+              "identifierType": "SERIAL"
+            }
+          ]
+        },
+        {
+          "code": "AUDIO_WEARABLE",
+          "name": "Audio/Wearables",
+          "deviceTypes": [
+            {
+              "code": "SMARTWATCH",
+              "name": "Smartwatch",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "TWS_EARBUDS",
+              "name": "Tai nghe TWS",
+              "identifierType": "SERIAL"
+            }
+          ]
+        },
+        {
+          "code": "HOME_APPLIANCE",
+          "name": "Thiết bị gia dụng",
+          "deviceTypes": [
+            {
+              "code": "AIR_CONDITIONER",
+              "name": "Máy lạnh",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "FRIDGE_INVERTER",
+              "name": "Tủ lạnh inverter",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "WASHER_FRONT",
+              "name": "Máy giặt lồng ngang",
+              "identifierType": "SERIAL"
+            }
+          ]
+        },
+        {
+          "code": "SMALL_ELECTRONICS",
+          "name": "Điện tử nhỏ",
+          "deviceTypes": [
+            {
+              "code": "GAME_CONSOLE",
+              "name": "Máy chơi game",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "PRINTER",
+              "name": "Máy in",
+              "identifierType": "SERIAL"
+            },
+            {
+              "code": "ROUTER",
+              "name": "Router",
+              "identifierType": "SERIAL"
+            }
+          ]
+        }
+      ],
+      "identifierTypes": [
+        "IMEI",
+        "SERIAL"
+      ],
+      "stations": [
+        {
+          "code": "HCM",
+          "name": "Trạm HCM",
+          "address": "TP. Hồ Chí Minh"
+        }
+      ]
+    },
+    "content_type": "application/json"
+  },
+  "/api/v1/portal/catalog [lowercase bearer]": {
+    "status": 401,
+    "body": {
+      "type": "https://longmanloc.vn/errors/AUTH_TOKEN_INVALID",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 401,
+      "detail": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+      "instance": "/api/v1/portal/catalog",
+      "code": "AUTH_TOKEN_INVALID",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login empty object": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "password",
+          "message": "must not be blank"
+        },
+        {
+          "field": "username",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login malformed JSON": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login null body": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login array body": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login string coercion": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "password",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login property case": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "password",
+          "message": "must not be blank"
+        },
+        {
+          "field": "username",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login boolean coercion": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "password",
+          "message": "must not be blank"
+        },
+        {
+          "field": "username",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login invalid boolean": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login NBSP": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "password",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST login em space": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/login",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "password",
+          "message": "must not be blank"
+        },
+        {
+          "field": "username",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST OTP empty object": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/mobile/otp",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "phone",
+          "message": "must not be blank"
+        },
+        {
+          "field": "purpose",
+          "message": "must not be null"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST OTP enum case": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/mobile/otp",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": []
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST OTP enum ordinal": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/mobile/otp",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "phone",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST register invalid email": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/mobile/register",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "otp",
+          "message": "must not be blank"
+        },
+        {
+          "field": "email",
+          "message": "must be a well-formed email address"
+        },
+        {
+          "field": "phone",
+          "message": "must not be blank"
+        },
+        {
+          "field": "password",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST register quoted email": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/mobile/register",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "otp",
+          "message": "must not be blank"
+        },
+        {
+          "field": "phone",
+          "message": "must not be blank"
+        },
+        {
+          "field": "password",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  },
+  "POST password reset empty object": {
+    "status": 400,
+    "body": {
+      "type": "https://longmanloc.vn/errors/VALIDATION_FAILED",
+      "title": "Yêu cầu không hợp lệ",
+      "status": 400,
+      "detail": "Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.",
+      "instance": "/api/v1/auth/mobile/password-reset",
+      "code": "VALIDATION_FAILED",
+      "correlationId": "stage4-readonly",
+      "fieldErrors": [
+        {
+          "field": "otp",
+          "message": "must not be blank"
+        },
+        {
+          "field": "phone",
+          "message": "must not be blank"
+        },
+        {
+          "field": "newPassword",
+          "message": "must not be blank"
+        }
+      ]
+    },
+    "content_type": "application/problem+json"
+  }
+}

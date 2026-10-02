@@ -1,0 +1,130 @@
+/* ==========================================================================
+   Design Tokens — LongManLoc Service Center
+   Nguồn: CLAUDE.md mục 3 (màu), 5 (typography), 6 (radius), 7 (elevation)
+   ========================================================================== */
+
+:root {
+  /* ---- Surfaces ---- */
+  --surface-page: #ffffff;
+  --surface-card: #ffffff;
+  --surface-sidebar: #ffffff;
+  --surface-header: #ffffff;
+  --surface-utility: #f8fafc; /* table header, toolbar, readonly, empty state, hover nhẹ */
+  --surface-inverse: #0f172a; /* nền tooltip */
+
+  /* ---- Borders ---- */
+  --border-universal: #e2e8f0;
+  --border-divider: #f1f5f9;
+
+  /* ---- Primary accent ---- */
+  --color-primary: #3573b3;
+  --color-primary-hover: #2a5c93;
+  --color-primary-focus-ring: #3573b3; /* viền focus bàn phím: ≥3:1 trên nền trắng và nền nhạt */
+  --color-primary-tint: #eaf1f8;
+  --color-primary-on-tint: #2a5c93; /* chữ trên nền --color-primary-tint: 6:1 (màu chính chỉ đạt 4,3:1) */
+  --color-primary-border: #c9d7e6; /* viền thẻ ứng viên khi di chuột */
+  --color-primary-wash: #fafcfe; /* nền thẻ ứng viên khi di chuột */
+
+  /* ---- Destructive ---- */
+  --color-destructive: #ad4d3f;
+  --color-destructive-hover: #8f3d32;
+  --color-destructive-tint: #fdf2f0;
+  --color-destructive-border: #f0d4cf; /* viền nút hủy/xóa ở trạng thái nghỉ */
+
+  /* ---- Status: success ---- */
+  --status-success-text: #166534;
+  --status-success-bg: #f0fdf4;
+  --status-success-border: #bbf7d0;
+
+  /* ---- Status: pending/warning ---- */
+  --status-warning-text: #854d0e;
+  --status-warning-bg: #fefce8;
+  --status-warning-border: #fef08a;
+
+  /* ---- Status: danger ---- */
+  --status-danger-text: #991b1b;
+  --status-danger-bg: #fef2f2;
+  --status-danger-border: #fecaca;
+
+  /* ---- Status: processing ---- */
+  --status-processing-text: #1d4ed8;
+  --status-processing-bg: #eff6ff;
+  --status-processing-border: #bfdbfe;
+
+  /* ---- Status: neutral ---- */
+  --status-neutral-text: #475569;
+  --status-neutral-bg: #f8fafc;
+  --status-neutral-border: #cbd5e1;
+
+  /* ---- Text roles ---- */
+  --text-strong: #0f172a; /* tiêu đề, số liệu, giá trị chính: 17:1 */
+  --text-default: #334155; /* đoạn văn, nội dung ô, nhãn trường: 10:1 */
+  --text-quiet: #475569; /* chữ phụ vẫn cần đọc kỹ: 7,5:1 */
+  --text-muted: #64748b; /* meta, nhãn cột, gợi ý; tối thiểu 12px: 4,8:1 */
+  --text-faint: #cbd5e1; /* chỉ biểu tượng trang trí, không dùng cho chữ */
+  --text-on-primary: #ffffff; /* chữ trên nền màu chính hoặc nền đậm */
+
+  /* ---- Charts (báo cáo) ---- */
+  --chart-series-1: var(--color-primary); /* một chuỗi: mọi cột/thanh cùng màu này */
+  --chart-series-2: #eb6834; /* phần thứ hai của thanh tỷ lệ; validator CVD với series 1: ΔE 20,5 */
+  --chart-grid: var(--border-divider);
+  --chart-baseline: var(--border-universal);
+
+  /* ---- Typography ---- */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "Roboto Mono", ui-monospace, monospace;
+
+  --text-h1-size: 18px;
+  --text-h1-weight: 700;
+  --text-h1-line: 24px;
+  --text-h1-color: var(--text-strong);
+
+  --text-h2-size: 15px;
+  --text-h2-weight: 600;
+  --text-h2-line: 20px;
+  --text-h2-color: var(--text-strong);
+
+  --text-body-size: 13px;
+  --text-body-weight: 400;
+  --text-body-line: 18px;
+  --text-body-color: var(--text-strong);
+
+  --text-table-header-size: 11px;
+  --text-table-header-weight: 600;
+  --text-table-header-color: var(--text-muted);
+  --text-table-header-tracking: 0.05em;
+
+  --text-micro-size: 12px;
+  --text-micro-weight: 500;
+  --text-micro-line: 16px;
+
+  /* ---- Corner radius ---- */
+  --radius-button: 4px;
+  --radius-input: 4px;
+  --radius-badge: 4px;
+  --radius-card: 6px;
+  --radius-table: 6px;
+  --radius-modal: 6px;
+  --radius-drawer: 6px;
+
+  /* ---- Elevation ---- */
+  --shadow-flyout: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-none: none;
+
+  /* ---- Layout ---- */
+  --sidebar-width: 260px;
+  --header-height: 64px;
+  --page-padding: 24px;
+  --section-spacing: 20px;
+  --card-padding: 16px;
+  --table-row-height: 38px;
+
+  /* ---- Z-index ---- */
+  --z-sidebar: 30;
+  --z-header: 40;
+  --z-sticky-table-header: 20;
+  --z-dropdown: 60;
+  --z-modal-overlay: 100;
+  --z-modal: 110;
+  --z-critical-modal: 120;
+}

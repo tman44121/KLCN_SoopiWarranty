@@ -1,0 +1,178 @@
+[
+  {
+    "case": "POST login empty object",
+    "first": [
+      {
+        "field": "username",
+        "message": "must not be blank"
+      },
+      {
+        "field": "password",
+        "message": "must not be blank"
+      }
+    ],
+    "second": [
+      {
+        "field": "password",
+        "message": "must not be blank"
+      },
+      {
+        "field": "username",
+        "message": "must not be blank"
+      }
+    ],
+    "same_errors_different_order": true
+  },
+  {
+    "case": "POST login boolean coercion",
+    "first": [
+      {
+        "field": "username",
+        "message": "must not be blank"
+      },
+      {
+        "field": "password",
+        "message": "must not be blank"
+      }
+    ],
+    "second": [
+      {
+        "field": "password",
+        "message": "must not be blank"
+      },
+      {
+        "field": "username",
+        "message": "must not be blank"
+      }
+    ],
+    "same_errors_different_order": true
+  },
+  {
+    "case": "POST OTP empty object",
+    "first": [
+      {
+        "field": "purpose",
+        "message": "must not be null"
+      },
+      {
+        "field": "phone",
+        "message": "must not be blank"
+      }
+    ],
+    "second": [
+      {
+        "field": "phone",
+        "message": "must not be blank"
+      },
+      {
+        "field": "purpose",
+        "message": "must not be null"
+      }
+    ],
+    "same_errors_different_order": true
+  },
+  {
+    "case": "POST register invalid email",
+    "first": [
+      {
+        "field": "phone",
+        "message": "must not be blank"
+      },
+      {
+        "field": "otp",
+        "message": "must not be blank"
+      },
+      {
+        "field": "password",
+        "message": "must not be blank"
+      },
+      {
+        "field": "email",
+        "message": "must be a well-formed email address"
+      }
+    ],
+    "second": [
+      {
+        "field": "phone",
+        "message": "must not be blank"
+      },
+      {
+        "field": "email",
+        "message": "must be a well-formed email address"
+      },
+      {
+        "field": "otp",
+        "message": "must not be blank"
+      },
+      {
+        "field": "password",
+        "message": "must not be blank"
+      }
+    ],
+    "same_errors_different_order": true
+  },
+  {
+    "case": "POST register quoted email",
+    "first": [
+      {
+        "field": "password",
+        "message": "must not be blank"
+      },
+      {
+        "field": "phone",
+        "message": "must not be blank"
+      },
+      {
+        "field": "otp",
+        "message": "must not be blank"
+      }
+    ],
+    "second": [
+      {
+        "field": "phone",
+        "message": "must not be blank"
+      },
+      {
+        "field": "password",
+        "message": "must not be blank"
+      },
+      {
+        "field": "otp",
+        "message": "must not be blank"
+      }
+    ],
+    "same_errors_different_order": true
+  },
+  {
+    "case": "POST password reset empty object",
+    "first": [
+      {
+        "field": "otp",
+        "message": "must not be blank"
+      },
+      {
+        "field": "newPassword",
+        "message": "must not be blank"
+      },
+      {
+        "field": "phone",
+        "message": "must not be blank"
+      }
+    ],
+    "second": [
+      {
+        "field": "otp",
+        "message": "must not be blank"
+      },
+      {
+        "field": "phone",
+        "message": "must not be blank"
+      },
+      {
+        "field": "newPassword",
+        "message": "must not be blank"
+      }
+    ],
+    "same_errors_different_order": true
+  }
+]

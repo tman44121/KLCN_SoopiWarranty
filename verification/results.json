@@ -1,0 +1,706 @@
+{
+  "endpoint_count": 114,
+  "routes_equal_after_parameter_normalization": true,
+  "security": {
+    "roles": 7,
+    "permissions": 39,
+    "role_matrix_equal": true,
+    "error_codes_and_statuses": 86
+  },
+  "tables": [
+    {
+      "table": "BangGiaDichVu",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs"
+      ]
+    },
+    {
+      "table": "BoDemMa",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/CodeGenerator.cs"
+      ]
+    },
+    {
+      "table": "ChiTietBaoGia",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/QuotationStore.cs",
+        "backend-dotnet/src/Soopi.Api/Domain/Quotations/Quotation.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/ReportService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Tickets/TicketWorkflowServices.cs"
+      ]
+    },
+    {
+      "table": "ChiTietNhapKho",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/InventoryStores.cs",
+        "backend-dotnet/src/Soopi.Api/Domain/Inventory/StockDocuments.cs"
+      ]
+    },
+    {
+      "table": "ChiTietXuatKho",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/InventoryStores.cs",
+        "backend-dotnet/src/Soopi.Api/Domain/Inventory/StockDocuments.cs"
+      ]
+    },
+    {
+      "table": "ChinhSachBaoHanh",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/ProductCatalog.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs"
+      ]
+    },
+    {
+      "table": "ChuyenTrangThaiHopLe",
+      "references": []
+    },
+    {
+      "table": "DanhMucNhan",
+      "references": []
+    },
+    {
+      "table": "GhiChuPhieu",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs"
+      ]
+    },
+    {
+      "table": "HangSanXuat",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/ProductCatalog.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs"
+      ]
+    },
+    {
+      "table": "HangSanXuat_NhomThietBi",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs"
+      ]
+    },
+    {
+      "table": "HoaDon_PhieuThu",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/AppDbContext.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Entities/Payment.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/ReportService.cs"
+      ]
+    },
+    {
+      "table": "KetQuaSuaChua",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/ReportService.cs"
+      ]
+    },
+    {
+      "table": "KhachHang",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/AppDbContext.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Entities/Account.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Entities/Customer.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/AccountStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/IdentityStores.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Customers/CustomerService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Files/AttachmentService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Portal/PortalServices.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Shared/NotificationService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Tickets/TicketWorkflowServices.cs"
+      ]
+    },
+    {
+      "table": "LichSuPhanCong",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs"
+      ]
+    },
+    {
+      "table": "LichSuTrangThai_ThietBi",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs"
+      ]
+    },
+    {
+      "table": "LinhKien",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/InventoryStores.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Quotations/QuotationServices.cs"
+      ]
+    },
+    {
+      "table": "LoaiThietBi",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/ProductCatalog.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/ReportService.cs"
+      ]
+    },
+    {
+      "table": "MaXacThucOTP",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/IdentityStores.cs"
+      ]
+    },
+    {
+      "table": "NhaCungCap",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/InventoryStores.cs"
+      ]
+    },
+    {
+      "table": "NhanVien",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/AppDbContext.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Entities/Account.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Entities/Customer.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/AccountStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/IdentityStores.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/StaffDirectory.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/ReportService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Shared/NotificationService.cs"
+      ]
+    },
+    {
+      "table": "NhatKyThaoTac",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/AuditQueryService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Shared/AuditService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Tickets/TicketQueryService.cs"
+      ]
+    },
+    {
+      "table": "NhomThietBi",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs"
+      ]
+    },
+    {
+      "table": "PhanCong",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs"
+      ]
+    },
+    {
+      "table": "PhieuBanGiao",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/ReportService.cs"
+      ]
+    },
+    {
+      "table": "PhieuBaoGia",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/QuotationStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs",
+        "backend-dotnet/src/Soopi.Api/Domain/Quotations/Quotation.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/ReportService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Tickets/TechnicianAndSearchServices.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Tickets/TicketWorkflowServices.cs"
+      ]
+    },
+    {
+      "table": "PhieuDieuChuyen",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/InventoryStores.cs",
+        "backend-dotnet/src/Soopi.Api/Domain/Inventory/StockDocuments.cs"
+      ]
+    },
+    {
+      "table": "PhieuKiemTra",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/ReportService.cs"
+      ]
+    },
+    {
+      "table": "PhieuNhapKho",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/InventoryStores.cs",
+        "backend-dotnet/src/Soopi.Api/Domain/Inventory/StockDocuments.cs"
+      ]
+    },
+    {
+      "table": "PhieuSuaChua",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/ReportService.cs"
+      ]
+    },
+    {
+      "table": "PhieuTiepNhan",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs",
+        "backend-dotnet/src/Soopi.Api/Domain/Tickets/Ticket.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Customers/CustomerService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Devices/DeviceService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Files/AttachmentService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Portal/PortalServices.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/ReportService.cs"
+      ]
+    },
+    {
+      "table": "PhieuXuatKho",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/InventoryStores.cs",
+        "backend-dotnet/src/Soopi.Api/Domain/Inventory/StockDocuments.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Tickets/TechnicianAndSearchServices.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Tickets/TicketWorkflowServices.cs"
+      ]
+    },
+    {
+      "table": "QuyenHan",
+      "references": []
+    },
+    {
+      "table": "RefreshToken",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/AppDbContext.cs",
+        "backend-dotnet/src/Soopi.Api/Controllers/Identity/AuthController.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Entities/RefreshToken.cs",
+        "backend-dotnet/src/Soopi.Api/DTOs/Identity/IdentityDtos.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Identity/AuthService.cs"
+      ]
+    },
+    {
+      "table": "SanPham",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/ProductCatalog.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/ReportService.cs"
+      ]
+    },
+    {
+      "table": "TaiKhoan",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/AppDbContext.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Entities/Account.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Entities/Customer.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/StaffDirectory.cs",
+        "backend-dotnet/src/Soopi.Api/Infrastructure/Security/SecurityVersionCache.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Shared/NotificationService.cs"
+      ]
+    },
+    {
+      "table": "TaiKhoan_VaiTro",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/AppDbContext.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Entities/Account.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/StaffDirectory.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/ReportService.cs"
+      ]
+    },
+    {
+      "table": "TepDinhKem",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/WarrantyRequestStore.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Files/AttachmentService.cs"
+      ]
+    },
+    {
+      "table": "ThietBi",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/AppDbContext.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Entities/Device.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/TicketStore.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Customers/CustomerService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/ReportService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Tickets/TicketWorkflowServices.cs"
+      ]
+    },
+    {
+      "table": "ThietBiNhanThongBao",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/PushDeviceStore.cs"
+      ]
+    },
+    {
+      "table": "ThongBao",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Services/Notifications/NotificationQueryService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Shared/NotificationService.cs"
+      ]
+    },
+    {
+      "table": "ThongBao_DaDoc",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Services/Notifications/NotificationQueryService.cs"
+      ]
+    },
+    {
+      "table": "TonKhoTheoKe",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs",
+        "backend-dotnet/src/Soopi.Api/Data/Stores/InventoryStores.cs"
+      ]
+    },
+    {
+      "table": "TramDichVu",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/CatalogStore.cs"
+      ]
+    },
+    {
+      "table": "VaiTro",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Services/Reporting/AuditQueryService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Shared/AuditService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Tickets/TicketQueryService.cs"
+      ]
+    },
+    {
+      "table": "VaiTro_QuyenHan",
+      "references": []
+    },
+    {
+      "table": "YeuCauBaoHanh",
+      "references": [
+        "backend-dotnet/src/Soopi.Api/Data/Stores/WarrantyRequestStore.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Files/AttachmentService.cs",
+        "backend-dotnet/src/Soopi.Api/Services/Tickets/TechnicianAndSearchServices.cs"
+      ]
+    }
+  ],
+  "java_artifact": {
+    "sha256": "b148262571576e3f4030e65a1332f55c0b293960653f52e61fb57a0c65e012d6",
+    "matching_resources": 38,
+    "sources_newer_than_war": [],
+    "limitation": "Resource equality and timestamps do not prove class bytecode matches every source."
+  },
+  "live": [
+    {
+      "path": "/actuator/health",
+      "java_status": 200,
+      "dotnet_status": 200,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/portal/catalog",
+      "java_status": 200,
+      "dotnet_status": 200,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/auth/me",
+      "java_status": 401,
+      "dotnet_status": 401,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/customers",
+      "java_status": 401,
+      "dotnet_status": 401,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/portal/my/profile",
+      "java_status": 401,
+      "dotnet_status": 401,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/tickets",
+      "java_status": 401,
+      "dotnet_status": 401,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/files/1",
+      "java_status": 401,
+      "dotnet_status": 401,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/migration-not-found",
+      "java_status": 401,
+      "dotnet_status": 401,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/actuator/info",
+      "java_status": 403,
+      "dotnet_status": 403,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/actuator/health/liveness",
+      "java_status": 403,
+      "dotnet_status": 403,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/actuator/health/readiness",
+      "java_status": 403,
+      "dotnet_status": 403,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/auth/login",
+      "java_status": 405,
+      "dotnet_status": 405,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/portal/lookup",
+      "java_status": 405,
+      "dotnet_status": 405,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/portal/warranty-requests",
+      "java_status": 401,
+      "dotnet_status": 401,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/auth/mobile/otp",
+      "java_status": 405,
+      "dotnet_status": 405,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/migration-not-found",
+      "java_status": 403,
+      "dotnet_status": 403,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/js/migration-not-found.js",
+      "java_status": 404,
+      "dotnet_status": 404,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/API/v1/portal/catalog",
+      "java_status": 403,
+      "dotnet_status": 403,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/JS/migration-not-found.js",
+      "java_status": 403,
+      "dotnet_status": 403,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/actuator/health [invalid bearer]",
+      "java_status": 200,
+      "dotnet_status": 200,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/actuator/info [invalid bearer]",
+      "java_status": 403,
+      "dotnet_status": 403,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/portal/catalog [invalid bearer]",
+      "java_status": 401,
+      "dotnet_status": 401,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/migration-not-found [invalid bearer]",
+      "java_status": 401,
+      "dotnet_status": 401,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/portal/catalog [bare bearer]",
+      "java_status": 401,
+      "dotnet_status": 401,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/portal/catalog [empty bearer]",
+      "java_status": 401,
+      "dotnet_status": 401,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/portal/catalog [malformed bearer]",
+      "java_status": 401,
+      "dotnet_status": 401,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/portal/catalog [non-bearer]",
+      "java_status": 200,
+      "dotnet_status": 200,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "/api/v1/portal/catalog [lowercase bearer]",
+      "java_status": 401,
+      "dotnet_status": 401,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "POST login empty object",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "POST login malformed JSON",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "POST login null body",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "POST login array body",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "POST login string coercion",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "POST login property case",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [
+        "$.body.fieldErrors[0].field: value differs",
+        "$.body.fieldErrors[1].field: value differs"
+      ],
+      "field_error_order_only": true
+    },
+    {
+      "path": "POST login boolean coercion",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [
+        "$.body.fieldErrors[0].field: value differs",
+        "$.body.fieldErrors[1].field: value differs"
+      ],
+      "field_error_order_only": true
+    },
+    {
+      "path": "POST login invalid boolean",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "POST login NBSP",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "POST login em space",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "POST OTP empty object",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "POST OTP enum case",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "POST OTP enum ordinal",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [],
+      "field_error_order_only": false
+    },
+    {
+      "path": "POST register invalid email",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [
+        "$.body.fieldErrors[1].field: value differs",
+        "$.body.fieldErrors[1].message: value differs",
+        "$.body.fieldErrors[2].field: value differs",
+        "$.body.fieldErrors[2].message: value differs"
+      ],
+      "field_error_order_only": true
+    },
+    {
+      "path": "POST register quoted email",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [
+        "$.body.fieldErrors[0].field: value differs",
+        "$.body.fieldErrors[1].field: value differs",
+        "$.body.fieldErrors[2].field: value differs"
+      ],
+      "field_error_order_only": true
+    },
+    {
+      "path": "POST password reset empty object",
+      "java_status": 400,
+      "dotnet_status": 400,
+      "differences": [],
+      "field_error_order_only": false
+    }
+  ],
+  "openapi_routes_equal": true,
+  "openapi_operations": 114
+}

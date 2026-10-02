@@ -1,0 +1,4042 @@
+﻿[
+    {
+        "schema":  "dbo",
+        "table":  "BangGiaDichVu",
+        "column":  "MaDichVu",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "BangGiaDichVu",
+        "column":  "TenDichVu",
+        "type":  "nvarchar",
+        "max_length":  300,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "BangGiaDichVu",
+        "column":  "MaNhom",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "BangGiaDichVu",
+        "column":  "DonGia",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "BangGiaDichVu",
+        "column":  "HoatDong",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "BoDemMa",
+        "column":  "Khoa",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "BoDemMa",
+        "column":  "GiaTri",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChinhSachBaoHanh",
+        "column":  "MaChinhSach",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChinhSachBaoHanh",
+        "column":  "PhamVi",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChinhSachBaoHanh",
+        "column":  "MaSP",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChinhSachBaoHanh",
+        "column":  "MaHang",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChinhSachBaoHanh",
+        "column":  "TenChinhSach",
+        "type":  "nvarchar",
+        "max_length":  300,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChinhSachBaoHanh",
+        "column":  "SoThangBaoHanh",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChinhSachBaoHanh",
+        "column":  "DieuKienBaoHanh",
+        "type":  "nvarchar",
+        "max_length":  -1,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChinhSachBaoHanh",
+        "column":  "TruongHopTuChoi",
+        "type":  "nvarchar",
+        "max_length":  -1,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChinhSachBaoHanh",
+        "column":  "NhaPhanPhoi",
+        "type":  "nvarchar",
+        "max_length":  300,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChinhSachBaoHanh",
+        "column":  "HoatDong",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietBaoGia",
+        "column":  "MaChiTietBG",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietBaoGia",
+        "column":  "MaBaoGia",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietBaoGia",
+        "column":  "SoThuTu",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietBaoGia",
+        "column":  "MaLK",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietBaoGia",
+        "column":  "NoiDungMuc",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietBaoGia",
+        "column":  "SoLuong",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietBaoGia",
+        "column":  "DonGia",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietBaoGia",
+        "column":  "TienCongSuaChua",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietBaoGia",
+        "column":  "ThanhTien",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietNhapKho",
+        "column":  "MaChiTietNhap",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietNhapKho",
+        "column":  "MaPhieuNhap",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietNhapKho",
+        "column":  "MaLK",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietNhapKho",
+        "column":  "SoLuongNhap",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietNhapKho",
+        "column":  "DonGiaNhap",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietNhapKho",
+        "column":  "SerialLo",
+        "type":  "nvarchar",
+        "max_length":  120,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietNhapKho",
+        "column":  "MaKe",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietXuatKho",
+        "column":  "MaChiTietXuat",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietXuatKho",
+        "column":  "MaPhieuXuat",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietXuatKho",
+        "column":  "MaLK",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietXuatKho",
+        "column":  "SoLuongXuat",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietXuatKho",
+        "column":  "DonGiaXuat",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietXuatKho",
+        "column":  "MaKe",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChiTietXuatKho",
+        "column":  "NgayHetHanBaoHanhLK",
+        "type":  "date",
+        "max_length":  3,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChuyenTrangThaiHopLe",
+        "column":  "TuTrangThai",
+        "type":  "nvarchar",
+        "max_length":  80,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChuyenTrangThaiHopLe",
+        "column":  "DenTrangThai",
+        "type":  "nvarchar",
+        "max_length":  80,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ChuyenTrangThaiHopLe",
+        "column":  "MoTa",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "DanhMucNhan",
+        "column":  "Nhom",
+        "type":  "nvarchar",
+        "max_length":  80,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "DanhMucNhan",
+        "column":  "Ma",
+        "type":  "nvarchar",
+        "max_length":  80,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "DanhMucNhan",
+        "column":  "NhanNghiepVu",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "DanhMucNhan",
+        "column":  "NhanGiaoDien",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "DanhMucNhan",
+        "column":  "Tone",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "DanhMucNhan",
+        "column":  "ThuTu",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "GhiChuPhieu",
+        "column":  "MaGhiChu",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "GhiChuPhieu",
+        "column":  "MaPhieuTN",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "GhiChuPhieu",
+        "column":  "Loai",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "GhiChuPhieu",
+        "column":  "NoiDung",
+        "type":  "nvarchar",
+        "max_length":  2000,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "GhiChuPhieu",
+        "column":  "NguoiViet",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "GhiChuPhieu",
+        "column":  "VaiTroNguoiViet",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "GhiChuPhieu",
+        "column":  "ThoiGian",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HangSanXuat",
+        "column":  "MaHang",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HangSanXuat",
+        "column":  "TenHang",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HangSanXuat",
+        "column":  "HoatDong",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HangSanXuat_NhomThietBi",
+        "column":  "MaHang",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HangSanXuat_NhomThietBi",
+        "column":  "MaNhom",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HoaDon_PhieuThu",
+        "column":  "MaPhieuThu",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HoaDon_PhieuThu",
+        "column":  "MaPhieuTN",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HoaDon_PhieuThu",
+        "column":  "MaBaoGia",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HoaDon_PhieuThu",
+        "column":  "LoaiThu",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HoaDon_PhieuThu",
+        "column":  "NgayThu",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HoaDon_PhieuThu",
+        "column":  "NguoiNopTien",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HoaDon_PhieuThu",
+        "column":  "SoTienThu",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HoaDon_PhieuThu",
+        "column":  "HinhThucThanhToan",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HoaDon_PhieuThu",
+        "column":  "MaThuNgan",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "HoaDon_PhieuThu",
+        "column":  "GhiChu",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KetQuaSuaChua",
+        "column":  "MaKetQua",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KetQuaSuaChua",
+        "column":  "MaPhieuSC",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KetQuaSuaChua",
+        "column":  "MaKTV",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KetQuaSuaChua",
+        "column":  "NoiDungSuaChua",
+        "type":  "nvarchar",
+        "max_length":  -1,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KetQuaSuaChua",
+        "column":  "KetQuaQCTungBuoc",
+        "type":  "nvarchar",
+        "max_length":  -1,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KetQuaSuaChua",
+        "column":  "KetQuaKCS",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KetQuaSuaChua",
+        "column":  "ChiTietTestKCS",
+        "type":  "nvarchar",
+        "max_length":  -1,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KetQuaSuaChua",
+        "column":  "NgayGhiNhan",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KhachHang",
+        "column":  "MaKH",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KhachHang",
+        "column":  "HoTen",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KhachHang",
+        "column":  "SDT",
+        "type":  "nvarchar",
+        "max_length":  30,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KhachHang",
+        "column":  "Email",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KhachHang",
+        "column":  "DiaChi",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KhachHang",
+        "column":  "MaTaiKhoan",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KhachHang",
+        "column":  "TrangThai",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KhachHang",
+        "column":  "GopVaoMaKH",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "KhachHang",
+        "column":  "NgayTao",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuPhanCong",
+        "column":  "MaLichSu",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuPhanCong",
+        "column":  "MaPhieuTN",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuPhanCong",
+        "column":  "MaKTVCu",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuPhanCong",
+        "column":  "MaKTVMoi",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuPhanCong",
+        "column":  "MaNVThucHien",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuPhanCong",
+        "column":  "ThoiGian",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuPhanCong",
+        "column":  "GhiChu",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuTrangThai_ThietBi",
+        "column":  "MaLichSu",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuTrangThai_ThietBi",
+        "column":  "MaPhieuTN",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuTrangThai_ThietBi",
+        "column":  "TrangThai",
+        "type":  "nvarchar",
+        "max_length":  80,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuTrangThai_ThietBi",
+        "column":  "ThoiGianCapNhat",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuTrangThai_ThietBi",
+        "column":  "MoTaChiTiet",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuTrangThai_ThietBi",
+        "column":  "NguoiCapNhat",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuTrangThai_ThietBi",
+        "column":  "TenNguoiCapNhat",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LichSuTrangThai_ThietBi",
+        "column":  "VaiTroNguoiCapNhat",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "MaLK",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "TenLK",
+        "type":  "nvarchar",
+        "max_length":  300,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "DonViTinh",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "MaNhom",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "TenHang",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "DonGiaVon",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "DonGiaDichVu",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "SoLuongTon",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "SoLuongDaGiu",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "DinhMucTonToiThieu",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "KeChinh",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "ThoiHanBaoHanhThang",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "MaNCC",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "HoatDong",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LinhKien",
+        "column":  "PhienBan",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LoaiThietBi",
+        "column":  "MaLoai",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LoaiThietBi",
+        "column":  "MaNhom",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LoaiThietBi",
+        "column":  "TenLoai",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LoaiThietBi",
+        "column":  "LoaiDinhDanh",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LoaiThietBi",
+        "column":  "ChecklistChanDoan",
+        "type":  "nvarchar",
+        "max_length":  -1,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "LoaiThietBi",
+        "column":  "HoatDong",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "MaXacThucOTP",
+        "column":  "MaOTP",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "MaXacThucOTP",
+        "column":  "SDT",
+        "type":  "nvarchar",
+        "max_length":  30,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "MaXacThucOTP",
+        "column":  "MucDich",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "MaXacThucOTP",
+        "column":  "MaHash",
+        "type":  "nchar",
+        "max_length":  128,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "MaXacThucOTP",
+        "column":  "NgayTao",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "MaXacThucOTP",
+        "column":  "HetHan",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "MaXacThucOTP",
+        "column":  "SoLanNhapSai",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "MaXacThucOTP",
+        "column":  "DaDungLuc",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "MaXacThucOTP",
+        "column":  "DiaChiIP",
+        "type":  "nvarchar",
+        "max_length":  90,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhaCungCap",
+        "column":  "MaNCC",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhaCungCap",
+        "column":  "TenNCC",
+        "type":  "nvarchar",
+        "max_length":  300,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhaCungCap",
+        "column":  "SDT",
+        "type":  "nvarchar",
+        "max_length":  30,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhaCungCap",
+        "column":  "DiaChi",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhaCungCap",
+        "column":  "Email",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhaCungCap",
+        "column":  "HoatDong",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhanVien",
+        "column":  "MaNV",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhanVien",
+        "column":  "HoTen",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhanVien",
+        "column":  "SDT",
+        "type":  "nvarchar",
+        "max_length":  30,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhanVien",
+        "column":  "Email",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhanVien",
+        "column":  "ChuyenMon",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhanVien",
+        "column":  "KyNang",
+        "type":  "nvarchar",
+        "max_length":  -1,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhanVien",
+        "column":  "TrangThaiLamViec",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhanVien",
+        "column":  "SoPhieuToiDa",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhanVien",
+        "column":  "CoMatTaiTram",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhanVien",
+        "column":  "MaTram",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhanVien",
+        "column":  "MaTaiKhoan",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhatKyThaoTac",
+        "column":  "MaNhatKy",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhatKyThaoTac",
+        "column":  "ThoiGian",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhatKyThaoTac",
+        "column":  "MaNguoiThaoTac",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhatKyThaoTac",
+        "column":  "TenNguoiThaoTac",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhatKyThaoTac",
+        "column":  "VaiTro",
+        "type":  "nvarchar",
+        "max_length":  400,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhatKyThaoTac",
+        "column":  "HanhDong",
+        "type":  "nvarchar",
+        "max_length":  100,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhatKyThaoTac",
+        "column":  "NhanHanhDong",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhatKyThaoTac",
+        "column":  "LoaiDoiTuong",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhatKyThaoTac",
+        "column":  "MaDoiTuong",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhatKyThaoTac",
+        "column":  "GiaTriTruoc",
+        "type":  "nvarchar",
+        "max_length":  1000,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhatKyThaoTac",
+        "column":  "GiaTriSau",
+        "type":  "nvarchar",
+        "max_length":  1000,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhomThietBi",
+        "column":  "MaNhom",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhomThietBi",
+        "column":  "TenNhom",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhomThietBi",
+        "column":  "ThuTu",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "NhomThietBi",
+        "column":  "HoatDong",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhanCong",
+        "column":  "MaPhanCong",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhanCong",
+        "column":  "MaPhieuTN",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhanCong",
+        "column":  "MaNVQuanLy",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhanCong",
+        "column":  "MaKTV",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhanCong",
+        "column":  "NgayPhanCong",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhanCong",
+        "column":  "MucDoUuTien",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhanCong",
+        "column":  "GhiChu",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "MaBanGiao",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "MaPhieuTN",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "LoaiBanGiao",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "NgayBanGiao",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "MaNVBanGiao",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "NguoiNhanMay",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "HienTrangKhiTra",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "TraLaiLinhKienCu",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "ThoiHanBaoHanhMoi",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "DanhGiaHaiLong",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "KT_NgoaiQuanDungBienBan",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "KT_KhoiDongBinhThuong",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "KT_ChucNangChinhOK",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "KT_PhuKienDayDu",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "KT_KhongLoiPhatSinh",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "MaTepChuKy",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBanGiao",
+        "column":  "KhachXacNhanNhanMay",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "MaBaoGia",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "MaPhieuTN",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "MaPhieuKT",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "MaKTVLap",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "NgayLapBaoGia",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "HanHieuLuc",
+        "type":  "date",
+        "max_length":  3,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "MaDichVu",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "TongTienLinhKien",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "TongTienCong",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "ThueVAT",
+        "type":  "decimal",
+        "max_length":  5,
+        "precision":  5,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "TongTienThanhToan",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "TrangThaiDuyetNoiBo",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "MaNVQuanLyDuyet",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "NgayDuyetNoiBo",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "GhiChuDuyet",
+        "type":  "nvarchar",
+        "max_length":  1000,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "KhachXacNhan",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "NgayKhachXacNhan",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "LyDoKhachTuChoi",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "KenhXacNhan",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuBaoGia",
+        "column":  "NguoiGhiNhanXacNhan",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuDieuChuyen",
+        "column":  "MaPhieuDC",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuDieuChuyen",
+        "column":  "MaLK",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuDieuChuyen",
+        "column":  "SoLuong",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuDieuChuyen",
+        "column":  "TuKe",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuDieuChuyen",
+        "column":  "DenKe",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuDieuChuyen",
+        "column":  "LyDo",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuDieuChuyen",
+        "column":  "TrangThai",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuDieuChuyen",
+        "column":  "MaNguoiLap",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuDieuChuyen",
+        "column":  "NgayLap",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuDieuChuyen",
+        "column":  "MaNguoiDuyet",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuDieuChuyen",
+        "column":  "NgayDuyet",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuDieuChuyen",
+        "column":  "LyDoTuChoi",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuKiemTra",
+        "column":  "MaPhieuKT",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuKiemTra",
+        "column":  "MaPhieuTN",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuKiemTra",
+        "column":  "MaKTV",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuKiemTra",
+        "column":  "NgayKiemTra",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuKiemTra",
+        "column":  "KetQuaKiemTraChiTiet",
+        "type":  "nvarchar",
+        "max_length":  -1,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuKiemTra",
+        "column":  "ChecklistKetQua",
+        "type":  "nvarchar",
+        "max_length":  -1,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuKiemTra",
+        "column":  "TinhTrangVaoNuoc",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuKiemTra",
+        "column":  "PhanLoaiBaoHanh",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuKiemTra",
+        "column":  "LyDoNgoaiBaoHanh",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuKiemTra",
+        "column":  "HuongKhacPhucDeXuat",
+        "type":  "nvarchar",
+        "max_length":  -1,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuKiemTra",
+        "column":  "GhiChuPhanLoaiLai",
+        "type":  "nvarchar",
+        "max_length":  1000,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuKiemTra",
+        "column":  "SoLanSuaPhanLoai",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuKiemTra",
+        "column":  "NgayCapNhat",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuNhapKho",
+        "column":  "MaPhieuNhap",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuNhapKho",
+        "column":  "MaNCC",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuNhapKho",
+        "column":  "SoLo",
+        "type":  "nvarchar",
+        "max_length":  100,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuNhapKho",
+        "column":  "NgayNhap",
+        "type":  "date",
+        "max_length":  3,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuNhapKho",
+        "column":  "MaNguoiLap",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuNhapKho",
+        "column":  "NgayLap",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuNhapKho",
+        "column":  "TrangThai",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuNhapKho",
+        "column":  "MaNguoiDuyet",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuNhapKho",
+        "column":  "NgayDuyet",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuNhapKho",
+        "column":  "LyDoTuChoi",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuNhapKho",
+        "column":  "TongTienNhap",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuNhapKho",
+        "column":  "GhiChu",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuSuaChua",
+        "column":  "MaPhieuSC",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuSuaChua",
+        "column":  "MaPhieuTN",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuSuaChua",
+        "column":  "MaPhanCong",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuSuaChua",
+        "column":  "MaKTV",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuSuaChua",
+        "column":  "NgayTao",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuSuaChua",
+        "column":  "NgayBatDau",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuSuaChua",
+        "column":  "TrangThaiSuaChua",
+        "type":  "nvarchar",
+        "max_length":  24,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "MaPhieuTN",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "MaTram",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "NgayTiepNhan",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "KenhTiepNhan",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "LoaiYeuCau",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "MaYeuCau",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "MaKH",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "MaThietBi",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "MaNVTiepNhan",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "BH_TrangThaiLucNhan",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "BH_NgayKichHoat",
+        "type":  "date",
+        "max_length":  3,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "BH_NgayHetHan",
+        "type":  "date",
+        "max_length":  3,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "BH_MaChinhSach",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "TinhTrangTem",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "NQ_VetTray",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "NQ_CanMop",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "NQ_NutVo",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "NQ_DauHieuAmNuoc",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "NQ_PhuKien",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "PhuKienKemTheo",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "TinhTrangNgoaiQuan",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "KhachXacNhanNgoaiQuan",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "MoTaLoiKhachBao",
+        "type":  "nvarchar",
+        "max_length":  -1,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "NgayHenTra",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "ChiPhiDuKien",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "MucSLA",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "HanSLA",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "TrangThaiXuLy",
+        "type":  "nvarchar",
+        "max_length":  80,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "NgayCapNhatTrangThai",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "NguoiCapNhatTrangThai",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "VaiTroCapNhatTrangThai",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "GhiChuTrangThai",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "PhienBan",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuTiepNhan",
+        "column":  "ConMo",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuXuatKho",
+        "column":  "MaPhieuXuat",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuXuatKho",
+        "column":  "MaPhieuTN",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuXuatKho",
+        "column":  "NguonXuat",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuXuatKho",
+        "column":  "MaBaoGia",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuXuatKho",
+        "column":  "LyDoXuat",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuXuatKho",
+        "column":  "MaKTVNhan",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuXuatKho",
+        "column":  "MaNguoiYeuCau",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuXuatKho",
+        "column":  "NgayYeuCau",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuXuatKho",
+        "column":  "TrangThai",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuXuatKho",
+        "column":  "MaThuKhoXuLy",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuXuatKho",
+        "column":  "NgayXuLy",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuXuatKho",
+        "column":  "LyDoTuChoi",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "PhieuXuatKho",
+        "column":  "TongTienXuat",
+        "type":  "decimal",
+        "max_length":  9,
+        "precision":  18,
+        "scale":  2,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "QuyenHan",
+        "column":  "MaQuyen",
+        "type":  "nvarchar",
+        "max_length":  100,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "QuyenHan",
+        "column":  "MoTa",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "RefreshToken",
+        "column":  "MaToken",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "RefreshToken",
+        "column":  "TokenHash",
+        "type":  "nchar",
+        "max_length":  128,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "RefreshToken",
+        "column":  "MaTaiKhoan",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "RefreshToken",
+        "column":  "HoToken",
+        "type":  "nchar",
+        "max_length":  72,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "RefreshToken",
+        "column":  "NgayCap",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "RefreshToken",
+        "column":  "HetHan",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "RefreshToken",
+        "column":  "ThuHoiLuc",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "RefreshToken",
+        "column":  "ThayBangHash",
+        "type":  "nchar",
+        "max_length":  128,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "RefreshToken",
+        "column":  "GhiNho",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "RefreshToken",
+        "column":  "DiaChiIP",
+        "type":  "nvarchar",
+        "max_length":  90,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "RefreshToken",
+        "column":  "UserAgent",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "SanPham",
+        "column":  "MaSP",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "SanPham",
+        "column":  "TenSP",
+        "type":  "nvarchar",
+        "max_length":  300,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "SanPham",
+        "column":  "MaHang",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "SanPham",
+        "column":  "MaLoai",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "SanPham",
+        "column":  "DongSanPham",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "SanPham",
+        "column":  "ThoiHanBaoHanhMacDinhThang",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "SanPham",
+        "column":  "HoatDong",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan",
+        "column":  "MaTaiKhoan",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan",
+        "column":  "TenDangNhap",
+        "type":  "nvarchar",
+        "max_length":  100,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan",
+        "column":  "MatKhauHash",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan",
+        "column":  "LoaiChuThe",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan",
+        "column":  "TrangThai",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan",
+        "column":  "SoLanSaiLienTiep",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan",
+        "column":  "KhoaTamDen",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan",
+        "column":  "BatBuocDoiMatKhau",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan",
+        "column":  "PhienBanBaoMat",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan",
+        "column":  "LanDangNhapCuoi",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan",
+        "column":  "NgayDoiMatKhau",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan",
+        "column":  "NgayTao",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan_VaiTro",
+        "column":  "MaTaiKhoan",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TaiKhoan_VaiTro",
+        "column":  "MaVaiTro",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TepDinhKem",
+        "column":  "MaTep",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TepDinhKem",
+        "column":  "LoaiChuSoHuu",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TepDinhKem",
+        "column":  "MaChuSoHuu",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TepDinhKem",
+        "column":  "TenTep",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TepDinhKem",
+        "column":  "LoaiNoiDung",
+        "type":  "nvarchar",
+        "max_length":  100,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TepDinhKem",
+        "column":  "KichThuoc",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TepDinhKem",
+        "column":  "DuongDanLuuTru",
+        "type":  "nvarchar",
+        "max_length":  1000,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TepDinhKem",
+        "column":  "NguoiTaiLen",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TepDinhKem",
+        "column":  "NgayTaiLen",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBi",
+        "column":  "MaThietBi",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBi",
+        "column":  "MaSP",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBi",
+        "column":  "LoaiDinhDanh",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBi",
+        "column":  "SoSerial_IMEI",
+        "type":  "nvarchar",
+        "max_length":  100,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBi",
+        "column":  "MaKH",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBi",
+        "column":  "NgayKichHoatBaoHanh",
+        "type":  "date",
+        "max_length":  3,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBi",
+        "column":  "NgayHetHanBaoHanh",
+        "type":  "date",
+        "max_length":  3,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBi",
+        "column":  "NhaPhanPhoi",
+        "type":  "nvarchar",
+        "max_length":  300,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBi",
+        "column":  "NgayTao",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBiNhanThongBao",
+        "column":  "MaCaiDat",
+        "type":  "nvarchar",
+        "max_length":  128,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBiNhanThongBao",
+        "column":  "MaTaiKhoan",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBiNhanThongBao",
+        "column":  "NenTang",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBiNhanThongBao",
+        "column":  "PushToken",
+        "type":  "nvarchar",
+        "max_length":  1024,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBiNhanThongBao",
+        "column":  "PhienBanApp",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBiNhanThongBao",
+        "column":  "NgayDangKy",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThietBiNhanThongBao",
+        "column":  "NgayCapNhat",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThongBao",
+        "column":  "MaThongBao",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThongBao",
+        "column":  "MaVaiTroNhan",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThongBao",
+        "column":  "MaTaiKhoanNhan",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThongBao",
+        "column":  "Loai",
+        "type":  "nvarchar",
+        "max_length":  80,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThongBao",
+        "column":  "NoiDung",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThongBao",
+        "column":  "DuongDan",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThongBao",
+        "column":  "MaDoiTuong",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThongBao",
+        "column":  "NgayTao",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThongBao_DaDoc",
+        "column":  "MaThongBao",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThongBao_DaDoc",
+        "column":  "MaTaiKhoan",
+        "type":  "bigint",
+        "max_length":  8,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "ThongBao_DaDoc",
+        "column":  "DocLuc",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TonKhoTheoKe",
+        "column":  "MaLK",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TonKhoTheoKe",
+        "column":  "MaKe",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TonKhoTheoKe",
+        "column":  "SoLuong",
+        "type":  "int",
+        "max_length":  4,
+        "precision":  10,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TramDichVu",
+        "column":  "MaTram",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TramDichVu",
+        "column":  "TenTram",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TramDichVu",
+        "column":  "DiaChi",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "TramDichVu",
+        "column":  "HoatDong",
+        "type":  "bit",
+        "max_length":  1,
+        "precision":  1,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "VaiTro",
+        "column":  "MaVaiTro",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "VaiTro",
+        "column":  "TenHienThi",
+        "type":  "nvarchar",
+        "max_length":  120,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "VaiTro",
+        "column":  "TenCuV1",
+        "type":  "nvarchar",
+        "max_length":  100,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "VaiTro",
+        "column":  "TrangDich",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "VaiTro",
+        "column":  "MoTa",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "VaiTro_QuyenHan",
+        "column":  "MaVaiTro",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "VaiTro_QuyenHan",
+        "column":  "MaQuyen",
+        "type":  "nvarchar",
+        "max_length":  100,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "MaYeuCau",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "HoTenKhach",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "SDTKhach",
+        "type":  "nvarchar",
+        "max_length":  30,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "EmailKhach",
+        "type":  "nvarchar",
+        "max_length":  200,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "DiaChiKhach",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "MaNhom",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "MaLoai",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "HangModel",
+        "type":  "nvarchar",
+        "max_length":  300,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "LoaiDinhDanh",
+        "type":  "nvarchar",
+        "max_length":  20,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "SoSerial_IMEI",
+        "type":  "nvarchar",
+        "max_length":  100,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "MoTaLoi",
+        "type":  "nvarchar",
+        "max_length":  -1,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "MaTramMongMuon",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "ThoiGianMongMuonTu",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "ThoiGianMongMuonDen",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "TrangThai",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  false
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "MaPhieuTN",
+        "type":  "nvarchar",
+        "max_length":  60,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "MaNVXuLy",
+        "type":  "nvarchar",
+        "max_length":  40,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "NgayXuLy",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "LyDoHuy",
+        "type":  "nvarchar",
+        "max_length":  510,
+        "precision":  0,
+        "scale":  0,
+        "nullable":  true
+    },
+    {
+        "schema":  "dbo",
+        "table":  "YeuCauBaoHanh",
+        "column":  "NgayTao",
+        "type":  "datetime2",
+        "max_length":  6,
+        "precision":  19,
+        "scale":  0,
+        "nullable":  false
+    }
+]
