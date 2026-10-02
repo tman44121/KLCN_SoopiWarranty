@@ -445,10 +445,39 @@ export default function initialize() {
   function partsStage(t) {
     if (state.pendingIssue) {
       const issue = state.pendingIssue;
+      // Dòng phiếu xuất chỉ có SKU + số lượng: tên, tồn và vị trí lấy từ danh mục linh kiện, rồi tới dòng báo giá.
+      const partOf = (sku) => state.parts.find((p) => p.sku === sku);
+      const quoteLineOf = (sku) => state.quotation && state.quotation.lines.find((l) => l.sku === sku);
+      const totalUnits = issue.lines.reduce((sum, l) => sum + l.quantity, 0);
       return card(
         "Yêu cầu linh kiện",
-        `Phiếu xuất ${issue.code} gửi lúc ${fmt.dateTime(issue.requestedAt)}`,
-        html`${issue.lines.map((l) => html`<div class="billing-row"><span class="mono">${l.sku}</span><span>× ${l.quantity}</span></div>`)}
+        html`Phiếu xuất <span class="mono">${issue.code}</span> gửi lúc ${fmt.dateTime(issue.requestedAt)}`,
+        html`
+          <div class="detail-grid">
+            ${kv("Nguồn yêu cầu", issue.source === "QUOTATION"
+              ? html`Theo báo giá <span class="mono">${issue.quotationCode}</span>`
+              : "Bảo hành miễn phí")}
+            ${kv("Kỹ thuật viên yêu cầu", issue.technicianName || issue.requestedBy)}
+            ${issue.reason ? kv("Lý do", issue.reason, true) : ""}
+          </div>
+          <div class="table-scroll" style="margin-top:14px;">
+            <table class="drawer-table">
+              <thead><tr><th>SKU</th><th>Tên linh kiện</th><th>SL</th><th>Tồn khả dụng</th><th>Vị trí kho</th></tr></thead>
+              <tbody>${issue.lines.map((l) => {
+                const part = partOf(l.sku);
+                const quoteLine = quoteLineOf(l.sku);
+                const unit = (part && part.unit) || "";
+                return html`<tr>
+                  <td class="mono">${l.sku}</td>
+                  <td>${(part && part.name) || (quoteLine && quoteLine.description) || "—"}</td>
+                  <td>${l.quantity}${unit ? ` ${unit}` : ""}</td>
+                  <td>${part ? html`${part.available}${part.available < l.quantity ? html` <span class="cell-muted">(thiếu ${l.quantity - part.available})</span>` : ""}` : "—"}</td>
+                  <td class="mono">${l.binCode || (part && part.primaryBin) || "—"}</td>
+                </tr>`;
+              })}</tbody>
+            </table>
+          </div>
+          <div class="billing-row"><span>Tổng</span><span>${issue.lines.length} mã · ${totalUnits} linh kiện</span></div>
           ${banner("Đang chờ Kho vật tư duyệt & thực xuất kho — phiếu tự chuyển sang Đang sửa chữa khi kho duyệt.")}`,
         fmt.badgeOf(L.STOCK_ISSUE_STATUS, issue.status)
       );

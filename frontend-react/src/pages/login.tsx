@@ -54,7 +54,7 @@ export default function LoginPage() {
               <label htmlFor="login-username">Số điện thoại / Tên đăng nhập</label>
               <div className="input-wrapper">
                 <span className="input-icon"><Icon glyph="user" /></span>
-                <input type="text" id="login-username" name="username" className="form-input" autoComplete="username" placeholder="09xxxxxxxx hoặc mã nhân viên" />
+                <input type="text" id="login-username" name="username" className="form-input" autoComplete="username" placeholder="09xxxxxxxx" />
               </div>
             </div>
             <div className="form-group">
