@@ -3,8 +3,10 @@ rem Chạy Soopi trên máy dev (xem docs/SETUP.md).
 rem   run.bat         kiểm tra/cài công cụ, chạy API .NET (8080) + Vite (5173), mở http://localhost:5173/login
 rem   run.bat build   build React vào wwwroot rồi chỉ chạy API, mở http://localhost:8080/login
 rem   run.bat check   chỉ kiểm tra/cài công cụ và cấu hình, không chạy server
-rem Tự cài nếu thiếu: .NET SDK 10, Node.js 22+ (qua winget), dependency frontend (npm ci).
-rem Không tự cài SQL Server: cần database có sẵn và ConnectionStrings:Default (docs/SETUP.md mục 2).
+rem   run.bat initdb [server]   máy mới: tạo database TrungTamBaoHanhDB (schema + dữ liệu mẫu) bằng đăng nhập Windows
+rem                   rồi đặt ConnectionStrings:Default; server mặc định localhost (VD: localhost\SQLEXPRESS)
+rem Tự cài nếu thiếu: .NET SDK 10, Node.js 22+, sqlcmd (qua winget), dependency frontend (npm ci).
+rem Không tự cài SQL Server: cần SQL Server đang chạy (Express/Developer đều được).
 setlocal
 chcp 65001 >nul
 cd /d "%~dp0"
@@ -12,6 +14,7 @@ set "MODE=%~1"
 
 echo [1/4] Kiểm tra .NET SDK 10...
 call :need_dotnet || goto fail
+if /i "%MODE%"=="initdb" goto initdb
 echo [2/4] Kiểm tra Node.js 22+...
 call :need_node || goto fail
 
@@ -29,7 +32,9 @@ if defined ConnectionStrings__Default goto db_ok
 rem Chỉ kiểm tra khóa có tồn tại; giá trị bí mật không được in ra.
 dotnet user-secrets list --project backend-dotnet\src\Soopi.Api 2>nul | findstr /b /c:"ConnectionStrings:Default" >nul
 if errorlevel 1 (
-  echo [Lỗi] Chưa đặt ConnectionStrings:Default cho backend. Chạy lệnh sau với thông tin SQL Server của bạn:
+  echo [Lỗi] Chưa đặt ConnectionStrings:Default cho backend.
+  echo   Máy mới chưa có database: chạy  run.bat initdb  ^(hoặc  run.bat initdb localhost\SQLEXPRESS^)
+  echo   Đã có database: chạy lệnh sau với thông tin SQL Server của bạn:
   echo   dotnet user-secrets set "ConnectionStrings:Default" "Server=<HOST>,<PORT>;Database=<DB>;User ID=<USER>;Password=<PASSWORD>;Encrypt=True;TrustServerCertificate=True;" --project backend-dotnet\src\Soopi.Api
   echo   Chi tiết: docs\SETUP.md mục 2.
   goto fail
@@ -76,6 +81,34 @@ exit /b 0
 pause
 exit /b 1
 
+rem ---------------------------------------------------------------- tạo database (máy mới)
+
+:initdb
+set "SQLSERVER=%~2"
+if "%SQLSERVER%"=="" set "SQLSERVER=localhost"
+call :need_sqlcmd || goto fail
+echo Kết nối SQL Server "%SQLSERVER%" bằng tài khoản Windows hiện tại...
+set "DBEXISTS="
+for /f "usebackq delims=" %%n in (`sqlcmd -S "%SQLSERVER%" -E -C -h -1 -W -Q "SET NOCOUNT ON; SELECT CASE WHEN DB_ID('TrungTamBaoHanhDB') IS NULL THEN 0 ELSE 1 END" 2^>nul`) do set "DBEXISTS=%%n"
+if not defined DBEXISTS (
+  echo [Lỗi] Không kết nối được SQL Server "%SQLSERVER%" bằng đăng nhập Windows.
+  echo   - Kiểm tra tên server trong SSMS ^(ô Server name^), VD: run.bat initdb localhost\SQLEXPRESS
+  echo   - Tài khoản Windows phải có quyền tạo database ^(sysadmin hoặc dbcreator^).
+  goto fail
+)
+if "%DBEXISTS%"=="1" (
+  echo Database TrungTamBaoHanhDB đã có - bỏ qua bước tạo, chỉ đặt lại connection string.
+) else (
+  echo Tạo database TrungTamBaoHanhDB và nạp dữ liệu mẫu...
+  sqlcmd -S "%SQLSERVER%" -E -C -I -b -f 65001 -i "database\TrungTamBaoHanhDB_SqlServer.sql"
+  if errorlevel 1 (echo [Lỗi] Chạy script SQL thất bại - xem thông báo phía trên. & goto fail)
+)
+dotnet user-secrets set "ConnectionStrings:Default" "Server=%SQLSERVER%;Database=TrungTamBaoHanhDB;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;" --project backend-dotnet\src\Soopi.Api >nul
+if errorlevel 1 (echo [Lỗi] Không đặt được User Secrets. & goto fail)
+echo Xong: database TrungTamBaoHanhDB sẵn sàng, đã đặt ConnectionStrings:Default.
+echo Chạy  run.bat  để mở ứng dụng. Tài khoản demo: docs\TAI_KHOAN_DEMO.md
+exit /b 0
+
 rem ---------------------------------------------------------------- hàm phụ
 
 :need_dotnet
@@ -109,6 +142,15 @@ where node >nul 2>nul || exit /b 0
 for /f "tokens=1 delims=." %%v in ('node -v') do set "NODE_MAJOR=%%v"
 set "NODE_MAJOR=%NODE_MAJOR:v=%"
 exit /b 0
+
+:need_sqlcmd
+where sqlcmd >nul 2>nul && exit /b 0
+echo Chưa có sqlcmd - đang cài bằng winget...
+call :winget Microsoft.Sqlcmd || exit /b 1
+set "PATH=%ProgramFiles%\SqlCmd;%PATH%"
+where sqlcmd >nul 2>nul && exit /b 0
+echo [Lỗi] Đã cài nhưng chưa thấy sqlcmd. Đóng cửa sổ này, mở lại rồi chạy lại lệnh.
+exit /b 1
 
 :winget
 where winget >nul 2>nul || (

@@ -37,6 +37,27 @@ Set-Location ..
 
 ## 2. Kết nối SQL Server
 
+### Máy mới: tạo database từ script
+
+Thư mục `database/` có script SQL Server mới nhất (lấy từ `warranty-system-mysql/db/sqlserver`): `01_schema.sql`
+(47 bảng), `02_reference_data.sql`, `03_demo_data.sql` (tài khoản demo, xem [TAI_KHOAN_DEMO.md](TAI_KHOAN_DEMO.md)),
+`04_app_user.sql` (tài khoản ứng dụng cho production) và file ghép `TrungTamBaoHanhDB_SqlServer.sql` (= 01 + 02 + 03,
+tự tạo database `TrungTamBaoHanhDB` collation `Latin1_General_100_CI_AI`).
+
+Cần SQL Server đang chạy (Express/Developer) và tài khoản Windows có quyền tạo database. Một lệnh:
+
+```powershell
+.\run.bat initdb                        # SQL Server mặc định trên máy (localhost)
+.\run.bat initdb localhost\SQLEXPRESS   # SQL Server Express
+```
+
+`initdb` cài `sqlcmd` nếu thiếu, tạo database và nạp dữ liệu mẫu bằng đăng nhập Windows (bỏ qua nếu database
+`TrungTamBaoHanhDB` đã có), rồi đặt `ConnectionStrings:Default` (`Integrated Security=True`). Sau đó chạy `run.bat`.
+Không dùng lệnh này trên máy đang trỏ tới database khác: nó ghi đè connection string. Tự chạy bằng SSMS hoặc
+`sqlcmd -S <server> -E -C -I -b -f 65001 -i database\TrungTamBaoHanhDB_SqlServer.sql` cũng được.
+
+### Đặt connection string thủ công
+
 Backend đọc `ConnectionStrings:Default`, gọi `UseSqlServer`; helper SQL dùng chung kết nối đó.
 `appsettings.json` chỉ có placeholder, `appsettings.Development.json` không chứa tài khoản DB.
 Development nạp User Secrets; biến môi trường/CLI có thể ghi đè cấu hình file và User Secrets.
