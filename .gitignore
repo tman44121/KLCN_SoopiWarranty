@@ -484,3 +484,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Tệp đính kèm do API lưu khi chạy dev (Storage:Directory = ./data/files)
+backend-dotnet/data/

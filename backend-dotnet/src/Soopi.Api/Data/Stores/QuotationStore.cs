@@ -9,16 +9,26 @@ namespace Soopi.Api.Data.Stores;
 /// </summary>
 public sealed class QuotationStore(Sql sql)
 {
-    private const string Columns = "MaBaoGia, MaPhieuTN, MaPhieuKT, MaKTVLap, NgayLapBaoGia, HanHieuLuc, MaDichVu, TongTienLinhKien, TongTienCong, "
-        + "ThueVAT, TongTienThanhToan, TrangThaiDuyetNoiBo, MaNVQuanLyDuyet, NgayDuyetNoiBo, GhiChuDuyet, KhachXacNhan, NgayKhachXacNhan, "
-        + "LyDoKhachTuChoi, KenhXacNhan, NguoiGhiNhanXacNhan";
+    // Cùng thứ tự với Header()/Review(): INSERT và UPDATE dựng từ một danh sách nên giá trị không thể lệch cột.
+    private static readonly string[] HeaderColumns = ["HanHieuLuc", "ThueVAT", "MaDichVu", "TongTienLinhKien", "TongTienCong", "TongTienThanhToan"];
+
+    private static readonly string[] ReviewColumns =
+    [
+        "TrangThaiDuyetNoiBo", "MaNVQuanLyDuyet", "NgayDuyetNoiBo", "GhiChuDuyet", "KhachXacNhan", "NgayKhachXacNhan",
+        "LyDoKhachTuChoi", "KenhXacNhan", "NguoiGhiNhanXacNhan",
+    ];
+
+    private static readonly string[] InsertColumns =
+        ["MaBaoGia", "MaPhieuTN", "MaPhieuKT", "MaKTVLap", "NgayLapBaoGia", .. HeaderColumns, .. ReviewColumns];
+
+    private static readonly string Columns = string.Join(", ", InsertColumns);
 
     public async Task SaveAsync(Quotation quotation)
     {
         if (!quotation.Persisted)
         {
             await sql.ExecuteAsync(
-                $"INSERT INTO PhieuBaoGia ({Columns}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                $"INSERT INTO PhieuBaoGia ({Columns}) VALUES ({string.Join(", ", InsertColumns.Select(_ => "?"))})",
                 [quotation.Id, quotation.TicketId, quotation.InspectionCode, quotation.CreatedBy, quotation.CreatedAt, .. Header(quotation), .. Review(quotation)]);
             await InsertLinesAsync(quotation);
             quotation.Persisted = true;
@@ -31,9 +41,7 @@ public sealed class QuotationStore(Sql sql)
             await InsertLinesAsync(quotation);
         }
         await sql.ExecuteAsync(
-            "UPDATE PhieuBaoGia SET HanHieuLuc = ?, ThueVAT = ?, MaDichVu = ?, TongTienLinhKien = ?, TongTienCong = ?, TongTienThanhToan = ?, "
-            + "TrangThaiDuyetNoiBo = ?, MaNVQuanLyDuyet = ?, NgayDuyetNoiBo = ?, GhiChuDuyet = ?, KhachXacNhan = ?, NgayKhachXacNhan = ?, "
-            + "LyDoKhachTuChoi = ?, KenhXacNhan = ?, NguoiGhiNhanXacNhan = ? WHERE MaBaoGia = ?",
+            $"UPDATE PhieuBaoGia SET {string.Join(", ", HeaderColumns.Concat(ReviewColumns).Select(column => column + " = ?"))} WHERE MaBaoGia = ?",
             [.. Header(quotation), .. Review(quotation), quotation.Id]);
     }
 
