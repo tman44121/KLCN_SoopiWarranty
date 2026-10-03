@@ -140,7 +140,8 @@ const stepText = (ticket: Json) => ticket.stopped
 /* ---------------------------------------------------------------- Trang chủ */
 
 function Overview({ data }: { data: Data }) {
-  const active = data.tickets.filter((t) => !t.stopped && t.status !== "DELIVERED");
+  // Chỉ đếm phiếu còn trong quy trình: chưa sửa xong và chưa dừng.
+  const active = data.tickets.filter((t) => !t.stopped && !inGroup("COMPLETED", t.status));
   const awaiting = data.tickets.filter((t) => t.status === "AWAITING_CUSTOMER_CONFIRMATION");
   const name = data.profile.fullName;
   return (
