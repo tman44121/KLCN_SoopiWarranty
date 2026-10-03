@@ -666,7 +666,7 @@
   letter-spacing: var(--text-table-header-tracking);
   text-transform: uppercase;
   color: var(--text-table-header-color);
-  overflow-wrap: anywhere;
+  overflow-wrap: normal; /* xuống dòng giữa các từ, không bẻ "KỸ THUẬ/T" */
 }
 
 .data-table th.is-sortable {
@@ -709,6 +709,11 @@
   color: var(--color-primary);
 }
 
+.data-table--fluid .cell-actions {
+  flex-wrap: wrap;
+  white-space: normal;
+}
+
 /* Lịch sử phiếu của kỹ thuật viên: cột kỹ thuật viên luôn là chính họ. */
 .data-table.is-own-only .col-technician {
   display: none;
@@ -727,11 +732,6 @@
   background: var(--border-divider);
 }
 
-.data-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.mono {
 /* Dòng mở popup thao tác khi bấm (bảng tài khoản nhân viên). */
 .data-table__row-action {
   cursor: pointer;
@@ -746,6 +746,11 @@
   background: var(--border-divider);
 }
 
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.mono {
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: -0.01em;
@@ -912,7 +917,7 @@
 }
 
 .workload-row__info {
-  width: 148px;
+  width: 240px; /* đủ cho "10/10 phiếu · SLA nguy cơ: 3" trên một dòng */
   flex-shrink: 0;
 }
 
@@ -1285,11 +1290,6 @@ button.queue-item {
   color: var(--text-strong);
 }
 
-.section-divider {
-  border: none;
-  border-top: 1px solid var(--border-universal);
-  margin: 16px 0;
-}
 /* Mật khẩu tạm hiện một lần (đặt lại mật khẩu khách) — chữ to, dễ đọc cho khách. */
 .temp-password {
   padding: 14px 16px;
@@ -1314,6 +1314,11 @@ button.queue-item {
   gap: 8px;
 }
 
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--border-universal);
+  margin: 16px 0;
+}
 
 .checklist {
   display: flex;

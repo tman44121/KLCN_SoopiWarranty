@@ -8,6 +8,30 @@
    Nạp sau brand.css; quy tắc của giao diện khách (.kh-app) không bị ảnh hưởng.
    ========================================================================== */
 
+/* Bảng điều phối 11 cột: thu đệm ô dưới 1600px, ẩn cột "Loại thiết bị" (trùng Hãng/Model, vẫn có ở dòng chi tiết)
+   dưới 1440px để không phải cuộn ngang mới thấy nút thao tác. */
+@media (max-width: 1599px) {
+  .data-table--fluid thead th,
+  .data-table--fluid tbody td {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1439px) {
+  .data-table--fluid .col-category {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1365px) {
+  .data-table--fluid thead th,
+  .data-table--fluid tbody td {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}
+
 @media (max-width: 1279px) {
   :root {
     --sidebar-width: 224px;
@@ -458,5 +482,14 @@
   .checkbox-row input[type="checkbox"] {
     width: 20px;
     height: 20px;
+  }
+
+  /* Bảng nhập liệu (dòng báo giá, dòng phiếu kho) và dòng hạng mục cũng là vùng chạm. */
+  .drawer-table--inputs input,
+  .drawer-table--inputs select,
+  .item-row input,
+  .item-row select,
+  .item-row__remove {
+    min-height: 44px;
   }
 }

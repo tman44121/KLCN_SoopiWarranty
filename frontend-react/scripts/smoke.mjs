@@ -26,7 +26,7 @@ const ticketView = (quoted) => ({ code: 'TN-2026-1002-00001', productName: 'Gala
   receivedAt: '2026-10-01T02:00:00Z', promisedReturnAt: '2026-10-04T10:00:00Z', status: quoted ? 'AWAITING_CUSTOMER_CONFIRMATION' : 'REPAIRING', stopped: false,
   steps: steps(quoted ? 1 : 3), customerNotes: [{ at: '2026-10-01T05:00:00Z', text: 'Máy cần thay màn hình.' }], handedOverAt: null,
   costs: { inWarrantyAmount: 0, outOfWarrantyParts: 2500000, serviceFee: 200000, vat: 216000, total: 2916000, paymentStatus: 'UNPAID' },
-  pendingQuotation: quoted ? { code: 'BG-1', validUntil: '2026-10-09', vatRate: 0.08, partsTotal: 2500000, laborTotal: 200000, grandTotal: 2916000,
+  pendingQuotation: quoted ? { code: 'BG-1', validUntil: '2026-10-09', vatRate: 8, partsTotal: 2500000, laborTotal: 200000, grandTotal: 2916000,
     lines: [{ lineNo: 1, description: 'Màn hình AMOLED', quantity: 1, lineTotal: 2500000 }, { lineNo: 2, description: 'Công thay', quantity: 1, lineTotal: 200000 }] } : null });
 export const browser = await chromium.launch({ channel: 'msedge', headless: true });
 let assertions = 0;

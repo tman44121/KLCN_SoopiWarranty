@@ -199,8 +199,8 @@ INSERT INTO LichSuTrangThai_ThietBi (MaLichSu, MaPhieuTN, TrangThai, ThoiGianCap
   (24, N'TN-2026-0912-00001', N'DIAGNOSED', '2026-09-12T13:00:00', N'Trạng thái đổi từ "Đang kiểm tra" sang "Đã chẩn đoán"', N'NV-105', N'Hoàng Anh Dũng', N'TECHNICIAN'),
   (25, N'TN-2026-0912-00001', N'AWAITING_QUOTE_APPROVAL', '2026-09-12T13:30:00', N'Trạng thái đổi từ "Đã chẩn đoán" sang "Chờ duyệt giá"', N'NV-105', N'Hoàng Anh Dũng', N'TECHNICIAN'),
   (26, N'TN-2026-0912-00001', N'AWAITING_CUSTOMER_CONFIRMATION', '2026-09-12T14:00:00', N'Trạng thái đổi từ "Chờ duyệt giá" sang "Chờ khách xác nhận"', N'NV-101', N'Trần Thị Hoa', N'DISPATCHER'),
-  (27, N'TN-2026-0912-00001', N'CANCELLED', '2026-09-12T16:00:00', N'Trạng thái đổi từ "Chờ khách xác nhận" sang "Đã hủy" (khách xác nhận trên Cổng khách hàng)', N'KH:KH-000003', N'Lý Gia Bảo', N'CUSTOMER'),
-  (28, N'TN-2026-0912-00001', N'RETURNED_UNREPAIRED', '2026-09-13T10:00:00', N'Trạng thái đổi từ "Đã hủy" sang "Đã trả máy (hủy)"', N'NV-102', N'Nguyễn Văn An', N'RECEPTIONIST');
+  (27, N'TN-2026-0912-00001', N'AWAITING_RETURN', '2026-09-12T16:00:00', N'Trạng thái đổi từ "Chờ khách xác nhận" sang "Chờ trả máy" (khách từ chối báo giá)', N'KH:KH-000003', N'Lý Gia Bảo', N'CUSTOMER'),
+  (28, N'TN-2026-0912-00001', N'RETURNED_UNREPAIRED', '2026-09-13T10:00:00', N'Trạng thái đổi từ "Chờ trả máy" sang "Đã trả máy (không sửa)"', N'NV-102', N'Nguyễn Văn An', N'RECEPTIONIST');
 SET IDENTITY_INSERT LichSuTrangThai_ThietBi OFF;
 GO
 INSERT INTO LinhKien (MaLK, TenLK, DonViTinh, MaNhom, TenHang, DonGiaVon, DonGiaDichVu, SoLuongTon, SoLuongDaGiu, DinhMucTonToiThieu, KeChinh, ThoiHanBaoHanhThang, MaNCC, HoatDong, PhienBan) VALUES
@@ -310,7 +310,7 @@ INSERT INTO NhatKyThaoTac (MaNhatKy, ThoiGian, MaNguoiThaoTac, TenNguoiThaoTac, 
   (42, '2026-09-12T13:30:00', N'NV-105', N'Hoàng Anh Dũng', N'Kỹ thuật viên', N'QUOTATION_CREATED', N'Gửi phiếu báo giá', N'QUOTATION', N'BG-2026-0912-00001', N'—', N'BG-2026-0912-00001 — Chờ phê duyệt — 1.836.000 đ'),
   (43, '2026-09-12T14:00:00', N'NV-101', N'Trần Thị Hoa', N'Điều phối viên', N'QUOTATION_APPROVED', N'Phê duyệt báo giá', N'QUOTATION', N'BG-2026-0912-00001', N'Chờ phê duyệt', N'Đã phê duyệt — chờ khách xác nhận'),
   (44, '2026-09-12T16:00:00', N'KH:KH-000003', N'Lý Gia Bảo', N'Khách hàng', N'QUOTATION_DECLINED', N'Từ chối báo giá', N'QUOTATION', N'BG-2026-0912-00001', N'Chờ khách xác nhận', N'Khách từ chối — Chi phí thay 1 bên tai cao hơn giá mua tai nghe mới, khách xin nhận lại máy.'),
-  (45, '2026-09-13T10:00:00', N'NV-102', N'Nguyễn Văn An', N'Tiếp nhận & Lễ tân', N'HANDOVER_COMPLETED', N'Hoàn tất bàn giao', N'TICKET', N'TN-2026-0912-00001', N'TN-2026-0912-00001 — Ngừng sửa theo yêu cầu khách', N'TN-2026-0912-00001 — Đã trả máy (không sửa)'),
+  (45, '2026-09-13T10:00:00', N'NV-102', N'Nguyễn Văn An', N'Tiếp nhận & Lễ tân', N'HANDOVER_COMPLETED', N'Hoàn tất bàn giao', N'TICKET', N'TN-2026-0912-00001', N'TN-2026-0912-00001 — Chờ trả máy', N'TN-2026-0912-00001 — Đã trả máy (không sửa)'),
   (46, '2026-09-17T21:02:00', N'PORTAL', NULL, NULL, N'WARRANTY_REQUEST_CREATED', N'Đăng ký yêu cầu bảo hành trực tuyến', N'WARRANTY_REQUEST', N'YC-2026-0917-00001', N'—', N'YC-2026-0917-00001 — Chờ tiếp nhận'),
   (47, '2026-09-16T15:00:00', N'NV-003', N'Đặng Văn Kiên', N'Quản lý kho vật tư', N'STOCK_RECEIPT_CREATED', N'Tạo phiếu nhập kho', N'STOCK_RECEIPT', N'PN-2026-00003', N'—', N'PN-2026-00003 — Chờ duyệt'),
   (48, '2026-09-17T09:00:00', N'NV-003', N'Đặng Văn Kiên', N'Quản lý kho vật tư', N'STOCK_TRANSFER_CREATED', N'Tạo phiếu điều chuyển', N'STOCK_TRANSFER', N'DC-2026-00001', N'—', N'LK-PWR-IC01 × 15: KHO-C-02-11 → KHO-C-01-04');

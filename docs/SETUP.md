@@ -44,6 +44,14 @@ Thư mục `database/` có script SQL Server mới nhất (lấy từ `warranty-
 `04_app_user.sql` (tài khoản ứng dụng cho production) và file ghép `TrungTamBaoHanhDB_SqlServer.sql` (= 01 + 02 + 03,
 tự tạo database `TrungTamBaoHanhDB` collation `Latin1_General_100_CI_AI`).
 
+Database tạo từ một bản script trước (còn trạng thái phiếu `CANCELLED`, `YeuCauBaoHanh` chưa có cột `MaKH`, chưa có
+quyền quản lý tài khoản khách) phải nâng cấp trước khi chạy backend hiện tại — giữ nguyên dữ liệu, chạy lại nhiều lần
+không sao, dùng được cho database tạo từ bất kỳ bản script nào trước đây:
+
+```powershell
+sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\05_upgrade_existing_db.sql
+```
+
 `run.bat` tự làm bước này khi máy chưa có connection string (xem mục 3). Muốn làm riêng:
 
 ```powershell

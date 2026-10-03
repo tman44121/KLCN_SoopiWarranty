@@ -14,7 +14,7 @@ export default function initialize() {
   const { html } = window;
   const COLUMNS = 11;
   /** Trạng thái còn đếm SLA (SLA không phải trạng thái — mục 7.1). */
-  const SLA_COUNTED = (status) => !["COMPLETED", "CANCELLED", "DELIVERED", "RETURNED_UNREPAIRED"].includes(status);
+  const SLA_COUNTED = (status) => !["COMPLETED", "AWAITING_RETURN", "DELIVERED", "RETURNED_UNREPAIRED"].includes(status);
   const REASSIGNABLE = ["INSPECTING", "DIAGNOSED", "AWAITING_QUOTE_APPROVAL", "AWAITING_CUSTOMER_CONFIRMATION", "AWAITING_PARTS", "REPAIRING"];
 
   const state = {
@@ -63,6 +63,9 @@ export default function initialize() {
     quotationDrawerReclass: document.querySelector("[data-quotation-drawer-reclass]"),
     quotationDrawerTech: document.querySelector("[data-quotation-drawer-tech]"),
     quotationDrawerNote: document.querySelector("[data-quotation-drawer-note]"),
+    quotationDrawerNoteLabel: document.querySelector("[data-quotation-drawer-note-label]"),
+    quotationDrawerVat: document.querySelector("[data-quotation-drawer-vat]"),
+    quotationDrawerVatLabel: document.querySelector("[data-quotation-drawer-vat-label]"),
     quotationDrawerItems: document.querySelector("[data-quotation-drawer-items]"),
     quotationDrawerPartsTotal: document.querySelector("[data-quotation-drawer-parts-total]"),
     quotationDrawerServiceFee: document.querySelector("[data-quotation-drawer-service-fee]"),
@@ -142,7 +145,7 @@ export default function initialize() {
         <td class="mono cell-primary">${t.code}</td>
         <td class="cell-muted">${fmt.dateTime(t.receivedAt)}</td>
         <td>${t.customer ? t.customer.fullName : "—"}</td>
-        <td>${L.CATEGORY[t.device.categoryCode] || "—"}</td>
+        <td class="col-category">${L.CATEGORY[t.device.categoryCode] || "—"}</td>
         <td>${t.device.deviceTypeName}<br><span class="cell-muted">${t.device.productName}</span></td>
         <td class="mono">${t.device.serialOrImei}</td>
         <td>${L.SLA_LEVEL[t.sla.level]}</td>
@@ -251,7 +254,7 @@ export default function initialize() {
           <div class="workload-row">
             <div class="workload-row__info">
               <div class="workload-row__name">${tech.fullName}</div>
-              <div class="workload-row__meta">${tech.activeTickets}/${tech.maxActiveTickets} ticket · SLA nguy cơ: ${tech.atRiskSla}${tech.onSite ? "" : " · Không có mặt tại trạm"}</div>
+              <div class="workload-row__meta">${tech.activeTickets}/${tech.maxActiveTickets} phiếu · SLA nguy cơ: ${tech.atRiskSla}${tech.onSite ? "" : " · Không có mặt tại trạm"}</div>
             </div>
             <div class="workload-row__bar-track" role="img" aria-label="${bars} ${tech.loadPercent}%">
               <div class="workload-row__bar-fill ${tech.overloaded ? "is-overload" : ""}" style="width:${pct}%"></div>
@@ -396,6 +399,7 @@ export default function initialize() {
       el.quotationDrawerSubtitle.textContent = `${quotation.code} — ${ticket.code} — ${ticket.device.deviceTypeName} (${ticket.device.productName})`;
       el.quotationDrawerReclass.textContent = L.CLASSIFICATION[inspection.classification] || "—";
       el.quotationDrawerTech.textContent = ticket.technicianName || quotation.createdBy;
+      el.quotationDrawerNoteLabel.textContent = inspection.reclassNote ? "Lý do phân loại lại" : "Lý do ngoài bảo hành";
       el.quotationDrawerNote.textContent = inspection.reclassNote || inspection.outOfWarrantyReason || "—";
       el.quotationDrawerItems.innerHTML = html`${quotation.lines.map((line) => html`
         <tr>
@@ -405,7 +409,10 @@ export default function initialize() {
           <td>${fmt.money(line.lineTotal)}</td>
         </tr>`)}`;
       el.quotationDrawerPartsTotal.textContent = fmt.money(quotation.partsTotal);
-      el.quotationDrawerServiceFee.textContent = `${fmt.money(quotation.laborTotal)} (VAT ${Number(quotation.vatRate)}%)`;
+      el.quotationDrawerServiceFee.textContent = fmt.money(quotation.laborTotal);
+      // VAT tính trên cả linh kiện lẫn tiền công: hiện thành dòng riêng để tổng cộng lại được.
+      el.quotationDrawerVatLabel.textContent = `Thuế VAT (${Number(quotation.vatRate)}%)`;
+      el.quotationDrawerVat.textContent = fmt.money(quotation.grandTotal - quotation.partsTotal - quotation.laborTotal);
       el.quotationDrawerTotal.textContent = fmt.money(quotation.grandTotal);
       el.quotationDispatchNote.value = "";
       el.quotationDispatchNoteError.setAttribute("hidden", "");

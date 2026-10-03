@@ -427,6 +427,9 @@ function TicketDetail({ code, onChanged }: { code: string; onChanged: () => void
           </section>
           <section className="content-panel-card">
             <h2 className="card-heading-title" style={{ marginBottom: 12 }}>Chi phí dự kiến</h2>
+            {ticket.pendingQuotation ? (
+              <p className="card-heading-desc">Chi phí được cập nhật sau khi bạn đồng ý báo giá ở trên.</p>
+            ) : (
             <div className="kv-list">
               <div className="kv-row"><span>Chi phí trong bảo hành</span><span>{fmt().money(costs.inWarrantyAmount)}</span></div>
               <div className="kv-row"><span>Linh kiện ngoài bảo hành</span><span>{fmt().money(costs.outOfWarrantyParts)}</span></div>
@@ -434,6 +437,7 @@ function TicketDetail({ code, onChanged }: { code: string; onChanged: () => void
               <div className="kv-row"><span>VAT</span><span>{fmt().money(costs.vat)}</span></div>
               <div className="kv-row is-total"><span>Tổng thanh toán</span><span>{fmt().money(costs.total)}</span></div>
             </div>
+            )}
           </section>
         </div>
       </div>
@@ -471,6 +475,10 @@ function Quotation({ ticket, onDecided }: { ticket: Json; onDecided: (ticket: Js
         {quote.lines.map((line: Json) => (
           <div key={line.lineNo} className="kv-row"><span>{line.description} × {line.quantity}</span><span>{fmt().money(line.lineTotal)}</span></div>
         ))}
+        {/* Dòng hạng mục đã gồm tiền công; tách linh kiện / công / VAT để khách cộng lại được ra tổng. */}
+        <div className="kv-row"><span>Linh kiện</span><span>{fmt().money(quote.partsTotal)}</span></div>
+        <div className="kv-row"><span>Tiền công</span><span>{fmt().money(quote.laborTotal)}</span></div>
+        <div className="kv-row"><span>VAT ({Number(quote.vatRate)}%)</span><span>{fmt().money(quote.grandTotal - quote.partsTotal - quote.laborTotal)}</span></div>
         <div className="kv-row is-total"><span>Tổng khách phải trả</span><span>{fmt().money(quote.grandTotal)}</span></div>
       </div>
       {error && <div className="field-error" role="alert">{error}</div>}

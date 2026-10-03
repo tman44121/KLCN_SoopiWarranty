@@ -703,7 +703,7 @@ export default function initialize() {
     if (decision === "DECLINE") {
       reason = await ui.promptReason({
         title: "Ghi nhận từ chối báo giá?",
-        message: `Phiếu ${q.ticketCode} sẽ chuyển sang “Ngừng sửa theo yêu cầu khách” và chờ trả máy.`,
+        message: `Phiếu ${q.ticketCode} sẽ chuyển sang “Chờ trả máy”.`,
         label: "Lý do khách từ chối",
         confirmLabel: "Ghi nhận khách từ chối",
       });

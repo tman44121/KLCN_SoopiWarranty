@@ -14,7 +14,7 @@ export default function initialize() {
     try {
       const [completed, cancelled] = await Promise.all([
         api.tickets.list({ status: "COMPLETED", page: 0, size: 100 }),
-        api.tickets.list({ status: "CANCELLED", page: 0, size: 100 }),
+        api.tickets.list({ status: "AWAITING_RETURN", page: 0, size: 100 }),
       ]);
       state.tickets = completed.items.concat(cancelled.items);
       renderQueue();
@@ -63,7 +63,7 @@ export default function initialize() {
       return;
     }
     const billing = state.billing;
-    const cancelled = ticket.status === "CANCELLED";
+    const cancelled = ticket.status === "AWAITING_RETURN";
     const settled = cancelled || (billing && billing.paymentStatus !== "UNPAID");
     detail.innerHTML = html`
       <section class="card"><div class="card__header"><div><h2 class="card__title">Chi tiết bàn giao — <span class="mono">${ticket.code}</span></h2>
@@ -157,7 +157,7 @@ export default function initialize() {
 
   async function handOver(button) {
     const ticket = state.selected;
-    const cancelled = ticket.status === "CANCELLED";
+    const cancelled = ticket.status === "AWAITING_RETURN";
     const receiverName = detail.querySelector("[data-receiver-name]").value.trim();
     const conditionOnReturn = detail.querySelector("[data-return-condition]").value.trim();
     const customerConfirmed = detail.querySelector("[data-customer-confirmed]").checked;

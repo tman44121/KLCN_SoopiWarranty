@@ -2471,13 +2471,24 @@ a.method-card:hover {
     gap: 10px;
   }
 
+  /* Bốn mục menu không vừa một hàng điện thoại: xuống hàng thay vì cắt chữ trong dải cuộn ẩn. */
   .nav-menu {
     order: 3;
     width: 100%;
-    gap: 20px;
-    overflow-x: auto;
+    flex-wrap: wrap;
+    gap: 6px 18px;
     padding: 6px 0 12px;
-    scrollbar-width: none;
+  }
+
+  .nav-menu .nav-link {
+    display: inline-block;
+    padding: 4px 0;
+    font-size: 13px;
+  }
+
+  /* Mã yêu cầu/phiếu không bẻ giữa chừng; badge trạng thái xuống dòng khi hết chỗ. */
+  .ticket-item-row {
+    flex-wrap: wrap;
   }
 
   .nav-right-actions .btn-primary-teal,
@@ -2653,3 +2664,9 @@ a.method-card:hover {
     margin-top: 4px;
   }
 }
+
+.ticket-meta .mono,
+.ticket-meta .dispatch-link {
+  white-space: nowrap;
+}
+

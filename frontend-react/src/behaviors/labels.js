@@ -15,9 +15,9 @@ export default function initialize() {
     AWAITING_CUSTOMER_CONFIRMATION: { label: "Chờ khách xác nhận", tone: "warning" },
     AWAITING_PARTS: { label: "Chờ linh kiện", tone: "warning" },
     REPAIRING: { label: "Đang sửa chữa", tone: "processing" },
-    COMPLETED: { label: "Sẵn sàng bàn giao", tone: "success" },
-    DELIVERED: { label: "Đã hoàn thành", tone: "success" },
-    CANCELLED: { label: "Ngừng sửa theo yêu cầu khách", tone: "neutral" },
+    COMPLETED: { label: "Hoàn thành – Chờ bàn giao", tone: "success" },
+    DELIVERED: { label: "Đã bàn giao", tone: "success" },
+    AWAITING_RETURN: { label: "Chờ trả máy", tone: "warning" },
     RETURNED_UNREPAIRED: { label: "Đã trả máy (không sửa)", tone: "neutral" },
   };
 

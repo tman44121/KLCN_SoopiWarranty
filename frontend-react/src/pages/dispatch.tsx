@@ -310,7 +310,7 @@ export default function DispatchPage() {
                   <th>
                     {"Khách hàng"}
                   </th>
-                  <th>
+                  <th className="col-category">
                     {"Loại thiết bị"}
                   </th>
                   <th>
@@ -502,8 +502,8 @@ export default function DispatchPage() {
               </span>
             </div>
             <div className="detail-grid__item detail-grid__item--wide">
-              <span className="kv-key">
-                {"Lý do phân loại lại"}
+              <span className="kv-key" data-quotation-drawer-note-label="">
+                {"Lý do ngoài bảo hành"}
               </span>
               <span data-quotation-drawer-note="">
                 {"—"}
@@ -548,9 +548,17 @@ export default function DispatchPage() {
               {"—"}
             </span>
           </div>
+          <div className="billing-row">
+            <span data-quotation-drawer-vat-label="">
+              {"Thuế VAT"}
+            </span>
+            <span data-quotation-drawer-vat="">
+              {"—"}
+            </span>
+          </div>
           <div className="billing-total-row">
             <span>
-              {"Tổng tạm tính"}
+              {"Tổng thanh toán"}
             </span>
             <span data-quotation-drawer-total="">
               {"—"}

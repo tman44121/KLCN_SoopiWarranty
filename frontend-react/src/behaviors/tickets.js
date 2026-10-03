@@ -49,7 +49,7 @@ export default function initialize() {
 
   // Không có TICKET_READ_ALL (kỹ thuật viên): GET /tickets chỉ trả phiếu được giao cho chính người đó.
   const ownOnly = () => !window.LML_AUTH.hasPermission("TICKET_READ_ALL");
-  const CLOSED = ["COMPLETED", "DELIVERED", "CANCELLED", "RETURNED_UNREPAIRED"];
+  const CLOSED = ["COMPLETED", "DELIVERED", "AWAITING_RETURN", "RETURNED_UNREPAIRED"];
 
   async function load() {
     ui.skeletonRows(el.tbody, COLUMNS, 6);
