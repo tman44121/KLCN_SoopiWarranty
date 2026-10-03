@@ -80,7 +80,7 @@ export default function RegisterPage() {
     <div className="kh-app kh-auth kh-auth--wide" ref={scaled}>
       <aside className="auth-banner">
         <div className="banner-header">
-          <a href="/portal" className="banner-logo">
+          <a href="/" className="banner-logo">
             <BrandLogo light={true} />
           </a>
           <a href="/portal" className="banner-home-link"><Icon glyph="search" />Tra cứu không cần đăng nhập</a>

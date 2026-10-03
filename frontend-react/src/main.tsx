@@ -10,6 +10,7 @@ import './styles/responsive.css';
 import './styles/customer.css';
 
 // Mỗi trang là một chunk riêng kèm controller của nó; mở /login không tải code kho, quản trị, báo cáo.
+const Home = lazy(() => import('./pages/home'));
 const Login = lazy(() => import('./pages/login'));
 const Dispatch = lazy(() => import('./pages/dispatch'));
 const Receptionist = lazy(() => import('./pages/receptionist'));
@@ -33,7 +34,7 @@ createRoot(document.getElementById('root')!).render(
   <BrowserRouter>
     <Suspense fallback={null}>
       <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/dispatch" element={<Dispatch />} />
       <Route path="/receptionist" element={<Receptionist />} />
@@ -49,7 +50,7 @@ createRoot(document.getElementById('root')!).render(
       <Route path="/account" element={<Account />} />
       {Object.entries(legacyRoutes).map(([from, to]) =>
         <Route key={from} path={from} element={<LegacyRedirect to={to} />} />)}
-      <Route path="*" element={<main><p role="alert">Không tìm thấy trang.</p><Link to="/login" reloadDocument>Đăng nhập</Link></main>} />
+      <Route path="*" element={<main><p role="alert">Không tìm thấy trang.</p><Link to="/" reloadDocument>Về trang chủ</Link></main>} />
     </Routes>
     </Suspense>
   </BrowserRouter>,

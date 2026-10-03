@@ -210,7 +210,8 @@ if (app.Environment.IsDevelopment()) app.MapOpenApi();
 app.MapControllers();
 
 // Chỉ các URL giao diện trả index.html; /api sai vẫn trả Problem Details.
-app.MapGet("/", () => Results.Redirect("/login"));
+// "/" là trang giới thiệu công khai cho khách (home/index.html của web khách KLCN).
+app.MapFallbackToFile("/", "index.html");
 foreach (var (legacy, route) in pages)
 {
     app.MapGet(legacy, (HttpContext context) => Results.Redirect(route + context.Request.QueryString, permanent: true));

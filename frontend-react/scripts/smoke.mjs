@@ -152,6 +152,18 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
   assert.deepEqual(admin.errors, [], 'staff on customer area: browser errors'); assertions++;
   await admin.context.close();
   console.log('PASS required password change, confirmation validation, multiple roles and logout');
+  for (const width of [1440, 390]) {
+    const h = await session('CUSTOMER', '/account', width);
+    await h.page.goto(base + '/');
+    await h.page.getByRole('heading', { name: 'Tra cứu & quản lý bảo hành sản phẩm' }).waitFor(); assertions++;
+    await h.page.getByRole('heading', { name: 'Trạm thử' }).waitFor(); assertions++;
+    await h.page.locator('.sla-pill-badge', { hasText: 'Ví dụ minh họa' }).waitFor(); assertions++;
+    assert.equal(await h.page.locator('.nav-link.active').getAttribute('href'), '/'); assertions++;
+    assert.equal(await h.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `home ${width}: horizontal scroll`); assertions++;
+    assert.deepEqual(h.errors, [], 'home: browser errors'); assertions++;
+    await h.page.screenshot({ path: fileURLToPath(new URL(`home-${width}.png`, output)), fullPage: true });
+    await h.context.close();
+  }
   const s = await session('CUSTOMER', '/portal', 390);
   await s.page.goto(base + '/login');
   await s.page.waitForLoadState('networkidle');
@@ -209,6 +221,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await c.page.goto(base + '/portal');
     await c.page.locator('.user-profile-trigger').waitFor(); assertions++;
     assert.equal(await c.page.locator('.nav-menu a').first().getAttribute('href'), '/account'); assertions++;
+    await c.page.goto(base + '/');
+    await c.page.locator('.sla-pill-badge', { hasText: 'Phiếu của bạn' }).waitFor(); assertions++;
+    assert.equal(await c.page.locator('.hero-dashboard-card .ticket-item-row').count(), customer.tickets.length); assertions++;
     await c.page.goto(base + '/account');
     await c.page.getByRole('heading', { name: 'Xin chào, Nguyễn Văn Khách' }).waitFor();
     await c.page.screenshot({ path: fileURLToPath(new URL(`account-${width}.png`, output)), fullPage: true });
