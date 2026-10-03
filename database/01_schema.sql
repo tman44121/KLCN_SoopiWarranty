@@ -307,6 +307,7 @@ CREATE TABLE ThietBi (
 -- ----------------------------------------------------------------------------
 CREATE TABLE YeuCauBaoHanh (
     MaYeuCau              NVARCHAR(30)  PRIMARY KEY,
+    MaKH                  NVARCHAR(20)  NULL, -- Gắn hồ sơ khách đăng nhập; NULL cho yêu cầu khách vãng lai.
     HoTenKhach            NVARCHAR(100) NOT NULL,
     SDTKhach              NVARCHAR(15)  NOT NULL,
     EmailKhach            NVARCHAR(100) NULL,
@@ -327,7 +328,9 @@ CREATE TABLE YeuCauBaoHanh (
     LyDoHuy               NVARCHAR(255) NULL,
     NgayTao               DATETIME2(0)  NOT NULL,
     INDEX IX_YeuCau_SDT (SDTKhach),
+    INDEX IX_YeuCau_KhachHang (MaKH, TrangThai, NgayTao),
     INDEX IX_YeuCau_TrangThai (TrangThai, NgayTao),
+    FOREIGN KEY (MaKH) REFERENCES KhachHang(MaKH),
     FOREIGN KEY (MaNhom) REFERENCES NhomThietBi(MaNhom),
     FOREIGN KEY (MaLoai) REFERENCES LoaiThietBi(MaLoai),
     FOREIGN KEY (MaTramMongMuon) REFERENCES TramDichVu(MaTram),

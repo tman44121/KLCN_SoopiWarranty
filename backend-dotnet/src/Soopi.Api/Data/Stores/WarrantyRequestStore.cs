@@ -18,7 +18,8 @@ public sealed record NewWarrantyRequest(
     string PreferredStation,
     DateTimeOffset? PreferredFrom,
     DateTimeOffset? PreferredTo,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    string? CustomerId = null);
 
 /// <summary>
 /// Yêu cầu bảo hành trực tuyến (bảng YeuCauBaoHanh, tệp ở TepDinhKem). API trả bản ghi dạng map cùng hình dạng giao diện
@@ -26,7 +27,7 @@ public sealed record NewWarrantyRequest(
 /// </summary>
 public sealed class WarrantyRequestStore(Sql sql)
 {
-    private const string Columns = "MaYeuCau, HoTenKhach, SDTKhach, EmailKhach, DiaChiKhach, MaNhom, MaLoai, HangModel, LoaiDinhDanh, "
+    private const string Columns = "MaYeuCau, MaKH, HoTenKhach, SDTKhach, EmailKhach, DiaChiKhach, MaNhom, MaLoai, HangModel, LoaiDinhDanh, "
         + "SoSerial_IMEI, MoTaLoi, MaTramMongMuon, ThoiGianMongMuonTu, ThoiGianMongMuonDen, TrangThai, MaPhieuTN, MaNVXuLy, NgayXuLy, LyDoHuy, NgayTao";
 
     public async Task<List<Dictionary<string, object?>>> SearchAsync(string? status, string? query)
@@ -55,9 +56,9 @@ public sealed class WarrantyRequestStore(Sql sql)
         return rows.FirstOrDefault();
     }
 
-    /// <summary>Yêu cầu gửi bằng SĐT này (đã chuẩn hóa), mới nhất trước — không kèm tệp.</summary>
-    public Task<List<Dictionary<string, object?>>> FindByPhoneAsync(string phone) =>
-        sql.QueryAsync($"SELECT {Columns} FROM YeuCauBaoHanh WHERE SDTKhach = ? ORDER BY NgayTao DESC, MaYeuCau DESC", Map, phone);
+    /// <summary>Yêu cầu của khách (gắn MaKH, hoặc gửi vãng lai bằng SĐT này đã chuẩn hóa), mới nhất trước — không kèm tệp.</summary>
+    public Task<List<Dictionary<string, object?>>> FindByCustomerAsync(string customerId, string phone) =>
+        sql.QueryAsync($"SELECT {Columns} FROM YeuCauBaoHanh WHERE MaKH = ? OR SDTKhach = ? ORDER BY NgayTao DESC, MaYeuCau DESC", Map, customerId, phone);
 
     public async Task<bool> IsPendingAsync(string code) =>
         await sql.ScalarAsync("SELECT 1 FROM YeuCauBaoHanh WHERE MaYeuCau = ? AND TrangThai = 'PENDING_INTAKE'", code) is not null;
@@ -69,10 +70,10 @@ public sealed class WarrantyRequestStore(Sql sql)
 
     public Task InsertAsync(NewWarrantyRequest request) =>
         sql.ExecuteAsync(
-            "INSERT INTO YeuCauBaoHanh (MaYeuCau, HoTenKhach, SDTKhach, EmailKhach, DiaChiKhach, MaNhom, MaLoai, HangModel, LoaiDinhDanh, "
+            "INSERT INTO YeuCauBaoHanh (MaYeuCau, MaKH, HoTenKhach, SDTKhach, EmailKhach, DiaChiKhach, MaNhom, MaLoai, HangModel, LoaiDinhDanh, "
             + "SoSerial_IMEI, MoTaLoi, MaTramMongMuon, ThoiGianMongMuonTu, ThoiGianMongMuonDen, TrangThai, NgayTao) "
-            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING_INTAKE', ?)",
-            request.Code, request.FullName, request.Phone, request.Email, request.Address, request.CategoryCode, request.DeviceTypeCode,
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING_INTAKE', ?)",
+            request.Code, request.CustomerId, request.FullName, request.Phone, request.Email, request.Address, request.CategoryCode, request.DeviceTypeCode,
             request.BrandModel, request.IdentifierType, request.SerialOrImei, request.Symptom, request.PreferredStation,
             request.PreferredFrom, request.PreferredTo, request.CreatedAt);
 
@@ -93,6 +94,7 @@ public sealed class WarrantyRequestStore(Sql sql)
     private static Dictionary<string, object?> Map(DbDataReader row) => new()
     {
         ["_id"] = row.Str("MaYeuCau"),
+        ["customerId"] = row.Str("MaKH"),
         ["customer"] = new Dictionary<string, object?>
         {
             ["fullName"] = row.Str("HoTenKhach"),

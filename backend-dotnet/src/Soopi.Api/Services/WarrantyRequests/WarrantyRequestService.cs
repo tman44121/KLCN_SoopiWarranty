@@ -55,7 +55,8 @@ public sealed record SubmissionCommand(
     string? Symptom,
     string? PreferredStation,
     DateTimeOffset? PreferredFrom,
-    DateTimeOffset? PreferredTo);
+    DateTimeOffset? PreferredTo,
+    string? CustomerId = null);
 
 /// <summary>Khách tự đăng ký yêu cầu bảo hành trên cổng khách (công khai) hoặc app.</summary>
 public sealed class WarrantyRequestSubmissionService(
@@ -104,7 +105,7 @@ public sealed class WarrantyRequestSubmissionService(
         };
         return new NewWarrantyRequest(
             code, JavaText.Trim(c.FullName!), phone, TrimToNull(c.Email), TrimToNull(c.Address), c.CategoryCode!, c.DeviceTypeCode!,
-            JavaText.Trim(c.BrandModel!), c.IdentifierType, serial, JavaText.Trim(c.Symptom!), c.PreferredStation!, c.PreferredFrom, c.PreferredTo, now);
+            JavaText.Trim(c.BrandModel!), c.IdentifierType, serial, JavaText.Trim(c.Symptom!), c.PreferredStation!, c.PreferredFrom, c.PreferredTo, now, c.CustomerId);
     }
 
     private async Task RequireDeviceTypeAsync(string? categoryCode, string? deviceTypeCode, string? identifierType)

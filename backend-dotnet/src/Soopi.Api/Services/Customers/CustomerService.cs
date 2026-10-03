@@ -19,7 +19,7 @@ public enum CustomerProjection
 }
 
 public sealed record CustomerView(
-    string Code, string? FullName, string? Phone, string? Email, string? Address, string Status, string? MergedInto, long? Version)
+    string Code, string? FullName, string? Phone, string? Email, string? Address, string Status, string? MergedInto, long? Version, bool HasAccount)
 {
     public static CustomerView From(Customer customer, CustomerProjection projection)
     {
@@ -33,7 +33,8 @@ public sealed record CustomerView(
             limited || none ? null : customer.Address,
             customer.Status.ToString(),
             customer.MergedInto,
-            null);
+            null,
+            customer.AccountId is not null);
     }
 
     private static string Mask(string phone) => phone.Length < 7 ? "***" : phone[..4] + "***" + phone[^3..];
@@ -53,7 +54,8 @@ public sealed record UpdateContactRequest(string? Phone, string? Email, string? 
 public sealed record MergeCustomerRequest([NotBlank] string TargetCode);
 
 public sealed class CustomerService(
-    AppDbContext db, Sql sql, CodeGenerator codes, CurrentActor actors, AuditService audit, TimeProvider clock, TransactionRunner transactions)
+    AppDbContext db, Sql sql, CodeGenerator codes, CurrentActor actors, AuditService audit, TimeProvider clock, TransactionRunner transactions,
+    CustomerAccountAdminService customerAccounts, SecurityVersionCache securityVersions)
 {
     public async Task<PageResponse<CustomerView>> SearchAsync(string? query, int page, int size)
     {
@@ -91,24 +93,30 @@ public sealed class CustomerService(
         });
     }
 
-    public Task<CustomerView> UpdateContactAsync(string code, UpdateContactRequest body)
+    /// <summary>Đổi SĐT của khách có tài khoản thì tên đăng nhập đổi theo và mọi phiên cũ bị đăng xuất.</summary>
+    public async Task<CustomerView> UpdateContactAsync(string code, UpdateContactRequest body)
     {
         actors.Require(Permission.CUSTOMER_UPDATE_CONTACT);
-        return transactions.InTransactionAsync(async () =>
+        var (view, accountId) = await transactions.InTransactionAsync(async () =>
         {
             var customer = await RequireActiveAsync(code);
             var before = Summary(customer);
+            var oldPhone = customer.Phone;
             customer.UpdateContact(body.Phone, body.Email, body.Address);
             await db.SaveChangesAsync();
+            var changedAccount = await customerAccounts.FollowPhoneAsync(customer.AccountId, oldPhone, customer.Phone);
             await AuditAsync("CUSTOMER_CONTACT_UPDATED", "Cập nhật liên hệ khách hàng", code, before, Summary(customer));
-            return View(customer);
+            return (View(customer), changedAccount);
         });
+        Evict(accountId);
+        return view;
     }
 
-    public Task<CustomerView> ArchiveAsync(string code)
+    /// <summary>Hồ sơ lưu trữ không đăng nhập được nữa: khóa luôn tài khoản để trạng thái hiển thị đúng và thu hồi phiên.</summary>
+    public async Task<CustomerView> ArchiveAsync(string code)
     {
         actors.Require(Permission.CUSTOMER_ARCHIVE);
-        return transactions.InTransactionAsync(async () =>
+        var (view, lockedAccount) = await transactions.InTransactionAsync(async () =>
         {
             var customer = await RequireActiveAsync(code);
             if (await sql.ScalarAsync("SELECT TOP 1 1 FROM PhieuTiepNhan WHERE MaKH = ? AND ConMo = 1", code) is not null)
@@ -116,37 +124,55 @@ public sealed class CustomerService(
             customer.Archive();
             await db.SaveChangesAsync();
             await AuditAsync("CUSTOMER_ARCHIVED", "Lưu trữ khách hàng", code, "ACTIVE", "ARCHIVED");
-            return View(customer);
+            var locked = await customerAccounts.LockForInactiveProfileAsync(code, customer.AccountId, "Hồ sơ đã lưu trữ");
+            return (View(customer), locked);
         });
+        Evict(lockedAccount);
+        return view;
     }
 
-    /// <summary>Chuyển thiết bị, phiếu và tài khoản tra cứu sang hồ sơ đích (như sp_HopNhatKhachHang).</summary>
-    public Task<CustomerView> MergeAsync(string sourceCode, string targetCode)
+    /// <summary>
+    /// Chuyển thiết bị, phiếu và tài khoản tra cứu sang hồ sơ đích (như sp_HopNhatKhachHang). Hồ sơ đích đã có tài khoản thì
+    /// tài khoản của hồ sơ nguồn bị khóa.
+    /// </summary>
+    public async Task<CustomerView> MergeAsync(string sourceCode, string targetCode)
     {
         actors.Require(Permission.CUSTOMER_MERGE);
         if (sourceCode == targetCode) throw new DomainException(ErrorCode.VALIDATION_FAILED);
-        return transactions.InTransactionAsync(async () =>
+        var (view, lockedAccount) = await transactions.InTransactionAsync(async () =>
         {
             var source = await RequireActiveAsync(sourceCode);
             var target = await RequireActiveAsync(targetCode);
             await sql.ExecuteAsync("UPDATE ThietBi SET MaKH = ? WHERE MaKH = ?", targetCode, sourceCode);
             // Tăng PhienBan để lần lưu phiếu đọc trước khi gộp không ghi đè ngược MaKH (optimistic lock của phiếu).
             await sql.ExecuteAsync("UPDATE PhieuTiepNhan SET MaKH = ?, PhienBan = PhienBan + 1 WHERE MaKH = ?", targetCode, sourceCode);
+            long? locked = null;
             if (source.AccountId is { } account && target.AccountId is null)
             {
                 await sql.ExecuteAsync("UPDATE KhachHang SET MaTaiKhoan = NULL WHERE MaKH = ?", sourceCode);
                 await sql.ExecuteAsync("UPDATE KhachHang SET MaTaiKhoan = ? WHERE MaKH = ?", account, targetCode);
             }
+            else if (source.AccountId is { } orphan)
+            {
+                locked = await customerAccounts.LockForInactiveProfileAsync(sourceCode, orphan, "Hồ sơ đã gộp vào " + targetCode);
+            }
             source.MergeInto(targetCode);
             await db.SaveChangesAsync();
             await AuditAsync("CUSTOMER_MERGED", "Hợp nhất khách hàng", sourceCode, sourceCode, targetCode);
-            return View(target);
+            return (View(target), locked);
         });
+        Evict(lockedAccount);
+        return view;
     }
 
     public async Task<Customer> RequireActiveAsync(string code) =>
         await db.Customers.FirstOrDefaultAsync(c => c.Id == code && c.Status == CustomerStatus.ACTIVE)
         ?? throw new DomainException(ErrorCode.CUSTOMER_NOT_FOUND);
+
+    private void Evict(long? accountId)
+    {
+        if (accountId is { } id) securityVersions.Evict(id);
+    }
 
     private CustomerView View(Customer customer) => CustomerView.From(customer, CustomerView.ProjectionFor(actors.Current));
 

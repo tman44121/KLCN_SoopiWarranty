@@ -206,6 +206,51 @@ export default function initialize() {
     });
   }
 
+  /** Hiện mật khẩu tạm đúng một lần (backend không lưu bản rõ) kèm nút sao chép; đóng là mất. */
+  function showTemporaryPassword({ title, message, password }) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement("div");
+      overlay.className = "modal-overlay";
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
+      overlay.innerHTML = window.html`
+        <div class="modal">
+          <div class="modal__header"><div>
+            <div class="modal__title">${title}</div>
+            ${message ? window.html`<div class="modal__subtitle">${message}</div>` : ""}
+          </div></div>
+          <div class="modal__body">
+            <div class="temp-password" aria-label="Mật khẩu tạm"><span class="mono" data-temp-password>${password}</span></div>
+            <p class="cell-muted" style="margin:10px 0 0">Mật khẩu này chỉ hiện một lần. Khách phải đổi mật khẩu mới ngay khi đăng nhập.</p>
+          </div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn--secondary" data-copy-password>Sao chép</button>
+            <button type="button" class="btn btn--primary" data-confirm-ok>Đã báo cho khách</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      window.openDialog(overlay);
+      const done = () => {
+        window.closeDialog(overlay);
+        overlay.remove();
+        resolve();
+      };
+      const copy = overlay.querySelector("[data-copy-password]");
+      copy.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(password);
+          copy.textContent = "Đã sao chép";
+        } catch {
+          window.getSelection().selectAllChildren(overlay.querySelector("[data-temp-password]"));
+        }
+      });
+      overlay.querySelector("[data-confirm-ok]").addEventListener("click", done);
+      overlay.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") done();
+      });
+    });
+  }
+
   /** In một khối nội dung: sao chép ra vùng .print-area cấp body (CSS in chỉ hiện vùng này). */
   function printElement(element) {
     const area = document.createElement("div");
@@ -243,6 +288,7 @@ export default function initialize() {
     busy,
     confirm,
     promptReason,
+    showTemporaryPassword,
     printElement,
     fillSelect,
     scrollBehavior,

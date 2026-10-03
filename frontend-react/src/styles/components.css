@@ -732,6 +732,20 @@
 }
 
 .mono {
+/* Dòng mở popup thao tác khi bấm (bảng tài khoản nhân viên). */
+.data-table__row-action {
+  cursor: pointer;
+}
+
+.data-table__row-action:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.data-table__row-action:focus-visible td {
+  background: var(--border-divider);
+}
+
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: -0.01em;
@@ -1276,6 +1290,30 @@ button.queue-item {
   border-top: 1px solid var(--border-universal);
   margin: 16px 0;
 }
+/* Mật khẩu tạm hiện một lần (đặt lại mật khẩu khách) — chữ to, dễ đọc cho khách. */
+.temp-password {
+  padding: 14px 16px;
+  border: 1px dashed var(--border-universal);
+  border-radius: var(--radius-card);
+  background: var(--surface-utility);
+  text-align: center;
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  color: var(--text-strong);
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+
+.temp-password .mono {
+  font-size: inherit;
+}
+
+.drawer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 
 .checklist {
   display: flex;

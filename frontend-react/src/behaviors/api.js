@@ -288,6 +288,10 @@ export default function initialize(global = window) {
       devices: (code) => get(`/customers/${enc(code)}/devices`),
       tickets: (code) => get(`/customers/${enc(code)}/tickets`),
       payments: (code) => get(`/customers/${enc(code)}/payments`),
+      updateContact: (code, body) => patch(`/customers/${enc(code)}/contact`, body),
+      archive: (code) => post(`/customers/${enc(code)}/archive`),
+      merge: (code, targetCode) => post(`/customers/${enc(code)}/merge`, { targetCode }),
+      resetPassword: (code) => post(`/customers/${enc(code)}/reset-password`),
     },
 
     devices: {
@@ -339,6 +343,10 @@ export default function initialize(global = window) {
       lock: (code) => post(`/admin/employees/${enc(code)}/lock`),
       unlock: (code) => post(`/admin/employees/${enc(code)}/unlock`),
       resetPassword: (code) => post(`/admin/employees/${enc(code)}/reset-password`),
+      customers: (query) => get("/admin/customers", query),
+      customer: (code) => get(`/admin/customers/${enc(code)}`),
+      lockCustomer: (code, reason) => post(`/admin/customers/${enc(code)}/lock`, { reason }),
+      unlockCustomer: (code) => post(`/admin/customers/${enc(code)}/unlock`),
     },
 
     notifications: {

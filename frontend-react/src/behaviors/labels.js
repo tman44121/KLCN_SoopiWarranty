@@ -132,6 +132,20 @@ export default function initialize() {
     LOCKED: { label: "Đã khóa", tone: "danger" },
   };
 
+  /** Tài khoản đăng nhập của khách (NONE = khách chưa tự đăng ký). */
+  const CUSTOMER_ACCOUNT_STATUS = {
+    NONE: { label: "Chưa có tài khoản", tone: "neutral" },
+    ACTIVE: { label: "Đang hoạt động", tone: "success" },
+    TEMP_LOCKED: { label: "Tạm khóa (đăng nhập sai nhiều lần)", tone: "warning" },
+    LOCKED: { label: "Đã khóa", tone: "danger" },
+  };
+
+  const CUSTOMER_STATUS = {
+    ACTIVE: { label: "Đang hoạt động", tone: "success" },
+    ARCHIVED: { label: "Đã lưu trữ", tone: "neutral" },
+    MERGED: { label: "Đã gộp", tone: "neutral" },
+  };
+
   const ROLE = {
     ADMIN: "Quản trị viên",
     RECEPTIONIST: "Tiếp nhận & Lễ tân",
@@ -234,6 +248,8 @@ export default function initialize() {
     STOCK_TRANSFER_STATUS,
     WARRANTY_REQUEST_STATUS,
     ACCOUNT_STATUS,
+    CUSTOMER_ACCOUNT_STATUS,
+    CUSTOMER_STATUS,
     ROLE,
     SCRATCHES,
     MOISTURE,

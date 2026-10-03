@@ -75,6 +75,38 @@ public class IdentityTests
     }
 
     [Fact]
+    public void Account_StaffResetClearsTemporaryLockButKeepsAdminLock()
+    {
+        var account = Account.Customer("0901234567", "{bcrypt}x", "KH-000001", false);
+        for (var attempt = 0; attempt < 5; attempt++) account.RegisterFailedLogin(Now, 5, TimeSpan.FromMinutes(15));
+        account.ResetPassword("{bcrypt}tam", Now);
+        Assert.False(account.TemporarilyLocked(Now));
+        Assert.Equal(0, account.FailedLoginAttempts);
+        Assert.True(account.MustChangePassword);
+        account.Lock();
+        account.ResetPassword("{bcrypt}tam2", Now);
+        Assert.Equal(AccountStatus.LOCKED, account.Status);
+    }
+
+    [Fact]
+    public void Account_ChangeUsernameFollowsPhoneAndRevokesTokens()
+    {
+        var account = Account.Customer("0901234567", "{bcrypt}x", "KH-000001", false);
+        account.ChangeUsername(" 0907654321 ");
+        Assert.Equal("0907654321", account.Username);
+        Assert.Equal(2, account.SecurityVersion);
+    }
+
+    [Fact]
+    public void TemporaryPassword_PassesPolicyAndDiffers()
+    {
+        var policy = new PasswordPolicy();
+        var passwords = Enumerable.Range(0, 20).Select(_ => TemporaryPasswords.New()).ToList();
+        foreach (var password in passwords) policy.Validate("0901234567", password);
+        Assert.Equal(passwords.Count, passwords.Distinct().Count());
+    }
+
+    [Fact]
     public void UserView_LandingFromFirstRole_PermissionsSorted()
     {
         var account = Account.Employee("letan", "{bcrypt}x", [Role.CASHIER, Role.RECEPTIONIST], "NV-004", false);
@@ -88,9 +120,12 @@ public class IdentityTests
     [Fact]
     public void RolePermissions_CopiedFromJava()
     {
-        Assert.Equal(6, RolePermissions.ForRole(Role.ADMIN).Count);
+        Assert.Equal(12, RolePermissions.ForRole(Role.ADMIN).Count);
         Assert.Equal(23, RolePermissions.ForRole(Role.DISPATCHER).Count);
-        Assert.Equal(39, Enum.GetValues<Permission>().Length);
+        Assert.Equal(41, Enum.GetValues<Permission>().Length);
+        Assert.Contains(Permission.CUSTOMER_ACCOUNT_MANAGE, RolePermissions.ForRole(Role.ADMIN));
+        Assert.Contains(Permission.CUSTOMER_PASSWORD_RESET, RolePermissions.ForRole(Role.RECEPTIONIST));
+        Assert.DoesNotContain(Permission.CUSTOMER_ACCOUNT_MANAGE, RolePermissions.ForRole(Role.RECEPTIONIST));
         Assert.Equal([Permission.QUOTE_DECIDE_OWN, Permission.PORTAL_SELF], RolePermissions.ForRole(Role.CUSTOMER).Order());
     }
 

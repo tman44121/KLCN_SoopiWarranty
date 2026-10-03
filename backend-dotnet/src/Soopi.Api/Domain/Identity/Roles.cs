@@ -45,6 +45,8 @@ public enum Permission
     CUSTOMER_READ_PAYMENTS,
     CUSTOMER_MERGE,
     CUSTOMER_ARCHIVE,
+    CUSTOMER_ACCOUNT_MANAGE,
+    CUSTOMER_PASSWORD_RESET,
     DEVICE_REGISTER,
     DEVICE_LOOKUP,
     WARRANTY_REQUEST_HANDLE,
@@ -89,14 +91,15 @@ public static class RolePermissions
         [Role.ADMIN] =
         [
             Permission.CATALOG_READ, Permission.CATALOG_MANAGE, Permission.ACCOUNT_MANAGE, Permission.REPORT_OPERATIONS,
-            Permission.REPORT_SYSTEM, Permission.AUDIT_READ,
+            Permission.REPORT_SYSTEM, Permission.AUDIT_READ, Permission.CUSTOMER_READ_CONTACT, Permission.CUSTOMER_UPDATE_CONTACT,
+            Permission.CUSTOMER_ARCHIVE, Permission.CUSTOMER_MERGE, Permission.CUSTOMER_ACCOUNT_MANAGE, Permission.CUSTOMER_PASSWORD_RESET,
         ],
         [Role.RECEPTIONIST] =
         [
             Permission.TICKET_CREATE, Permission.TICKET_READ_ALL, Permission.TICKET_NOTE_INTERNAL,
             Permission.QUOTE_DECIDE_ON_BEHALF, Permission.HANDOVER_COMPLETE, Permission.CUSTOMER_CREATE,
             Permission.CUSTOMER_UPDATE_CONTACT, Permission.CUSTOMER_READ_CONTACT, Permission.DEVICE_REGISTER,
-            Permission.DEVICE_LOOKUP, Permission.WARRANTY_REQUEST_HANDLE, Permission.CATALOG_READ,
+            Permission.DEVICE_LOOKUP, Permission.WARRANTY_REQUEST_HANDLE, Permission.CATALOG_READ, Permission.CUSTOMER_PASSWORD_RESET,
         ],
         [Role.DISPATCHER] =
         [

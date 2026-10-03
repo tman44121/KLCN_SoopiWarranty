@@ -82,6 +82,7 @@ builder.Services.AddScoped<CatalogStore>();
 builder.Services.AddScoped<CatalogService>();
 builder.Services.AddScoped<ProductCatalog>();
 builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<CustomerAccountAdminService>();
 builder.Services.AddScoped<DeviceService>();
 
 // Yêu cầu online, cổng khách hàng, tệp đính kèm.
