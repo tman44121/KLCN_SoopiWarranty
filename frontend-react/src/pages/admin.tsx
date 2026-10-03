@@ -1,15 +1,16 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
+import controller from "../behaviors/admin.js";
 import { BrandLogo } from "../customer";
 
 export default function AdminPage() {
-  usePage("admin", {"data-roles": "ADMIN"}, "Soopi — Quản trị viên");
+  usePage("admin", {"data-roles": "ADMIN"}, "Soopi — Quản trị hệ thống", controller);
   return (<>
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">
         <div className="sidebar-brand">
-          <div className="sidebar-brand__logo" aria-label="soopiwarranty">
+          <div className="sidebar-brand__logo">
             <BrandLogo />
           </div>
           <div className="sidebar-brand__system">
@@ -29,6 +30,15 @@ export default function AdminPage() {
                 </path>
               </svg>
               {"\n          Tài khoản & Phân quyền\n        "}
+            </a>
+            <a className="sidebar-nav__item" data-roles="ADMIN" data-perm="CUSTOMER_ACCOUNT_MANAGE" data-page-tab="customers" href="#customers">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <circle cx="7.5" cy="7" r="2.5">
+                </circle>
+                <path d="M2.5 16c0-2.5 2.2-4.2 5-4.2s5 1.7 5 4.2M13 5.5a2.3 2.3 0 010 4.4M15 12.2c1.6.5 2.5 1.8 2.5 3.8">
+                </path>
+              </svg>
+              {"Tài khoản khách hàng"}
             </a>
             <a className="sidebar-nav__item" data-roles="ADMIN" data-page-tab="catalogs" href="#catalogs">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -124,7 +134,7 @@ export default function AdminPage() {
                   {"Tài khoản & phân quyền"}
                 </h2>
                 <div className="card__title-meta">
-                  {"Danh sách nhân viên và vai trò được gán trong hệ thống"}
+                  {"Danh sách nhân viên và vai trò được gán trong hệ thống — bấm vào một dòng để sửa vai trò, khóa hoặc đặt lại mật khẩu"}
                 </div>
               </div>
               <button type="button" className="btn btn--primary btn--sm" data-open-add-employee="">
@@ -150,14 +160,120 @@ export default function AdminPage() {
                     <th>
                       {"Lần đăng nhập gần nhất"}
                     </th>
-                    <th>
-                      {"Thao tác"}
-                    </th>
                   </tr>
                 </thead>
                 <tbody data-employee-tbody="">
                 </tbody>
               </table>
+            </div>
+          </section>
+        </div>
+        <div data-page-panel="customers" hidden={true}>
+          <section className="card" aria-labelledby="customers-title">
+            <div className="card__header">
+              <div>
+                <h2 className="card__title" id="customers-title">
+                  {"Tài khoản khách hàng"}
+                </h2>
+                <div className="card__title-meta">
+                  {"Hồ sơ khách và tài khoản đăng nhập cổng khách hàng — bấm vào một dòng để xem chi tiết và thao tác"}
+                </div>
+              </div>
+            </div>
+            <div className="toolbar">
+              <div className="toolbar__field">
+                <label htmlFor="cust-filter-account">
+                  {"Tài khoản"}
+                </label>
+                <select id="cust-filter-account" className="select-field" data-cust-filter-account="">
+                  <option value="">
+                    {"Tất cả"}
+                  </option>
+                  <option value="ACTIVE">
+                    {"Đang hoạt động"}
+                  </option>
+                  <option value="TEMP_LOCKED">
+                    {"Tạm khóa (đăng nhập sai nhiều lần)"}
+                  </option>
+                  <option value="LOCKED">
+                    {"Đã khóa"}
+                  </option>
+                  <option value="NONE">
+                    {"Chưa có tài khoản"}
+                  </option>
+                </select>
+              </div>
+              <div className="toolbar__field">
+                <label htmlFor="cust-filter-status">
+                  {"Hồ sơ"}
+                </label>
+                <select id="cust-filter-status" className="select-field" data-cust-filter-status="" defaultValue="ACTIVE">
+                  <option value="ACTIVE">
+                    {"Đang hoạt động"}
+                  </option>
+                  <option value="ARCHIVED">
+                    {"Đã lưu trữ"}
+                  </option>
+                  <option value="MERGED">
+                    {"Đã gộp"}
+                  </option>
+                  <option value="">
+                    {"Tất cả"}
+                  </option>
+                </select>
+              </div>
+              <div className="toolbar__field toolbar__field--search">
+                <input type="text" className="text-field" placeholder="Tìm theo tên, SĐT, mã khách…" data-cust-search="" aria-label="Tìm khách hàng" />
+              </div>
+              <div className="toolbar__spacer">
+              </div>
+              <div className="toolbar__count" data-cust-count="">
+                {"—"}
+              </div>
+            </div>
+            <div className="table-scroll">
+              <table className="data-table data-table--fluid">
+                <thead>
+                  <tr>
+                    <th>
+                      {"Mã KH"}
+                    </th>
+                    <th>
+                      {"Họ tên"}
+                    </th>
+                    <th>
+                      {"Số điện thoại"}
+                    </th>
+                    <th>
+                      {"Hồ sơ"}
+                    </th>
+                    <th>
+                      {"Tài khoản"}
+                    </th>
+                    <th>
+                      {"Đăng nhập cuối"}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody data-cust-tbody="">
+                </tbody>
+              </table>
+            </div>
+            <div className="pagination">
+              <div className="pagination__rows">
+                {"25 dòng / trang"}
+              </div>
+              <div className="pagination__nav">
+                <button type="button" className="pagination__nav-btn" data-cust-prev="">
+                  {"← Trước"}
+                </button>
+                <span data-cust-page="">
+                  {"Trang 1 / 1"}
+                </span>
+                <button type="button" className="pagination__nav-btn" data-cust-next="">
+                  {"Sau →"}
+                </button>
+              </div>
             </div>
           </section>
         </div>
@@ -553,6 +669,149 @@ export default function AdminPage() {
           <button type="button" className="btn btn--primary" data-add-employee-submit="">
             {"Thêm nhân viên"}
           </button>
+        </div>
+      </div>
+    </div>
+    <div className="drawer-overlay" data-cust-drawer="" hidden={true}>
+      <div className="drawer" role="dialog" aria-modal="true" aria-labelledby="cust-drawer-title">
+        <div className="drawer__header">
+          <div>
+            <div className="drawer__title" id="cust-drawer-title" data-cust-drawer-title="">
+              {"Khách hàng"}
+            </div>
+            <div className="drawer__subtitle" data-cust-drawer-subtitle="">
+              {"—"}
+            </div>
+          </div>
+          <button type="button" className="modal__close" data-cust-drawer-close="" aria-label="Đóng">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M5 5l10 10M15 5L5 15">
+              </path>
+            </svg>
+          </button>
+        </div>
+        <div className="drawer__body" data-cust-drawer-body="">
+        </div>
+        <div className="drawer__footer">
+          <div className="drawer-actions" data-cust-drawer-actions="">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="modal-overlay" data-cust-contact-modal="" hidden={true} role="dialog" aria-modal="true" aria-labelledby="cust-contact-title">
+      <div className="modal">
+        <div className="modal__header">
+          <div>
+            <div className="modal__title" id="cust-contact-title">
+              {"Sửa liên hệ khách hàng"}
+            </div>
+            <div className="modal__subtitle" data-cust-contact-subtitle="">
+              {"Đổi số điện thoại của khách đã có tài khoản thì tên đăng nhập đổi theo và khách bị đăng xuất."}
+            </div>
+          </div>
+          <button type="button" className="modal__close" data-cust-contact-close="" aria-label="Đóng">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M5 5l10 10M15 5L5 15">
+              </path>
+            </svg>
+          </button>
+        </div>
+        <div className="modal__body" data-cust-contact-form="">
+          <div className="form-field">
+            <label htmlFor="cust-contact-phone">
+              {"Số điện thoại"}
+              <span className="required-mark">
+                {"*"}
+              </span>
+            </label>
+            <input type="tel" id="cust-contact-phone" data-cust-contact-phone="" />
+          </div>
+          <div className="form-field">
+            <label htmlFor="cust-contact-email">
+              {"Email"}
+            </label>
+            <input type="email" id="cust-contact-email" data-cust-contact-email="" />
+          </div>
+          <div className="form-field">
+            <label htmlFor="cust-contact-address">
+              {"Địa chỉ"}
+            </label>
+            <input type="text" id="cust-contact-address" data-cust-contact-address="" />
+          </div>
+        </div>
+        <div className="modal__footer">
+          <button type="button" className="btn btn--secondary" data-cust-contact-cancel="">
+            {"Hủy"}
+          </button>
+          <button type="button" className="btn btn--primary" data-cust-contact-save="">
+            {"Lưu liên hệ"}
+          </button>
+        </div>
+      </div>
+    </div>
+    <div className="modal-overlay" data-cust-merge-modal="" hidden={true} role="dialog" aria-modal="true" aria-labelledby="cust-merge-title">
+      <div className="modal">
+        <div className="modal__header">
+          <div>
+            <div className="modal__title" id="cust-merge-title">
+              {"Gộp hồ sơ khách hàng"}
+            </div>
+            <div className="modal__subtitle" data-cust-merge-subtitle="">
+              {"—"}
+            </div>
+          </div>
+          <button type="button" className="modal__close" data-cust-merge-close="" aria-label="Đóng">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M5 5l10 10M15 5L5 15">
+              </path>
+            </svg>
+          </button>
+        </div>
+        <div className="modal__body" data-cust-merge-form="">
+          <div className="form-field">
+            <label htmlFor="cust-merge-target">
+              {"Mã khách hàng giữ lại"}
+              <span className="required-mark">
+                {"*"}
+              </span>
+            </label>
+            <input type="text" id="cust-merge-target" className="mono" placeholder="KH-000001" data-cust-merge-target="" />
+          </div>
+          <p className="cell-muted">
+            {"Thiết bị và phiếu chuyển sang hồ sơ giữ lại. Nếu hồ sơ đó đã có tài khoản, tài khoản của hồ sơ này bị khóa."}
+          </p>
+        </div>
+        <div className="modal__footer">
+          <button type="button" className="btn btn--secondary" data-cust-merge-cancel="">
+            {"Hủy"}
+          </button>
+          <button type="button" className="btn btn--destructive" data-cust-merge-save="">
+            {"Gộp hồ sơ"}
+          </button>
+        </div>
+      </div>
+    </div>
+    <div className="modal-overlay" data-emp-modal="" hidden={true} role="dialog" aria-modal="true" aria-labelledby="emp-modal-title">
+      <div className="modal">
+        <div className="modal__header">
+          <div>
+            <div className="modal__title" id="emp-modal-title" data-emp-modal-title="">
+              {"Nhân viên"}
+            </div>
+            <div className="modal__subtitle" data-emp-modal-subtitle="">
+              {"—"}
+            </div>
+          </div>
+          <button type="button" className="modal__close" data-emp-modal-close="" aria-label="Đóng">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M5 5l10 10M15 5L5 15">
+              </path>
+            </svg>
+          </button>
+        </div>
+        <div className="modal__body" data-emp-modal-body="">
+        </div>
+        <div className="modal__footer" data-emp-modal-actions="">
         </div>
       </div>
     </div>

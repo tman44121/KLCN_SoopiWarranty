@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -27,9 +26,6 @@ public sealed partial class EmployeeAdminService(
     IOptions<SecurityOptions> options,
     TimeProvider clock)
 {
-    private const string Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
-    private const string Digits = "23456789";
-
     public async Task<List<EmployeeAccountView>> ListAsync(string? query, Role? role, string? status)
     {
         actors.Require(Permission.ACCOUNT_MANAGE);
@@ -60,7 +56,7 @@ public sealed partial class EmployeeAdminService(
                 throw new DomainException(ErrorCode.VALIDATION_FAILED);
             if (await accounts.FindByLoginAsync(command.Username) is not null) throw new DomainException(ErrorCode.ACCOUNT_USERNAME_DUPLICATE);
             var code = await codes.NextAsync(BusinessCodeType.Employee);
-            var temporary = TemporaryPassword();
+            var temporary = TemporaryPasswords.New();
             var account = await accounts.AddAsync(Account.Employee(command.Username, PasswordHasher.Encode(temporary), roles, code, true));
             var record = new EmployeeRecord(
                 code,
@@ -216,17 +212,6 @@ public sealed partial class EmployeeAdminService(
         roles is null || roles.Count == 0 || roles.Contains(Role.CUSTOMER)
             ? throw new DomainException(ErrorCode.VALIDATION_FAILED)
             : roles.ToHashSet();
-
-    private static string TemporaryPassword()
-    {
-        var chars = new char[12];
-        for (var index = 0; index < chars.Length; index++)
-        {
-            var source = index % 3 == 2 ? Digits : Alphabet;
-            chars[index] = source[RandomNumberGenerator.GetInt32(source.Length)];
-        }
-        return new string(chars);
-    }
 
     private static string RequireText(string? value) =>
         string.IsNullOrWhiteSpace(value) ? throw new DomainException(ErrorCode.VALIDATION_FAILED) : value.Trim();

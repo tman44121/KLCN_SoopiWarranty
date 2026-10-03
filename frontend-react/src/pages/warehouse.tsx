@@ -1,15 +1,16 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
+import controller from "../behaviors/warehouse.js";
 import { BrandLogo } from "../customer";
 
 export default function WarehousePage() {
-  usePage("warehouse", {"data-roles": "WAREHOUSE_KEEPER"}, "Soopi — Kho vật tư");
+  usePage("warehouse", {"data-roles": "WAREHOUSE_KEEPER"}, "Soopi — Kho vật tư", controller);
   return (<>
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">
         <div className="sidebar-brand">
-          <div className="sidebar-brand__logo" aria-label="soopiwarranty">
+          <div className="sidebar-brand__logo">
             <BrandLogo />
           </div>
           <div className="sidebar-brand__system">
@@ -39,7 +40,7 @@ export default function WarehousePage() {
             <div className="sidebar-nav__group-title">
               {"Xử lý phiếu"}
             </div>
-            <a className="sidebar-nav__item" data-roles="RECEPTIONIST" href="receptionist.html">
+            <a className="sidebar-nav__item" data-roles="RECEPTIONIST" href="/receptionist">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M4 4h12v12H4z">
                 </path>
@@ -48,7 +49,7 @@ export default function WarehousePage() {
               </svg>
               {"\n          Tiếp nhận\n        "}
             </a>
-            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="tickets.html">
+            <a className="sidebar-nav__item" data-roles="DISPATCHER,TECHNICIAN" href="/tickets">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M6 3h5l3 3v11H6z">
                 </path>
@@ -66,7 +67,7 @@ export default function WarehousePage() {
               </svg>
               {"\n          Điều phối\n        "}
             </Link>
-            <a className="sidebar-nav__item" data-roles="TECHNICIAN" href="technician.html">
+            <a className="sidebar-nav__item" data-roles="TECHNICIAN" href="/technician">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M13 4l-1.5 1.5M4 16l6-6M9 6l5 5-1.5 3-5-5z">
                 </path>
@@ -117,7 +118,7 @@ export default function WarehousePage() {
             <div className="sidebar-nav__group-title">
               {"Thanh toán"}
             </div>
-            <a className="sidebar-nav__item" data-roles="CASHIER" href="cashier.html">
+            <a className="sidebar-nav__item" data-roles="CASHIER" href="/cashier">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <rect x="3" y="5" width="14" height="10" rx="1.4">
                 </rect>
@@ -126,7 +127,7 @@ export default function WarehousePage() {
               </svg>
               {"\n          Thu ngân\n        "}
             </a>
-            <a className="sidebar-nav__item" data-roles="CASHIER" href="cashier.html">
+            <a className="sidebar-nav__item" data-roles="CASHIER" href="/cashier">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M6 6h8v9l-4-2-4 2z">
                 </path>
@@ -138,13 +139,13 @@ export default function WarehousePage() {
             <div className="sidebar-nav__group-title">
               {"Báo cáo"}
             </div>
-            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="reports.html#sla">
+            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="/reports#sla">
               {"SLA"}
             </a>
-            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="reports.html#performance">
+            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="/reports#performance">
               {"Hiệu suất"}
             </a>
-            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="reports.html#audit">
+            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="/reports#audit">
               {"Lịch sử thao tác"}
             </a>
           </div>
@@ -152,7 +153,7 @@ export default function WarehousePage() {
             <div className="sidebar-nav__group-title">
               {"Quản trị"}
             </div>
-            <a className="sidebar-nav__item" href="admin.html" data-roles="ADMIN">
+            <a className="sidebar-nav__item" href="/admin" data-roles="ADMIN">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M10 3l6 2.5v4c0 4-2.5 6.5-6 7.5-3.5-1-6-3.5-6-7.5v-4z">
                 </path>

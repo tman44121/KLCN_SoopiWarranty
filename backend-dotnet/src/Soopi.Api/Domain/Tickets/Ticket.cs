@@ -11,10 +11,10 @@ public enum TicketStatus
     AWAITING_QUOTE_APPROVAL,
     AWAITING_CUSTOMER_CONFIRMATION,
     AWAITING_PARTS,
+    AWAITING_RETURN,
     REPAIRING,
     COMPLETED,
     DELIVERED,
-    CANCELLED,
     RETURNED_UNREPAIRED,
 }
 
@@ -63,11 +63,11 @@ public static class TicketEnums
         [TicketStatus.AWAITING_QUOTE_APPROVAL] = "Chờ duyệt giá",
         [TicketStatus.AWAITING_CUSTOMER_CONFIRMATION] = "Chờ khách xác nhận",
         [TicketStatus.AWAITING_PARTS] = "Chờ linh kiện",
+        [TicketStatus.AWAITING_RETURN] = "Chờ trả máy",
         [TicketStatus.REPAIRING] = "Đang sửa chữa",
         [TicketStatus.COMPLETED] = "Hoàn thành",
         [TicketStatus.DELIVERED] = "Đã bàn giao",
-        [TicketStatus.CANCELLED] = "Đã hủy",
-        [TicketStatus.RETURNED_UNREPAIRED] = "Đã trả máy (hủy)",
+        [TicketStatus.RETURNED_UNREPAIRED] = "Đã trả máy (không sửa)",
     };
 
     /// <summary>Nhãn tiếng Việt dùng trong lịch sử trạng thái và thông điệp lỗi (như dữ liệu cũ).</summary>
@@ -136,11 +136,11 @@ public sealed class Ticket
         [TicketStatus.INSPECTING] = [TicketStatus.DIAGNOSED],
         [TicketStatus.DIAGNOSED] = [TicketStatus.REPAIRING, TicketStatus.AWAITING_PARTS, TicketStatus.AWAITING_QUOTE_APPROVAL],
         [TicketStatus.AWAITING_QUOTE_APPROVAL] = [TicketStatus.AWAITING_CUSTOMER_CONFIRMATION, TicketStatus.DIAGNOSED],
-        [TicketStatus.AWAITING_CUSTOMER_CONFIRMATION] = [TicketStatus.AWAITING_PARTS, TicketStatus.CANCELLED],
+        [TicketStatus.AWAITING_CUSTOMER_CONFIRMATION] = [TicketStatus.AWAITING_PARTS, TicketStatus.REPAIRING, TicketStatus.AWAITING_RETURN],
         [TicketStatus.AWAITING_PARTS] = [TicketStatus.REPAIRING],
         [TicketStatus.REPAIRING] = [TicketStatus.COMPLETED],
         [TicketStatus.COMPLETED] = [TicketStatus.DELIVERED],
-        [TicketStatus.CANCELLED] = [TicketStatus.RETURNED_UNREPAIRED],
+        [TicketStatus.AWAITING_RETURN] = [TicketStatus.RETURNED_UNREPAIRED],
         [TicketStatus.DELIVERED] = [],
         [TicketStatus.RETURNED_UNREPAIRED] = [],
     };
@@ -256,7 +256,7 @@ public sealed class Ticket
     public string Reassign(string managerId, string technicianId, string? note, DateTimeOffset now)
     {
         if (Assignment is null || Status is TicketStatus.RECEIVED or TicketStatus.COMPLETED or TicketStatus.DELIVERED
-                or TicketStatus.CANCELLED or TicketStatus.RETURNED_UNREPAIRED)
+                or TicketStatus.AWAITING_RETURN or TicketStatus.RETURNED_UNREPAIRED)
             throw new DomainException(ErrorCode.REASSIGN_NOT_ALLOWED);
         var previous = Assignment.TechnicianId;
         if (previous == technicianId) throw new DomainException(ErrorCode.VALIDATION_FAILED);
@@ -344,11 +344,11 @@ public sealed class Ticket
     /// </summary>
     public async Task HandOverAsync(string handoverCode, HandoverInput input, Func<Task<Signature>>? signature, DateTimeOffset now, AuthenticatedActor actor)
     {
-        if (Status is not (TicketStatus.COMPLETED or TicketStatus.CANCELLED)) throw new DomainException(ErrorCode.HANDOVER_INVALID_STATE);
+        if (Status is not (TicketStatus.COMPLETED or TicketStatus.AWAITING_RETURN)) throw new DomainException(ErrorCode.HANDOVER_INVALID_STATE);
         if (JavaText.IsBlank(input.ReceiverName) || JavaText.IsBlank(input.ConditionOnReturn)
             || input.Rating is < 1 or > 5)
             throw new DomainException(ErrorCode.VALIDATION_FAILED);
-        if (Status == TicketStatus.CANCELLED && BlankToNull(input.NewWarrantyNote) is not null)
+        if (Status == TicketStatus.AWAITING_RETURN && BlankToNull(input.NewWarrantyNote) is not null)
             throw new DomainException(ErrorCode.HANDOVER_CANCELLED_NO_WARRANTY);
         if (Status == TicketStatus.COMPLETED && (input.Recheck is null || !input.Recheck.AllPassed() || signature is null || !input.CustomerConfirmed))
             throw new DomainException(ErrorCode.VALIDATION_FAILED);
@@ -382,10 +382,12 @@ public sealed class Ticket
         TransitionTo(TicketStatus.DIAGNOSED, actor, null, now, "DISPATCHER");
     }
 
-    public void AcceptQuotation(string quotationCode, DateTimeOffset now, AuthenticatedActor actor, bool onBehalf)
+    /// <summary>T7a: báo giá có dòng linh kiện (SKU) thì chờ linh kiện; chỉ tiền công thì vào sửa ngay.</summary>
+    public void AcceptQuotation(string quotationCode, bool needsParts, DateTimeOffset now, AuthenticatedActor actor, bool onBehalf)
     {
         RequireActiveQuotation(quotationCode, TicketStatus.AWAITING_CUSTOMER_CONFIRMATION);
-        TransitionTo(TicketStatus.AWAITING_PARTS, actor, onBehalf ? "Khách hàng đồng ý báo giá (xác nhận thay khách tại quầy)." : null, now,
+        if (!needsParts) StartPendingRepair(now);
+        TransitionTo(needsParts ? TicketStatus.AWAITING_PARTS : TicketStatus.REPAIRING, actor, onBehalf ? "Khách hàng đồng ý báo giá (xác nhận thay khách tại quầy)." : null, now,
             DecisionRole(actor, onBehalf));
     }
 
@@ -393,7 +395,7 @@ public sealed class Ticket
     {
         RequireActiveQuotation(quotationCode, TicketStatus.AWAITING_CUSTOMER_CONFIRMATION);
         RepairOrder = RepairOrder! with { Status = "CANCELLED" };
-        TransitionTo(TicketStatus.CANCELLED, actor, onBehalf ? "Khách hàng từ chối báo giá (xác nhận thay khách tại quầy)." : null, now,
+        TransitionTo(TicketStatus.AWAITING_RETURN, actor, onBehalf ? "Khách hàng từ chối báo giá (xác nhận thay khách tại quầy)." : null, now,
             DecisionRole(actor, onBehalf));
     }
 

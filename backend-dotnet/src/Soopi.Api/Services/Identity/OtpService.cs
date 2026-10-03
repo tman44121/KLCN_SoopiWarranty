@@ -86,8 +86,19 @@ public sealed partial class OtpService
     /// <summary>Sai mã, hết hạn, đã dùng hay sai quá số lần đều trả cùng một lỗi.</summary>
     public async Task ConsumeAsync(string phone, OtpPurpose purpose, string? code)
     {
-        var now = clock.GetUtcNow();
-        var pending = await store.LatestAsync(phone, purpose.ToString(), now);
+        var pending = await MatchAsync(phone, purpose, code);
+        if (!await store.ConsumeAsync(pending.Id, clock.GetUtcNow())) throw new DomainException(ErrorCode.OTP_INVALID);
+    }
+
+    /// <summary>
+    /// Kiểm mã mà không tiêu (web chỉ mở bước đặt mật khẩu khi mã đúng). Lần sai vẫn được đếm chung với ConsumeAsync nên
+    /// tổng số lần thử của một mã vẫn tối đa 5.
+    /// </summary>
+    public Task VerifyAsync(string phone, OtpPurpose purpose, string? code) => MatchAsync(phone, purpose, code);
+
+    private async Task<PendingOtp> MatchAsync(string phone, OtpPurpose purpose, string? code)
+    {
+        var pending = await store.LatestAsync(phone, purpose.ToString(), clock.GetUtcNow());
         if (pending is null || pending.FailedAttempts >= MaxFailedAttempts) throw new DomainException(ErrorCode.OTP_INVALID);
         var matches = code is not null
             && SixDigits().IsMatch(code)
@@ -97,7 +108,7 @@ public sealed partial class OtpService
             await store.RecordFailureAsync(pending.Id);
             throw new DomainException(ErrorCode.OTP_INVALID);
         }
-        if (!await store.ConsumeAsync(pending.Id, now)) throw new DomainException(ErrorCode.OTP_INVALID);
+        return pending;
     }
 
     private static string Hash(string code) => AuthService.Hash(code);

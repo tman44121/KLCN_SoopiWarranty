@@ -118,6 +118,15 @@ public sealed class MobileAuthController(
         StatusCode(StatusCodes.Status201Created, MobileAuthResponse.From(await customerAccounts.RegisterAsync(
             new RegisterCommand(body.Phone, body.Otp, body.FullName, body.Password, body.Email), actors.ClientIp, actors.UserAgent)));
 
+    /// <summary>Chỉ có ở Soopi (D-047): kiểm OTP đặt lại mật khẩu mà không tiêu mã; 204 khi đúng, 422 OTP_INVALID khi sai.</summary>
+    [HttpPost("password-reset/verify")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyPasswordReset([FromBody] PasswordResetVerifyBody body)
+    {
+        await customerAccounts.VerifyResetOtpAsync(body.Phone, body.Otp);
+        return NoContent();
+    }
+
     [HttpPost("password-reset")]
     [AllowAnonymous]
     public async Task<IActionResult> ResetPassword([FromBody] PasswordResetBody body)

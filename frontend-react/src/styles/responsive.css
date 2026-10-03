@@ -1,0 +1,495 @@
+/* ==========================================================================
+   Màn nội bộ trên tablet và điện thoại — D-046, PRODUCT.md (Operating Context)
+   Desktop giữ nguyên bố cục cũ; các mốc dưới đây do nội dung quyết định:
+   - ≤1279px: sidebar hẹp lại để vùng làm việc còn ≥ 1000px.
+   - ≤1023px: sidebar thành ngăn kéo (nút menu do shell.js chèn), danh sách + chi tiết xếp chồng.
+   - ≤767px : header hai hàng, form một cột, bảng thành thẻ, hộp thoại mở từ đáy màn hình.
+   - pointer: coarse: vùng chạm 44px cho nút, ô nhập và mục điều hướng.
+   Nạp sau brand.css; quy tắc của giao diện khách (.kh-app) không bị ảnh hưởng.
+   ========================================================================== */
+
+/* Bảng điều phối 11 cột: thu đệm ô dưới 1600px, ẩn cột "Loại thiết bị" (trùng Hãng/Model, vẫn có ở dòng chi tiết)
+   dưới 1440px để không phải cuộn ngang mới thấy nút thao tác. */
+@media (max-width: 1599px) {
+  .data-table--fluid thead th,
+  .data-table--fluid tbody td {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1439px) {
+  .data-table--fluid .col-category {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1365px) {
+  .data-table--fluid thead th,
+  .data-table--fluid tbody td {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}
+
+@media (max-width: 1279px) {
+  :root {
+    --sidebar-width: 224px;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Tablet dọc và nhỏ hơn: sidebar thành ngăn kéo                           */
+/* ---------------------------------------------------------------------- */
+
+@media (max-width: 1023px) {
+  :root {
+    --page-padding: 20px;
+  }
+
+  .app-sidebar {
+    width: min(300px, 86vw);
+    z-index: var(--z-dropdown);
+    box-shadow: var(--shadow-flyout);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.22s;
+  }
+
+  .is-nav-open .app-sidebar {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .app-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--z-dropdown) - 1);
+    background: rgba(41, 53, 74, 0.4);
+  }
+
+  .app-menu-toggle {
+    display: flex;
+    flex-shrink: 0;
+  }
+
+  .app-header {
+    left: 0;
+    gap: 12px;
+  }
+
+  /* Ô tìm kiếm nhận hết chỗ trống; màn cảm ứng không có phím tắt Ctrl K. */
+  .header-search {
+    max-width: none;
+  }
+
+  .header-spacer,
+  .header-search__shortcut {
+    display: none;
+  }
+
+  .app-main {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .master-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Chọn phiếu xong cuộn tới chi tiết: chừa chỗ cho header cố định. */
+  .master-detail > * {
+    scroll-margin-top: calc(var(--header-height) + 12px);
+  }
+
+  .report-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .notification-popover {
+    right: 12px;
+  }
+}
+
+@media (max-width: 1023px) and (prefers-reduced-motion: reduce) {
+  .app-sidebar,
+  .is-nav-open .app-sidebar {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Điện thoại                                                              */
+/* ---------------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+  :root {
+    --header-height: 108px;
+    --page-padding: 12px;
+    --section-spacing: 16px;
+    --card-padding: 14px;
+    --text-body-size: 14px;
+    --text-body-line: 20px;
+  }
+
+  /* Header: hàng 1 menu + thao tác tài khoản, hàng 2 ô tìm kiếm rộng hết màn. */
+  .app-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "menu spacer right"
+      "search search search";
+    align-items: center;
+    row-gap: 8px;
+    column-gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .app-menu-toggle {
+    grid-area: menu;
+  }
+
+  .header-spacer {
+    display: block;
+    grid-area: spacer;
+  }
+
+  .header-right {
+    grid-area: right;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .header-search {
+    grid-area: search;
+    max-width: none;
+  }
+
+  /* Trạng thái trạm chỉ là nhãn thông tin; nhường chỗ cho tìm kiếm và thao tác. */
+  .app-header > .status-badge {
+    display: none;
+  }
+
+  .header-user {
+    min-width: 0;
+    max-width: 34vw;
+    margin-left: 4px;
+  }
+
+  .header-user__name,
+  .header-user__role {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .notification-popover {
+    position: fixed;
+    top: calc(var(--header-height) + 4px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+
+  .header-search__results {
+    max-height: calc(100vh - var(--header-height) - 24px);
+    overflow-y: auto;
+  }
+
+  /* Tiêu đề trang, thẻ và thanh công cụ xuống dòng thay vì tràn ngang. */
+  .page-title-row,
+  .card__header,
+  .section-head {
+    flex-wrap: wrap;
+  }
+
+  .toolbar {
+    padding: 10px var(--card-padding);
+  }
+
+  .toolbar__field,
+  .toolbar__field--search {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .toolbar__field .select-field,
+  .toolbar__field .text-field {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .toolbar__spacer {
+    display: none;
+  }
+
+  .form-page {
+    max-width: none;
+  }
+
+  .form-row,
+  .detail-grid,
+  .assign-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inline-lookup {
+    width: 100%;
+  }
+
+  .inline-lookup .text-field {
+    flex: 1 1 160px;
+    width: auto;
+  }
+
+  .action-bar {
+    flex-wrap: wrap;
+  }
+
+  .action-bar .btn {
+    flex: 1 1 auto;
+  }
+
+  .workload-row {
+    flex-wrap: wrap;
+  }
+
+  .workload-row__info {
+    width: 100%;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  /* Hộp thoại mở từ đáy màn hình, nút hành động nằm trong tầm ngón cái. */
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal,
+  .modal--critical {
+    max-width: none;
+    max-height: 92vh;
+    border-radius: var(--radius-modal) var(--radius-modal) 0 0;
+  }
+
+  .modal__header,
+  .drawer__header {
+    padding: 14px 16px;
+  }
+
+  .modal__body,
+  .drawer__body {
+    padding: 16px;
+  }
+
+  .modal__footer,
+  .drawer__footer {
+    flex-wrap: wrap;
+    padding: 12px 16px max(12px, env(safe-area-inset-bottom));
+  }
+
+  .modal__footer .btn,
+  .drawer__footer .btn {
+    flex: 1 1 auto;
+  }
+
+  .drawer {
+    width: 100% !important; /* thắng width inline 560px của drawer chi tiết */
+  }
+
+  .toast-stack {
+    left: 12px;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .toast {
+    min-width: 0;
+    max-width: none;
+  }
+
+  /* Ô nhập 16px để Safari trên iPhone không tự phóng to khi chạm. */
+  .app-main input:not([type="checkbox"]):not([type="radio"]),
+  .app-main select,
+  .app-main textarea,
+  .modal input:not([type="checkbox"]):not([type="radio"]),
+  .modal select,
+  .modal textarea,
+  .drawer input:not([type="checkbox"]):not([type="radio"]),
+  .drawer select,
+  .drawer textarea,
+  .header-search input {
+    font-size: 16px;
+  }
+
+  /* ---- Bảng dữ liệu thành thẻ: mỗi hàng một thẻ, nhãn cột đứng trước giá trị ---- */
+  .table-scroll {
+    overflow-x: visible;
+  }
+
+  .data-table {
+    min-width: 0;
+  }
+
+  .data-table,
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  /* Hàng tiêu đề chỉ giữ các cột sắp xếp được, hiển thị thành dãy nút. */
+  .data-table thead {
+    display: block;
+    border-bottom: 1px solid var(--border-universal);
+  }
+
+  .data-table thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px;
+  }
+
+  .data-table thead th {
+    display: none;
+  }
+
+  .data-table thead th.is-sortable {
+    display: block;
+    position: static;
+    padding: 0;
+    border: 1px solid var(--border-universal);
+    border-radius: var(--radius-badge);
+    background: var(--surface-card);
+  }
+
+  .data-table thead th.is-sortable .sort-button {
+    min-height: 32px;
+    padding: 0 12px;
+  }
+
+  .data-table thead:not(:has(th.is-sortable)) {
+    display: none;
+  }
+
+  .data-table tbody tr {
+    padding: 6px 14px;
+    border-bottom: 1px solid var(--border-universal);
+  }
+
+  .data-table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .data-table tbody td {
+    height: auto;
+    padding: 6px 0;
+    border-bottom: none;
+    overflow-wrap: anywhere;
+  }
+
+  .data-table tbody td[data-label] {
+    display: grid;
+    grid-template-columns: minmax(96px, 38%) minmax(0, 1fr);
+    gap: 10px;
+    align-items: baseline;
+  }
+
+  .data-table tbody td[data-label]::before {
+    content: attr(data-label);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: normal;
+    color: var(--text-muted);
+  }
+
+  /* Mọi phần tử con (dòng phụ, badge, nút) nằm ở cột giá trị và giữ độ rộng tự nhiên. */
+  .data-table tbody td[data-label] > * {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .data-table tbody tr:hover td {
+    background: transparent;
+  }
+
+  .data-table tbody tr:hover {
+    background: var(--border-divider);
+  }
+
+  .data-table .cell-actions,
+  .data-table td[data-label] > .cell-actions {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  /* Bảng nhập liệu trong ngăn kéo (dòng chứng từ) vẫn cuộn ngang trong khung riêng. */
+  .drawer .table-scroll {
+    overflow-x: auto;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Màn cảm ứng: vùng chạm 44px                                             */
+/* ---------------------------------------------------------------------- */
+
+@media (pointer: coarse) {
+  .btn,
+  .icon-button,
+  .select-field,
+  .text-field,
+  .form-field input:not([type="checkbox"]):not([type="radio"]),
+  .form-field select,
+  .choice-group__btn,
+  .result-toggle__btn,
+  .pagination__nav-btn,
+  .header-search input {
+    min-height: 44px;
+  }
+
+  .btn--sm {
+    min-height: 36px;
+  }
+
+  .icon-button,
+  .pagination__nav-btn {
+    min-width: 44px;
+  }
+
+  .sidebar-nav__item {
+    min-height: 44px;
+  }
+
+  .modal__close {
+    width: 44px;
+    height: 44px;
+  }
+
+  .checkbox-row input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Bảng nhập liệu (dòng báo giá, dòng phiếu kho) và dòng hạng mục cũng là vùng chạm. */
+  .drawer-table--inputs input,
+  .drawer-table--inputs select,
+  .item-row input,
+  .item-row select,
+  .item-row__remove {
+    min-height: 44px;
+  }
+}

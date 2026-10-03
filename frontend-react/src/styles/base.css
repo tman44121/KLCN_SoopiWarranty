@@ -19,11 +19,9 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
-/* Màn nội bộ chỉ nhắm máy tính từ 1280px; trang công khai (Đăng nhập, Cổng khách hàng) dùng .is-fluid. */
+/* Mọi màn (kể cả nội bộ) chạy từ điện thoại 360px tới desktop — D-046; bố cục co giãn ở responsive.css. */
 body {
   margin: 0;
-  min-width: 1280px;
-  overflow-x: auto;
   background: var(--surface-page);
   color: var(--text-body-color);
   font-family: var(--font-sans);
@@ -83,11 +81,6 @@ a {
   html {
     scroll-behavior: auto;
   }
-}
-
-body.is-fluid {
-  min-width: 0;
-  overflow-x: visible;
 }
 
 /* ---- App shell layout ---- */

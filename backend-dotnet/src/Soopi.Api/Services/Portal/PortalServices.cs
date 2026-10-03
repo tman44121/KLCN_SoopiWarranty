@@ -183,7 +183,7 @@ public sealed class PortalWarrantyRequestService(
         limiter.Acquire("portal-warranty-request-customer:" + customer.Id, 5, TimeSpan.FromHours(1));
         return await submissions.SubmitAsync(
             new SubmissionCommand(customer.FullName, customer.Phone, customer.Email, customer.Address, data.CategoryCode, data.DeviceTypeCode,
-                data.BrandModel, data.IdentifierType, data.SerialOrImei, data.Symptom, data.PreferredStation, data.PreferredFrom, data.PreferredTo),
+                data.BrandModel, data.IdentifierType, data.SerialOrImei, data.Symptom, data.PreferredStation, data.PreferredFrom, data.PreferredTo, customer.Id),
             uploads);
     }
 
@@ -191,7 +191,7 @@ public sealed class PortalWarrantyRequestService(
     {
         actors.Require(Permission.PORTAL_SELF);
         var customer = await policy.RequireCustomerAsync();
-        return (await requests.FindByPhoneAsync(customer.Phone))
+        return (await requests.FindByCustomerAsync(customer.Id, customer.Phone))
             .Select(value => new RequestSummary(value["_id"] as string, value["status"] as string, value["createdAt"] as DateTimeOffset?,
                 value["brandModel"] as string, value["serialOrImei"] as string, value["convertedTicketId"] as string))
             .ToList();

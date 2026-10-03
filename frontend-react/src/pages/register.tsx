@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { usePage } from "../usePage";
-import { BrandLogo, Icon, PasswordInput, api, errorText, useBusy } from "../customer";
+import { BrandLogo, Icon, PasswordInput, api, errorText, useAuthScale, useBusy } from "../customer";
 
 type Field = "fullName" | "phone" | "email" | "otp" | "password" | "confirm";
 const EMPTY: Record<Field, string> = { fullName: "", phone: "", email: "", otp: "", password: "", confirm: "" };
@@ -8,7 +8,8 @@ const EMPTY: Record<Field, string> = { fullName: "", phone: "", email: "", otp: 
 /* Đăng ký tài khoản khách (giao diện web khách KLCN). Backend xác thực SĐT bằng OTP qua /auth/mobile; đăng ký xong
    đăng nhập phiên web (cookie refresh) rồi thu hồi refresh token kiểu mobile mà /register trả về. */
 export default function RegisterPage() {
-  usePage("register", {"class": "is-fluid"}, "Đăng ký — Soopi");
+  usePage("register", {}, "Đăng ký — Soopi");
+  const scaled = useAuthScale();
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [summary, setSummary] = useState("");
@@ -76,7 +77,7 @@ export default function RegisterPage() {
   const fieldError = (field: Field) => errors[field] && <div className="field-error" id={`${field}-error`}>{errors[field]}</div>;
 
   return (
-    <div className="kh-app kh-auth">
+    <div className="kh-app kh-auth kh-auth--wide" ref={scaled}>
       <aside className="auth-banner">
         <div className="banner-header">
           <a href="/portal" className="banner-logo">

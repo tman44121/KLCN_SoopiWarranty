@@ -82,6 +82,7 @@ builder.Services.AddScoped<CatalogStore>();
 builder.Services.AddScoped<CatalogService>();
 builder.Services.AddScoped<ProductCatalog>();
 builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<CustomerAccountAdminService>();
 builder.Services.AddScoped<DeviceService>();
 
 // Yêu cầu online, cổng khách hàng, tệp đính kèm.
@@ -167,6 +168,7 @@ var pages = new Dictionary<string, string>
     ["/pages/admin.html"] = "/admin", ["/pages/customer-portal.html"] = "/portal",
     // URL cũ của web khách KLCN (Thymeleaf).
     ["/Account/Register"] = "/register", ["/Account/Profile"] = "/account",
+    ["/Account/ForgotPassword"] = "/forgot-password",
 };
 
 app.UseMiddleware<CorrelationIdMiddleware>();

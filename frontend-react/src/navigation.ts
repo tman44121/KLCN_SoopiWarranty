@@ -11,6 +11,7 @@ export const legacyRoutes: Record<string, string> = {
   '/pages/customer-portal.html': '/portal',
   '/Account/Register': '/register',
   '/Account/Profile': '/account',
+  '/Account/ForgotPassword': '/forgot-password',
 };
 
 export function internalRoute(value: string | null): string | null {

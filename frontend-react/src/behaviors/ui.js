@@ -6,16 +6,16 @@
    - Hộp xác nhận cho thao tác không hoàn tác được (mục 27).
    ========================================================================== */
 
-export default function initialize(global = window) {
+export default function initialize() {
 
-  const ICON_TABLE = global.html`<svg class="table-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="5" width="16" height="14" rx="1.5"/><path d="M4 10h16"/></svg>`;
-  const ICON_ERROR = global.html`<svg class="table-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>`;
+  const ICON_TABLE = window.html`<svg class="table-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="5" width="16" height="14" rx="1.5"/><path d="M4 10h16"/></svg>`;
+  const ICON_ERROR = window.html`<svg class="table-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>`;
 
   function skeletonRows(tbody, columns, rows = 5) {
     const cells = Array.from({ length: columns }, (_, i) =>
-      global.html`<td><div class="skeleton-bar" style="width:${40 + ((i * 17) % 45)}%"></div></td>`
+      window.html`<td><div class="skeleton-bar" style="width:${40 + ((i * 17) % 45)}%"></div></td>`
     );
-    tbody.innerHTML = Array.from({ length: rows }, () => global.html`<tr class="table-skeleton-row">${cells}</tr>`)
+    tbody.innerHTML = Array.from({ length: rows }, () => window.html`<tr class="table-skeleton-row">${cells}</tr>`)
       .join("");
   }
 
@@ -39,14 +39,14 @@ export default function initialize(global = window) {
         : kind === "filtered"
           ? "Hãy thử điều chỉnh bộ lọc hoặc từ khoá tìm kiếm."
           : "");
-    tbody.innerHTML = global.html`
+    tbody.innerHTML = window.html`
       <tr><td colspan="${columns}">
         <div class="table-state ${isError ? "table-state--error" : ""}">
           ${isError ? ICON_ERROR : ICON_TABLE}
           <div class="table-state__title">${title}</div>
-          ${desc ? global.html`<div class="table-state__desc">${desc}</div>` : ""}
+          ${desc ? window.html`<div class="table-state__desc">${desc}</div>` : ""}
           ${isError && onRetry
-            ? global.html`<div class="table-state__action"><button type="button" class="btn btn--secondary" data-retry-load>Thử lại</button></div>`
+            ? window.html`<div class="table-state__action"><button type="button" class="btn btn--secondary" data-retry-load>Thử lại</button></div>`
             : ""}
         </div>
       </td></tr>`;
@@ -57,12 +57,12 @@ export default function initialize(global = window) {
   /** Khối trạng thái cho vùng không phải bảng (danh sách, panel). */
   function blockState(container, kind, texts = {}, onRetry) {
     const isError = kind === "error";
-    container.innerHTML = global.html`
+    container.innerHTML = window.html`
       <div class="${isError ? "table-state table-state--error" : "empty-selection-hint"}">
-        ${isError ? global.html`${ICON_ERROR}<div class="table-state__title">${texts.title || "Không thể tải dữ liệu"}</div>` : ""}
+        ${isError ? window.html`${ICON_ERROR}<div class="table-state__title">${texts.title || "Không thể tải dữ liệu"}</div>` : ""}
         <div class="${isError ? "table-state__desc" : ""}">${texts.desc || (kind === "loading" ? "Đang tải…" : "")}</div>
         ${isError && onRetry
-          ? global.html`<div class="table-state__action"><button type="button" class="btn btn--secondary" data-retry-load>Thử lại</button></div>`
+          ? window.html`<div class="table-state__action"><button type="button" class="btn btn--secondary" data-retry-load>Thử lại</button></div>`
           : ""}
       </div>`;
     const retry = container.querySelector("[data-retry-load]");
@@ -99,7 +99,7 @@ export default function initialize(global = window) {
       });
     }
     if (placed === 0 || (error && error.code !== "VALIDATION_FAILED")) {
-      global.showToast((error && error.detail) || "Đã xảy ra lỗi hệ thống. Vui lòng thử lại.", "error");
+      window.showToast((error && error.detail) || "Đã xảy ra lỗi hệ thống. Vui lòng thử lại.", "error");
     }
   }
 
@@ -127,11 +127,11 @@ export default function initialize(global = window) {
       overlay.className = "modal-overlay";
       overlay.setAttribute("role", "dialog");
       overlay.setAttribute("aria-modal", "true");
-      overlay.innerHTML = global.html`
+      overlay.innerHTML = window.html`
         <div class="modal modal--critical">
           <div class="modal__header"><div>
             <div class="modal__title">${title}</div>
-            ${message ? global.html`<div class="modal__subtitle">${message}</div>` : ""}
+            ${message ? window.html`<div class="modal__subtitle">${message}</div>` : ""}
           </div></div>
           <div class="modal__footer">
             <button type="button" class="btn btn--secondary" data-confirm-cancel>${cancelLabel}</button>
@@ -139,9 +139,9 @@ export default function initialize(global = window) {
           </div>
         </div>`;
       document.body.appendChild(overlay);
-      global.openDialog(overlay);
+      window.openDialog(overlay);
       const done = (value) => {
-        global.closeDialog(overlay);
+        window.closeDialog(overlay);
         overlay.remove();
         resolve(value);
       };
@@ -162,11 +162,11 @@ export default function initialize(global = window) {
       overlay.className = "modal-overlay";
       overlay.setAttribute("role", "dialog");
       overlay.setAttribute("aria-modal", "true");
-      overlay.innerHTML = global.html`
+      overlay.innerHTML = window.html`
         <div class="modal modal--critical">
           <div class="modal__header"><div>
             <div class="modal__title">${title}</div>
-            ${message ? global.html`<div class="modal__subtitle">${message}</div>` : ""}
+            ${message ? window.html`<div class="modal__subtitle">${message}</div>` : ""}
           </div></div>
           <div class="modal__body">
             <div class="form-field" data-reason-field>
@@ -181,11 +181,11 @@ export default function initialize(global = window) {
           </div>
         </div>`;
       document.body.appendChild(overlay);
-      global.openDialog(overlay);
+      window.openDialog(overlay);
       const input = overlay.querySelector("[data-reason-input]");
       input.focus();
       const done = (value) => {
-        global.closeDialog(overlay);
+        window.closeDialog(overlay);
         overlay.remove();
         resolve(value);
       };
@@ -206,6 +206,51 @@ export default function initialize(global = window) {
     });
   }
 
+  /** Hiện mật khẩu tạm đúng một lần (backend không lưu bản rõ) kèm nút sao chép; đóng là mất. */
+  function showTemporaryPassword({ title, message, password }) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement("div");
+      overlay.className = "modal-overlay";
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
+      overlay.innerHTML = window.html`
+        <div class="modal">
+          <div class="modal__header"><div>
+            <div class="modal__title">${title}</div>
+            ${message ? window.html`<div class="modal__subtitle">${message}</div>` : ""}
+          </div></div>
+          <div class="modal__body">
+            <div class="temp-password" aria-label="Mật khẩu tạm"><span class="mono" data-temp-password>${password}</span></div>
+            <p class="cell-muted" style="margin:10px 0 0">Mật khẩu này chỉ hiện một lần. Khách phải đổi mật khẩu mới ngay khi đăng nhập.</p>
+          </div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn--secondary" data-copy-password>Sao chép</button>
+            <button type="button" class="btn btn--primary" data-confirm-ok>Đã báo cho khách</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      window.openDialog(overlay);
+      const done = () => {
+        window.closeDialog(overlay);
+        overlay.remove();
+        resolve();
+      };
+      const copy = overlay.querySelector("[data-copy-password]");
+      copy.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(password);
+          copy.textContent = "Đã sao chép";
+        } catch {
+          window.getSelection().selectAllChildren(overlay.querySelector("[data-temp-password]"));
+        }
+      });
+      overlay.querySelector("[data-confirm-ok]").addEventListener("click", done);
+      overlay.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") done();
+      });
+    });
+  }
+
   /** In một khối nội dung: sao chép ra vùng .print-area cấp body (CSS in chỉ hiện vùng này). */
   function printElement(element) {
     const area = document.createElement("div");
@@ -218,17 +263,23 @@ export default function initialize(global = window) {
 
   /** Cuộn tới khối mới hiện: mượt khi được phép, nhảy thẳng khi người dùng chọn giảm chuyển động. */
   function scrollBehavior() {
-    return global.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   }
 
   /** Option cho <select> từ danh sách [{value,label}] — giữ option đầu tiên (placeholder). */
   function fillSelect(select, options, keepFirst = true) {
     const first = keepFirst && select.options.length > 0 ? select.options[0].outerHTML : "";
     select.innerHTML =
-      first + options.map((o) => global.html`<option value="${o.value}">${o.label}</option>`).join("");
+      first + options.map((o) => window.html`<option value="${o.value}">${o.label}</option>`).join("");
   }
 
-  global.LML_UI = {
+  /** Bố cục danh sách + chi tiết xếp chồng dưới 1024px: chọn phiếu thì cuộn tới phần chi tiết. */
+  function revealDetail(element) {
+    if (!element || !window.matchMedia("(max-width: 1023px)").matches) return;
+    element.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
+  }
+
+  window.LML_UI = {
     skeletonRows,
     tableState,
     blockState,
@@ -237,8 +288,10 @@ export default function initialize(global = window) {
     busy,
     confirm,
     promptReason,
+    showTemporaryPassword,
     printElement,
     fillSelect,
     scrollBehavior,
+    revealDetail,
   };
 }

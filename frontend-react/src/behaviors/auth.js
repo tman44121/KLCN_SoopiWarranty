@@ -68,6 +68,12 @@ export default function initialize() {
     });
 
     const permissions = new Set(user.permissions || []);
+    if (!permissions.has("TICKET_READ_ALL")) {
+      document.querySelectorAll('.sidebar-nav__item[href="/tickets"]').forEach((link) => {
+        const label = Array.from(link.childNodes).reverse().find((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+        if (label) label.textContent = " Lịch sử phiếu";
+      });
+    }
     document.querySelectorAll("[data-perm]").forEach((node) => {
       node.hidden = !listAttr(node, "data-perm").some((p) => permissions.has(p));
     });

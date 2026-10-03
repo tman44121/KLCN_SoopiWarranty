@@ -1,9 +1,10 @@
 import { usePage } from "../usePage";
+import controller from "../behaviors/customer-portal.js";
 import { CustomerFooter, CustomerHeader, Icon } from "../customer";
 
 /* Tra cứu công khai theo giao diện trang Tra cứu của web khách KLCN. id và data-* giữ nguyên vì customer-portal.js gắn vào. */
 export default function PortalPage() {
-  usePage("portal", {"class": "is-fluid"}, "Soopi — Tra cứu sửa chữa");
+  usePage("portal", {}, "Soopi — Tra cứu sửa chữa", controller);
   return (
     <div className="kh-app">
       <CustomerHeader active="lookup" />
@@ -38,7 +39,7 @@ export default function PortalPage() {
 
           <div className="lookup-cta">
             <div>
-              <h2 className="card-heading-title">Thiết bị cần sửa chữa?</h2>
+              <h2 className="card-heading-title">Gửi yêu cầu trước khi mang máy tới</h2>
               <p className="card-heading-desc">Gửi yêu cầu trước khi mang máy tới trạm. Có tài khoản? <a className="dispatch-link" href="/login">Đăng nhập</a> để theo dõi mọi phiếu của bạn.</p>
             </div>
             <button type="button" className="btn-secondary-white" data-open-register="">

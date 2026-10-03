@@ -47,6 +47,10 @@ export default function initialize() {
     return state.status !== "all" || state.category !== "all" || state.technician !== "all" || state.q.trim() !== "";
   }
 
+  // Không có TICKET_READ_ALL (kỹ thuật viên): GET /tickets chỉ trả phiếu được giao cho chính người đó.
+  const ownOnly = () => !window.LML_AUTH.hasPermission("TICKET_READ_ALL");
+  const CLOSED = ["COMPLETED", "DELIVERED", "AWAITING_RETURN", "RETURNED_UNREPAIRED"];
+
   async function load() {
     ui.skeletonRows(el.tbody, COLUMNS, 6);
     el.count.textContent = "Đang tải…";
@@ -58,7 +62,7 @@ export default function initialize() {
       el.count.textContent = `${page.totalItems} phiếu`;
       if (page.items.length === 0) {
         ui.tableState(el.tbody, COLUMNS, isFiltered() ? "filtered" : "empty", {
-          title: isFiltered() ? "Không tìm thấy phiếu phù hợp" : "Chưa có phiếu tiếp nhận nào",
+          title: isFiltered() ? "Không tìm thấy phiếu phù hợp" : ownOnly() ? "Bạn chưa được phân công phiếu nào" : "Chưa có phiếu tiếp nhận nào",
         });
         return;
       }
@@ -70,7 +74,7 @@ export default function initialize() {
           <td>${L.CATEGORY[t.device.categoryCode] || "—"}</td>
           <td class="mono">${t.device.serialOrImei}</td>
           <td>${fmt.badgeOf(L.TICKET_STATUS, t.status)}</td>
-          <td>${t.technicianName || html`<span class="cell-muted">Chưa có</span>`}</td>
+          <td class="col-technician">${t.technicianName || html`<span class="cell-muted">Chưa có</span>`}</td>
           <td class="cell-muted">${fmt.dateTime(t.receivedAt)}</td>
           <td><button type="button" class="btn btn--secondary btn--sm" data-view-ticket="${t.code}">Xem chi tiết</button></td>
         </tr>`)}`;
@@ -99,6 +103,46 @@ export default function initialize() {
 
   function kv(label, value, wide) {
     return html`<div class="detail-grid__item${wide ? " detail-grid__item--wide" : ""}"><span class="kv-key">${label}</span><span>${value}</span></div>`;
+  }
+
+  /** Báo giá đang gắn với phiếu và các phiếu xuất kho của chính kỹ thuật viên cho phiếu này. */
+  async function technicianWork(t) {
+    const [quotation, issues] = await Promise.all([
+      t.activeQuotationCode ? api.quotations.get(t.activeQuotationCode).catch(() => null) : null,
+      api.inventory.myIssues().then((list) => list.filter((issue) => issue.ticketCode === t.code)).catch(() => []),
+    ]);
+    return { quotation, issues };
+  }
+
+  function workSection(t, { quotation, issues }) {
+    const i = t.inspection;
+    const order = t.repairOrder;
+    const result = order && order.results && order.results.length ? order.results[order.results.length - 1] : null;
+    const qcLabel = (code) => (L.QC_STEPS.find((s) => s.code === code) || {}).label || code;
+    return section(
+      "Công việc kỹ thuật",
+      html`
+        <div class="detail-grid">
+          ${i ? html`
+            ${kv("Chẩn đoán", L.CLASSIFICATION[i.classification] || i.classification)}
+            ${kv("Thời điểm chẩn đoán", fmt.dateTime(i.inspectedAt))}
+            ${kv("Kết quả kiểm tra", i.findings, true)}
+            ${i.outOfWarrantyReason ? kv("Lý do ngoài bảo hành", i.outOfWarrantyReason, true) : ""}
+            ${i.proposedFix ? kv("Phương án sửa chữa", i.proposedFix, true) : ""}` : kv("Chẩn đoán", "Chưa chẩn đoán", true)}
+          ${quotation ? html`
+            ${kv("Báo giá", html`<span class="mono">${quotation.code}</span> · ${fmt.money(quotation.grandTotal)}`)}
+            ${kv("Duyệt / khách xác nhận", html`${fmt.badgeOf(L.QUOTE_APPROVAL, quotation.approval.status)} ${quotation.approval.status === "APPROVED" ? fmt.badgeOf(L.QUOTE_DECISION, quotation.customerDecision.status) : ""}`)}` : ""}
+          ${issues.length ? kv("Linh kiện xuất kho", html`${issues.map((issue) => html`
+            <div><span class="mono">${issue.code}</span> ${fmt.badgeOf(L.STOCK_ISSUE_STATUS, issue.status)}
+              <span class="cell-muted">${issue.lines.map((l) => `${l.sku} × ${l.quantity}`).join(", ")}</span></div>`)}`, true) : ""}
+          ${order ? kv("Bắt đầu sửa", order.startedAt ? fmt.dateTime(order.startedAt) : "Chưa bắt đầu") : ""}
+          ${result ? html`
+            ${kv("Kết quả QC", fmt.badgeOf(L.STEP_RESULT, result.qcResult))}
+            ${kv("Công việc đã làm", result.workDone, true)}
+            ${kv("QC từng bước", result.qcSteps.map((s) => `${qcLabel(s.step)}: ${(L.STEP_RESULT[s.result] || {}).label || s.result}`).join(" · "), true)}
+            ${result.qcDetails ? kv("Ghi chú QC", result.qcDetails, true) : ""}` : ""}
+        </div>`
+    );
   }
 
   function billingSection(b) {
@@ -136,11 +180,14 @@ export default function initialize() {
         api.tickets.history(code),
         window.LML_AUTH.hasPermission("PAYMENT_READ") ? api.tickets.billing(code) : Promise.resolve(null),
       ]);
+      const work = ownOnly() ? await technicianWork(t) : null;
       const customer = t.customer || {};
       const w = t.warrantyAtIntake || {};
       const c = t.cosmetic || {};
       el.drawerSubtitle.textContent = [customer.fullName, customer.phone].filter(Boolean).join(" · ") || t.code;
+      const canWork = window.LML_AUTH.hasPermission("TICKET_REPAIR") && !CLOSED.includes(t.status);
       el.drawerBody.innerHTML = html`
+        ${canWork ? html`<div class="action-bar action-bar--start"><a class="btn btn--primary btn--sm" href="/technician?ticket=${t.code}">Mở trong màn Kỹ thuật</a></div>` : ""}
         <div class="detail-grid">
           ${kv("Mã phiếu", html`<span class="mono">${t.code}</span>`)}
           ${kv("Trạng thái", fmt.badgeOf(L.TICKET_STATUS, t.status))}
@@ -154,6 +201,7 @@ export default function initialize() {
           ${kv("Ngày hẹn trả", fmt.dateTime(t.promisedReturnAt))}
           ${kv("Triệu chứng khách hàng", t.reportedIssue, true)}
         </div>
+        ${work ? workSection(t, work) : ""}
         ${section("Thông tin bảo hành", html`
           <div class="detail-grid">
             ${kv("Tình trạng bảo hành", fmt.badgeOf(L.WARRANTY_STATUS, w.status))}
@@ -198,6 +246,12 @@ export default function initialize() {
   }
 
   window.LML_AUTH.ready(() => {
+    if (ownOnly()) {
+      el.tbody.closest("table").classList.add("is-own-only");
+      document.title = "Soopi — Lịch sử phiếu được phân công";
+      document.querySelector(".page-title").textContent = "Lịch sử phiếu được phân công";
+      document.querySelector(".page-subtitle").textContent = "Mọi phiếu được phân công cho bạn, kể cả đã hoàn tất, đã bàn giao hoặc đã hủy";
+    }
     const params = new URLSearchParams(location.search);
     if (params.get("q")) {
       state.q = params.get("q");

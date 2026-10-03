@@ -82,7 +82,7 @@ export default function initialize() {
 
   function renderQueue() {
     if (state.queue.length === 0) {
-      ui.blockState(el.queueList, "empty", { desc: "Bạn chưa được phân công phiếu nào." });
+      ui.blockState(el.queueList, "empty", { desc: "Hàng đợi trống — không còn phiếu cần xử lý. Phiếu đã xong nằm ở mục Lịch sử phiếu." });
       return;
     }
     el.queueList.innerHTML = html`${state.queue.map((t) => html`
@@ -96,7 +96,10 @@ export default function initialize() {
         <div style="display:flex; gap:6px; flex-wrap:wrap;">${fmt.badgeOf(L.TICKET_STATUS, t.status)}${t.sla.status === "BREACHED" && t.status !== "COMPLETED" ? fmt.badge("danger", "Trễ hẹn SLA") : ""}</div>
       </div>`)}`;
     el.queueList.querySelectorAll("[data-ticket-id]").forEach((item) => {
-      const open = () => selectTicket(item.getAttribute("data-ticket-id"));
+      const open = () => {
+        selectTicket(item.getAttribute("data-ticket-id"));
+        ui.revealDetail(el.detail);
+      };
       item.addEventListener("click", open);
       item.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -136,6 +139,8 @@ export default function initialize() {
       state.quotation = ticket.activeQuotationCode ? await api.quotations.get(ticket.activeQuotationCode) : null;
       const pending = await api.inventory.myIssues("PENDING");
       state.pendingIssue = pending.find((issue) => issue.ticketCode === code) || null;
+      // Tồn/giữ chỗ thay đổi ngay khi gửi yêu cầu: tải lại để khối "Yêu cầu linh kiện" không hiện số cũ.
+      if (state.pendingIssue) state.parts = await api.inventory.parts({}).catch(() => state.parts);
       renderDetail();
     } catch (error) {
       ui.blockState(el.detail, "error", { desc: error.detail }, () => selectTicket(code));
@@ -150,7 +155,7 @@ export default function initialize() {
 
   function summaryCard(t) {
     const w = t.warrantyAtIntake || {};
-    const counted = !["COMPLETED", "DELIVERED", "CANCELLED", "RETURNED_UNREPAIRED"].includes(t.status);
+    const counted = !["COMPLETED", "DELIVERED", "AWAITING_RETURN", "RETURNED_UNREPAIRED"].includes(t.status);
     return card(
       html`Chi tiết phiếu — <span class="mono">${t.code}</span>`,
       t.customer ? `${t.customer.fullName} · ${t.customer.phone || ""}` : "",
@@ -193,7 +198,7 @@ export default function initialize() {
         break;
       case "AWAITING_QUOTE_APPROVAL":
       case "AWAITING_CUSTOMER_CONFIRMATION":
-      case "CANCELLED":
+      case "AWAITING_RETURN":
         sections.push(inspectionSummary(t, false), quotationCard(t));
         break;
       case "AWAITING_PARTS":
@@ -406,7 +411,7 @@ export default function initialize() {
   function quotationCard(t) {
     const q = state.quotation;
     if (!q) {
-      return t.status === "CANCELLED"
+      return t.status === "AWAITING_RETURN"
         ? card("Báo giá sửa chữa", "", banner("Khách hàng từ chối báo giá — phiếu chờ bàn giao lại thiết bị chưa sửa.", true))
         : "";
     }
@@ -431,7 +436,8 @@ export default function initialize() {
         </div>
         <div class="billing-row"><span>Tổng linh kiện</span><span>${fmt.money(q.partsTotal)}</span></div>
         <div class="billing-row"><span>Tiền công</span><span>${fmt.money(q.laborTotal)}</span></div>
-        <div class="billing-total-row"><span>Tổng thanh toán (gồm VAT ${Number(q.vatRate)}%)</span><span>${fmt.money(q.grandTotal)}</span></div>
+        <div class="billing-row"><span>Thuế VAT (${Number(q.vatRate)}%)</span><span>${fmt.money(q.grandTotal - q.partsTotal - q.laborTotal)}</span></div>
+        <div class="billing-total-row"><span>Tổng thanh toán</span><span>${fmt.money(q.grandTotal)}</span></div>
         ${note ? banner(note, q.customerDecision.status === "DECLINED") : ""}`,
       html`<div style="display:flex; gap:6px;">${fmt.badgeOf(L.QUOTE_APPROVAL, q.approval.status)}${q.approval.status === "APPROVED" ? fmt.badgeOf(L.QUOTE_DECISION, q.customerDecision.status) : ""}</div>`
     );
@@ -442,10 +448,39 @@ export default function initialize() {
   function partsStage(t) {
     if (state.pendingIssue) {
       const issue = state.pendingIssue;
+      // Dòng phiếu xuất chỉ có SKU + số lượng: tên, tồn và vị trí lấy từ danh mục linh kiện, rồi tới dòng báo giá.
+      const partOf = (sku) => state.parts.find((p) => p.sku === sku);
+      const quoteLineOf = (sku) => state.quotation && state.quotation.lines.find((l) => l.sku === sku);
+      const totalUnits = issue.lines.reduce((sum, l) => sum + l.quantity, 0);
       return card(
         "Yêu cầu linh kiện",
-        `Phiếu xuất ${issue.code} gửi lúc ${fmt.dateTime(issue.requestedAt)}`,
-        html`${issue.lines.map((l) => html`<div class="billing-row"><span class="mono">${l.sku}</span><span>× ${l.quantity}</span></div>`)}
+        html`Phiếu xuất <span class="mono">${issue.code}</span> gửi lúc ${fmt.dateTime(issue.requestedAt)}`,
+        html`
+          <div class="detail-grid">
+            ${kv("Nguồn yêu cầu", issue.source === "QUOTATION"
+              ? html`Theo báo giá <span class="mono">${issue.quotationCode}</span>`
+              : "Bảo hành miễn phí")}
+            ${kv("Kỹ thuật viên yêu cầu", issue.technicianName || issue.requestedBy)}
+            ${issue.reason ? kv("Lý do", issue.reason, true) : ""}
+          </div>
+          <div class="table-scroll" style="margin-top:14px;">
+            <table class="drawer-table">
+              <thead><tr><th>SKU</th><th>Tên linh kiện</th><th>SL</th><th>Tồn thực tế / đã giữ</th><th>Vị trí kho</th></tr></thead>
+              <tbody>${issue.lines.map((l) => {
+                const part = partOf(l.sku);
+                const quoteLine = quoteLineOf(l.sku);
+                const unit = (part && part.unit) || "";
+                return html`<tr>
+                  <td class="mono">${l.sku}</td>
+                  <td>${(part && part.name) || (quoteLine && quoteLine.description) || "—"}</td>
+                  <td>${l.quantity}${unit ? ` ${unit}` : ""}</td>
+                  <td>${part ? html`${part.onHand} / ${part.reserved}${part.onHand < l.quantity ? html` <span class="cell-muted">(thiếu ${l.quantity - part.onHand})</span>` : ""}` : "—"}</td>
+                  <td class="mono">${l.binCode || (part && part.primaryBin) || "—"}</td>
+                </tr>`;
+              })}</tbody>
+            </table>
+          </div>
+          <div class="billing-row"><span>Tổng</span><span>${issue.lines.length} mã · ${totalUnits} linh kiện</span></div>
           ${banner("Đang chờ Kho vật tư duyệt & thực xuất kho — phiếu tự chuyển sang Đang sửa chữa khi kho duyệt.")}`,
         fmt.badgeOf(L.STOCK_ISSUE_STATUS, issue.status)
       );

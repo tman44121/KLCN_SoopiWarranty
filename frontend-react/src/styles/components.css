@@ -228,9 +228,9 @@
   font-size: 12px;
   color: var(--text-muted);
   border: 1px solid var(--border-universal);
-  border-radius: 3px;
   padding: 1px 5px;
   background: var(--surface-card);
+  border-radius: 8px;
 }
 
 .header-search__results {
@@ -262,7 +262,7 @@
   flex-direction: column;
   gap: 2px;
   padding: 7px 8px;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 .header-search__result:hover,
@@ -419,6 +419,7 @@
   border: 1px solid transparent;
   transition: background-color 0.12s ease, border-color 0.12s ease;
   white-space: nowrap;
+  text-decoration: none; /* nút dạng <a> (vd. "Mở trong màn Kỹ thuật") */
 }
 
 .btn:disabled {
@@ -665,7 +666,7 @@
   letter-spacing: var(--text-table-header-tracking);
   text-transform: uppercase;
   color: var(--text-table-header-color);
-  overflow-wrap: anywhere;
+  overflow-wrap: normal; /* xuống dòng giữa các từ, không bẻ "KỸ THUẬ/T" */
 }
 
 .data-table th.is-sortable {
@@ -684,10 +685,38 @@
   font-size: 9px;
 }
 
+.data-table th.is-sorted-desc .sort-caret {
+  transform: rotate(180deg);
+}
+
+/* Tiêu đề cột sắp xếp là nút thật để dùng được bằng bàn phím; trông như chữ tiêu đề. */
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  text-align: inherit;
+}
+
 .data-table th.is-sorted-asc .sort-caret,
 .data-table th.is-sorted-desc .sort-caret {
   opacity: 1;
   color: var(--color-primary);
+}
+
+.data-table--fluid .cell-actions {
+  flex-wrap: wrap;
+  white-space: normal;
+}
+
+/* Lịch sử phiếu của kỹ thuật viên: cột kỹ thuật viên luôn là chính họ. */
+.data-table.is-own-only .col-technician {
+  display: none;
 }
 
 .data-table tbody td {
@@ -700,6 +729,20 @@
 }
 
 .data-table tbody tr:hover td {
+  background: var(--border-divider);
+}
+
+/* Dòng mở popup thao tác khi bấm (bảng tài khoản nhân viên). */
+.data-table__row-action {
+  cursor: pointer;
+}
+
+.data-table__row-action:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.data-table__row-action:focus-visible td {
   background: var(--border-divider);
 }
 
@@ -751,10 +794,10 @@
 
 .skeleton-bar {
   height: 12px;
-  border-radius: 3px;
   background: linear-gradient(90deg, var(--border-divider) 25%, var(--border-universal) 37%, var(--border-divider) 63%);
   background-size: 400% 100%;
   animation: skeleton-shimmer 1.4s ease infinite;
+  border-radius: 8px;
 }
 
 @keyframes skeleton-shimmer {
@@ -874,7 +917,7 @@
 }
 
 .workload-row__info {
-  width: 148px;
+  width: 240px; /* đủ cho "10/10 phiếu · SLA nguy cơ: 3" trên một dòng */
   flex-shrink: 0;
 }
 
@@ -893,15 +936,15 @@
 .workload-row__bar-track {
   flex: 1;
   height: 8px;
-  border-radius: 4px;
   background: var(--border-divider);
   overflow: hidden;
+  border-radius: 8px;
 }
 
 .workload-row__bar-fill {
   height: 100%;
-  border-radius: 4px;
   background: var(--color-primary);
+  border-radius: 8px;
 }
 
 .workload-row__bar-fill.is-overload {
@@ -1111,12 +1154,12 @@
   font-size: 12px;
   font-weight: 500;
   padding: 5px 8px;
-  border-radius: 4px;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.12s ease;
   z-index: var(--z-dropdown);
+  border-radius: 8px;
 }
 
 .tooltip-wrap:hover::after,
@@ -1245,6 +1288,30 @@ button.queue-item {
 .detail-grid__item span {
   font-size: 13px;
   color: var(--text-strong);
+}
+
+/* Mật khẩu tạm hiện một lần (đặt lại mật khẩu khách) — chữ to, dễ đọc cho khách. */
+.temp-password {
+  padding: 14px 16px;
+  border: 1px dashed var(--border-universal);
+  border-radius: var(--radius-card);
+  background: var(--surface-utility);
+  text-align: center;
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  color: var(--text-strong);
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+
+.temp-password .mono {
+  font-size: inherit;
+}
+
+.drawer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .section-divider {
@@ -2397,7 +2464,7 @@ button.queue-item {
   position: relative;
   width: min(24px, 70%);
   background: var(--chart-series-1);
-  border-radius: 4px 4px 0 0;
+  border-radius: 8px 8px 0 0;
 }
 
 .chart-columns__slot:hover .chart-columns__bar,
@@ -2478,7 +2545,7 @@ button.queue-item {
   min-width: 2px;
   height: 16px;
   background: var(--chart-series-1);
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 8px 8px 0;
 }
 
 .chart-bars__row:hover .chart-bars__bar,
@@ -2508,7 +2575,7 @@ button.queue-item {
 }
 
 .chart-split__segment:last-child {
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 8px 8px 0;
 }
 
 .chart-split__segment--1,
@@ -2548,7 +2615,7 @@ button.queue-item {
   flex: none;
   width: 12px;
   height: 12px;
-  border-radius: 2px;
+  border-radius: 8px;
 }
 
 .chart-legend__value {
@@ -2612,7 +2679,7 @@ button.queue-item {
   content: "";
   width: 12px;
   height: 2px;
-  border-radius: 1px;
+  border-radius: 8px;
 }
 
 .chart-tooltip__label[data-series="1"]::before {
@@ -2638,3 +2705,66 @@ button.queue-item {
     background: repeating-linear-gradient(45deg, CanvasText 0 2px, Canvas 2px 5px);
   }
 }
+
+/* ---------------------------------------------------------------------- */
+/* Bố cục trang dùng chung (thay style inline cố định — D-046)             */
+/* ---------------------------------------------------------------------- */
+
+/* Danh sách bên trái + chi tiết bên phải (Kỹ thuật, Thu ngân). */
+.master-detail {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+/* Hai trường cạnh nhau trong hộp phân công (ưu tiên + ghi chú). */
+.assign-fields {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+/* Ô nhập mã + nút tra cứu trên cùng một hàng. */
+.inline-lookup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.inline-lookup .text-field {
+  width: 210px;
+  max-width: 100%;
+}
+
+/* Liên kết bỏ qua điều hướng: chỉ hiện khi được focus bằng bàn phím. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: var(--z-critical-modal);
+  padding: 10px 14px;
+  border-radius: var(--radius-button);
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-160%);
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}
+
+.app-main:focus {
+  outline: none;
+}
+
+/* Nút menu và nền mờ của sidebar chỉ dùng dưới 1024px (responsive.css). */
+.app-menu-toggle,
+.app-sidebar-backdrop {
+  display: none;
+}
+
