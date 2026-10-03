@@ -33,6 +33,10 @@ def normalized(path):
     return re.sub(r"\{[^}]+\}", "{}", path)
 
 
+# Endpoint chỉ có ở Soopi, không có trong bản Java (DECISIONS D-047). Ngoài các endpoint này, route phải khớp Java 1:1.
+SOOPI_ONLY = {("POST", "/api/v1/auth/mobile/password-reset/verify")}
+
+
 def endpoints():
     java, dotnet = [], []
     for file in sorted((JAVA / "src/main/java").rglob("*Controller.java")):
@@ -56,10 +60,13 @@ def endpoints():
                 dotnet.append({"method": match[1].upper(), "path": route(bases[0], match[2] or ""),
                                "controller": cls[1], "source": str(file.relative_to(ROOT)).replace("\\", "/")})
             start = cls.end()
-    assert len(java) == len(dotnet) == 114, (len(java), len(dotnet))
+    extras = {(row["method"], normalized(row["path"])) for row in dotnet} & SOOPI_ONLY
+    assert extras == SOOPI_ONLY, ("Soopi-only endpoint missing", SOOPI_ONLY - extras)
+    parity = [row for row in dotnet if (row["method"], normalized(row["path"])) not in SOOPI_ONLY]
+    assert len(java) == len(parity) == 114, (len(java), len(parity))
     keys = lambda rows: Counter((row["method"], normalized(row["path"])) for row in rows)
-    assert keys(java) == keys(dotnet), {"missing": list((keys(java) - keys(dotnet)).elements()),
-                                      "extra": list((keys(dotnet) - keys(java)).elements())}
+    assert keys(java) == keys(parity), {"missing": list((keys(java) - keys(parity)).elements()),
+                                      "extra": list((keys(parity) - keys(java)).elements())}
     assert all(count == 1 for count in keys(java).values()), "Duplicate route"
     return java, dotnet
 
@@ -197,6 +204,10 @@ def main():
     for row in java:
         net = net_index[(row["method"], normalized(row["path"]))]
         appendix.append(f'| {row["method"]} | `{row["path"]}` | `{net["path"]}` | {row["controller"]} | {net["controller"]} |')
+    appendix += ["", "## Chỉ có ở Soopi (D-047)", "", "| Method | .NET URL | .NET controller |", "|---|---|---|"]
+    for row in dotnet:
+        if (row["method"], normalized(row["path"])) in SOOPI_ONLY:
+            appendix.append(f'| {row["method"]} | `{row["path"]}` | {row["controller"]} |')
     (ROOT / "verification/ENDPOINTS.md").write_text("\n".join(appendix) + "\n", encoding="utf-8")
     if args.live:
         paths = ["/actuator/health", "/api/v1/portal/catalog", "/api/v1/auth/me", "/api/v1/customers",

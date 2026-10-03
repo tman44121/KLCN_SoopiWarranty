@@ -6,28 +6,23 @@ import ui from './behaviors/ui.js';
 import charts from './behaviors/charts.js';
 import auth from './behaviors/auth.js';
 
-const pages = import.meta.glob<{ default: () => unknown }>([
-  './behaviors/*.js',
-  '!./behaviors/{html,labels,api,shell,ui,charts,auth}.js',
-], { eager: true });
-// ponytail: eager controllers bind before paint; use Suspense for whole pages if
-// the measured cost of this bundle later justifies loading pages separately.
+/** Controller DOM của một trang; có thể trả về hàm chạy sau khi shell sẵn sàng. */
+export type Controller = () => unknown;
 
-export async function initializePage(name: string) {
-  html(window);
-  labels(window);
-  api(window);
+export async function initializePage(name: string, controller?: Controller) {
+  html();
+  labels();
+  api();
   const startShell = shell();
-  ui(window);
-  charts(window);
-  const startAuth = !['home', 'login', 'portal', 'register'].includes(name) ? auth() : null;
+  ui();
+  charts();
+  const startAuth = !['home', 'login', 'portal', 'register', 'forgot-password'].includes(name) ? auth() : null;
   // ponytail: one document per page preserves existing DOM handlers; move handlers
   // into React state only if navigation must retain a mounted shell.
-  // Bind handlers synchronously before paint: a late import allowed native GET
-  // submission of the login form while its submit handler was still loading.
-  const module = pages[`./behaviors/${name === 'portal' ? 'customer-portal' : name}.js`];
+  // Controller đi cùng chunk của trang (import tĩnh trong pages/*.tsx) nên đã có sẵn khi trang render:
+  // gắn đồng bộ trước paint, form đăng nhập không bao giờ submit GET khi chưa có handler.
   // Trang khách (home, account, register) dựng bằng React state, không có controller DOM.
-  const startPage = module?.default();
+  const startPage = controller?.();
   startShell();
   if (typeof startPage === 'function') startPage();
   await startAuth?.();

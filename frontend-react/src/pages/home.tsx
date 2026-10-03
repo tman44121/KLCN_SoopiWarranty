@@ -86,7 +86,7 @@ function useMyTickets(signedIn: boolean) {
 }
 
 export default function HomePage() {
-  usePage("home", {"class": "is-fluid"}, "Trang chủ — Soopi");
+  usePage("home", {}, "Trang chủ — Soopi");
   const name = useCustomerName();
   const [catalog, setCatalog] = useState<{ categories: Json[]; stations: Json[] }>({ categories: [], stations: [] });
   const [openFaq, setOpenFaq] = useState(0);

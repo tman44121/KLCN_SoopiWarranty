@@ -4,7 +4,7 @@
    Mọi màn hình so sánh theo mã enum, không so chuỗi tiếng Việt.
    ========================================================================== */
 
-export default function initialize(global = window) {
+export default function initialize() {
 
   /** Bảng 7.1: trạng thái phiếu → nhãn UI (badge) + tone mục 4. */
   const TICKET_STATUS = {
@@ -15,9 +15,9 @@ export default function initialize(global = window) {
     AWAITING_CUSTOMER_CONFIRMATION: { label: "Chờ khách xác nhận", tone: "warning" },
     AWAITING_PARTS: { label: "Chờ linh kiện", tone: "warning" },
     REPAIRING: { label: "Đang sửa chữa", tone: "processing" },
-    COMPLETED: { label: "Sẵn sàng bàn giao", tone: "success" },
-    DELIVERED: { label: "Đã hoàn thành", tone: "success" },
-    CANCELLED: { label: "Ngừng sửa theo yêu cầu khách", tone: "neutral" },
+    COMPLETED: { label: "Hoàn thành – Chờ bàn giao", tone: "success" },
+    DELIVERED: { label: "Đã bàn giao", tone: "success" },
+    AWAITING_RETURN: { label: "Chờ trả máy", tone: "warning" },
     RETURNED_UNREPAIRED: { label: "Đã trả máy (không sửa)", tone: "neutral" },
   };
 
@@ -79,7 +79,7 @@ export default function initialize(global = window) {
   const QUOTE_APPROVAL = {
     PENDING: { label: "Chờ phê duyệt", tone: "warning" },
     APPROVED: { label: "Đã phê duyệt", tone: "success" },
-    REJECTED: { label: "Bị từ chối", tone: "danger" },
+    REJECTED: { label: "Đã từ chối", tone: "danger" },
   };
 
   const QUOTE_DECISION = {
@@ -130,6 +130,20 @@ export default function initialize(global = window) {
   const ACCOUNT_STATUS = {
     ACTIVE: { label: "Đang hoạt động", tone: "success" },
     LOCKED: { label: "Đã khóa", tone: "danger" },
+  };
+
+  /** Tài khoản đăng nhập của khách (NONE = khách chưa tự đăng ký). */
+  const CUSTOMER_ACCOUNT_STATUS = {
+    NONE: { label: "Chưa có tài khoản", tone: "neutral" },
+    ACTIVE: { label: "Đang hoạt động", tone: "success" },
+    TEMP_LOCKED: { label: "Tạm khóa (đăng nhập sai nhiều lần)", tone: "warning" },
+    LOCKED: { label: "Đã khóa", tone: "danger" },
+  };
+
+  const CUSTOMER_STATUS = {
+    ACTIVE: { label: "Đang hoạt động", tone: "success" },
+    ARCHIVED: { label: "Đã lưu trữ", tone: "neutral" },
+    MERGED: { label: "Đã gộp", tone: "neutral" },
   };
 
   const ROLE = {
@@ -206,7 +220,7 @@ export default function initialize(global = window) {
 
   /** Badge chuẩn mục 4 — luôn có ● + nhãn tiếng Việt, không chỉ dựa vào màu. */
   function badge(tone, label) {
-    return global.html`<span class="status-badge status-badge--${tone}"><span class="status-badge__dot">●</span>${label}</span>`;
+    return window.html`<span class="status-badge status-badge--${tone}"><span class="status-badge__dot">●</span>${label}</span>`;
   }
 
   function badgeOf(table, code) {
@@ -214,7 +228,7 @@ export default function initialize(global = window) {
     return entry ? badge(entry.tone, entry.label) : badge("neutral", code || "—");
   }
 
-  global.LML_LABELS = {
+  window.LML_LABELS = {
     TICKET_STATUS,
     CATEGORY,
     SLA_LEVEL,
@@ -234,11 +248,13 @@ export default function initialize(global = window) {
     STOCK_TRANSFER_STATUS,
     WARRANTY_REQUEST_STATUS,
     ACCOUNT_STATUS,
+    CUSTOMER_ACCOUNT_STATUS,
+    CUSTOMER_STATUS,
     ROLE,
     SCRATCHES,
     MOISTURE,
     ACCESSORIES,
   };
 
-  global.LML_FMT = { dateTime, date, money, countdown, badge, badgeOf };
+  window.LML_FMT = { dateTime, date, money, countdown, badge, badgeOf };
 }

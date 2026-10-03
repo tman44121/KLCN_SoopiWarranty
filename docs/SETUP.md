@@ -44,15 +44,24 @@ Thư mục `database/` có script SQL Server mới nhất (lấy từ `warranty-
 `04_app_user.sql` (tài khoản ứng dụng cho production) và file ghép `TrungTamBaoHanhDB_SqlServer.sql` (= 01 + 02 + 03,
 tự tạo database `TrungTamBaoHanhDB` collation `Latin1_General_100_CI_AI`).
 
-Cần SQL Server đang chạy (Express/Developer) và tài khoản Windows có quyền tạo database. Một lệnh:
+Database tạo từ một bản script trước (còn trạng thái phiếu `CANCELLED`, `YeuCauBaoHanh` chưa có cột `MaKH`, chưa có
+quyền quản lý tài khoản khách) phải nâng cấp trước khi chạy backend hiện tại — giữ nguyên dữ liệu, chạy lại nhiều lần
+không sao, dùng được cho database tạo từ bất kỳ bản script nào trước đây:
 
 ```powershell
-.\run.bat initdb                        # SQL Server mặc định trên máy (localhost)
-.\run.bat initdb localhost\SQLEXPRESS   # SQL Server Express
+sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\05_upgrade_existing_db.sql
+```
+
+`run.bat` tự làm bước này khi máy chưa có connection string (xem mục 3). Muốn làm riêng:
+
+```powershell
+.\run.bat initdb                        # tự tìm SQL Server trên máy, không có thì cài SQL Server 2022 Express
+.\run.bat initdb localhost\SQLEXPRESS   # chỉ định server (tên trong ô Server name của SSMS)
 ```
 
 `initdb` cài `sqlcmd` nếu thiếu, tạo database và nạp dữ liệu mẫu bằng đăng nhập Windows (bỏ qua nếu database
-`TrungTamBaoHanhDB` đã có), rồi đặt `ConnectionStrings:Default` (`Integrated Security=True`). Sau đó chạy `run.bat`.
+`TrungTamBaoHanhDB` đã có), rồi đặt `ConnectionStrings:Default` (`Integrated Security=True`). Tài khoản Windows cần
+quyền tạo database (bản Express thường cấp sẵn quyền quản trị cho tài khoản đã cài nó). Sau đó chạy `run.bat`.
 Không dùng lệnh này trên máy đang trỏ tới database khác: nó ghi đè connection string. Tự chạy bằng SSMS hoặc
 `sqlcmd -S <server> -E -C -I -b -f 65001 -i database\TrungTamBaoHanhDB_SqlServer.sql` cũng được.
 
@@ -94,10 +103,20 @@ phù hợp các thao tác được chủ dự án cho phép; tài liệu này kh
 
 ## 3. Chạy backend và React khi phát triển
 
-Cách nhanh: chạy `run.bat` ở thư mục gốc. Script kiểm tra và cài nếu thiếu .NET SDK 10, Node.js 22+ (qua `winget`)
-và dependency frontend (`npm ci`), kiểm tra đã đặt `ConnectionStrings:Default` (không in giá trị), rồi mở API, Vite
-và trình duyệt; API/Vite đang chạy sẵn thì dùng lại. `run.bat check` chỉ kiểm tra, `run.bat build` chạy bản build
-cùng origin ở cổng 8080. SQL Server và database không được tự cài. Tài khoản demo: [TAI_KHOAN_DEMO.md](TAI_KHOAN_DEMO.md).
+Cách nhanh (máy Windows 10/11 nào cũng được, kể cả máy trắng): chạy `run.bat` ở thư mục gốc. Script:
+
+1. Cài nếu thiếu .NET SDK 10, Node.js 22+ (qua `winget`) và dependency frontend (`npm ci`).
+2. Chưa có `ConnectionStrings:Default` (chỉ kiểm tra khóa, không in giá trị): tìm SQL Server trên máy (`localhost`,
+   `localhost\SQLEXPRESS`, LocalDB) bằng đăng nhập Windows; không có thì cài SQL Server 2022 Express bằng `winget`
+   (5–15 phút, Windows hỏi quyền quản trị). Sau đó tạo `TrungTamBaoHanhDB` từ `database/` nếu chưa có và đặt
+   connection string. Máy đã có connection string (như máy dùng `_Dev`) giữ nguyên.
+3. Chọn cổng: API 8080, web 5173; bị chương trình khác chiếm thì tự lấy cổng trống kế tiếp (API 8081/8082/8090/18080,
+   web 5174/5175/5180/5190). API/Vite của Soopi đang chạy sẵn thì dùng lại.
+4. Mở API, Vite và trình duyệt; chờ API tối đa 6 phút (lần đầu phải tải package và build).
+
+`run.bat check` chỉ kiểm tra/cài, `run.bat build` chạy bản build cùng origin, `run.bat initdb [server]` làm lại bước
+database. Máy không có `winget` (App Installer) thì script in link tải thủ công. Tài khoản demo:
+[TAI_KHOAN_DEMO.md](TAI_KHOAN_DEMO.md).
 
 Chạy thủ công:
 

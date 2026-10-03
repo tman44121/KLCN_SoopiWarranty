@@ -54,7 +54,7 @@ CREATE TABLE DanhMucNhan (
     CONSTRAINT CK_DanhMucNhan_Tone CHECK (Tone IS NULL OR Tone IN ('success', 'warning', 'danger', 'processing', 'neutral'))
 );
 
--- Dữ liệu tham chiếu (máy trạng thái hiển thị/đối chiếu); luật chuyển trạng thái nằm trong Ticket (Java).
+-- Dữ liệu tham chiếu trạng thái; Ticket (C#) kiểm tra chuyển trạng thái theo ChuyenTrangThaiHopLe và ghi lịch sử cùng transaction.
 CREATE TABLE ChuyenTrangThaiHopLe (
     TuTrangThai  NVARCHAR(40)  NOT NULL,
     DenTrangThai NVARCHAR(40)  NOT NULL,
@@ -307,6 +307,7 @@ CREATE TABLE ThietBi (
 -- ----------------------------------------------------------------------------
 CREATE TABLE YeuCauBaoHanh (
     MaYeuCau              NVARCHAR(30)  PRIMARY KEY,
+    MaKH                  NVARCHAR(20)  NULL, -- Gắn hồ sơ khách đăng nhập; NULL cho yêu cầu khách vãng lai.
     HoTenKhach            NVARCHAR(100) NOT NULL,
     SDTKhach              NVARCHAR(15)  NOT NULL,
     EmailKhach            NVARCHAR(100) NULL,
@@ -327,7 +328,9 @@ CREATE TABLE YeuCauBaoHanh (
     LyDoHuy               NVARCHAR(255) NULL,
     NgayTao               DATETIME2(0)  NOT NULL,
     INDEX IX_YeuCau_SDT (SDTKhach),
+    INDEX IX_YeuCau_KhachHang (MaKH, TrangThai, NgayTao),
     INDEX IX_YeuCau_TrangThai (TrangThai, NgayTao),
+    FOREIGN KEY (MaKH) REFERENCES KhachHang(MaKH),
     FOREIGN KEY (MaNhom) REFERENCES NhomThietBi(MaNhom),
     FOREIGN KEY (MaLoai) REFERENCES LoaiThietBi(MaLoai),
     FOREIGN KEY (MaTramMongMuon) REFERENCES TramDichVu(MaTram),
@@ -363,7 +366,7 @@ CREATE TABLE TepDinhKem (
 
 -- ----------------------------------------------------------------------------
 -- 1.4 TIẾP NHẬN & ĐIỀU PHỐI
--- Máy trạng thái do Ticket (Java) kiểm soát; lịch sử trạng thái do JpaTicketRepository ghi cùng transaction.
+-- Ticket (C#) kiểm tra chuyển trạng thái; TicketStore cập nhật phiếu và ghi LichSuTrangThai_ThietBi trong cùng transaction.
 -- ConMo = máy còn ở trung tâm; Java ghi cùng TrangThaiXuLy, CHECK bảo đảm hai cột không lệch nhau.
 -- ----------------------------------------------------------------------------
 CREATE TABLE PhieuTiepNhan (
@@ -424,7 +427,7 @@ CREATE TABLE PhieuTiepNhan (
     CONSTRAINT CK_PTN_SLA CHECK (MucSLA IN ('EXPRESS_12H', 'PRIORITY_24H', 'STANDARD_48H') AND HanSLA > NgayTiepNhan),
     CONSTRAINT CK_PTN_TrangThai CHECK (TrangThaiXuLy IN (
         'RECEIVED', 'INSPECTING', 'DIAGNOSED', 'AWAITING_QUOTE_APPROVAL', 'AWAITING_CUSTOMER_CONFIRMATION',
-        'AWAITING_PARTS', 'REPAIRING', 'COMPLETED', 'DELIVERED', 'CANCELLED', 'RETURNED_UNREPAIRED')),
+        'AWAITING_PARTS', 'AWAITING_RETURN', 'REPAIRING', 'COMPLETED', 'DELIVERED', 'RETURNED_UNREPAIRED')),
     CONSTRAINT CK_PTN_ConMo CHECK (ConMo = CASE WHEN TrangThaiXuLy IN ('DELIVERED', 'RETURNED_UNREPAIRED') THEN 0 ELSE 1 END)
 );
 CREATE UNIQUE INDEX UX_PhieuTiepNhan_ThietBiDangMo ON PhieuTiepNhan(MaThietBi) WHERE ConMo = 1;
@@ -520,7 +523,7 @@ CREATE TABLE PhieuKiemTra (
 );
 
 -- Nhiều báo giá / phiếu nhưng tối đa 1 báo giá còn hiệu lực (UX_PhieuBaoGia_ConHieuLuc).
--- Tổng tiền do Quotation (Java) tính và ghi cùng các dòng chi tiết.
+-- Quotation (C#) tính tổng từ ChiTietBaoGia, áp dụng VAT và ghi header/detail trong cùng transaction.
 CREATE TABLE PhieuBaoGia (
     MaBaoGia               NVARCHAR(30)  PRIMARY KEY,
     MaPhieuTN              NVARCHAR(30)  NOT NULL,

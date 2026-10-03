@@ -97,12 +97,39 @@ public class TicketTests
         ticket.MarkQuotationPending("BG-1", Now, Technician);
         Assert.Equal(ErrorCode.QUOTE_NOT_FOUND, Assert.Throws<DomainException>(() => ticket.ApproveQuotation("BG-2", Now, Dispatcher)).Code);
         ticket.ApproveQuotation("BG-1", Now, Dispatcher);
-        ticket.AcceptQuotation("BG-1", Now, Receptionist, onBehalf: true);
+        ticket.AcceptQuotation("BG-1", needsParts: true, Now, Receptionist, onBehalf: true);
         Assert.Equal(TicketStatus.AWAITING_PARTS, ticket.Status);
         Assert.Equal("Khách hàng đồng ý báo giá (xác nhận thay khách tại quầy).", ticket.StatusHistory[^1].Description);
         Assert.Equal("RECEPTIONIST", ticket.StatusHistory[^1].ActorRole);
         Assert.Equal(ErrorCode.TICKET_INVALID_TRANSITION,
             Assert.Throws<DomainException>(() => ticket.TransitionTo(TicketStatus.DELIVERED, Dispatcher, null, Now)).Code);
+    }
+
+    [Fact]
+    public void AcceptedLaborOnlyQuotation_StartsRepairDirectly()
+    {
+        var ticket = Diagnosed(WarrantyClassification.OUT_OF_WARRANTY, "Rơi vỡ", "Có dấu va đập");
+        ticket.MarkQuotationPending("BG-1", Now, Technician);
+        ticket.ApproveQuotation("BG-1", Now, Dispatcher);
+        ticket.AcceptQuotation("BG-1", needsParts: false, Now, Receptionist, onBehalf: true);
+        Assert.Equal(TicketStatus.REPAIRING, ticket.Status);
+        Assert.Equal("IN_PROGRESS", ticket.RepairOrder!.Status);
+    }
+
+    [Fact]
+    public async Task DeclinedQuotation_AwaitsReturn_ThenReturnsUnrepaired()
+    {
+        var ticket = Diagnosed(WarrantyClassification.OUT_OF_WARRANTY, "Rơi vỡ", "Có dấu va đập");
+        ticket.MarkQuotationPending("BG-1", Now, Technician);
+        ticket.ApproveQuotation("BG-1", Now, Dispatcher);
+        ticket.DeclineQuotation("BG-1", Now, Receptionist, onBehalf: true);
+        Assert.Equal(TicketStatus.AWAITING_RETURN, ticket.Status);
+        Assert.Equal("CANCELLED", ticket.RepairOrder!.Status);
+        Assert.True(ticket.Open);
+        var input = new HandoverInput("Khách", "Như lúc nhận", false, null, 5, null, true);
+        await ticket.HandOverAsync("PBG-1", input, null, Now, Receptionist);
+        Assert.Equal(TicketStatus.RETURNED_UNREPAIRED, ticket.Status);
+        Assert.Equal("Trạng thái đổi từ \"Chờ trả máy\" sang \"Đã trả máy (không sửa)\"", ticket.StatusHistory[^1].Description);
     }
 
     [Fact]

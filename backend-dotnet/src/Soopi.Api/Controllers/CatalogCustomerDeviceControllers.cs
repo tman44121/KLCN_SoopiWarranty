@@ -31,7 +31,7 @@ public sealed class CatalogController(CatalogService catalog) : ControllerBase
 [ApiController]
 [Authorize]
 [Route("api/v1/customers")]
-public sealed class CustomersController(CustomerService customers, DeviceService devices) : ControllerBase
+public sealed class CustomersController(CustomerService customers, CustomerAccountAdminService accounts, DeviceService devices) : ControllerBase
 {
     [HttpGet]
     public Task<PageResponse<CustomerView>> Search([FromQuery] string? q, [FromQuery] int page = 0, [FromQuery] int size = 25) =>
@@ -55,6 +55,31 @@ public sealed class CustomersController(CustomerService customers, DeviceService
 
     [HttpGet("{customerCode}/devices")]
     public Task<List<DeviceView>> Devices(string customerCode) => devices.ListForCustomerAsync(customerCode);
+
+    /// <summary>Mật khẩu tạm chỉ trả về đúng một lần trong response này.</summary>
+    [HttpPost("{code}/reset-password")]
+    public async Task<Dictionary<string, string>> ResetPassword(string code) =>
+        new() { ["temporaryPassword"] = await accounts.ResetPasswordAsync(code) };
+}
+
+[ApiController]
+[Authorize]
+[Route("api/v1/admin/customers")]
+public sealed class AdminCustomersController(CustomerAccountAdminService accounts) : ControllerBase
+{
+    [HttpGet]
+    public Task<PageResponse<CustomerAccountView>> Search(
+        [FromQuery] string? q, [FromQuery] string? status, [FromQuery] string? account, [FromQuery] int page = 0, [FromQuery] int size = 25) =>
+        accounts.SearchAsync(q, status, account, page, size);
+
+    [HttpGet("{code}")]
+    public Task<CustomerAccountDetail> Get(string code) => accounts.GetAsync(code);
+
+    [HttpPost("{code}/lock")]
+    public Task<CustomerAccountDetail> Lock(string code, [FromBody] LockCustomerAccountRequest body) => accounts.LockAsync(code, body.Reason);
+
+    [HttpPost("{code}/unlock")]
+    public Task<CustomerAccountDetail> Unlock(string code) => accounts.UnlockAsync(code);
 }
 
 [ApiController]

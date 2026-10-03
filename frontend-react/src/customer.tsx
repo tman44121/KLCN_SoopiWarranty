@@ -1,6 +1,6 @@
 /* Phần dùng chung của giao diện khách (port từ web khách KLCN): header, footer, icon, badge.
    API, nhãn và định dạng lấy từ các module behaviors đã gắn lên window (api.js, labels.js). */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const w = window as unknown as { LML_API: Json; LML_LABELS: Json; LML_FMT: Json; LML_AUTH?: Json };
@@ -287,4 +287,34 @@ export function PasswordInput({ id, name, value, onChange, autoComplete, placeho
       </button>
     </div>
   );
+}
+
+/**
+ * Đăng nhập/đăng ký phóng cả bố cục theo màn hình như một khung cố định: hệ số theo chiều ngang (mốc 1366px,
+ * tối đa 1,6) rồi giảm cho tới khi nội dung mỗi cột vừa chiều cao màn. Dưới 768px giữ nguyên (xếp chồng, cuộn).
+ */
+export function useAuthScale() {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    const fit = () => {
+      root.style.setProperty('--auth-scale', '1');
+      if (innerWidth < 768) return;
+      let scale = Math.min(Math.max(innerWidth / 1366, 1), 1.6);
+      root.querySelectorAll<HTMLElement>('.auth-banner, .auth-form-panel').forEach((panel) => {
+        const items = Array.from(panel.children as HTMLCollectionOf<HTMLElement>).filter((item) => item.getClientRects().length > 0);
+        const content = items.reduce((sum, item) => sum + item.offsetHeight, 0);
+        const style = getComputedStyle(panel);
+        const fixed = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) + (parseFloat(style.rowGap) || 0) * Math.max(items.length - 1, 0);
+        if (content > 0) scale = Math.min(scale, (panel.clientHeight - fixed) / content);
+      });
+      root.style.setProperty('--auth-scale', String(Math.max(1, Math.floor(scale * 100) / 100)));
+    };
+    fit();
+    void document.fonts?.ready.then(fit);
+    addEventListener('resize', fit);
+    return () => removeEventListener('resize', fit);
+  }, []);
+  return ref;
 }

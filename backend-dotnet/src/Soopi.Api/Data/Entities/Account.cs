@@ -136,12 +136,24 @@ public class Account
         SecurityVersion++;
     }
 
-    /// <summary>Mật khẩu tạm do Quản trị viên đặt lại — bắt buộc đổi ở lần đăng nhập kế tiếp.</summary>
+    /// <summary>
+    /// Mật khẩu tạm do nhân viên đặt lại — bắt buộc đổi ở lần đăng nhập kế tiếp. Xóa luôn khóa tạm do sai mật khẩu (thường chính
+    /// là lý do cần đặt lại); khóa của Quản trị viên (LOCKED) giữ nguyên.
+    /// </summary>
     public void ResetPassword(string encodedTemporaryPassword, DateTimeOffset now)
     {
         PasswordHash = encodedTemporaryPassword;
         PasswordChangedAt = now;
         MustChangePassword = true;
+        FailedLoginAttempts = 0;
+        TemporaryLockUntil = null;
+        SecurityVersion++;
+    }
+
+    /// <summary>Tên đăng nhập của khách là SĐT: đổi SĐT hồ sơ thì đổi theo và thu hồi phiên cũ.</summary>
+    public void ChangeUsername(string username)
+    {
+        Username = Normalize(username);
         SecurityVersion++;
     }
 

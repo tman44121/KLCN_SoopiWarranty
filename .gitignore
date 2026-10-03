@@ -487,3 +487,5 @@ $RECYCLE.BIN/
 
 # Tệp đính kèm do API lưu khi chạy dev (Storage:Directory = ./data/files)
 backend-dotnet/data/
+# … hoặc tương đối với thư mục project khi chạy bằng dotnet run --project
+backend-dotnet/src/Soopi.Api/Data/files/

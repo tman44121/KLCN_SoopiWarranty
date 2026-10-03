@@ -8,9 +8,9 @@
    bàn phím; cả biểu đồ là một điểm dừng Tab, phím mũi tên chuyển giữa các cột/thanh.
    ========================================================================== */
 
-export default function initialize(global = window) {
+export default function initialize() {
 
-  const html = global.html;
+  const html = window.html;
   const MARK = "[data-chart-mark]";
   let tooltip = null;
 
@@ -224,5 +224,5 @@ export default function initialize(global = window) {
       </div>`)}`;
   }
 
-  global.LML_CHARTS = { columns, bars, split, stats, compact, number };
+  window.LML_CHARTS = { columns, bars, split, stats, compact, number };
 }

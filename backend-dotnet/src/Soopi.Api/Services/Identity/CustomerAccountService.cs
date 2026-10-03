@@ -65,6 +65,15 @@ public sealed class CustomerAccountService(
         return await auth.SignInAsync(accountId, clientIp, userAgent);
     }
 
+    /// <summary>Bước 1 của quên mật khẩu trên web: xác nhận mã đúng trước khi khách nhập mật khẩu mới (mã chưa bị tiêu).</summary>
+    public async Task VerifyResetOtpAsync(string rawPhone, string code)
+    {
+        var phone = PhoneNumber.Require(rawPhone);
+        var profile = await profiles.FindActiveByPhoneAsync(phone);
+        if (profile?.AccountId is null) throw new DomainException(ErrorCode.CUSTOMER_ACCOUNT_NOT_FOUND);
+        await otp.VerifyAsync(phone, OtpPurpose.RESET_PASSWORD, code);
+    }
+
     /// <summary>Thu hồi mọi phiên và mọi thiết bị nhận push: máy bị mất không còn đăng nhập hay nhận thông báo được nữa.</summary>
     public async Task ResetPasswordAsync(string rawPhone, string code, string newPassword)
     {

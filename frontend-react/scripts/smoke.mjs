@@ -26,7 +26,7 @@ const ticketView = (quoted) => ({ code: 'TN-2026-1002-00001', productName: 'Gala
   receivedAt: '2026-10-01T02:00:00Z', promisedReturnAt: '2026-10-04T10:00:00Z', status: quoted ? 'AWAITING_CUSTOMER_CONFIRMATION' : 'REPAIRING', stopped: false,
   steps: steps(quoted ? 1 : 3), customerNotes: [{ at: '2026-10-01T05:00:00Z', text: 'Máy cần thay màn hình.' }], handedOverAt: null,
   costs: { inWarrantyAmount: 0, outOfWarrantyParts: 2500000, serviceFee: 200000, vat: 216000, total: 2916000, paymentStatus: 'UNPAID' },
-  pendingQuotation: quoted ? { code: 'BG-1', validUntil: '2026-10-09', vatRate: 0.08, partsTotal: 2500000, laborTotal: 200000, grandTotal: 2916000,
+  pendingQuotation: quoted ? { code: 'BG-1', validUntil: '2026-10-09', vatRate: 8, partsTotal: 2500000, laborTotal: 200000, grandTotal: 2916000,
     lines: [{ lineNo: 1, description: 'Màn hình AMOLED', quantity: 1, lineTotal: 2500000 }, { lineNo: 2, description: 'Công thay', quantity: 1, lineTotal: 200000 }] } : null });
 export const browser = await chromium.launch({ channel: 'msedge', headless: true });
 let assertions = 0;
@@ -38,7 +38,7 @@ export async function session(role, landing, width = 1440) {
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => {
-    if (message.type() === 'error' && message.text() === 'Failed to load resource: the server responded with a status of 404 (Not Found)' && expectedResource404 > 0) { expectedResource404--; return; }
+    if (message.type() === 'error' && /^Failed to load resource: the server responded with a status of (404|422) /.test(message.text()) && expectedResource404 > 0) { expectedResource404--; return; }
     if (['error', 'warning'].includes(message.type())) errors.push(message.text());
   });
   const user = { username: 'mock-user', displayName: 'Tài khoản kiểm tra', employeeId: 'NVTEST', stationCode: 'ST01', landing,
@@ -75,6 +75,12 @@ export async function session(role, landing, width = 1440) {
     else if (path === '/auth/mobile/otp') data = { expiresIn: 300, resendAfter: 60 };
     else if (path === '/auth/mobile/register') data = { accessToken: 'mock-mobile', refreshToken: 'mock-mobile-rt', user };
     else if (path === '/auth/mobile/logout') return route.fulfill({ status: 204 });
+    else if (path === '/auth/mobile/password-reset') return route.fulfill({ status: 204 });
+    else if (path === '/auth/mobile/password-reset/verify') {
+      if (JSON.parse(request.postData()).otp === '123456') return route.fulfill({ status: 204 });
+      expectedResource404++;
+      return route.fulfill({ status: 422, contentType: 'application/problem+json', body: JSON.stringify({ code: 'OTP_INVALID', detail: 'Mã xác minh không đúng hoặc đã hết hạn.' }) });
+    }
     else if (path === '/portal/lookup') {
       expectedResource404++;
       return route.fulfill({ status: 404, contentType: 'application/problem+json', body: JSON.stringify({ code: 'NOT_FOUND', detail: 'Không tìm thấy mã tra cứu thử.' }) });
@@ -265,5 +271,44 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await c.context.close();
   }
   console.log('PASS customer register, account, history, quotation, request, profile and password');
-  console.log(`PASS: 12 pages, ${assertions} checks, ${mockedWrites} mocked write requests, no live database writes`);
+  // Quên mật khẩu: link từ đăng nhập, kiểm tra trường, OTP mục đích RESET_PASSWORD, đặt lại xong quay về đăng nhập.
+  for (const width of [1440, 390]) {
+    const f = await session('CUSTOMER', '/account', width);
+    await f.page.goto(base + '/login');
+    await f.page.getByRole('link', { name: 'Quên mật khẩu?' }).click();
+    await f.page.waitForURL(base + '/forgot-password'); assertions++;
+    await f.page.click('button[type="submit"]');
+    await f.page.getByText('Vui lòng nhập số điện thoại đã đăng ký.', { exact: true }).waitFor(); assertions++;
+    assert(!f.calls.includes('/auth/mobile/password-reset')); assertions++;
+    await f.page.fill('#phone', '0900000000');
+    const otp = f.page.waitForRequest(request => request.url().endsWith('/auth/mobile/otp'));
+    await f.page.click('.btn-otp');
+    assert.equal(JSON.parse((await otp).postData()).purpose, 'RESET_PASSWORD'); assertions++;
+    // Mã sai: ở lại bước 1, chưa hiện ô mật khẩu.
+    await f.page.fill('#otp', '000000');
+    await f.page.getByRole('button', { name: 'Xác nhận mã' }).click();
+    await f.page.getByText('Mã xác minh không đúng hoặc đã hết hạn.').waitFor(); assertions++;
+    assert.equal(await f.page.locator('#password').count(), 0); assertions++;
+    // Mã đúng: sang bước 2 rồi mới đặt mật khẩu.
+    await f.page.fill('#otp', '123456');
+    const verify = f.page.waitForRequest(request => request.url().endsWith('/auth/mobile/password-reset/verify'));
+    await f.page.getByRole('button', { name: 'Xác nhận mã' }).click();
+    assert.deepEqual(JSON.parse((await verify).postData()), { phone: '0900000000', otp: '123456' }); assertions++;
+    await f.page.getByRole('heading', { name: 'Đặt mật khẩu mới', level: 1 }).waitFor(); assertions++;
+    assert(!f.calls.includes('/auth/mobile/password-reset')); assertions++;
+    await f.page.fill('#password', 'Khach-mat-khau-moi-1');
+    await f.page.fill('#confirm', 'Khach-mat-khau-moi-1');
+    const reset = f.page.waitForRequest(request => request.url().endsWith('/auth/mobile/password-reset'));
+    await f.page.click('button[type="submit"]');
+    assert.deepEqual(JSON.parse((await reset).postData()), { phone: '0900000000', otp: '123456', newPassword: 'Khach-mat-khau-moi-1' }); assertions++;
+    await f.page.getByRole('heading', { name: 'Đã đặt lại mật khẩu' }).waitFor(); assertions++;
+    assert.equal(await f.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `forgot ${width}: horizontal scroll`); assertions++;
+    if (width === 1440) await f.page.screenshot({ path: fileURLToPath(new URL('forgot-desktop.png', output)) });
+    await f.page.getByRole('link', { name: 'Đăng nhập với mật khẩu mới' }).click();
+    await f.page.waitForURL(base + '/login'); assertions++;
+    assert.deepEqual(f.errors, [], `forgot ${width}: browser errors`); assertions++;
+    await f.context.close();
+  }
+  console.log('PASS customer forgot password: OTP RESET_PASSWORD, verify before new password, wrong code, reset body');
+  console.log(`PASS: 13 pages, ${assertions} checks, ${mockedWrites} mocked write requests, no live database writes`);
 } finally { await browser.close(); } }

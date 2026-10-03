@@ -248,7 +248,7 @@ public sealed class TicketStore(Sql sql)
     /// <summary>Phiếu đang xử lý (trừ "Hoàn thành", "Đã hủy") có hạn SLA trong [from, until].</summary>
     public async Task<List<Ticket>> FindSlaDueBetweenAsync(DateTimeOffset from, DateTimeOffset until) =>
         await LoadAsync(await IdsAsync(
-            "SELECT MaPhieuTN FROM PhieuTiepNhan WHERE ConMo = 1 AND TrangThaiXuLy NOT IN ('COMPLETED', 'CANCELLED') AND HanSLA BETWEEN ? AND ?",
+            "SELECT MaPhieuTN FROM PhieuTiepNhan WHERE ConMo = 1 AND TrangThaiXuLy NOT IN ('COMPLETED', 'AWAITING_RETURN') AND HanSLA BETWEEN ? AND ?",
             from, until));
 
     public async Task<List<Ticket>> FindByCustomerAsync(string customerId) =>
@@ -257,7 +257,7 @@ public sealed class TicketStore(Sql sql)
     /// <summary>Tải của mọi KTV có phiếu mở: số phiếu đang xử lý (trừ "Hoàn thành", "Đã hủy") và số phiếu mở có hạn SLA trong [from, to].</summary>
     public async Task<Dictionary<string, TechnicianLoad>> TechnicianLoadsAsync(DateTimeOffset from, DateTimeOffset to) =>
         (await sql.QueryAsync(
-            "SELECT pc.MaKTV, SUM(CASE WHEN ptn.TrangThaiXuLy NOT IN ('COMPLETED', 'CANCELLED') THEN 1 ELSE 0 END) AS active, "
+            "SELECT pc.MaKTV, SUM(CASE WHEN ptn.TrangThaiXuLy NOT IN ('COMPLETED', 'AWAITING_RETURN') THEN 1 ELSE 0 END) AS active, "
             + "SUM(CASE WHEN ptn.HanSLA BETWEEN ? AND ? THEN 1 ELSE 0 END) AS atRisk FROM PhieuTiepNhan ptn "
             + "JOIN PhanCong pc ON pc.MaPhieuTN = ptn.MaPhieuTN WHERE ptn.ConMo = 1 GROUP BY pc.MaKTV",
             row => (Id: row.Str("MaKTV")!, Load: new TechnicianLoad(row.Long("active"), row.Long("atRisk"))),

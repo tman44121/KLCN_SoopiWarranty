@@ -154,7 +154,7 @@ public sealed class ReportService(Sql sql, CurrentActor actors, TimeProvider clo
         var until = now + configuration.GetValue("Sla:AtRiskThreshold", TimeSpan.FromHours(2));
         return sql.QueryAsync(
             "SELECT MucSLA, SUM(CASE WHEN HanSLA < ? THEN 1 ELSE 0 END) AS breached, SUM(CASE WHEN HanSLA BETWEEN ? AND ? THEN 1 ELSE 0 END) AS atRisk, "
-            + "COUNT(*) AS total FROM PhieuTiepNhan WHERE ConMo = 1 AND TrangThaiXuLy NOT IN ('COMPLETED', 'CANCELLED') GROUP BY MucSLA ORDER BY MucSLA",
+            + "COUNT(*) AS total FROM PhieuTiepNhan WHERE ConMo = 1 AND TrangThaiXuLy NOT IN ('COMPLETED', 'AWAITING_RETURN') GROUP BY MucSLA ORDER BY MucSLA",
             row => new SlaBucket(row.Str("MucSLA")!, row.Long("breached"), row.Long("atRisk"), row.Long("total") - row.Long("breached") - row.Long("atRisk")),
             now, now, until);
     }

@@ -81,7 +81,7 @@ CREATE TABLE DanhMucNhan (
     CONSTRAINT CK_DanhMucNhan_Tone CHECK (Tone IS NULL OR Tone IN ('success', 'warning', 'danger', 'processing', 'neutral'))
 );
 
--- Dữ liệu tham chiếu (máy trạng thái hiển thị/đối chiếu); luật chuyển trạng thái nằm trong Ticket (Java).
+-- Dữ liệu tham chiếu trạng thái; Ticket (C#) kiểm tra chuyển trạng thái theo ChuyenTrangThaiHopLe và ghi lịch sử cùng transaction.
 CREATE TABLE ChuyenTrangThaiHopLe (
     TuTrangThai  NVARCHAR(40)  NOT NULL,
     DenTrangThai NVARCHAR(40)  NOT NULL,
@@ -334,6 +334,7 @@ CREATE TABLE ThietBi (
 -- ----------------------------------------------------------------------------
 CREATE TABLE YeuCauBaoHanh (
     MaYeuCau              NVARCHAR(30)  PRIMARY KEY,
+    MaKH                  NVARCHAR(20)  NULL, -- Gắn hồ sơ khách đăng nhập; NULL cho yêu cầu khách vãng lai.
     HoTenKhach            NVARCHAR(100) NOT NULL,
     SDTKhach              NVARCHAR(15)  NOT NULL,
     EmailKhach            NVARCHAR(100) NULL,
@@ -354,7 +355,9 @@ CREATE TABLE YeuCauBaoHanh (
     LyDoHuy               NVARCHAR(255) NULL,
     NgayTao               DATETIME2(0)  NOT NULL,
     INDEX IX_YeuCau_SDT (SDTKhach),
+    INDEX IX_YeuCau_KhachHang (MaKH, TrangThai, NgayTao),
     INDEX IX_YeuCau_TrangThai (TrangThai, NgayTao),
+    FOREIGN KEY (MaKH) REFERENCES KhachHang(MaKH),
     FOREIGN KEY (MaNhom) REFERENCES NhomThietBi(MaNhom),
     FOREIGN KEY (MaLoai) REFERENCES LoaiThietBi(MaLoai),
     FOREIGN KEY (MaTramMongMuon) REFERENCES TramDichVu(MaTram),
@@ -390,7 +393,7 @@ CREATE TABLE TepDinhKem (
 
 -- ----------------------------------------------------------------------------
 -- 1.4 TIẾP NHẬN & ĐIỀU PHỐI
--- Máy trạng thái do Ticket (Java) kiểm soát; lịch sử trạng thái do JpaTicketRepository ghi cùng transaction.
+-- Ticket (C#) kiểm tra chuyển trạng thái; TicketStore cập nhật phiếu và ghi LichSuTrangThai_ThietBi trong cùng transaction.
 -- ConMo = máy còn ở trung tâm; Java ghi cùng TrangThaiXuLy, CHECK bảo đảm hai cột không lệch nhau.
 -- ----------------------------------------------------------------------------
 CREATE TABLE PhieuTiepNhan (
@@ -451,7 +454,7 @@ CREATE TABLE PhieuTiepNhan (
     CONSTRAINT CK_PTN_SLA CHECK (MucSLA IN ('EXPRESS_12H', 'PRIORITY_24H', 'STANDARD_48H') AND HanSLA > NgayTiepNhan),
     CONSTRAINT CK_PTN_TrangThai CHECK (TrangThaiXuLy IN (
         'RECEIVED', 'INSPECTING', 'DIAGNOSED', 'AWAITING_QUOTE_APPROVAL', 'AWAITING_CUSTOMER_CONFIRMATION',
-        'AWAITING_PARTS', 'REPAIRING', 'COMPLETED', 'DELIVERED', 'CANCELLED', 'RETURNED_UNREPAIRED')),
+        'AWAITING_PARTS', 'AWAITING_RETURN', 'REPAIRING', 'COMPLETED', 'DELIVERED', 'RETURNED_UNREPAIRED')),
     CONSTRAINT CK_PTN_ConMo CHECK (ConMo = CASE WHEN TrangThaiXuLy IN ('DELIVERED', 'RETURNED_UNREPAIRED') THEN 0 ELSE 1 END)
 );
 CREATE UNIQUE INDEX UX_PhieuTiepNhan_ThietBiDangMo ON PhieuTiepNhan(MaThietBi) WHERE ConMo = 1;
@@ -547,7 +550,7 @@ CREATE TABLE PhieuKiemTra (
 );
 
 -- Nhiều báo giá / phiếu nhưng tối đa 1 báo giá còn hiệu lực (UX_PhieuBaoGia_ConHieuLuc).
--- Tổng tiền do Quotation (Java) tính và ghi cùng các dòng chi tiết.
+-- Quotation (C#) tính tổng từ ChiTietBaoGia, áp dụng VAT và ghi header/detail trong cùng transaction.
 CREATE TABLE PhieuBaoGia (
     MaBaoGia               NVARCHAR(30)  PRIMARY KEY,
     MaPhieuTN              NVARCHAR(30)  NOT NULL,
@@ -957,12 +960,13 @@ ALTER TABLE VaiTro NOCHECK CONSTRAINT ALL;
 ALTER TABLE VaiTro_QuyenHan NOCHECK CONSTRAINT ALL;
 GO
 INSERT INTO ChuyenTrangThaiHopLe (TuTrangThai, DenTrangThai, MoTa) VALUES
-  (N'AWAITING_CUSTOMER_CONFIRMATION', N'AWAITING_PARTS', N'T7a Khách đồng ý'),
-  (N'AWAITING_CUSTOMER_CONFIRMATION', N'CANCELLED', N'T7b Khách từ chối'),
-  (N'AWAITING_PARTS', N'REPAIRING', N'T9 Duyệt xuất kho / T9c Đủ LK ngoài kho'),
+  (N'AWAITING_CUSTOMER_CONFIRMATION', N'AWAITING_PARTS', N'T7a Khách đồng ý, cần chờ linh kiện'),
+  (N'AWAITING_CUSTOMER_CONFIRMATION', N'REPAIRING', N'T7a Khách đồng ý, không cần chờ linh kiện'),
+  (N'AWAITING_CUSTOMER_CONFIRMATION', N'AWAITING_RETURN', N'T7b Khách từ chối, chờ trả máy'),
+  (N'AWAITING_PARTS', N'REPAIRING', N'T9 Duyệt xuất kho / T9c Đủ linh kiện ngoài kho'),
+  (N'AWAITING_RETURN', N'RETURNED_UNREPAIRED', N'T12 Trung tâm xác nhận đã trả máy'),
   (N'AWAITING_QUOTE_APPROVAL', N'AWAITING_CUSTOMER_CONFIRMATION', N'T6a Quản lý duyệt báo giá'),
   (N'AWAITING_QUOTE_APPROVAL', N'DIAGNOSED', N'T6b Quản lý yêu cầu sửa lại báo giá'),
-  (N'CANCELLED', N'RETURNED_UNREPAIRED', N'T12 Trả máy không sửa'),
   (N'COMPLETED', N'DELIVERED', N'T12 Bàn giao'),
   (N'DIAGNOSED', N'AWAITING_PARTS', N'T8 Yêu cầu xuất LK ca miễn phí'),
   (N'DIAGNOSED', N'AWAITING_QUOTE_APPROVAL', N'T5 Lập báo giá'),
@@ -1036,16 +1040,16 @@ INSERT INTO DanhMucNhan (Nhom, Ma, NhanNghiepVu, NhanGiaoDien, Tone, ThuTu) VALU
   (N'STOCK_TRANSFER', N'PENDING', N'Chờ duyệt', N'Chờ duyệt', N'warning', 1),
   (N'STOCK_TRANSFER', N'REJECTED', N'Đã từ chối', N'Đã từ chối', N'danger', 3),
   (N'TICKET_STATUS', N'AWAITING_CUSTOMER_CONFIRMATION', N'Chờ khách xác nhận', N'Chờ khách xác nhận', N'warning', 5),
+  (N'TICKET_STATUS', N'AWAITING_RETURN', N'Chờ trả máy', N'Chờ trả máy', N'warning', 9),
   (N'TICKET_STATUS', N'AWAITING_PARTS', N'Chờ linh kiện', N'Chờ linh kiện', N'warning', 6),
   (N'TICKET_STATUS', N'AWAITING_QUOTE_APPROVAL', N'Chờ duyệt giá', N'Chờ phê duyệt báo giá', N'warning', 4),
-  (N'TICKET_STATUS', N'CANCELLED', N'Đã hủy', N'Ngừng sửa theo yêu cầu khách', N'neutral', 10),
-  (N'TICKET_STATUS', N'COMPLETED', N'Hoàn thành', N'Sẵn sàng bàn giao', N'success', 8),
-  (N'TICKET_STATUS', N'DELIVERED', N'Đã bàn giao', N'Đã hoàn thành', N'success', 9),
+  (N'TICKET_STATUS', N'COMPLETED', N'Hoàn thành', N'Hoàn thành – Chờ bàn giao', N'success', 8),
+  (N'TICKET_STATUS', N'DELIVERED', N'Đã bàn giao', N'Đã bàn giao', N'success', 11),
   (N'TICKET_STATUS', N'DIAGNOSED', N'Đã chẩn đoán', N'Đã chẩn đoán', N'processing', 3),
   (N'TICKET_STATUS', N'INSPECTING', N'Đang kiểm tra', N'Đang chẩn đoán', N'processing', 2),
   (N'TICKET_STATUS', N'RECEIVED', N'Đã tiếp nhận', N'Chưa phân công', N'neutral', 1),
   (N'TICKET_STATUS', N'REPAIRING', N'Đang sửa chữa', N'Đang sửa chữa', N'processing', 7),
-  (N'TICKET_STATUS', N'RETURNED_UNREPAIRED', N'Đã trả máy (hủy)', N'Đã trả máy (không sửa)', N'neutral', 11),
+  (N'TICKET_STATUS', N'RETURNED_UNREPAIRED', N'Đã trả máy (không sửa)', N'Đã trả máy (không sửa)', N'neutral', 12),
   (N'WARRANTY_AT_INTAKE', N'IN_WARRANTY', N'Còn bảo hành', N'Còn bảo hành', N'success', 1),
   (N'WARRANTY_AT_INTAKE', N'NOT_ACTIVATED', N'Chưa kích hoạt', N'Chưa kích hoạt', N'neutral', 3),
   (N'WARRANTY_AT_INTAKE', N'OUT_OF_WARRANTY', N'Hết bảo hành', N'Hết bảo hành', N'danger', 2),
@@ -1061,9 +1065,11 @@ INSERT INTO QuyenHan (MaQuyen, MoTa) VALUES
   (N'AUDIT_READ', N'Xem nhật ký thao tác'),
   (N'CATALOG_MANAGE', N'Quản lý danh mục'),
   (N'CATALOG_READ', N'Xem danh mục'),
+  (N'CUSTOMER_ACCOUNT_MANAGE', N'Quản lý tài khoản khách (khóa / mở khóa)'),
   (N'CUSTOMER_ARCHIVE', N'Lưu trữ / xóa hồ sơ khách'),
   (N'CUSTOMER_CREATE', N'Tạo hồ sơ khách'),
   (N'CUSTOMER_MERGE', N'Hợp nhất hồ sơ khách'),
+  (N'CUSTOMER_PASSWORD_RESET', N'Đặt lại mật khẩu tài khoản khách'),
   (N'CUSTOMER_READ_CONTACT', N'Xem liên hệ khách'),
   (N'CUSTOMER_READ_PAYMENTS', N'Xem lịch sử thanh toán của khách'),
   (N'CUSTOMER_UPDATE_CONTACT', N'Sửa liên hệ khách'),
@@ -1101,7 +1107,7 @@ INSERT INTO TramDichVu (MaTram, TenTram, DiaChi, HoatDong) VALUES
   (N'HCM', N'Trạm HCM', N'TP. Hồ Chí Minh', 1);
 GO
 INSERT INTO VaiTro (MaVaiTro, TenHienThi, TenCuV1, TrangDich, MoTa) VALUES
-  (N'ADMIN', N'Quản trị viên', N'Admin', N'pages/admin.html', N'Tài khoản & phân quyền, danh mục, báo cáo, nhật ký'),
+  (N'ADMIN', N'Quản trị viên', N'Admin', N'pages/admin.html', N'Tài khoản & phân quyền, tài khoản khách, danh mục, báo cáo, nhật ký'),
   (N'CASHIER', N'Thu ngân & Bàn giao', N'ThuNgan', N'pages/cashier.html', N'Thu tiền, xác nhận miễn phí, bàn giao'),
   (N'CUSTOMER', N'Khách hàng', N'KhachHang', N'pages/customer-portal.html', N'Tài khoản tra cứu của khách'),
   (N'DISPATCHER', N'Điều phối viên', N'QuanLy', N'index.html', N'Phân công, duyệt báo giá, quản lý hồ sơ khách'),
@@ -1120,15 +1126,22 @@ INSERT INTO VaiTro_QuyenHan (MaVaiTro, MaQuyen) VALUES
   (N'RECEPTIONIST', N'CATALOG_READ'),
   (N'TECHNICIAN', N'CATALOG_READ'),
   (N'WAREHOUSE_KEEPER', N'CATALOG_READ'),
+  (N'ADMIN', N'CUSTOMER_ACCOUNT_MANAGE'),
+  (N'ADMIN', N'CUSTOMER_ARCHIVE'),
   (N'DISPATCHER', N'CUSTOMER_ARCHIVE'),
   (N'DISPATCHER', N'CUSTOMER_CREATE'),
   (N'RECEPTIONIST', N'CUSTOMER_CREATE'),
+  (N'ADMIN', N'CUSTOMER_MERGE'),
   (N'DISPATCHER', N'CUSTOMER_MERGE'),
+  (N'ADMIN', N'CUSTOMER_PASSWORD_RESET'),
+  (N'RECEPTIONIST', N'CUSTOMER_PASSWORD_RESET'),
+  (N'ADMIN', N'CUSTOMER_READ_CONTACT'),
   (N'CASHIER', N'CUSTOMER_READ_CONTACT'),
   (N'DISPATCHER', N'CUSTOMER_READ_CONTACT'),
   (N'RECEPTIONIST', N'CUSTOMER_READ_CONTACT'),
   (N'CASHIER', N'CUSTOMER_READ_PAYMENTS'),
   (N'DISPATCHER', N'CUSTOMER_READ_PAYMENTS'),
+  (N'ADMIN', N'CUSTOMER_UPDATE_CONTACT'),
   (N'DISPATCHER', N'CUSTOMER_UPDATE_CONTACT'),
   (N'RECEPTIONIST', N'CUSTOMER_UPDATE_CONTACT'),
   (N'DISPATCHER', N'DEVICE_LOOKUP'),
@@ -1388,8 +1401,8 @@ INSERT INTO LichSuTrangThai_ThietBi (MaLichSu, MaPhieuTN, TrangThai, ThoiGianCap
   (24, N'TN-2026-0912-00001', N'DIAGNOSED', '2026-09-12T13:00:00', N'Trạng thái đổi từ "Đang kiểm tra" sang "Đã chẩn đoán"', N'NV-105', N'Hoàng Anh Dũng', N'TECHNICIAN'),
   (25, N'TN-2026-0912-00001', N'AWAITING_QUOTE_APPROVAL', '2026-09-12T13:30:00', N'Trạng thái đổi từ "Đã chẩn đoán" sang "Chờ duyệt giá"', N'NV-105', N'Hoàng Anh Dũng', N'TECHNICIAN'),
   (26, N'TN-2026-0912-00001', N'AWAITING_CUSTOMER_CONFIRMATION', '2026-09-12T14:00:00', N'Trạng thái đổi từ "Chờ duyệt giá" sang "Chờ khách xác nhận"', N'NV-101', N'Trần Thị Hoa', N'DISPATCHER'),
-  (27, N'TN-2026-0912-00001', N'CANCELLED', '2026-09-12T16:00:00', N'Trạng thái đổi từ "Chờ khách xác nhận" sang "Đã hủy" (khách xác nhận trên Cổng khách hàng)', N'KH:KH-000003', N'Lý Gia Bảo', N'CUSTOMER'),
-  (28, N'TN-2026-0912-00001', N'RETURNED_UNREPAIRED', '2026-09-13T10:00:00', N'Trạng thái đổi từ "Đã hủy" sang "Đã trả máy (hủy)"', N'NV-102', N'Nguyễn Văn An', N'RECEPTIONIST');
+  (27, N'TN-2026-0912-00001', N'AWAITING_RETURN', '2026-09-12T16:00:00', N'Trạng thái đổi từ "Chờ khách xác nhận" sang "Chờ trả máy" (khách từ chối báo giá)', N'KH:KH-000003', N'Lý Gia Bảo', N'CUSTOMER'),
+  (28, N'TN-2026-0912-00001', N'RETURNED_UNREPAIRED', '2026-09-13T10:00:00', N'Trạng thái đổi từ "Chờ trả máy" sang "Đã trả máy (không sửa)"', N'NV-102', N'Nguyễn Văn An', N'RECEPTIONIST');
 SET IDENTITY_INSERT LichSuTrangThai_ThietBi OFF;
 GO
 INSERT INTO LinhKien (MaLK, TenLK, DonViTinh, MaNhom, TenHang, DonGiaVon, DonGiaDichVu, SoLuongTon, SoLuongDaGiu, DinhMucTonToiThieu, KeChinh, ThoiHanBaoHanhThang, MaNCC, HoatDong, PhienBan) VALUES
@@ -1499,7 +1512,7 @@ INSERT INTO NhatKyThaoTac (MaNhatKy, ThoiGian, MaNguoiThaoTac, TenNguoiThaoTac, 
   (42, '2026-09-12T13:30:00', N'NV-105', N'Hoàng Anh Dũng', N'Kỹ thuật viên', N'QUOTATION_CREATED', N'Gửi phiếu báo giá', N'QUOTATION', N'BG-2026-0912-00001', N'—', N'BG-2026-0912-00001 — Chờ phê duyệt — 1.836.000 đ'),
   (43, '2026-09-12T14:00:00', N'NV-101', N'Trần Thị Hoa', N'Điều phối viên', N'QUOTATION_APPROVED', N'Phê duyệt báo giá', N'QUOTATION', N'BG-2026-0912-00001', N'Chờ phê duyệt', N'Đã phê duyệt — chờ khách xác nhận'),
   (44, '2026-09-12T16:00:00', N'KH:KH-000003', N'Lý Gia Bảo', N'Khách hàng', N'QUOTATION_DECLINED', N'Từ chối báo giá', N'QUOTATION', N'BG-2026-0912-00001', N'Chờ khách xác nhận', N'Khách từ chối — Chi phí thay 1 bên tai cao hơn giá mua tai nghe mới, khách xin nhận lại máy.'),
-  (45, '2026-09-13T10:00:00', N'NV-102', N'Nguyễn Văn An', N'Tiếp nhận & Lễ tân', N'HANDOVER_COMPLETED', N'Hoàn tất bàn giao', N'TICKET', N'TN-2026-0912-00001', N'TN-2026-0912-00001 — Ngừng sửa theo yêu cầu khách', N'TN-2026-0912-00001 — Đã trả máy (không sửa)'),
+  (45, '2026-09-13T10:00:00', N'NV-102', N'Nguyễn Văn An', N'Tiếp nhận & Lễ tân', N'HANDOVER_COMPLETED', N'Hoàn tất bàn giao', N'TICKET', N'TN-2026-0912-00001', N'TN-2026-0912-00001 — Chờ trả máy', N'TN-2026-0912-00001 — Đã trả máy (không sửa)'),
   (46, '2026-09-17T21:02:00', N'PORTAL', NULL, NULL, N'WARRANTY_REQUEST_CREATED', N'Đăng ký yêu cầu bảo hành trực tuyến', N'WARRANTY_REQUEST', N'YC-2026-0917-00001', N'—', N'YC-2026-0917-00001 — Chờ tiếp nhận'),
   (47, '2026-09-16T15:00:00', N'NV-003', N'Đặng Văn Kiên', N'Quản lý kho vật tư', N'STOCK_RECEIPT_CREATED', N'Tạo phiếu nhập kho', N'STOCK_RECEIPT', N'PN-2026-00003', N'—', N'PN-2026-00003 — Chờ duyệt'),
   (48, '2026-09-17T09:00:00', N'NV-003', N'Đặng Văn Kiên', N'Quản lý kho vật tư', N'STOCK_TRANSFER_CREATED', N'Tạo phiếu điều chuyển', N'STOCK_TRANSFER', N'DC-2026-00001', N'—', N'LK-PWR-IC01 × 15: KHO-C-02-11 → KHO-C-01-04');

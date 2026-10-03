@@ -216,7 +216,7 @@ public sealed class CustomerDecisionService(
         if (decision == Decision.ACCEPT)
         {
             quotation.Accept(recordedBy, channel, DbTime.Date(now), now);
-            ticket.AcceptQuotation(code, now, actor, onBehalf);
+            ticket.AcceptQuotation(code, quotation.Lines.Any(line => line.Sku is not null), now, actor, onBehalf);
         }
         else
         {

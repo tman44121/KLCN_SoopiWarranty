@@ -31,24 +31,57 @@ export default function initialize() {
 
   async function loadEmployees() {
     const tbody = $("[data-employee-tbody]");
-    ui.skeletonRows(tbody, 6);
+    ui.skeletonRows(tbody, 5);
     try {
       state.employees = await api.admin.employees({});
-      if (!state.employees.length) return ui.tableState(tbody, 6, "empty");
-      tbody.innerHTML = html`${state.employees.map((employee) => html`<tr>
+      if (!state.employees.length) return ui.tableState(tbody, 5, "empty");
+      tbody.innerHTML = html`${state.employees.map((employee) => html`<tr class="data-table__row-action" tabindex="0" data-row-open="${employee.employeeId}" aria-label="Thao tác với tài khoản ${employee.employeeId} — ${employee.fullName}">
         <td class="mono cell-primary">${employee.employeeId}</td><td>${employee.fullName}</td>
         <td>${employee.roles.map((role) => role.label).join(", ") || "—"}</td>
         <td>${fmt.badgeOf(L.ACCOUNT_STATUS, employee.accountStatus)}</td><td class="cell-muted">${fmt.dateTime(employee.lastLoginAt)}</td>
-        <td><div class="cell-actions"><button type="button" class="btn btn--secondary btn--sm" data-edit-roles="${employee.employeeId}">Sửa vai trò</button>
-          <button type="button" class="btn ${employee.accountStatus === "LOCKED" ? "btn--secondary" : "btn--destructive"} btn--sm" data-toggle-lock="${employee.employeeId}">${employee.accountStatus === "LOCKED" ? "Mở khóa tài khoản" : "Khóa tài khoản"}</button>
-          <button type="button" class="btn btn--secondary btn--sm" data-reset-password="${employee.employeeId}">Đặt lại mật khẩu</button></div></td>
       </tr>`)}`;
-      tbody.querySelectorAll("[data-edit-roles]").forEach((button) => button.addEventListener("click", () => editRoles(button.dataset.editRoles)));
-      tbody.querySelectorAll("[data-toggle-lock]").forEach((button) => button.addEventListener("click", () => toggleLock(button.dataset.toggleLock, button)));
-      tbody.querySelectorAll("[data-reset-password]").forEach((button) => button.addEventListener("click", () => resetPassword(button.dataset.resetPassword, button)));
+      bindRowOpen(tbody, openEmployee);
     } catch (error) {
-      ui.tableState(tbody, 6, "error", { desc: error.detail }, loadEmployees);
+      ui.tableState(tbody, 5, "error", { desc: error.detail }, loadEmployees);
     }
+  }
+
+  /** Dòng bảng mở chi tiết/thao tác khi bấm chuột hoặc Enter/Space (dòng có tabindex để chọn bằng bàn phím). */
+  function bindRowOpen(tbody, openRow) {
+    tbody.querySelectorAll("[data-row-open]").forEach((row) => {
+      row.addEventListener("click", () => openRow(row.dataset.rowOpen));
+      row.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        openRow(row.dataset.rowOpen);
+      });
+    });
+  }
+
+  /** Popup thao tác của một tài khoản nhân viên: thông tin tóm tắt + sửa vai trò, khóa/mở khóa, đặt lại mật khẩu. */
+  function openEmployee(code) {
+    const employee = state.employees.find((item) => item.employeeId === code);
+    if (!employee) return;
+    const locked = employee.accountStatus === "LOCKED";
+    const kv = (label, value) => html`<div class="detail-grid__item"><span class="kv-key">${label}</span><span>${value}</span></div>`;
+    $("[data-emp-modal-title]").textContent = employee.fullName;
+    $("[data-emp-modal-subtitle]").textContent = `${employee.employeeId}${employee.username ? ` · ${employee.username}` : ""}`;
+    $("[data-emp-modal-body]").innerHTML = html`<div class="detail-grid">
+      ${kv("Vai trò", employee.roles.map((role) => role.label).join(", ") || "—")}
+      ${kv("Trạng thái", fmt.badgeOf(L.ACCOUNT_STATUS, employee.accountStatus))}
+      ${kv("Số điện thoại", html`<span class="mono">${employee.phone}</span>`)}
+      ${kv("Lần đăng nhập gần nhất", employee.lastLoginAt ? fmt.dateTime(employee.lastLoginAt) : "—")}
+    </div>`;
+    $("[data-emp-modal-actions]").innerHTML = html`
+      <button type="button" class="btn btn--secondary" data-emp-action="roles">Sửa vai trò</button>
+      <button type="button" class="btn btn--secondary" data-emp-action="reset">Đặt lại mật khẩu</button>
+      <button type="button" class="btn ${locked ? "btn--primary" : "btn--destructive"}" data-emp-action="lock">${locked ? "Mở khóa tài khoản" : "Khóa tài khoản"}</button>`;
+    const actions = { roles: () => editRoles(code), reset: () => resetPassword(code), lock: () => toggleLock(code) };
+    $("[data-emp-modal-actions]").querySelectorAll("[data-emp-action]").forEach((button) => button.addEventListener("click", () => {
+      close("[data-emp-modal]");
+      actions[button.dataset.empAction]();
+    }));
+    open("[data-emp-modal]");
   }
 
   let editingEmployee = null;
@@ -70,20 +103,20 @@ export default function initialize() {
     } catch (error) { ui.showError(error); }
   }
 
-  async function toggleLock(code, button) {
+  async function toggleLock(code) {
     const employee = state.employees.find((item) => item.employeeId === code);
     if (employee.accountStatus !== "LOCKED") {
       const confirmed = await ui.confirm({ title: "Khóa tài khoản này?", message: `${employee.fullName} sẽ không thể đăng nhập cho tới khi được mở khóa.`, confirmLabel: "Khóa tài khoản" });
       if (!confirmed) return;
     }
     try {
-      await ui.busy(button, () => employee.accountStatus === "LOCKED" ? api.admin.unlock(code) : api.admin.lock(code));
+      await (employee.accountStatus === "LOCKED" ? api.admin.unlock(code) : api.admin.lock(code));
       window.showToast(employee.accountStatus === "LOCKED" ? "Đã mở khóa tài khoản." : "Đã khóa tài khoản.", "success");
       loadEmployees();
     } catch (error) { ui.showError(error); }
   }
 
-  async function resetPassword(code, button) {
+  async function resetPassword(code) {
     const confirmed = await ui.confirm({
       title: `Đặt lại mật khẩu cho ${code}?`,
       message: "Mật khẩu trở về mật khẩu mặc định; mọi phiên đăng nhập hiện tại bị đăng xuất. Nhân viên phải đổi mật khẩu mới ngay khi đăng nhập lại.",
@@ -91,9 +124,216 @@ export default function initialize() {
     });
     if (!confirmed) return;
     try {
-      const result = await ui.busy(button, () => api.admin.resetPassword(code));
+      const result = await api.admin.resetPassword(code);
       window.showToast(`Đã đặt lại mật khẩu của ${code} về ${result.temporaryPassword}. Nhân viên phải đổi mật khẩu khi đăng nhập.`, "success");
     } catch (error) { ui.showError(error); }
+  }
+
+  /* ---- Tài khoản khách hàng: hồ sơ + tài khoản đăng nhập cổng khách ---- */
+  const CUSTOMER_COLUMNS = 6;
+  const customers = { page: 0, size: 25, totalPages: 1, filtered: false, selected: null };
+
+  async function loadCustomers() {
+    const tbody = $("[data-cust-tbody]");
+    const query = { q: $("[data-cust-search]").value.trim() || null, account: $("[data-cust-filter-account]").value || null,
+      status: $("[data-cust-filter-status]").value || null, page: customers.page, size: customers.size };
+    customers.filtered = Boolean(query.q || query.account || query.status !== "ACTIVE");
+    ui.skeletonRows(tbody, CUSTOMER_COLUMNS);
+    try {
+      const page = await api.admin.customers(query);
+      customers.totalPages = Math.max(1, page.totalPages);
+      $("[data-cust-count]").textContent = `${page.totalItems} khách hàng`;
+      $("[data-cust-page]").textContent = `Trang ${customers.page + 1} / ${customers.totalPages}`;
+      $("[data-cust-prev]").disabled = customers.page <= 0;
+      $("[data-cust-next]").disabled = customers.page + 1 >= customers.totalPages;
+      if (!page.items.length) {
+        return ui.tableState(tbody, CUSTOMER_COLUMNS, customers.filtered ? "filtered" : "empty", {
+          title: customers.filtered ? "Không tìm thấy khách hàng phù hợp" : "Chưa có khách hàng nào",
+        });
+      }
+      tbody.innerHTML = html`${page.items.map((c) => html`<tr class="data-table__row-action" tabindex="0" data-row-open="${c.code}" aria-label="Xem chi tiết khách hàng ${c.code} — ${c.fullName}">
+        <td class="mono cell-primary">${c.code}</td><td>${c.fullName}${c.email ? html`<br><span class="cell-muted">${c.email}</span>` : ""}</td><td class="mono">${c.phone}</td>
+        <td>${fmt.badgeOf(L.CUSTOMER_STATUS, c.status)}</td><td>${fmt.badgeOf(L.CUSTOMER_ACCOUNT_STATUS, c.accountStatus)}</td>
+        <td class="cell-muted">${c.lastLoginAt ? fmt.dateTime(c.lastLoginAt) : "—"}</td>
+      </tr>`)}`;
+      bindRowOpen(tbody, openCustomer);
+    } catch (error) {
+      ui.tableState(tbody, CUSTOMER_COLUMNS, "error", { desc: error.detail }, loadCustomers);
+    }
+  }
+
+  async function openCustomer(code) {
+    const body = $("[data-cust-drawer-body]");
+    $("[data-cust-drawer-title]").textContent = "Khách hàng";
+    $("[data-cust-drawer-subtitle]").textContent = code;
+    $("[data-cust-drawer-actions]").innerHTML = "";
+    ui.blockState(body, "loading");
+    if ($("[data-cust-drawer]").hidden) window.openDialog($("[data-cust-drawer]"));
+    try {
+      renderCustomer(await api.admin.customer(code));
+    } catch (error) {
+      ui.blockState(body, "error", { desc: error.detail }, () => openCustomer(code));
+    }
+  }
+
+  function renderCustomer(detail) {
+    const c = detail.customer;
+    customers.selected = c;
+    const kv = (label, value, wide) => html`<div class="detail-grid__item${wide ? " detail-grid__item--wide" : ""}"><span class="kv-key">${label}</span><span>${value}</span></div>`;
+    const dash = html`<span class="cell-muted">—</span>`;
+    $("[data-cust-drawer-title]").textContent = c.fullName;
+    $("[data-cust-drawer-subtitle]").textContent = `${c.code} · ${c.phone}`;
+    const account = c.accountStatus === "NONE"
+      ? html`<p class="cell-muted" style="margin:0">Khách chưa đăng ký tài khoản. Khách tự đăng ký trên cổng khách hàng bằng số điện thoại (OTP).</p>`
+      : html`<div class="detail-grid">
+          ${kv("Trạng thái", fmt.badgeOf(L.CUSTOMER_ACCOUNT_STATUS, c.accountStatus))}
+          ${kv("Tên đăng nhập", html`<span class="mono">${c.username}</span>`)}
+          ${kv("Đăng nhập gần nhất", c.lastLoginAt ? fmt.dateTime(c.lastLoginAt) : dash)}
+          ${c.accountStatus === "TEMP_LOCKED" ? kv("Tự mở khóa lúc", fmt.dateTime(c.temporaryLockUntil)) : ""}
+        </div>`;
+    $("[data-cust-drawer-body]").innerHTML = html`
+      <h3 class="report-panel__title">Hồ sơ</h3>
+      <div class="detail-grid">
+        ${kv("Trạng thái hồ sơ", fmt.badgeOf(L.CUSTOMER_STATUS, c.status))}
+        ${kv("Ngày tạo", fmt.dateTime(c.createdAt))}
+        ${kv("Email", c.email || dash)}
+        ${kv("Thiết bị / phiếu đang mở", `${detail.devices} thiết bị · ${detail.openTickets} phiếu đang mở`)}
+        ${kv("Địa chỉ", c.address || dash, true)}
+        ${c.mergedInto ? kv("Đã gộp vào", html`<span class="mono">${c.mergedInto}</span>`, true) : ""}
+      </div>
+      <hr class="section-divider" />
+      <h3 class="report-panel__title">Tài khoản đăng nhập</h3>
+      ${account}`;
+    const active = c.status === "ACTIVE";
+    const hasAccount = c.accountStatus !== "NONE";
+    const locked = c.accountStatus === "LOCKED";
+    const action = (name, label, kind) => html`<button type="button" class="btn ${kind} btn--sm" data-cust-action="${name}">${label}</button>`;
+    $("[data-cust-drawer-actions]").innerHTML = html`
+      ${hasAccount && active && !locked ? action("reset", "Đặt lại mật khẩu", "btn--secondary") : ""}
+      ${hasAccount && active && (locked || c.accountStatus === "TEMP_LOCKED") ? action("unlock", "Mở khóa tài khoản", "btn--secondary") : ""}
+      ${hasAccount && !locked ? action("lock", "Khóa tài khoản", "btn--destructive") : ""}
+      ${active ? action("contact", "Sửa liên hệ", "btn--secondary") : ""}
+      ${active ? action("merge", "Gộp hồ sơ", "btn--secondary") : ""}
+      ${active ? action("archive", "Lưu trữ hồ sơ", "btn--destructive") : ""}`;
+    $("[data-cust-drawer-actions]").querySelectorAll("[data-cust-action]").forEach((button) =>
+      button.addEventListener("click", () => CUSTOMER_ACTIONS[button.dataset.custAction](button)));
+  }
+
+  /** Thao tác xong: vẽ lại chi tiết từ bản mới nhất và làm mới danh sách (trạng thái có thể đã đổi). */
+  async function afterCustomerChange(code, message) {
+    window.showToast(message, "success");
+    loadCustomers();
+    if (!$("[data-cust-drawer]").hidden) openCustomer(code);
+  }
+
+  const CUSTOMER_ACTIONS = {
+    async reset(button) {
+      const c = customers.selected;
+      const confirmed = await ui.confirm({
+        title: `Đặt lại mật khẩu cho ${c.fullName}?`,
+        message: "Hệ thống tạo mật khẩu tạm mới; mọi phiên đăng nhập hiện tại của khách bị đăng xuất. Chỉ làm khi đã xác minh đúng chủ tài khoản.",
+        confirmLabel: "Đặt lại mật khẩu",
+        destructive: false,
+      });
+      if (!confirmed) return;
+      try {
+        const result = await ui.busy(button, () => api.customers.resetPassword(c.code));
+        await ui.showTemporaryPassword({ title: "Mật khẩu tạm của khách", message: `${c.fullName} — đăng nhập bằng ${c.username}`, password: result.temporaryPassword });
+        afterCustomerChange(c.code, "Đã đặt lại mật khẩu khách.");
+      } catch (error) { ui.showError(error); }
+    },
+    async lock(button) {
+      const c = customers.selected;
+      const reason = await ui.promptReason({
+        title: `Khóa tài khoản của ${c.fullName}?`,
+        message: "Khách bị đăng xuất ngay và không đăng nhập được cho tới khi được mở khóa.",
+        label: "Lý do khóa",
+        confirmLabel: "Khóa tài khoản",
+      });
+      if (!reason) return;
+      try {
+        await ui.busy(button, () => api.admin.lockCustomer(c.code, reason));
+        afterCustomerChange(c.code, "Đã khóa tài khoản khách.");
+      } catch (error) { ui.showError(error); }
+    },
+    async unlock(button) {
+      const c = customers.selected;
+      try {
+        await ui.busy(button, () => api.admin.unlockCustomer(c.code));
+        afterCustomerChange(c.code, "Đã mở khóa tài khoản khách.");
+      } catch (error) { ui.showError(error); }
+    },
+    contact() {
+      const c = customers.selected;
+      $("[data-cust-contact-phone]").value = c.phone;
+      $("[data-cust-contact-email]").value = c.email || "";
+      $("[data-cust-contact-address]").value = c.address || "";
+      ui.clearFieldErrors($("[data-cust-contact-form]"));
+      open("[data-cust-contact-modal]");
+    },
+    merge() {
+      const c = customers.selected;
+      $("[data-cust-merge-subtitle]").textContent = `Gộp ${c.code} — ${c.fullName} vào một hồ sơ khác`;
+      $("[data-cust-merge-target]").value = "";
+      ui.clearFieldErrors($("[data-cust-merge-form]"));
+      open("[data-cust-merge-modal]");
+    },
+    async archive(button) {
+      const c = customers.selected;
+      const confirmed = await ui.confirm({
+        title: `Lưu trữ hồ sơ ${c.code}?`,
+        message: c.accountStatus === "NONE"
+          ? "Hồ sơ không còn dùng để tiếp nhận được nữa. Khách không được còn phiếu đang mở."
+          : "Hồ sơ không còn dùng để tiếp nhận được nữa và tài khoản đăng nhập của khách bị khóa. Khách không được còn phiếu đang mở.",
+        confirmLabel: "Lưu trữ hồ sơ",
+      });
+      if (!confirmed) return;
+      try {
+        await ui.busy(button, () => api.customers.archive(c.code));
+        afterCustomerChange(c.code, `Đã lưu trữ hồ sơ ${c.code}.`);
+      } catch (error) { ui.showError(error); }
+    },
+  };
+
+  async function saveContact(button) {
+    const c = customers.selected;
+    const body = {
+      phone: $("[data-cust-contact-phone]").value.trim(),
+      email: $("[data-cust-contact-email]").value.trim(),
+      address: $("[data-cust-contact-address]").value.trim(),
+    };
+    if (!body.phone) return window.showToast("Vui lòng nhập số điện thoại.", "error");
+    try {
+      await ui.busy(button, () => api.customers.updateContact(c.code, body));
+      close("[data-cust-contact-modal]");
+      afterCustomerChange(c.code, "Đã cập nhật liên hệ khách hàng.");
+    } catch (error) { ui.showError(error, $("[data-cust-contact-form]")); }
+  }
+
+  async function saveMerge(button) {
+    const c = customers.selected;
+    const target = $("[data-cust-merge-target]").value.trim().toUpperCase();
+    if (!target) return window.showToast("Vui lòng nhập mã khách hàng giữ lại.", "error");
+    try {
+      await ui.busy(button, () => api.customers.merge(c.code, target));
+      close("[data-cust-merge-modal]");
+      afterCustomerChange(target, `Đã gộp ${c.code} vào ${target}.`);
+    } catch (error) { ui.showError(error, $("[data-cust-merge-form]")); }
+  }
+
+  function bindCustomers() {
+    const reload = () => { customers.page = 0; loadCustomers(); };
+    let timer = null;
+    $("[data-cust-search]").addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(reload, 300); });
+    $("[data-cust-filter-account]").addEventListener("change", reload);
+    $("[data-cust-filter-status]").addEventListener("change", reload);
+    $("[data-cust-prev]").addEventListener("click", () => { customers.page = Math.max(0, customers.page - 1); loadCustomers(); });
+    $("[data-cust-next]").addEventListener("click", () => { customers.page += 1; loadCustomers(); });
+    $("[data-cust-drawer-close]").addEventListener("click", () => close("[data-cust-drawer]"));
+    $("[data-cust-contact-save]").addEventListener("click", (event) => saveContact(event.currentTarget));
+    $("[data-cust-merge-save]").addEventListener("click", (event) => saveMerge(event.currentTarget));
+    bindClose("cust-contact", "[data-cust-contact-modal]");
+    bindClose("cust-merge", "[data-cust-merge-modal]");
   }
 
   async function createEmployee(button) {
@@ -387,15 +627,29 @@ export default function initialize() {
     $("[data-add-employee-submit]").addEventListener("click", (event) => createEmployee(event.currentTarget));
     $("[data-edit-roles-save]").addEventListener("click", (event) => saveRoles(event.currentTarget));
     bindClose("add-employee", "[data-add-employee-drawer]"); bindClose("edit-roles", "[data-edit-roles-modal]");
+    $("[data-emp-modal-close]").addEventListener("click", () => close("[data-emp-modal]"));
+    // Esc đóng hộp thoại nằm trên cùng (hộp con như Sửa liên hệ/Gộp hồ sơ trước drawer chi tiết khách).
+    const ESCAPE_ORDER = ["[data-cust-contact-modal]", "[data-cust-merge-modal]", "[data-edit-roles-modal]", "[data-emp-modal]",
+      "[data-cust-drawer]", "[data-add-employee-drawer]", "[data-add-category-drawer]", "[data-add-brand-drawer]", "[data-add-sku-drawer]",
+      "[data-add-service-drawer]", "[data-add-policy-drawer]"];
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      // Hộp xác nhận/nhập lý do của ui.js tự đóng và tự gỡ khỏi trang trước khi sự kiện tới đây: không đóng thêm hộp bên dưới.
+      const owner = event.target.closest && event.target.closest(".modal-overlay, .drawer-overlay");
+      if (owner && !owner.isConnected) return;
+      const top = ESCAPE_ORDER.find((selector) => $(selector) && !$(selector).hidden);
+      if (top) close(top);
+    });
     ["category", "brand", "sku", "policy", "service"].forEach((name) => bindClose(`add-${name}`, `[data-add-${name}-drawer]`));
     bindCatalogActions();
+    bindCustomers();
     $("[data-admin-station]").addEventListener("change", loadReports);
     $("[data-admin-range]").addEventListener("change", loadReports);
   }
 
   window.LML_AUTH.ready(async () => {
     bind();
-    await Promise.all([loadEmployees(), loadCatalogs()]);
+    await Promise.all([loadEmployees(), loadCatalogs(), window.LML_AUTH.hasPermission("CUSTOMER_ACCOUNT_MANAGE") ? loadCustomers() : null]);
     const stations = await api.catalog.list("stations");
     $("[data-admin-station]").innerHTML = html`<option value="">Tất cả trạm</option>${stations.map((station) => html`<option value="${station._id}">${station.name}</option>`)}`;
     loadReports();

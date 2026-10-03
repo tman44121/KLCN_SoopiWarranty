@@ -43,7 +43,7 @@ public sealed class TechnicianQueryService(StaffDirectory staff, TicketStore tic
     {
         var actor = actors.Require(Permission.TICKET_READ_ASSIGNED);
         var queue = (await tickets.SearchAsync(views.Filter(null, null, actor.EmployeeId, null, null, null, null), 0, 100))
-            .Where(ticket => ticket.Open && ticket.Status is not (TicketStatus.COMPLETED or TicketStatus.CANCELLED))
+            .Where(ticket => ticket.Open && ticket.Status is not (TicketStatus.COMPLETED or TicketStatus.AWAITING_RETURN))
             .OrderBy(ticket => ticket.Sla.DueAt)
             .ThenBy(ticket => (int)ticket.Assignment!.Priority);
         return await views.ViewsAsync(queue, actor);

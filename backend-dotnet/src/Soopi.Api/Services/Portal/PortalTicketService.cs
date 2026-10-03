@@ -60,7 +60,7 @@ public sealed record PortalTicketView(
         _ => 1,
     };
 
-    public static bool IsStopped(TicketStatus status) => status is TicketStatus.CANCELLED or TicketStatus.RETURNED_UNREPAIRED;
+    public static bool IsStopped(TicketStatus status) => status is TicketStatus.AWAITING_RETURN or TicketStatus.RETURNED_UNREPAIRED;
 
     private static List<PortalStep> BuildSteps(TicketStatus status)
     {

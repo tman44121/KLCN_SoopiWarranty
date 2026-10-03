@@ -264,9 +264,35 @@ export default function initialize() {
       el.name.value = customer.fullName || "";
       el.email.value = customer.email || "";
       el.address.value = customer.address || "";
-      el.customerHint.innerHTML = html`Khách hàng đã có hồ sơ: <span class="mono">${customer.code}</span> — ${customer.fullName}`;
+      const canReset = customer.hasAccount && window.LML_AUTH.hasPermission("CUSTOMER_PASSWORD_RESET");
+      el.customerHint.innerHTML = html`Khách hàng đã có hồ sơ: <span class="mono">${customer.code}</span> — ${customer.fullName}${
+        canReset ? html` · <button type="button" class="btn btn--secondary btn--sm" data-reset-customer-password>Đặt lại mật khẩu đăng nhập</button>` : ""}`;
+      if (canReset) {
+        el.customerHint.querySelector("[data-reset-customer-password]").addEventListener("click", (event) => resetCustomerPassword(customer, event.currentTarget));
+      }
     } else {
       el.customerHint.textContent = "Khách hàng mới — hồ sơ sẽ được tạo khi tiếp nhận thiết bị.";
+    }
+  }
+
+  /** Khách quên mật khẩu tại quầy: nhân viên xác minh giấy tờ rồi cấp mật khẩu tạm (khách phải đổi khi đăng nhập). */
+  async function resetCustomerPassword(customer, button) {
+    const confirmed = await ui.confirm({
+      title: `Đặt lại mật khẩu cho ${customer.fullName}?`,
+      message: "Chỉ làm khi đã xác minh giấy tờ của khách. Hệ thống tạo mật khẩu tạm mới và đăng xuất mọi phiên đăng nhập hiện tại của khách.",
+      confirmLabel: "Đặt lại mật khẩu",
+      destructive: false,
+    });
+    if (!confirmed) return;
+    try {
+      const result = await ui.busy(button, () => api.customers.resetPassword(customer.code));
+      await ui.showTemporaryPassword({
+        title: "Mật khẩu tạm của khách",
+        message: `${customer.fullName} — ${customer.code}`,
+        password: result.temporaryPassword,
+      });
+    } catch (error) {
+      ui.showError(error);
     }
   }
 
@@ -676,8 +702,8 @@ export default function initialize() {
     let reason = null;
     if (decision === "DECLINE") {
       reason = await ui.promptReason({
-        title: "Khách từ chối báo giá?",
-        message: `Phiếu ${q.ticketCode} sẽ chuyển sang “Ngừng sửa theo yêu cầu khách” và chờ trả máy.`,
+        title: "Ghi nhận từ chối báo giá?",
+        message: `Phiếu ${q.ticketCode} sẽ chuyển sang “Chờ trả máy”.`,
         label: "Lý do khách từ chối",
         confirmLabel: "Ghi nhận khách từ chối",
       });

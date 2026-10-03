@@ -1,15 +1,16 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
+import controller from "../behaviors/receptionist.js";
 import { BrandLogo } from "../customer";
 
 export default function ReceptionistPage() {
-  usePage("receptionist", {"data-roles": "RECEPTIONIST"}, "Soopi — Tiếp nhận");
+  usePage("receptionist", {"data-roles": "RECEPTIONIST"}, "Soopi — Tiếp nhận", controller);
   return (<>
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">
         <div className="sidebar-brand">
-          <div className="sidebar-brand__logo" aria-label="soopiwarranty">
+          <div className="sidebar-brand__logo">
             <BrandLogo />
           </div>
           <div className="sidebar-brand__system">
@@ -39,7 +40,7 @@ export default function ReceptionistPage() {
             <div className="sidebar-nav__group-title">
               {"Xử lý phiếu"}
             </div>
-            <a className="sidebar-nav__item is-active" data-roles="RECEPTIONIST" href="receptionist.html">
+            <a className="sidebar-nav__item is-active" data-roles="RECEPTIONIST" href="/receptionist">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M4 4h12v12H4z">
                 </path>
@@ -48,7 +49,7 @@ export default function ReceptionistPage() {
               </svg>
               {"\n          Tiếp nhận\n        "}
             </a>
-            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="tickets.html">
+            <a className="sidebar-nav__item" data-roles="DISPATCHER,TECHNICIAN" href="/tickets">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M6 3h5l3 3v11H6z">
                 </path>
@@ -66,7 +67,7 @@ export default function ReceptionistPage() {
               </svg>
               {"\n          Điều phối\n        "}
             </Link>
-            <a className="sidebar-nav__item" data-roles="TECHNICIAN" href="technician.html">
+            <a className="sidebar-nav__item" data-roles="TECHNICIAN" href="/technician">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M13 4l-1.5 1.5M4 16l6-6M9 6l5 5-1.5 3-5-5z">
                 </path>
@@ -78,7 +79,7 @@ export default function ReceptionistPage() {
             <div className="sidebar-nav__group-title">
               {"Kho vật tư"}
             </div>
-            <a className="sidebar-nav__item" data-roles="WAREHOUSE_KEEPER" href="warehouse.html">
+            <a className="sidebar-nav__item" data-roles="WAREHOUSE_KEEPER" href="/warehouse">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M3 7l7-4 7 4v9H3z">
                 </path>
@@ -87,7 +88,7 @@ export default function ReceptionistPage() {
               </svg>
               {"\n          Tồn kho\n        "}
             </a>
-            <a className="sidebar-nav__item" data-roles="WAREHOUSE_KEEPER" href="warehouse.html#stockin">
+            <a className="sidebar-nav__item" data-roles="WAREHOUSE_KEEPER" href="/warehouse#stockin">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <rect x="4" y="7" width="12" height="9" rx="1">
                 </rect>
@@ -96,7 +97,7 @@ export default function ReceptionistPage() {
               </svg>
               {"\n          Nhập kho\n        "}
             </a>
-            <a className="sidebar-nav__item" data-roles="WAREHOUSE_KEEPER" href="warehouse.html#stockout">
+            <a className="sidebar-nav__item" data-roles="WAREHOUSE_KEEPER" href="/warehouse#stockout">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <rect x="4" y="7" width="12" height="9" rx="1">
                 </rect>
@@ -105,7 +106,7 @@ export default function ReceptionistPage() {
               </svg>
               {"\n          Xuất kho\n        "}
             </a>
-            <a className="sidebar-nav__item" data-roles="WAREHOUSE_KEEPER" href="warehouse.html#transfer">
+            <a className="sidebar-nav__item" data-roles="WAREHOUSE_KEEPER" href="/warehouse#transfer">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M4 10h12M11 6l4 4-4 4">
                 </path>
@@ -117,7 +118,7 @@ export default function ReceptionistPage() {
             <div className="sidebar-nav__group-title">
               {"Thanh toán"}
             </div>
-            <a className="sidebar-nav__item" data-roles="CASHIER" href="cashier.html">
+            <a className="sidebar-nav__item" data-roles="CASHIER" href="/cashier">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <rect x="3" y="5" width="14" height="10" rx="1.4">
                 </rect>
@@ -126,7 +127,7 @@ export default function ReceptionistPage() {
               </svg>
               {"\n          Thu ngân\n        "}
             </a>
-            <a className="sidebar-nav__item" data-roles="CASHIER" href="cashier.html">
+            <a className="sidebar-nav__item" data-roles="CASHIER" href="/cashier">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M6 6h8v9l-4-2-4 2z">
                 </path>
@@ -138,13 +139,13 @@ export default function ReceptionistPage() {
             <div className="sidebar-nav__group-title">
               {"Báo cáo"}
             </div>
-            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="reports.html#sla">
+            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="/reports#sla">
               {"SLA"}
             </a>
-            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="reports.html#performance">
+            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="/reports#performance">
               {"Hiệu suất"}
             </a>
-            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="reports.html#audit">
+            <a className="sidebar-nav__item" data-roles="DISPATCHER" href="/reports#audit">
               {"Lịch sử thao tác"}
             </a>
           </div>
@@ -152,7 +153,7 @@ export default function ReceptionistPage() {
             <div className="sidebar-nav__group-title">
               {"Quản trị"}
             </div>
-            <a className="sidebar-nav__item" href="admin.html" data-roles="ADMIN">
+            <a className="sidebar-nav__item" href="/admin" data-roles="ADMIN">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M10 3l6 2.5v4c0 4-2.5 6.5-6 7.5-3.5-1-6-3.5-6-7.5v-4z">
                 </path>
@@ -239,8 +240,8 @@ export default function ReceptionistPage() {
                 {"Khách đăng ký trước trên Cổng khách hàng hoặc app. Nhập mã YC- để tự điền biểu mẫu tiếp nhận."}
               </div>
             </div>
-            <div style={{"display": "flex", "gap": "8px", "alignItems": "center"} as CSSProperties}>
-              <input type="text" className="text-field mono" data-yc-code="" placeholder="YC-2026-0917-00095" aria-label="Mã yêu cầu trực tuyến" style={{"width": "210px"} as CSSProperties} />
+            <div className="inline-lookup">
+              <input type="text" className="text-field mono" data-yc-code="" placeholder="VD: YC-2026-0917-00095" aria-label="Mã yêu cầu trực tuyến" />
               <button type="button" className="btn btn--secondary btn--sm" data-yc-load="">
                 {"Tự điền từ mã YC"}
               </button>
@@ -475,13 +476,13 @@ export default function ReceptionistPage() {
           <section className="card">
             <div className="card__header">
               <h2 className="card__title">
-                {"Mô tả lỗi khách hàng"}
+                {"Lỗi khách báo"}
               </h2>
             </div>
             <div className="card__body">
               <div className="form-field" data-field="reportedIssue">
                 <label htmlFor="symptom" className="visually-hidden">
-                  {"Mô tả lỗi khách hàng"}
+                  {"Lỗi khách báo"}
                 </label>
                 <textarea id="symptom" name="reportedIssue" placeholder="Khách hàng mô tả tình trạng/lỗi gặp phải…">
                 </textarea>
@@ -729,8 +730,8 @@ export default function ReceptionistPage() {
                 {"Dùng khi khách có mặt tại trung tâm. Báo giá phải đã được điều phối phê duyệt."}
               </div>
             </div>
-            <div style={{"display": "flex", "gap": "8px", "alignItems": "center"} as CSSProperties}>
-              <input type="text" className="text-field mono" data-counter-ticket="" placeholder="TN-2026-0917-00423" aria-label="Mã phiếu tiếp nhận" style={{"width": "210px"} as CSSProperties} />
+            <div className="inline-lookup">
+              <input type="text" className="text-field mono" data-counter-ticket="" placeholder="VD: TN-2026-0917-00423" aria-label="Mã phiếu tiếp nhận" />
               <button type="button" className="btn btn--secondary btn--sm" data-counter-load="">
                 {"Tải báo giá"}
               </button>
