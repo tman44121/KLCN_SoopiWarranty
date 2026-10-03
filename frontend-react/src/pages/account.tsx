@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { usePage } from "../usePage";
 import {
-  CustomerFooter, CustomerHeader, Icon, PasswordInput, STEP_LABELS, StatusBadge, api, errorText, fmt, inGroup, initial, newest,
-  useBusy,
+  CustomerFooter, CustomerHeader, Icon, PasswordInput, STEP_LABELS, StatusBadge, TICKET_FILTERS, api, errorText, fmt, inGroup,
+  initial, newest, useBusy,
 } from "../customer";
 
 /* Khu tài khoản khách hàng Soopi (port các trang khách của web KLCN: trang chủ, lịch sử, chi tiết phiếu, đăng ký bảo hành,
@@ -181,7 +181,7 @@ function Overview({ data }: { data: Data }) {
                         <div className="ticket-meta"><span className="mono">{ticket.code}</span> · Nhận {fmt().date(ticket.receivedAt)}</div>
                       </div>
                     </div>
-                    <StatusBadge table="TICKET_STATUS" code={ticket.status} />
+                    <StatusBadge table="TICKET_STATUS_CUSTOMER" code={ticket.status} />
                   </a>
                 ))}
               </div>
@@ -266,9 +266,9 @@ function History({ data }: { data: Data }) {
   const needle = query.trim().toLowerCase();
   const shown = data.tickets.filter((t) => inGroup(group, t.status)
     && (!needle || [t.code, t.productName, t.serialOrImei].some((v) => String(v || "").toLowerCase().includes(needle))));
-  const pills = [
-    ["ALL", "Tất cả"], ["PROCESSING", "Đang xử lý"], ["WAITING", "Chờ linh kiện / xác nhận"], ["COMPLETED", "Hoàn thành"],
-  ];
+  const tone: Record<string, string> = {
+    PROCESSING: "var(--kh-navy)", WAITING: "var(--kh-warn-text)", READY: "var(--kh-forest)", COMPLETED: "var(--kh-quiet)",
+  };
   return (
     <div className="page-container">
       <div className="kh-page-title-row">
@@ -280,15 +280,17 @@ function History({ data }: { data: Data }) {
       </div>
 
       <div className="history-stats-grid">
-        <div className="history-stat"><div className="history-stat-label">Tổng số phiếu</div><div className="history-stat-num">{data.tickets.length}</div></div>
-        <div className="history-stat"><div className="history-stat-label" style={{ color: "var(--kh-navy)" }}>Đang xử lý</div><div className="history-stat-num" style={{ color: "var(--kh-navy)" }}>{count("PROCESSING")}</div></div>
-        <div className="history-stat"><div className="history-stat-label" style={{ color: "var(--kh-warn-text)" }}>Chờ linh kiện / xác nhận</div><div className="history-stat-num" style={{ color: "var(--kh-warn-text)" }}>{count("WAITING")}</div></div>
-        <div className="history-stat"><div className="history-stat-label" style={{ color: "var(--kh-forest)" }}>Hoàn thành</div><div className="history-stat-num" style={{ color: "var(--kh-forest)" }}>{count("COMPLETED")}</div></div>
+        {TICKET_FILTERS.map(([key, label]) => (
+          <div key={key} className="history-stat">
+            <div className="history-stat-label" style={{ color: tone[key] }}>{key === "ALL" ? "Tổng số phiếu" : label}</div>
+            <div className="history-stat-num" style={{ color: tone[key] }}>{count(key)}</div>
+          </div>
+        ))}
       </div>
 
       <div className="history-filters-bar">
         <div className="filter-pills-row" role="group" aria-label="Lọc theo trạng thái">
-          {pills.map(([key, label]) => (
+          {TICKET_FILTERS.map(([key, label]) => (
             <button key={key} type="button" className="filter-pill" aria-pressed={group === key} onClick={() => setGroup(key)}>
               {label} ({count(key)})
             </button>
@@ -307,7 +309,7 @@ function History({ data }: { data: Data }) {
             <div className="ticket-card-header">
               <span className="ticket-code-tag">{ticket.code}</span>
               <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-                <StatusBadge table="TICKET_STATUS" code={ticket.status} />
+                <StatusBadge table="TICKET_STATUS_CUSTOMER" code={ticket.status} />
                 <span className="ticket-date-info">Ngày nhận: {fmt().date(ticket.receivedAt)}</span>
               </div>
             </div>
@@ -372,7 +374,7 @@ function TicketDetail({ code, onChanged }: { code: string; onChanged: () => void
             {ticket.serialOrImei && <span>Serial/IMEI: <strong className="mono">{ticket.serialOrImei}</strong></span>}
           </div>
         </div>
-        <StatusBadge table="TICKET_STATUS" code={ticket.status} />
+        <StatusBadge table="TICKET_STATUS_CUSTOMER" code={ticket.status} />
       </div>
 
       <div className="detail-grid-2">

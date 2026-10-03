@@ -11,12 +11,20 @@ export const fmt = () => w.LML_FMT;
 /** Lỗi API → câu tiếng Việt của máy chủ (ApiError.detail đã gồm fieldErrors). */
 export const errorText = (error: Json) => error?.detail || 'Đã xảy ra lỗi. Vui lòng thử lại.';
 
-/** Nhóm trạng thái phiếu cho khách (lọc Lịch sử bảo hành, số liệu trang chủ) — theo TICKET_STATUS của labels.js. */
+/** Nhóm trạng thái phiếu phía khách (bộ lọc Lịch sử bảo hành, số liệu trang chủ) theo luồng của trung tâm:
+    tiếp nhận → chẩn đoán → (chờ linh kiện / chờ khách xác nhận) → sửa → chờ khách nhận máy → hoàn thành.
+    Sửa xong (COMPLETED) và không sửa (AWAITING_RETURN) đều là máy chờ khách nhận; trả máy xong mới hoàn thành. */
 export const TICKET_GROUPS: Record<string, string[]> = {
   PROCESSING: ['RECEIVED', 'INSPECTING', 'DIAGNOSED', 'REPAIRING'],
-  WAITING: ['AWAITING_PARTS', 'AWAITING_QUOTE_APPROVAL', 'AWAITING_CUSTOMER_CONFIRMATION', 'AWAITING_RETURN'],
-  COMPLETED: ['COMPLETED', 'DELIVERED', 'RETURNED_UNREPAIRED'],
+  WAITING: ['AWAITING_PARTS', 'AWAITING_QUOTE_APPROVAL', 'AWAITING_CUSTOMER_CONFIRMATION'],
+  READY: ['COMPLETED', 'AWAITING_RETURN'],
+  COMPLETED: ['DELIVERED', 'RETURNED_UNREPAIRED'],
 };
+
+/** Bộ lọc Lịch sử bảo hành theo thứ tự hiển thị. */
+export const TICKET_FILTERS: [string, string][] = [
+  ['ALL', 'Tất cả'], ['PROCESSING', 'Đang xử lý'], ['WAITING', 'Chờ linh kiện / xác nhận'], ['READY', 'Chờ nhận máy'], ['COMPLETED', 'Hoàn thành'],
+];
 export const inGroup = (group: string, status: string) => group === 'ALL' || TICKET_GROUPS[group].includes(status);
 
 /** So sánh để xếp mới nhất trước theo một trường thời gian ISO. */
@@ -74,7 +82,7 @@ const TONE_CLASS: Record<string, string> = {
   danger: 'badge-danger',
 };
 
-/** Badge trạng thái theo bảng nhãn của labels.js (TICKET_STATUS, WARRANTY_REQUEST_STATUS, WARRANTY_STATUS). */
+/** Badge trạng thái theo bảng nhãn của labels.js (TICKET_STATUS_CUSTOMER, WARRANTY_REQUEST_STATUS, WARRANTY_STATUS). */
 const TONE_ICON: Record<string, string> = { success: 'checkCircle', warning: 'clock', danger: 'xCircle' };
 
 export function StatusBadge({ table, code }: { table: string; code: string | null | undefined }) {

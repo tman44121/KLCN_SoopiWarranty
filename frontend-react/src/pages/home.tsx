@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { usePage } from "../usePage";
 import {
-  CustomerFooter, CustomerHeader, Icon, STEP_LABELS, StatusBadge, TICKET_GROUPS, api, fmt, newest, portalCatalog, useCustomerName,
+  CustomerFooter, CustomerHeader, Icon, STEP_LABELS, StatusBadge, TICKET_FILTERS, TICKET_GROUPS, api, fmt, newest, portalCatalog,
+  useCustomerName,
 } from "../customer";
 
 /* Trang chủ / giới thiệu của Soopi — port bố cục home/index.html + home.css của web khách KLCN theo DESIGN.md
@@ -16,12 +17,15 @@ const SAMPLE_TICKETS: Ticket[] = [
   { code: "TN-2026-0908-00001", productName: "MacBook Air M2 2023", serialOrImei: "C02G789X01", receivedAt: "2026-09-08T02:00:00Z", status: "REPAIRING", currentStep: 3 },
   { code: "TN-2026-0907-00002", productName: "Máy lọc không khí Pro X", serialOrImei: "MLK-992011", receivedAt: "2026-09-07T02:00:00Z", status: "AWAITING_PARTS", currentStep: 2 },
   { code: "TN-2026-0905-00003", productName: "Smart Tivi OLED 55 inch", serialOrImei: "TV-55OLED-88", receivedAt: "2026-09-05T02:00:00Z", status: "COMPLETED", currentStep: 5 },
+  // Không hiện trong danh sách (chỉ 3 phiếu mới nhất) nhưng có trong số liệu, để ví dụ đủ cả 4 nhóm.
+  { code: "TN-2026-0820-00004", productName: "Tai nghe không dây", serialOrImei: "TWS-20260820", receivedAt: "2026-08-20T02:00:00Z", status: "DELIVERED", currentStep: 6 },
 ];
 
-/* Nhóm dùng chung với Lịch sử bảo hành; trạng thái chưa biết tính vào "đang sửa" để tổng vẫn khớp. */
-const DONE = TICKET_GROUPS.COMPLETED;
-const WAITING = TICKET_GROUPS.WAITING;
-const iconTone = (status: string) => (DONE.includes(status) ? "type-ok" : WAITING.includes(status) ? "type-sr" : "type-qr");
+/* Nhóm và tên giống bộ lọc Lịch sử bảo hành (/account); trạng thái chưa biết tính vào "Đang xử lý" để tổng vẫn khớp. */
+const GROUP_KEYS = ["PROCESSING", "WAITING", "READY", "COMPLETED"] as const;
+const groupOf = (status: string) => GROUP_KEYS.find((key) => TICKET_GROUPS[key].includes(status)) || "PROCESSING";
+const FILTER_LABEL = Object.fromEntries(TICKET_FILTERS);
+const iconTone = (status: string) => ({ READY: "type-ok", COMPLETED: "type-ok", WAITING: "type-sr" })[groupOf(status) as string] || "type-qr";
 const percent = (part: number, total: number) => (total ? Math.round((part * 100) / total) : 0);
 
 const FEATURES = [
@@ -108,9 +112,8 @@ export default function HomePage() {
   const loading = Boolean(name) && mine === undefined;
   const sample = !mine?.length;
   const tickets = loading ? [] : sample ? SAMPLE_TICKETS : mine!;
-  const done = tickets.filter((t) => DONE.includes(t.status)).length;
-  const waiting = tickets.filter((t) => WAITING.includes(t.status)).length;
-  const processing = tickets.length - done - waiting;
+  const count = Object.fromEntries(GROUP_KEYS.map((key) => [key, tickets.filter((t) => groupOf(t.status) === key).length]));
+  const doneRate = percent(count.COMPLETED, tickets.length);
   const sampleNote = !name ? "Đăng nhập để xem phiếu thật của bạn"
     : mine === null ? "Không tải được phiếu của bạn — đây là ví dụ" : "Bạn chưa có phiếu nào — đây là ví dụ";
   const status = loading ? "Đang tải phiếu của bạn…" : sample ? sampleNote : "Cập nhật theo từng bước xử lý";
@@ -120,11 +123,7 @@ export default function HomePage() {
   const targets: Record<string, string> = {
     lookup: "/portal", history: historyHref, stations: catalog.stations.length ? "#tram-dich-vu" : request,
   };
-  const bars = [
-    { key: "delivered", label: "Đã xong", count: done },
-    { key: "operating", label: "Đang sửa chữa", count: processing },
-    { key: "received", label: "Đang chờ", count: waiting },
-  ];
+  const bars = GROUP_KEYS.map((key) => ({ key: key.toLowerCase(), label: FILTER_LABEL[key], count: count[key] }));
 
   return (
     <div className="kh-app kh-home">
@@ -158,8 +157,8 @@ export default function HomePage() {
               </div>
               <dl className="dash-stats-grid" aria-busy={loading || undefined}>
                 <div className="dash-stat-box"><dt className="dash-stat-label">Tổng phiếu</dt><dd className="dash-stat-val">{loading ? "–" : tickets.length}</dd></div>
-                <div className="dash-stat-box"><dt className="dash-stat-label">Đang xử lý</dt><dd className="dash-stat-val">{loading ? "–" : processing + waiting}</dd></div>
-                <div className="dash-stat-box"><dt className="dash-stat-label">Đã xong</dt><dd className="dash-stat-val">{loading ? "–" : done}</dd></div>
+                <div className="dash-stat-box"><dt className="dash-stat-label">Chờ nhận máy</dt><dd className="dash-stat-val">{loading ? "–" : count.READY}</dd></div>
+                <div className="dash-stat-box"><dt className="dash-stat-label">Hoàn thành</dt><dd className="dash-stat-val">{loading ? "–" : count.COMPLETED}</dd></div>
               </dl>
               <div className="dispatch-section-header">
                 <p className="ticket-meta" role="status">{status}</p>
@@ -171,7 +170,7 @@ export default function HomePage() {
                   <a key={ticket.code} href={sample ? "/portal" : `/account#phieu/${ticket.code}`} className="ticket-item-row">
                     <div className="ticket-info-left">
                       <span className={"ticket-type-icon " + iconTone(ticket.status)}>
-                        <Icon glyph={DONE.includes(ticket.status) ? "checkCircle" : "wrench"} />
+                        <Icon glyph={iconTone(ticket.status) === "type-ok" ? "checkCircle" : "wrench"} />
                       </span>
                       <div style={{ minWidth: 0 }}>
                         <div className="ticket-title"><span className="mono">{ticket.code}</span> – {ticket.productName || "Thiết bị"}</div>
@@ -180,7 +179,7 @@ export default function HomePage() {
                         </div>
                       </div>
                     </div>
-                    <StatusBadge table="TICKET_STATUS" code={ticket.status} />
+                    <StatusBadge table="TICKET_STATUS_CUSTOMER" code={ticket.status} />
                   </a>
                 ))}
               </div>
@@ -243,24 +242,24 @@ export default function HomePage() {
                 </div>
                 <div className="sla-progress-box">
                   <div className="sla-progress-label">
-                    <span id="home-done-rate">Tỷ lệ phiếu đã xong</span>
-                    <span className="sla-progress-value">{percent(done, tickets.length)}%</span>
+                    <span id="home-done-rate">Tỷ lệ phiếu hoàn thành</span>
+                    <span className="sla-progress-value">{doneRate}%</span>
                   </div>
                   <div className="progress-track" role="progressbar" aria-labelledby="home-done-rate"
-                    aria-valuenow={percent(done, tickets.length)} aria-valuemin={0} aria-valuemax={100}>
-                    <div className="progress-fill" style={{ width: `${percent(done, tickets.length)}%` }} />
+                    aria-valuenow={doneRate} aria-valuemin={0} aria-valuemax={100}>
+                    <div className="progress-fill" style={{ width: `${doneRate}%` }} />
                   </div>
                 </div>
                 <div className="dark-metrics-grid">
                   <div className="dark-metric-card">
-                    <div className="dark-metric-title">Đang sửa chữa</div>
-                    <div className="dark-metric-num">{processing}</div>
-                    <div className="dark-metric-sub">Tiếp nhận, chẩn đoán, sửa</div>
+                    <div className="dark-metric-title">Đang xử lý</div>
+                    <div className="dark-metric-num">{count.PROCESSING}</div>
+                    <div className="dark-metric-sub">Tiếp nhận, kiểm tra, chẩn đoán, sửa</div>
                   </div>
                   <div className="dark-metric-card">
-                    <div className="dark-metric-title">Đang chờ</div>
-                    <div className="dark-metric-num">{waiting}</div>
-                    <div className="dark-metric-sub">Linh kiện, báo giá hoặc trả máy</div>
+                    <div className="dark-metric-title">Chờ linh kiện / xác nhận</div>
+                    <div className="dark-metric-num">{count.WAITING}</div>
+                    <div className="dark-metric-sub">Linh kiện hoặc báo giá cần bạn duyệt</div>
                   </div>
                 </div>
                 <div className="repair-breakdown-box">

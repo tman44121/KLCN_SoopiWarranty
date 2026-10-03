@@ -21,6 +21,14 @@ export default function initialize() {
     RETURNED_UNREPAIRED: { label: "Đã trả máy (không sửa)", tone: "neutral" },
   };
 
+  /* Nhãn phía khách (/, /account, /portal). Giữ nguyên mã trạng thái và nhãn nhân viên; chỉ đổi lời cho khách:
+     máy đã sửa xong hoặc không sửa và đang chờ ra quầy lấy thì khách đọc là "chờ nhận máy". */
+  const TICKET_STATUS_CUSTOMER = {
+    ...TICKET_STATUS,
+    COMPLETED: { label: "Sửa xong – Chờ nhận máy", tone: "success" },
+    AWAITING_RETURN: { label: "Chờ nhận máy", tone: "warning" },
+  };
+
   const CATEGORY = {
     PHONE: "Điện thoại",
     LAPTOP_TABLET: "Laptop/Tablet",
@@ -230,6 +238,7 @@ export default function initialize() {
 
   window.LML_LABELS = {
     TICKET_STATUS,
+    TICKET_STATUS_CUSTOMER,
     CATEGORY,
     SLA_LEVEL,
     PRIORITY,

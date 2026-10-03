@@ -1643,7 +1643,7 @@ textarea.regular-input {
 
 .history-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   margin-bottom: 28px;
 }
@@ -2462,6 +2462,10 @@ a.method-card:hover {
   .history-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .history-stats-grid > .history-stat:first-child {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 860px) {
@@ -3125,12 +3129,14 @@ a.method-card:hover {
   color: var(--kh-navy);
 }
 
-.kh-home .bar-seg-delivered,
-.kh-home .legend-delivered { background: var(--kh-mint-soft); }
-.kh-home .bar-seg-operating,
-.kh-home .legend-operating { background: var(--kh-honey); }
-.kh-home .bar-seg-received,
-.kh-home .legend-received { background: var(--kh-lilac); }
+.kh-home .bar-seg-processing,
+.kh-home .legend-processing { background: var(--kh-lilac); }
+.kh-home .bar-seg-waiting,
+.kh-home .legend-waiting { background: var(--kh-honey); }
+.kh-home .bar-seg-ready,
+.kh-home .legend-ready { background: var(--kh-mint-soft); }
+.kh-home .bar-seg-completed,
+.kh-home .legend-completed { background: var(--kh-cream); }
 
 .kh-home .breakdown-legend {
   list-style: none;
