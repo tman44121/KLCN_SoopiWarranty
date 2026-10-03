@@ -1643,7 +1643,7 @@ textarea.regular-input {
 
 .history-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   margin-bottom: 28px;
 }
@@ -2462,6 +2462,10 @@ a.method-card:hover {
   .history-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .history-stats-grid > .history-stat:first-child {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 860px) {
@@ -2672,10 +2676,26 @@ a.method-card:hover {
 
 
 /* ==========================================================================
-   TRANG CHỦ / GIỚI THIỆU (/) — port home.css của web khách KLCN, đổi màu sang
-   bộ soopiwarranty. Bọc trong .kh-home vì vài tên class cũ (section-title…)
-   trùng class của màn nội bộ.
+   TRANG CHỦ / GIỚI THIỆU (/) — bố cục home.css của web khách KLCN theo DESIGN.md:
+   bo 8px (điều khiển, nhãn) / 10px (khung) / 50%; thẻ phẳng, không bóng khi nghỉ;
+   chữ ≥ 12px; màu qua token --kh-* / token chung. Bọc trong .kh-home vì vài tên
+   class cũ (section-title…) trùng class của màn nội bộ.
    ========================================================================== */
+
+.kh-home {
+  --kh-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --kh-on-dark: rgba(255, 255, 255, 0.86);      /* chữ phụ trên nền xanh chim cánh cụt (≥ 9:1) */
+  --kh-on-dark-line: rgba(255, 255, 255, 0.12);
+}
+
+.kh-home .hero-headline,
+.kh-home .section-title,
+.kh-home .cta-heading {
+  font-family: var(--kh-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
 
 .kh-home .hero-section {
   padding: 60px 24px 80px;
@@ -2689,128 +2709,126 @@ a.method-card:hover {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #ffffff;
+  background: var(--surface-card);
   color: var(--kh-forest);
-  font-size: 11.5px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  padding: 6px 14px;
-  border-radius: 50px;
+  padding: 6px 12px;
+  border-radius: 8px;
   border: 1px solid var(--kh-border);
   margin-bottom: 20px;
 }
 
-.kh-home .hero-badge-tag span {
-  color: var(--kh-honey);
-}
-
-.kh-home .hero-headline {
-  font-size: 46px;
-}
-
 .kh-home .hero-stats-row {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
-  gap: 36px;
-  margin-top: 36px;
+  gap: 16px 36px;
+  margin: 36px 0 0;
   padding-top: 24px;
   border-top: 1px solid var(--kh-border);
   align-self: stretch;
 }
 
-.kh-home .hero-stat-item h3 {
+.kh-home .hero-stat-item {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.kh-home .hero-stat-item dd {
+  margin: 0;
+  font-family: var(--kh-display);
   font-size: 28px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--kh-navy);
-  margin-bottom: 2px;
   font-variant-numeric: tabular-nums;
 }
 
-.kh-home .hero-stat-item p {
-  font-size: 12.5px;
-  color: var(--kh-muted);
+.kh-home .hero-stat-item dt {
+  font-size: 13px;
+  color: var(--kh-quiet);
   font-weight: 500;
 }
 
 .kh-home .hero-dashboard-card {
   padding: 20px;
-  transform: perspective(1000px) rotateY(-2deg) rotateX(1deg);
-  transition: transform 0.4s ease;
-}
-
-.kh-home .hero-dashboard-card:hover {
-  transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+  box-shadow: none;
 }
 
 .kh-home .card-top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  gap: 12px;
+  margin-bottom: 16px;
 }
-
-.kh-home .dots-wrapper {
-  display: flex;
-  gap: 6px;
-}
-
-.kh-home .dots-wrapper span {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.kh-home .dot-red { background: var(--kh-peach); }
-.kh-home .dot-yellow { background: var(--kh-honey); }
-.kh-home .dot-green { background: #8fcaa8; }
 
 .kh-home .sla-pill-badge {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--status-success-border);
   background: var(--kh-mint-soft);
   color: var(--kh-forest);
-  font-size: 11.5px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 50px;
-  border: 1px solid #bcdcc8;
 }
 
-.kh-home .dash-stat-sub {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--kh-forest);
-  margin-top: 2px;
+.kh-home .sla-pill-badge.is-sample {
+  border-color: var(--status-processing-border);
+  background: var(--kh-lilac);
+  color: var(--kh-navy);
+}
+
+.kh-home .dash-stats-grid {
+  margin: 0 0 16px;
+}
+
+.kh-home .dash-stat-box dd {
+  margin: 0;
 }
 
 .kh-home .dispatch-ticket-list {
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .kh-home .qr-scan-spark-card {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  background: var(--kh-surface);
-  border: 1px solid var(--kh-divider);
+  background: var(--kh-mint-soft);
+  border: 1px solid var(--status-success-border);
   border-radius: 10px;
   padding: 12px;
   color: var(--kh-forest);
-  transition: border-color 0.2s ease;
+  transition: border-color 0.12s ease;
+}
+
+.kh-home .qr-scan-spark-card > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
 }
 
 .kh-home .qr-scan-spark-card:hover {
   border-color: var(--kh-forest);
 }
 
+.kh-home .qr-scan-spark-card .card-icon-circle {
+  margin: 0;
+  width: 36px;
+  height: 36px;
+  background: var(--surface-card);
+}
+
 .kh-home .qr-spark-title {
+  display: block;
   font-size: 12px;
-  color: var(--kh-muted);
   font-weight: 600;
 }
 
 .kh-home .qr-spark-val {
+  display: block;
   font-size: 14px;
   font-weight: 800;
   color: var(--kh-navy);
@@ -2821,18 +2839,18 @@ a.method-card:hover {
 .kh-home .brands-ribbon-section {
   padding: 40px 24px;
   text-align: center;
-  background: #ffffff;
+  background: var(--surface-card);
   border-top: 1px solid var(--kh-divider);
   border-bottom: 1px solid var(--kh-divider);
 }
 
 .kh-home .brands-header-text {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--kh-muted);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .kh-home .brands-flex-container {
@@ -2842,29 +2860,18 @@ a.method-card:hover {
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .kh-home .brand-pill {
   background: var(--kh-cream);
   border: 1px solid var(--kh-border);
-  padding: 10px 20px;
+  padding: 10px 18px;
   border-radius: 8px;
-  font-size: 12.5px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--kh-navy);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-}
-
-.kh-home .brand-pill:hover {
-  background: #ffffff;
-  border-color: var(--kh-forest);
-  color: var(--kh-forest);
-  transform: translateY(-2px);
 }
 
 /* ---- Khung section chung ---- */
@@ -2879,7 +2886,7 @@ a.method-card:hover {
 
 .kh-home .features-main-section,
 .kh-home .process-steps-section {
-  background: #ffffff;
+  background: var(--surface-card);
   padding: 80px 24px;
   scroll-margin-top: 80px;
 }
@@ -2890,17 +2897,14 @@ a.method-card:hover {
 }
 
 .kh-home .section-title {
-  font-size: 34px;
-  font-weight: 900;
-  color: var(--kh-navy);
-  letter-spacing: -0.01em;
+  font-size: 32px;
   line-height: 1.2;
+  color: var(--kh-navy);
   margin-bottom: 10px;
-  text-wrap: balance;
 }
 
 .kh-home .section-subtitle {
-  font-size: 15.5px;
+  font-size: 15px;
   color: var(--kh-muted);
   max-width: 650px;
   margin-bottom: 40px;
@@ -2908,14 +2912,14 @@ a.method-card:hover {
 
 .kh-home .center-header {
   text-align: center;
-  margin-bottom: 50px;
+  margin-bottom: 48px;
 }
 
 .kh-home .center-header .section-subtitle {
   margin: 0 auto;
 }
 
-/* ---- Dành cho khách hàng + bảng giám sát tối ---- */
+/* ---- Dành cho khách hàng + bảng tối ---- */
 
 .kh-home .management-grid {
   display: grid;
@@ -2932,21 +2936,20 @@ a.method-card:hover {
 
 .kh-home .management-cta {
   align-self: flex-start;
-  margin-top: 10px;
+  margin-top: 8px;
+}
+
+.kh-home .feature-info-card,
+.kh-home .main-feature-card,
+.kh-home .step-process-card {
+  background: var(--surface-card);
+  border: 1px solid var(--kh-border);
+  border-radius: 10px;
+  transition: border-color 0.12s ease;
 }
 
 .kh-home .feature-info-card {
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 28px;
-  border: 1px solid var(--kh-border);
-  box-shadow: 0 2px 4px rgba(41, 53, 74, 0.04);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-.kh-home .feature-info-card:hover {
-  box-shadow: 0 10px 25px -5px rgba(41, 53, 74, 0.1);
-  transform: translateY(-2px);
+  padding: 24px;
 }
 
 .kh-home .card-icon-circle,
@@ -2958,13 +2961,24 @@ a.method-card:hover {
   flex-shrink: 0;
   background: var(--kh-mint-soft);
   color: var(--kh-forest);
+  border-radius: 50%;
 }
 
 .kh-home .card-icon-circle {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
   margin-bottom: 16px;
+}
+
+.kh-home .main-feature-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 20px;
+}
+
+.kh-home .step-icon-bg {
+  width: 36px;
+  height: 36px;
 }
 
 .kh-home .card-icon-circle .kh-icon,
@@ -2975,129 +2989,123 @@ a.method-card:hover {
 
 .kh-home .feature-card-heading {
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--kh-navy);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .kh-home .feature-card-body {
-  font-size: 14.5px;
+  font-size: 14px;
   color: var(--kh-muted);
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .kh-home .card-tags-flex {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 16px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--kh-forest);
 }
 
 .kh-home .dark-monitoring-panel {
-  background: var(--kh-navy);
+  background: var(--surface-inverse);
   color: #ffffff;
-  border-radius: 24px;
-  padding: 30px;
-  box-shadow: 0 25px 50px -12px rgba(41, 53, 74, 0.3);
+  border-radius: 10px;
+  padding: 28px;
 }
 
 .kh-home .dark-panel-header {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .kh-home .dark-panel-tag {
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--kh-honey);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .kh-home .dark-panel-title {
   font-size: 20px;
   font-weight: 800;
-  color: #ffffff;
   margin-top: 4px;
 }
 
 .kh-home .sla-progress-box,
-.kh-home .repair-breakdown-box {
+.kh-home .repair-breakdown-box,
+.kh-home .dark-metric-card {
   background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--kh-on-dark-line);
+  border-radius: 10px;
   padding: 16px;
-  border-radius: 14px;
-  margin-bottom: 20px;
+}
+
+.kh-home .sla-progress-box,
+.kh-home .repair-breakdown-box {
+  margin-bottom: 16px;
 }
 
 .kh-home .sla-progress-label {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
-  color: #c9d1dc;
+  color: var(--kh-on-dark);
   margin-bottom: 8px;
 }
 
 .kh-home .sla-progress-value {
   color: var(--kh-mint-soft);
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .kh-home .progress-track {
-  width: 100%;
   height: 8px;
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
+  background: var(--kh-on-dark-line);
+  border-radius: 8px;
   overflow: hidden;
 }
 
 .kh-home .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #8fcaa8 0%, var(--kh-mint-soft) 100%);
-  border-radius: 10px;
+  background: var(--kh-mint-soft);
 }
 
 .kh-home .dark-metrics-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  margin-bottom: 20px;
-}
-
-.kh-home .dark-metric-card {
-  background: rgba(255, 255, 255, 0.06);
-  padding: 16px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 16px;
 }
 
 .kh-home .dark-metric-title {
-  font-size: 12px;
-  color: #c9d1dc;
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-size: 13px;
+  color: var(--kh-on-dark);
+  margin-bottom: 2px;
 }
 
 .kh-home .dark-metric-num {
   font-size: 24px;
-  font-weight: 900;
-  color: #ffffff;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
 .kh-home .dark-metric-sub {
-  font-size: 11.5px;
-  color: var(--kh-honey);
+  font-size: 12px;
   font-weight: 600;
+  color: var(--kh-honey);
 }
 
 .kh-home .breakdown-title {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
-  color: #c9d1dc;
-  letter-spacing: 0.06em;
+  color: var(--kh-on-dark);
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   margin-bottom: 10px;
 }
@@ -3108,36 +3116,40 @@ a.method-card:hover {
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 10px;
-  font-size: 11px;
+  background: var(--kh-on-dark-line);
+  font-size: 12px;
   font-weight: 800;
-  background: rgba(255, 255, 255, 0.12);
 }
 
 .kh-home .multi-color-bar > div {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 34px;
+  min-width: 36px;
   color: var(--kh-navy);
 }
 
-.kh-home .bar-seg-delivered,
-.kh-home .legend-delivered { background: var(--kh-mint-soft); }
-.kh-home .bar-seg-operating,
-.kh-home .legend-operating { background: var(--kh-honey); }
-.kh-home .bar-seg-received,
-.kh-home .legend-received { background: var(--kh-lilac); }
+.kh-home .bar-seg-processing,
+.kh-home .legend-processing { background: var(--kh-lilac); }
+.kh-home .bar-seg-waiting,
+.kh-home .legend-waiting { background: var(--kh-honey); }
+.kh-home .bar-seg-ready,
+.kh-home .legend-ready { background: var(--kh-mint-soft); }
+.kh-home .bar-seg-completed,
+.kh-home .legend-completed { background: var(--kh-cream); }
 
 .kh-home .breakdown-legend {
+  list-style: none;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 6px 12px;
-  font-size: 11.5px;
-  color: #c9d1dc;
+  font-size: 12px;
+  color: var(--kh-on-dark);
 }
 
-.kh-home .breakdown-legend span {
+.kh-home .breakdown-legend li {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -3150,85 +3162,75 @@ a.method-card:hover {
 }
 
 .kh-home .dark-panel-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   font-size: 12px;
-  color: #c9d1dc;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--kh-on-dark);
+  padding-top: 12px;
+  border-top: 1px solid var(--kh-on-dark-line);
 }
 
-.kh-home .dark-panel-online {
-  color: var(--kh-mint-soft);
-  white-space: nowrap;
-}
+/* ---- Thẻ tiện ích, trạm, quy trình ---- */
 
-/* ---- Thẻ tiện ích 3 cột ---- */
-
-.kh-home .three-cols-grid {
+.kh-home .three-cols-grid,
+.kh-home .steps-four-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
   max-width: 1280px;
   margin: 0 auto;
   padding: 0;
   list-style: none;
 }
 
+.kh-home .three-cols-grid {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.kh-home .steps-four-grid {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
 .kh-home .main-feature-card {
   display: flex;
   flex-direction: column;
+  padding: 28px;
+}
+
+.kh-home .features-main-section .main-feature-card,
+.kh-home .step-process-card {
   background: var(--kh-cream);
-  border-radius: 20px;
-  padding: 30px;
-  border: 1px solid var(--kh-border);
-  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
-.kh-home .extend-features-section .main-feature-card {
-  background: #ffffff;
-}
-
-.kh-home .main-feature-card:hover {
-  background: #ffffff;
-  box-shadow: 0 10px 25px -5px rgba(41, 53, 74, 0.1);
-  transform: translateY(-4px);
-}
-
-.kh-home .main-feature-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  margin-bottom: 20px;
+.kh-home .main-feature-card:hover,
+.kh-home .step-process-card:hover,
+.kh-home .feature-info-card:hover {
+  border-color: var(--color-primary-border);
 }
 
 .kh-home .feature-title-h3 {
-  font-size: 19px;
-  font-weight: 800;
-  color: var(--kh-navy);
+  font-size: 18px;
+  font-weight: 700;
   line-height: 1.35;
-  margin-bottom: 12px;
+  color: var(--kh-navy);
+  margin-bottom: 10px;
 }
 
 .kh-home .feature-desc-p {
-  font-size: 14.5px;
+  font-size: 14px;
   color: var(--kh-muted);
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .kh-home .checklist-ul {
   list-style: none;
   padding: 0;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .kh-home .checklist-ul li {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--kh-navy);
   margin-bottom: 8px;
@@ -3241,17 +3243,13 @@ a.method-card:hover {
 
 .kh-home .card-action-link {
   margin-top: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13.5px;
+  align-self: flex-start;
+  font-size: 14px;
   font-weight: 700;
   color: var(--kh-forest);
-  transition: gap 0.2s ease;
 }
 
 .kh-home .card-action-link:hover {
-  gap: 8px;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -3262,7 +3260,8 @@ a.method-card:hover {
   gap: 16px;
 }
 
-.kh-home .station-card .main-feature-icon {
+.kh-home .station-card .main-feature-icon,
+.kh-home .station-card .feature-desc-p {
   margin-bottom: 0;
 }
 
@@ -3270,37 +3269,11 @@ a.method-card:hover {
   margin-bottom: 4px;
 }
 
-.kh-home .station-card .feature-desc-p {
-  margin-bottom: 0;
-}
-
-/* ---- Quy trình 4 bước ---- */
-
-.kh-home .steps-four-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0;
-  list-style: none;
-}
-
 .kh-home .step-process-card {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: var(--kh-cream);
-  border-radius: 20px;
   padding: 24px;
-  border: 1px solid var(--kh-border);
-  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.kh-home .step-process-card:hover {
-  background: #ffffff;
-  border-color: var(--kh-forest);
-  box-shadow: 0 10px 25px -5px rgba(41, 53, 74, 0.1);
 }
 
 .kh-home .step-top-head {
@@ -3311,34 +3284,28 @@ a.method-card:hover {
 }
 
 .kh-home .step-num-big {
+  font-family: var(--kh-display);
   font-size: 26px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--kh-forest);
   font-variant-numeric: tabular-nums;
 }
 
-.kh-home .step-icon-bg {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-}
-
 .kh-home .step-card-title {
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--kh-navy);
   margin-bottom: 8px;
 }
 
 .kh-home .step-card-desc {
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--kh-muted);
-  line-height: 1.5;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .kh-home .step-time-tag {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--kh-forest);
 }
@@ -3350,15 +3317,14 @@ a.method-card:hover {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .kh-home .faq-item-card {
-  background: #ffffff;
-  border-radius: 14px;
+  background: var(--surface-card);
   border: 1px solid var(--kh-border);
-  overflow: hidden;
-  transition: border-color 0.2s ease;
+  border-radius: 10px;
+  transition: border-color 0.12s ease;
 }
 
 .kh-home .faq-item-card.active {
@@ -3367,16 +3333,18 @@ a.method-card:hover {
 
 .kh-home .faq-question-btn {
   width: 100%;
+  min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   background: none;
   border: none;
-  padding: 20px 24px;
+  border-radius: 10px;
+  padding: 16px 20px;
   text-align: left;
   font: inherit;
-  font-size: 15.5px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--kh-navy);
   cursor: pointer;
@@ -3395,110 +3363,100 @@ a.method-card:hover {
 }
 
 .kh-home .faq-answer-body {
-  padding: 0 24px 20px;
-  font-size: 14.5px;
+  padding: 0 20px 18px;
+  font-size: 14px;
   color: var(--kh-muted);
 }
 
-/* ---- Băng CTA ---- */
+/* ---- Băng kêu gọi ---- */
 
 .kh-home .cta-banner-section {
   padding: 60px 24px 80px;
-  background: #ffffff;
+  background: var(--surface-card);
 }
 
 .kh-home .cta-dark-card {
   max-width: 1280px;
   margin: 0 auto;
-  background: linear-gradient(135deg, var(--kh-forest) 0%, var(--kh-navy) 100%);
-  border-radius: 24px;
-  padding: 60px 40px;
+  background: var(--surface-inverse);
+  border-radius: 10px;
+  padding: 56px 40px;
   text-align: center;
   color: #ffffff;
-  box-shadow: 0 25px 50px -12px rgba(41, 53, 74, 0.25);
 }
 
 .kh-home .cta-tag-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.1);
   color: var(--kh-honey);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
-  padding: 6px 16px;
-  border-radius: 50px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  margin-bottom: 20px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--kh-on-dark-line);
+  margin-bottom: 18px;
 }
 
 .kh-home .cta-heading {
-  font-size: 36px;
-  font-weight: 900;
+  font-size: 34px;
   line-height: 1.2;
-  letter-spacing: -0.01em;
-  margin-bottom: 16px;
-  text-wrap: balance;
+  margin-bottom: 14px;
 }
 
 .kh-home .cta-subtitle {
   font-size: 16px;
-  color: var(--kh-mint-soft);
+  color: var(--kh-on-dark);
   max-width: 600px;
-  margin: 0 auto 36px;
+  margin: 0 auto 32px;
 }
 
 .kh-home .cta-buttons-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 12px;
 }
 
-.kh-home .cta-primary {
+.kh-home .cta-buttons-row > a {
   min-height: 48px;
-  padding: 0 28px;
+  padding: 0 24px;
   font-size: 15px;
-  background: var(--kh-honey);
-  color: var(--kh-navy);
-  box-shadow: none;
-}
-
-.kh-home .cta-primary:hover:not(:disabled) {
-  background: #f3c76c;
-  box-shadow: none;
 }
 
 .kh-home .btn-secondary-glass {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 48px;
-  padding: 0 24px;
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
   color: #ffffff;
-  font-size: 14.5px;
   font-weight: 600;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  transition: background 0.2s ease;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition: background 0.12s ease;
 }
 
 .kh-home .btn-secondary-glass:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--kh-on-dark-line);
+}
+
+/* ---- Màn cảm ứng: vùng chạm tối thiểu 44px ---- */
+
+@media (pointer: coarse) {
+  .kh-home .dispatch-link,
+  .kh-home .card-action-link,
+  .kh-home .management-cta {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .kh-home .hero-dashboard-card,
-  .kh-home .hero-dashboard-card:hover {
-    transform: none;
-  }
-
-  .kh-home .feature-info-card:hover,
-  .kh-home .main-feature-card:hover,
-  .kh-home .brand-pill:hover {
-    transform: none;
+  .kh-home .faq-question-btn .kh-icon {
+    transition: none;
   }
 }
 
@@ -3511,11 +3469,6 @@ a.method-card:hover {
   .kh-home .three-cols-grid,
   .kh-home .steps-four-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .kh-home .hero-dashboard-card,
-  .kh-home .hero-dashboard-card:hover {
-    transform: none;
   }
 }
 
@@ -3556,12 +3509,24 @@ a.method-card:hover {
     font-size: 26px;
   }
 
-  .kh-home .hero-stats-row {
-    gap: 16px 28px;
+  .kh-home .hero-stat-item dd {
+    font-size: 24px;
   }
 
-  .kh-home .hero-stat-item h3 {
-    font-size: 24px;
+  .kh-home .dark-monitoring-panel {
+    padding: 20px;
+  }
+
+  .kh-home .cta-dark-card {
+    padding: 40px 20px;
+  }
+
+  .kh-home .cta-heading {
+    font-size: 26px;
+  }
+
+  .kh-home .card-top-bar {
+    align-items: flex-start;
   }
 
   .kh-home .ticket-item-row {
@@ -3583,25 +3548,5 @@ a.method-card:hover {
 
   .kh-home .dispatch-section-header {
     flex-wrap: wrap;
-  }
-
-  .kh-home .dark-monitoring-panel {
-    padding: 22px;
-  }
-
-  .kh-home .cta-dark-card {
-    padding: 40px 22px;
-  }
-
-  .kh-home .cta-heading {
-    font-size: 26px;
-  }
-
-  .kh-home .faq-question-btn {
-    padding: 18px;
-  }
-
-  .kh-home .faq-answer-body {
-    padding: 0 18px 18px;
   }
 }

@@ -1,6 +1,6 @@
 @echo off
 rem Chạy Soopi trên bất kỳ máy Windows 10/11 nào (xem docs/SETUP.md).
-rem   run.bat                   kiểm tra/cài mọi thứ còn thiếu, chạy API .NET + Vite, mở trang đăng nhập
+rem   run.bat                   kiểm tra/cài mọi thứ còn thiếu, chạy API .NET + Vite, mở trang chủ (đăng nhập ở góc phải)
 rem   run.bat build             build React vào wwwroot rồi chỉ chạy API (một cổng)
 rem   run.bat check             chỉ kiểm tra/cài công cụ và database, không chạy server
 rem   run.bat initdb [server]   tạo lại cấu hình database: tìm (hoặc dùng [server]) SQL Server, tạo TrungTamBaoHanhDB
@@ -52,7 +52,7 @@ if defined API_RUNNING (
   rem Job cảnh báo SLA tắt khi chạy dev như docs/SETUP.md.
   start "Soopi API (%API_PORT%)" /d "%~dp0backend-dotnet" cmd /k dotnet run --project src/Soopi.Api --launch-profile http -- --urls http://localhost:%API_PORT% --Sla:Alerts:Enabled=false
 )
-set "WEB=http://localhost:%API_PORT%/login"
+set "WEB=http://localhost:%API_PORT%/"
 if /i "%MODE%"=="build" goto wait_api
 
 call :pick_web || goto fail
@@ -62,7 +62,7 @@ if defined WEB_RUNNING (
   set "VITE_PROXY_TARGET=http://localhost:%API_PORT%"
   start "Soopi Web (%WEB_PORT%)" /d "%~dp0frontend-react" cmd /k npm run dev -- --port %WEB_PORT%
 )
-set "WEB=http://localhost:%WEB_PORT%/login"
+set "WEB=http://localhost:%WEB_PORT%/"
 
 :wait_api
 echo Đang chờ API khởi động ^(lần đầu trên máy mới có thể mất vài phút để tải và build^)...

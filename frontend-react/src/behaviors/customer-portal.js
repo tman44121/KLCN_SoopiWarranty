@@ -61,7 +61,7 @@ export default function initialize() {
       <div class="ticket-hero-card">
         <div><h2 style="font-size:26px;font-weight:900;line-height:1.2;margin-bottom:8px;">${ticket.brandName} ${ticket.productName}</h2>
           <div class="ticket-hero-meta"><span>Mã phiếu: <strong class="mono">${ticket.code}</strong></span><span>Serial/IMEI: <strong class="mono">${ticket.serialOrImei}</strong></span></div></div>
-        ${badge(labels.TICKET_STATUS, ticket.status)}
+        ${badge(labels.TICKET_STATUS_CUSTOMER, ticket.status)}
       </div>
       ${ticket.pendingQuotation ? quotation(ticket) : ""}
       <div class="detail-grid-2">

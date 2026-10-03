@@ -1,57 +1,65 @@
 import { useEffect, useState } from "react";
 import { usePage } from "../usePage";
-import { CustomerFooter, CustomerHeader, Icon, STEP_LABELS, StatusBadge, api, fmt, useCustomerName } from "../customer";
+import {
+  CustomerFooter, CustomerHeader, Icon, STEP_LABELS, StatusBadge, TICKET_FILTERS, TICKET_GROUPS, api, fmt, newest, portalCatalog,
+  useCustomerName,
+} from "../customer";
 
-/* Trang chủ / giới thiệu của Soopi — port bố cục home/index.html + home.css của web khách KLCN, đổi sang bộ màu
-   soopiwarranty (class giữ tên cũ, CSS bọc trong .kh-home). Số liệu cố định của bản cũ (lượt khách, SLA, CSAT, hotline,
-   thương hiệu) không có nguồn thật nên thay bằng dữ liệu thật: danh mục công khai /portal/catalog, phiếu của khách
-   đăng nhập qua /portal/my/tickets. Chưa đăng nhập hoặc chưa có phiếu → danh sách mẫu như bản cũ, ghi rõ "Ví dụ minh họa". */
+/* Trang chủ / giới thiệu của Soopi — port bố cục home/index.html + home.css của web khách KLCN theo DESIGN.md
+   (class giữ tên cũ, CSS bọc trong .kh-home). Số liệu cố định của bản cũ (lượt khách, SLA, CSAT, hotline, thương hiệu)
+   không có nguồn thật nên thay bằng dữ liệu thật: danh mục công khai /portal/catalog, phiếu của khách đăng nhập qua
+   /portal/my/tickets. Chưa đăng nhập hoặc chưa có phiếu → danh sách mẫu như bản cũ, ghi rõ "Ví dụ minh họa". */
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
-type Ticket = { code: string; productName?: string; serialOrImei?: string; receivedAt?: string; status: string; stopped?: boolean; currentStep: number };
+type Ticket = { code: string; productName?: string; serialOrImei?: string; receivedAt?: string; status: string; currentStep: number };
 
 const SAMPLE_TICKETS: Ticket[] = [
   { code: "TN-2026-0908-00001", productName: "MacBook Air M2 2023", serialOrImei: "C02G789X01", receivedAt: "2026-09-08T02:00:00Z", status: "REPAIRING", currentStep: 3 },
   { code: "TN-2026-0907-00002", productName: "Máy lọc không khí Pro X", serialOrImei: "MLK-992011", receivedAt: "2026-09-07T02:00:00Z", status: "AWAITING_PARTS", currentStep: 2 },
   { code: "TN-2026-0905-00003", productName: "Smart Tivi OLED 55 inch", serialOrImei: "TV-55OLED-88", receivedAt: "2026-09-05T02:00:00Z", status: "COMPLETED", currentStep: 5 },
+  // Không hiện trong danh sách (chỉ 3 phiếu mới nhất) nhưng có trong số liệu, để ví dụ đủ cả 4 nhóm.
+  { code: "TN-2026-0820-00004", productName: "Tai nghe không dây", serialOrImei: "TWS-20260820", receivedAt: "2026-08-20T02:00:00Z", status: "DELIVERED", currentStep: 6 },
 ];
 
-const DONE = ["COMPLETED", "DELIVERED"];
-const WAITING = ["AWAITING_PARTS", "AWAITING_QUOTE_APPROVAL", "AWAITING_CUSTOMER_CONFIRMATION"];
+/* Nhóm và tên giống bộ lọc Lịch sử bảo hành (/account); trạng thái chưa biết tính vào "Đang xử lý" để tổng vẫn khớp. */
+const GROUP_KEYS = ["PROCESSING", "WAITING", "READY", "COMPLETED"] as const;
+const groupOf = (status: string) => GROUP_KEYS.find((key) => TICKET_GROUPS[key].includes(status)) || "PROCESSING";
+const FILTER_LABEL = Object.fromEntries(TICKET_FILTERS);
+const iconTone = (status: string) => ({ READY: "type-ok", COMPLETED: "type-ok", WAITING: "type-sr" })[groupOf(status) as string] || "type-qr";
 const percent = (part: number, total: number) => (total ? Math.round((part * 100) / total) : 0);
 
 const FEATURES = [
   {
     icon: "search", title: "Tra cứu tiến độ trực tuyến",
-    text: "Nhập mã phiếu và số điện thoại để xem thiết bị đang ở bước nào, ghi chú của kỹ thuật viên và ngày hẹn trả máy mà không cần giữ giấy tờ.",
+    text: "Nhập mã phiếu và số điện thoại để xem thiết bị đang ở bước nào, ghi chú của kỹ thuật viên và ngày hẹn trả máy.",
     checks: ["Tra cứu bằng mã phiếu TN- / YC-", "Không cần đăng nhập", "Xem ghi chú và chi phí sửa chữa"],
-    link: "Tra cứu ngay", href: "/portal",
+    link: "Tra cứu ngay", target: "lookup",
   },
   {
     icon: "file", title: "Lịch sử sửa chữa & linh kiện",
     text: "Xem chi tiết các lần sửa chữa, linh kiện được thay và báo giá từng hạng mục trên tài khoản khách hàng của bạn.",
-    checks: ["Minh bạch báo giá linh kiện", "Duyệt báo giá trực tuyến", "Lưu toàn bộ lịch sử theo SĐT"],
-    link: "Xem lịch sử bảo hành", href: "/account#lich-su",
+    checks: ["Báo giá ghi rõ từng linh kiện", "Duyệt báo giá trực tuyến", "Lưu toàn bộ lịch sử theo SĐT"],
+    link: "Xem lịch sử bảo hành", target: "history",
   },
   {
     icon: "pin", title: "Mạng lưới trạm dịch vụ",
     text: "Mang máy tới trạm dịch vụ gần nhất hoặc chọn trạm và khung giờ khi gửi yêu cầu bảo hành trực tuyến.",
     checks: ["Chọn trạm khi gửi yêu cầu", "Hẹn giờ mang máy tới", "Kỹ thuật viên tiếp nhận và chẩn đoán"],
-    link: "Xem trạm dịch vụ", href: "#tram-dich-vu",
+    link: "Xem trạm dịch vụ", target: "stations",
   },
 ];
 
 const EXTEND = [
   { icon: "wrench", title: "Gửi yêu cầu bảo hành online", text: "Mô tả lỗi, đính kèm ảnh tình trạng máy và hẹn giờ mang tới trạm trước khi đi.", tag: "Tiếp nhận nhanh hơn tại trạm" },
   { icon: "checkCircle", title: "Xác nhận báo giá trên web", text: "Phần sửa chữa ngoài bảo hành được báo giá rõ từng dòng; kỹ thuật viên chỉ sửa khi bạn đồng ý.", tag: "Minh bạch chi phí" },
-  { icon: "device", title: "Theo dõi hạn bảo hành thiết bị", text: "Danh sách thiết bị gắn với tài khoản kèm trạng thái còn hay hết hạn bảo hành theo hồ sơ trung tâm.", tag: "Không lo thất lạc hóa đơn" },
+  { icon: "device", title: "Theo dõi hạn bảo hành thiết bị", text: "Danh sách thiết bị gắn với tài khoản kèm trạng thái còn hay hết hạn bảo hành theo hồ sơ trung tâm.", tag: "Theo hồ sơ của trung tâm" },
 ];
 
 const STEPS = [
-  { icon: "user", title: "Đăng ký / Gửi yêu cầu", text: "Tạo tài khoản bằng số điện thoại hoặc gửi yêu cầu bảo hành trực tuyến không cần đăng nhập.", tag: "Thực hiện: 1 phút" },
-  { icon: "inbox", title: "Gửi thiết bị bảo hành", text: "Mang máy tới trạm dịch vụ; lễ tân kiểm tra máy và lập phiếu tiếp nhận mã TN-.", tag: "Tiếp nhận nhanh chóng" },
+  { icon: "user", title: "Đăng ký / Gửi yêu cầu", text: "Tạo tài khoản bằng số điện thoại hoặc gửi yêu cầu bảo hành trực tuyến không cần đăng nhập.", tag: "Chỉ cần số điện thoại" },
+  { icon: "inbox", title: "Gửi thiết bị bảo hành", text: "Mang máy tới trạm dịch vụ; lễ tân kiểm tra máy và lập phiếu tiếp nhận mã TN-.", tag: "Nhận mã phiếu để tra cứu" },
   { icon: "clock", title: "Theo dõi tiến độ online", text: "Theo dõi từng bước chẩn đoán, chờ linh kiện, sửa chữa và QC; xác nhận báo giá nếu có.", tag: "Cập nhật theo từng bước" },
-  { icon: "checkCircle", title: "Nhận lại máy & nghiệm thu", text: "Khi phiếu ở bước Sẵn sàng nhận máy, tới trạm kiểm tra thiết bị và nhận lại máy.", tag: "An tâm sử dụng" },
+  { icon: "checkCircle", title: "Nhận lại máy & nghiệm thu", text: "Khi phiếu ở bước Sẵn sàng nhận máy, tới trạm kiểm tra thiết bị và nhận lại máy.", tag: "Kiểm tra máy khi bàn giao" },
 ];
 
 const FAQ = [
@@ -73,13 +81,14 @@ const FAQ = [
   },
 ];
 
-/** Phiếu của khách đang đăng nhập (mới nhất trước); null khi chưa đăng nhập hoặc không đọc được. */
+/** Phiếu của khách đang đăng nhập, mới nhất trước: undefined = đang tải, null = không đọc được (phiên hết hạn…).
+    redirect: false — trang công khai không đẩy khách về /login khi phiên cũ hết hạn, chỉ quay về dạng khách vãng lai. */
 function useMyTickets(signedIn: boolean) {
-  const [tickets, setTickets] = useState<Ticket[] | null>(null);
+  const [tickets, setTickets] = useState<Ticket[] | null | undefined>(undefined);
   useEffect(() => {
     if (!signedIn) return;
-    api().get("/portal/my/tickets")
-      .then((rows: Ticket[]) => setTickets([...rows].sort((a, b) => String(b.receivedAt || "").localeCompare(String(a.receivedAt || "")))))
+    api().get("/portal/my/tickets", null, { redirect: false })
+      .then((rows: Ticket[]) => setTickets([...rows].sort(newest("receivedAt"))))
       .catch(() => setTickets(null));
   }, [signedIn]);
   return tickets;
@@ -95,101 +104,92 @@ export default function HomePage() {
   const mine = useMyTickets(Boolean(name));
   useEffect(() => {
     setReady(true);
-    api().portal.catalog()
+    portalCatalog()
       .then((value: Json) => setCatalog({ categories: value.categories || [], stations: value.stations || [] }))
       .catch(() => setCatalog({ categories: [], stations: [] }));
   }, []);
 
+  const loading = Boolean(name) && mine === undefined;
   const sample = !mine?.length;
-  const tickets = sample ? SAMPLE_TICKETS : mine;
-  const done = tickets.filter((t) => DONE.includes(t.status)).length;
-  const waiting = tickets.filter((t) => WAITING.includes(t.status)).length;
-  const processing = tickets.length - done - waiting;
+  const tickets = loading ? [] : sample ? SAMPLE_TICKETS : mine!;
+  const count = Object.fromEntries(GROUP_KEYS.map((key) => [key, tickets.filter((t) => groupOf(t.status) === key).length]));
+  const doneRate = percent(count.COMPLETED, tickets.length);
+  const sampleNote = !name ? "Đăng nhập để xem phiếu thật của bạn"
+    : mine === null ? "Không tải được phiếu của bạn — đây là ví dụ" : "Bạn chưa có phiếu nào — đây là ví dụ";
+  const status = loading ? "Đang tải phiếu của bạn…" : sample ? sampleNote : "Cập nhật theo từng bước xử lý";
   const historyHref = name ? "/account#lich-su" : "/login?next=" + encodeURIComponent("/account#lich-su");
   const signUp = name ? { href: "/account", label: "Vào trang của tôi" } : { href: "/register", label: "Đăng ký bảo hành ngay" };
   const request = name ? "/account#yeu-cau-moi" : "/portal#dang-ky";
+  const targets: Record<string, string> = {
+    lookup: "/portal", history: historyHref, stations: catalog.stations.length ? "#tram-dich-vu" : request,
+  };
+  const bars = GROUP_KEYS.map((key) => ({ key: key.toLowerCase(), label: FILTER_LABEL[key], count: count[key] }));
 
   return (
     <div className="kh-app kh-home">
-      <CustomerHeader active={name ? "" : "home"} />
+      <CustomerHeader name={name} active={name ? "" : "home"} />
       <main className="kh-main">
         {/* HERO */}
         <section className="hero-section">
           <div className="hero-bg-glow" />
           <div className="hero-grid-container">
             <div className="hero-left-content">
-              <div className="hero-badge-tag"><span aria-hidden="true">●</span> Thẻ bảo hành điện tử dành cho khách hàng</div>
+              <div className="hero-badge-tag"><Icon glyph="shield" />Thẻ bảo hành điện tử dành cho khách hàng</div>
               <h1 className="hero-headline">Tra cứu &amp; quản lý bảo hành sản phẩm</h1>
               <p className="hero-description">
-                Dễ dàng theo dõi thời hạn bảo hành, lịch sử sửa chữa, tiến độ thay thế linh kiện và nhận hỗ trợ kỹ thuật trực tiếp cho
-                các thiết bị cá nhân của bạn.
+                Theo dõi thời hạn bảo hành, lịch sử sửa chữa, tiến độ thay linh kiện và báo giá cho các thiết bị của bạn ở một nơi.
               </p>
               <div className="hero-actions">
                 <a href={signUp.href} className="btn-primary-teal"><Icon glyph="shield" />{signUp.label}</a>
                 <a href="/portal" className="btn-secondary-white"><Icon glyph="search" />Tra cứu tiến độ</a>
               </div>
-              <div className="hero-stats-row">
-                <div className="hero-stat-item"><h3>{STEP_LABELS.length} bước</h3><p>Tiến độ sửa chữa minh bạch</p></div>
-                {catalog.stations.length > 0 && <div className="hero-stat-item"><h3>{catalog.stations.length}</h3><p>Trạm dịch vụ</p></div>}
-                {catalog.categories.length > 0 && <div className="hero-stat-item"><h3>{catalog.categories.length}</h3><p>Nhóm thiết bị bảo hành</p></div>}
-              </div>
+              <dl className="hero-stats-row">
+                <div className="hero-stat-item"><dt>Tiến độ sửa chữa minh bạch</dt><dd>{STEP_LABELS.length} bước</dd></div>
+                {catalog.stations.length > 0 && <div className="hero-stat-item"><dt>Trạm dịch vụ</dt><dd>{catalog.stations.length}</dd></div>}
+                {catalog.categories.length > 0 && <div className="hero-stat-item"><dt>Nhóm thiết bị bảo hành</dt><dd>{catalog.categories.length}</dd></div>}
+              </dl>
             </div>
 
             <div className="hero-dashboard-card" id="tracking">
               <div className="card-top-bar">
-                <div className="dots-wrapper" aria-hidden="true"><span className="dot-red" /><span className="dot-yellow" /><span className="dot-green" /></div>
-                <div className="sla-pill-badge">{sample ? "Ví dụ minh họa" : "Phiếu của bạn"}</div>
+                <h2 className="dispatch-title">Tiến độ sửa chữa thiết bị của bạn</h2>
+                {!loading && <span className={"sla-pill-badge" + (sample ? " is-sample" : "")}>{sample ? "Ví dụ minh họa" : "Phiếu của bạn"}</span>}
               </div>
-              <div className="dash-stats-grid">
-                <div className="dash-stat-box">
-                  <div className="dash-stat-label">Tổng phiếu sửa chữa</div>
-                  <div className="dash-stat-val">{tickets.length}</div>
-                  <div className="dash-stat-sub">✓ Đã tiếp nhận</div>
-                </div>
-                <div className="dash-stat-box">
-                  <div className="dash-stat-label">Đang xử lý</div>
-                  <div className="dash-stat-val">{processing + waiting}</div>
-                  <div className="dash-stat-sub">↗ Theo dõi trực tiếp</div>
-                </div>
-                <div className="dash-stat-box">
-                  <div className="dash-stat-label">Đã hoàn thành</div>
-                  <div className="dash-stat-val">{done}</div>
-                  <div className="dash-stat-sub">✓ Sẵn sàng / đã giao</div>
-                </div>
-              </div>
+              <dl className="dash-stats-grid" aria-busy={loading || undefined}>
+                <div className="dash-stat-box"><dt className="dash-stat-label">Tổng phiếu</dt><dd className="dash-stat-val">{loading ? "–" : tickets.length}</dd></div>
+                <div className="dash-stat-box"><dt className="dash-stat-label">Chờ nhận máy</dt><dd className="dash-stat-val">{loading ? "–" : count.READY}</dd></div>
+                <div className="dash-stat-box"><dt className="dash-stat-label">Hoàn thành</dt><dd className="dash-stat-val">{loading ? "–" : count.COMPLETED}</dd></div>
+              </dl>
               <div className="dispatch-section-header">
-                <div>
-                  <h2 className="dispatch-title">Tiến độ sửa chữa thiết bị của bạn</h2>
-                  <div className="ticket-meta">{sample ? "Đăng nhập để xem phiếu thật của bạn" : "Cập nhật theo từng bước xử lý"}</div>
-                </div>
+                <p className="ticket-meta" role="status">{status}</p>
                 <a href={historyHref} className="dispatch-link">Xem tất cả thiết bị →</a>
               </div>
               <div className="dispatch-ticket-list">
-                {ready && tickets.slice(0, 3).map((ticket, index) => (
+                {loading && [0, 1].map((i) => <div key={i} className="kh-skeleton" style={{ height: 58 }} />)}
+                {ready && tickets.slice(0, 3).map((ticket) => (
                   <a key={ticket.code} href={sample ? "/portal" : `/account#phieu/${ticket.code}`} className="ticket-item-row">
                     <div className="ticket-info-left">
-                      <span className={"ticket-type-icon " + (DONE.includes(ticket.status) ? "type-ok" : index % 2 ? "type-sr" : "type-qr")}>
-                        <Icon glyph={DONE.includes(ticket.status) ? "checkCircle" : "wrench"} />
+                      <span className={"ticket-type-icon " + iconTone(ticket.status)}>
+                        <Icon glyph={iconTone(ticket.status) === "type-ok" ? "checkCircle" : "wrench"} />
                       </span>
                       <div style={{ minWidth: 0 }}>
                         <div className="ticket-title"><span className="mono">{ticket.code}</span> – {ticket.productName || "Thiết bị"}</div>
                         <div className="ticket-meta">
-                          {ticket.serialOrImei && <>SN: {ticket.serialOrImei} • </>}Tiếp nhận: {fmt().date(ticket.receivedAt)}
+                          {ticket.serialOrImei && <>SN: <span className="mono">{ticket.serialOrImei}</span> • </>}Tiếp nhận: {fmt().date(ticket.receivedAt)}
                         </div>
                       </div>
                     </div>
-                    <StatusBadge table="TICKET_STATUS" code={ticket.status} />
+                    <StatusBadge table="TICKET_STATUS_CUSTOMER" code={ticket.status} />
                   </a>
                 ))}
               </div>
               <a href="/portal" className="qr-scan-spark-card">
-                <div>
-                  <div className="qr-spark-title">Tra cứu nhanh không cần đăng nhập</div>
-                  <div className="qr-spark-val">Mã phiếu + số điện thoại</div>
-                </div>
-                <svg width="100" height="28" viewBox="0 0 100 28" fill="none" aria-hidden="true">
-                  <path d="M0 24C15 24 25 18 35 14C45 10 55 16 65 10C75 4 85 8 100 2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                </svg>
+                <span className="card-icon-circle"><Icon glyph="search" /></span>
+                <span>
+                  <span className="qr-spark-title">Tra cứu nhanh không cần đăng nhập</span>
+                  <span className="qr-spark-val">Mã phiếu + số điện thoại</span>
+                </span>
+                <span aria-hidden="true">→</span>
               </a>
             </div>
           </div>
@@ -197,8 +197,8 @@ export default function HomePage() {
 
         {/* NHÓM THIẾT BỊ (dải thương hiệu của bản cũ) */}
         {catalog.categories.length > 0 && (
-          <section className="brands-ribbon-section" aria-label="Nhóm thiết bị được bảo hành">
-            <div className="brands-header-text">Nhóm thiết bị được tiếp nhận bảo hành tại Soopi</div>
+          <section className="brands-ribbon-section" aria-labelledby="home-categories">
+            <h2 className="brands-header-text" id="home-categories">Nhóm thiết bị được tiếp nhận bảo hành tại Soopi</h2>
             <ul className="brands-flex-container">
               {catalog.categories.map((category) => <li key={category.code} className="brand-pill">{category.name}</li>)}
             </ul>
@@ -218,8 +218,7 @@ export default function HomePage() {
                   <div className="card-icon-circle"><Icon glyph="file" /></div>
                   <h3 className="feature-card-heading">Ghi nhận sự cố &amp; yêu cầu bảo hành online</h3>
                   <p className="feature-card-body">
-                    Ghi nhận đầy đủ lịch sử hỏng hóc theo số serial/IMEI của sản phẩm. Trạm đối chiếu thời hạn bảo hành và đề xuất phương án
-                    xử lý nhanh chóng, minh bạch.
+                    Ghi nhận lịch sử hỏng hóc theo số serial/IMEI của sản phẩm. Trạm đối chiếu thời hạn bảo hành và đề xuất phương án xử lý.
                   </p>
                   <div className="card-tags-flex"><span>✓ Tra cứu theo mã phiếu</span><span>✓ Nhật ký sửa chữa</span></div>
                 </div>
@@ -238,48 +237,45 @@ export default function HomePage() {
 
               <div className="dark-monitoring-panel">
                 <div className="dark-panel-header">
-                  <div className="dark-panel-tag">{sample ? "Ví dụ minh họa" : "Giám sát phiếu của bạn"}</div>
+                  <div className="dark-panel-tag">{loading ? "Đang tải" : sample ? "Ví dụ minh họa" : "Phiếu của bạn"}</div>
                   <h3 className="dark-panel-title">Tiến độ phục vụ thiết bị</h3>
                 </div>
                 <div className="sla-progress-box">
                   <div className="sla-progress-label">
-                    <span>Tỷ lệ phiếu đã hoàn thành</span>
-                    <span className="sla-progress-value">{percent(done, tickets.length)}%</span>
+                    <span id="home-done-rate">Tỷ lệ phiếu hoàn thành</span>
+                    <span className="sla-progress-value">{doneRate}%</span>
                   </div>
-                  <div className="progress-track" role="progressbar" aria-label="Tỷ lệ phiếu đã hoàn thành"
-                    aria-valuenow={percent(done, tickets.length)} aria-valuemin={0} aria-valuemax={100}>
-                    <div className="progress-fill" style={{ width: `${percent(done, tickets.length)}%` }} />
+                  <div className="progress-track" role="progressbar" aria-labelledby="home-done-rate"
+                    aria-valuenow={doneRate} aria-valuemin={0} aria-valuemax={100}>
+                    <div className="progress-fill" style={{ width: `${doneRate}%` }} />
                   </div>
                 </div>
                 <div className="dark-metrics-grid">
                   <div className="dark-metric-card">
-                    <div className="dark-metric-title">Đang sửa chữa</div>
-                    <div className="dark-metric-num">{processing}</div>
-                    <div className="dark-metric-sub">Tiếp nhận, chẩn đoán, sửa, QC</div>
+                    <div className="dark-metric-title">Đang xử lý</div>
+                    <div className="dark-metric-num">{count.PROCESSING}</div>
+                    <div className="dark-metric-sub">Tiếp nhận, kiểm tra, chẩn đoán, sửa</div>
                   </div>
                   <div className="dark-metric-card">
                     <div className="dark-metric-title">Chờ linh kiện / xác nhận</div>
-                    <div className="dark-metric-num">{waiting}</div>
-                    <div className="dark-metric-sub">Báo giá cần bạn duyệt</div>
+                    <div className="dark-metric-num">{count.WAITING}</div>
+                    <div className="dark-metric-sub">Linh kiện hoặc báo giá cần bạn duyệt</div>
                   </div>
                 </div>
                 <div className="repair-breakdown-box">
                   <div className="breakdown-title">Phân luồng tình trạng thiết bị</div>
                   <div className="multi-color-bar" aria-hidden="true">
-                    {done > 0 && <div className="bar-seg-delivered" style={{ width: `${percent(done, tickets.length)}%` }}>{percent(done, tickets.length)}%</div>}
-                    {processing > 0 && <div className="bar-seg-operating" style={{ width: `${percent(processing, tickets.length)}%` }}>{percent(processing, tickets.length)}%</div>}
-                    {waiting > 0 && <div className="bar-seg-received" style={{ width: `${percent(waiting, tickets.length)}%` }}>{percent(waiting, tickets.length)}%</div>}
+                    {bars.filter((bar) => bar.count > 0).map((bar) => (
+                      <div key={bar.key} className={`bar-seg-${bar.key}`} style={{ width: `${percent(bar.count, tickets.length)}%` }}>
+                        {percent(bar.count, tickets.length)}%
+                      </div>
+                    ))}
                   </div>
-                  <div className="breakdown-legend">
-                    <span><i className="legend-delivered" />Đã hoàn thành {done}</span>
-                    <span><i className="legend-operating" />Đang sửa chữa {processing}</span>
-                    <span><i className="legend-received" />Chờ linh kiện / xác nhận {waiting}</span>
-                  </div>
+                  <ul className="breakdown-legend">
+                    {bars.map((bar) => <li key={bar.key}><i className={`legend-${bar.key}`} />{bar.label}: {bar.count}</li>)}
+                  </ul>
                 </div>
-                <div className="dark-panel-footer">
-                  <span>{sample ? "Đăng nhập để xem số liệu phiếu của bạn" : "Cập nhật khi tải trang"}</span>
-                  <span className="dark-panel-online">● Trực tuyến</span>
-                </div>
+                <p className="dark-panel-footer">{loading || sample ? status : "Số liệu tính từ các phiếu của bạn"}</p>
               </div>
             </div>
           </div>
@@ -290,7 +286,7 @@ export default function HomePage() {
           <div className="section-container">
             <div className="center-header">
               <h2 className="section-title">Tiện ích bảo hành cho bạn</h2>
-              <p className="section-subtitle">Dễ dàng theo dõi tiến độ sửa chữa, bảo trì và tra cứu linh kiện chính hãng.</p>
+              <p className="section-subtitle">Theo dõi tiến độ sửa chữa, xem linh kiện đã thay và tìm trạm dịch vụ.</p>
             </div>
             <div className="three-cols-grid">
               {FEATURES.map((card) => (
@@ -301,7 +297,9 @@ export default function HomePage() {
                   <ul className="checklist-ul">
                     {card.checks.map((check) => <li key={check}><span className="check-mark" aria-hidden="true">✓</span>{check}</li>)}
                   </ul>
-                  <a href={card.href === "/account#lich-su" ? historyHref : card.href} className="card-action-link">{card.link} →</a>
+                  <a href={targets[card.target]} className="card-action-link">
+                    {card.target === "stations" && !catalog.stations.length ? "Gửi yêu cầu & chọn trạm" : card.link} →
+                  </a>
                 </article>
               ))}
             </div>
@@ -340,7 +338,7 @@ export default function HomePage() {
                 <li key={step.title} className="step-process-card">
                   <div>
                     <div className="step-top-head">
-                      <span className="step-num-big">{String(index + 1).padStart(2, "0")}</span>
+                      <span className="step-num-big" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
                       <div className="step-icon-bg"><Icon glyph={step.icon} /></div>
                     </div>
                     <h3 className="step-card-title">{step.title}</h3>
@@ -386,11 +384,13 @@ export default function HomePage() {
             <div className="faq-max-width">
               {FAQ.map((item, index) => (
                 <div key={item.q} className={"faq-item-card" + (openFaq === index ? " active" : "")}>
-                  <button type="button" className="faq-question-btn" aria-expanded={openFaq === index} aria-controls={`faq-${index}`}
-                    onClick={() => setOpenFaq(openFaq === index ? -1 : index)}>
-                    <span>{item.q}</span>
-                    <Icon glyph="chevron" />
-                  </button>
+                  <h3>
+                    <button type="button" className="faq-question-btn" aria-expanded={openFaq === index} aria-controls={`faq-${index}`}
+                      onClick={() => setOpenFaq(openFaq === index ? -1 : index)}>
+                      <span>{item.q}</span>
+                      <Icon glyph="chevron" />
+                    </button>
+                  </h3>
                   <div className="faq-answer-body" id={`faq-${index}`} hidden={openFaq !== index}>{item.a}</div>
                 </div>
               ))}
@@ -401,15 +401,15 @@ export default function HomePage() {
         {/* CTA */}
         <section className="cta-banner-section">
           <div className="cta-dark-card">
-            <div className="cta-tag-pill"><Icon glyph="shield" />An tâm sử dụng sản phẩm chính hãng</div>
+            <div className="cta-tag-pill"><Icon glyph="shield" />Bảo hành điện tử Soopi</div>
             <h2 className="cta-heading">Bảo vệ quyền lợi bảo hành sản phẩm của bạn</h2>
             <p className="cta-subtitle">
               {name
                 ? "Xem phiếu đang xử lý, báo giá chờ xác nhận và gửi yêu cầu mới ngay trong trang tài khoản."
-                : "Tạo tài khoản bảo hành điện tử ngay hôm nay để theo dõi tiến độ sửa chữa dễ dàng và không lo thất lạc hóa đơn giấy."}
+                : "Tạo tài khoản bằng số điện thoại để theo dõi tiến độ sửa chữa và báo giá của mọi thiết bị ở một nơi."}
             </p>
             <div className="cta-buttons-row">
-              <a href={signUp.href} className="btn-primary-teal cta-primary"><Icon glyph="shield" />{signUp.label}</a>
+              <a href={signUp.href} className="btn-secondary-white"><Icon glyph="shield" />{signUp.label}</a>
               <a href={request} className="btn-secondary-glass"><Icon glyph="wrench" />Gửi yêu cầu bảo hành</a>
             </div>
           </div>

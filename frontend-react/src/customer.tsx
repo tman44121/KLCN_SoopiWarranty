@@ -11,6 +11,35 @@ export const fmt = () => w.LML_FMT;
 /** Lỗi API → câu tiếng Việt của máy chủ (ApiError.detail đã gồm fieldErrors). */
 export const errorText = (error: Json) => error?.detail || 'Đã xảy ra lỗi. Vui lòng thử lại.';
 
+/** Nhóm trạng thái phiếu phía khách (bộ lọc Lịch sử bảo hành, số liệu trang chủ) theo luồng của trung tâm:
+    tiếp nhận → chẩn đoán → (chờ linh kiện / chờ khách xác nhận) → sửa → chờ khách nhận máy → hoàn thành.
+    Sửa xong (COMPLETED) và không sửa (AWAITING_RETURN) đều là máy chờ khách nhận; trả máy xong mới hoàn thành. */
+export const TICKET_GROUPS: Record<string, string[]> = {
+  PROCESSING: ['RECEIVED', 'INSPECTING', 'DIAGNOSED', 'REPAIRING'],
+  WAITING: ['AWAITING_PARTS', 'AWAITING_QUOTE_APPROVAL', 'AWAITING_CUSTOMER_CONFIRMATION'],
+  READY: ['COMPLETED', 'AWAITING_RETURN'],
+  COMPLETED: ['DELIVERED', 'RETURNED_UNREPAIRED'],
+};
+
+/** Bộ lọc Lịch sử bảo hành theo thứ tự hiển thị. */
+export const TICKET_FILTERS: [string, string][] = [
+  ['ALL', 'Tất cả'], ['PROCESSING', 'Đang xử lý'], ['WAITING', 'Chờ linh kiện / xác nhận'], ['READY', 'Chờ nhận máy'], ['COMPLETED', 'Hoàn thành'],
+];
+export const inGroup = (group: string, status: string) => group === 'ALL' || TICKET_GROUPS[group].includes(status);
+
+/** So sánh để xếp mới nhất trước theo một trường thời gian ISO. */
+export const newest = (key: string) => (a: Json, b: Json) => String(b[key] || '').localeCompare(String(a[key] || ''));
+
+let catalogRequest: Promise<Json> | null = null;
+/** Danh mục công khai (/portal/catalog), dùng chung một request cho trang và footer; lỗi thì lần sau gọi lại. */
+export function portalCatalog(): Promise<Json> {
+  catalogRequest ??= api().portal.catalog().catch((error: Json) => {
+    catalogRequest = null;
+    throw error;
+  });
+  return catalogRequest!;
+}
+
 /** Bước tiến độ trên cổng khách — trùng StepLabels của PortalTicketView. */
 export const STEP_LABELS = ['Tiếp nhận', 'Chẩn đoán', 'Chờ linh kiện', 'Đang sửa', 'QC', 'Sẵn sàng nhận máy'];
 
@@ -53,7 +82,7 @@ const TONE_CLASS: Record<string, string> = {
   danger: 'badge-danger',
 };
 
-/** Badge trạng thái theo bảng nhãn của labels.js (TICKET_STATUS, WARRANTY_REQUEST_STATUS, WARRANTY_STATUS). */
+/** Badge trạng thái theo bảng nhãn của labels.js (TICKET_STATUS_CUSTOMER, WARRANTY_REQUEST_STATUS, WARRANTY_STATUS). */
 const TONE_ICON: Record<string, string> = { success: 'checkCircle', warning: 'clock', danger: 'xCircle' };
 
 export function StatusBadge({ table, code }: { table: string; code: string | null | undefined }) {
@@ -142,7 +171,8 @@ function UserMenu({ name, active }: { name: string; active: string }) {
   }, [open]);
   return (
     <div className="user-profile-menu" ref={box}>
-      <button type="button" className="user-profile-trigger" aria-expanded={open} aria-haspopup="true" onClick={() => setOpen(!open)}>
+      <button type="button" className="user-profile-trigger" aria-label={`Tài khoản: ${name}`} aria-expanded={open} aria-haspopup="true"
+        onClick={() => setOpen(!open)}>
         <span className="user-avatar-circle" aria-hidden="true">{initial(name)}</span>
         <span className="user-name-text">{name}</span>
         <Icon glyph="chevron" />
@@ -209,7 +239,7 @@ export function CustomerFooter() {
   const name = useCustomerName();
   const [stations, setStations] = useState<Json[]>([]);
   useEffect(() => {
-    api().portal.catalog().then((catalog: Json) => setStations(catalog.stations || [])).catch(() => setStations([]));
+    portalCatalog().then((catalog: Json) => setStations(catalog.stations || [])).catch(() => setStations([]));
   }, []);
   return (
     <footer className="footer-main">

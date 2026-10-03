@@ -62,10 +62,22 @@ test('network errors and failed refresh report errors and preserve return locati
   assert.equal(location.redirect, '/login?next=%2Ftickets%3Fq%3DTN01%23notes');
   assert.equal(api.tokens.get(), null);
 });
+test('optional requests (redirect: false) fail without leaving a public page', async () => {
+  const api = setup(async () => json({}, 401));
+  api.tokens.set('test-stale');
+  await assert.rejects(api.get('/portal/my/tickets', null, { redirect: false }), error => error.status === 401);
+  assert.equal(location.redirect, undefined);
+  assert.equal(api.tokens.get(), null);
+  globalThis.fetch = async () => json({ code: 'AUTH_PASSWORD_CHANGE_REQUIRED', detail: 'Đổi mật khẩu' }, 403);
+  await assert.rejects(api.get('/portal/my/tickets', null, { redirect: false }), error => error.code === 'AUTH_PASSWORD_CHANGE_REQUIRED');
+  assert.equal(location.redirect, undefined);
+});
 test('legacy navigation keeps query/hash and rejects external redirects', () => {
   setup(async () => json({}));
   assert.equal(internalRoute('pages/warehouse.html?station=A#stockout'), '/warehouse?station=A#stockout');
   assert.equal(internalRoute('/index.html?ticket=TN01'), '/dispatch?ticket=TN01');
+  assert.equal(internalRoute('/'), '/');
+  assert.equal(internalRoute('/?x=1#hoi-dap'), '/?x=1#hoi-dap');
   for (const value of ['https://evil.example/portal', '//evil.example/login', 'javascript:alert(1)', '/unknown', '/\\evil.example/login']) assert.equal(internalRoute(value), null);
 });
 test('HTML rendering escapes data and keeps nested safe markup', () => {

@@ -18,6 +18,7 @@ const customer = {
   tickets: [
     { code: 'TN-2026-1002-00001', productName: 'Galaxy S24', serialOrImei: '356000000000001', receivedAt: '2026-10-01T02:00:00Z', status: 'AWAITING_CUSTOMER_CONFIRMATION', stopped: false, currentStep: 1 },
     { code: 'TN-2026-0920-00007', productName: 'MacBook Air M2', serialOrImei: 'C02G789X01', receivedAt: '2026-09-20T03:00:00Z', status: 'DELIVERED', stopped: false, currentStep: 6 },
+    { code: 'TN-2026-0915-00003', productName: 'Máy giặt LG', serialOrImei: 'LG-WM-0003', receivedAt: '2026-09-15T03:00:00Z', status: 'AWAITING_RETURN', stopped: true, currentStep: 1 },
   ],
   requests: [{ code: 'YC-2026-0001', status: 'PENDING_INTAKE', createdAt: '2026-10-01T01:00:00Z', brandModel: 'Samsung Inverter RT35K5982', serialOrImei: 'RT35-001', ticketCode: null }],
   devices: [{ code: 'TB0001', productName: 'Galaxy S24', brandName: 'Samsung', identifierType: 'IMEI', serialOrImei: '356000000000001', warrantyActivatedOn: '2025-10-01', warrantyExpiresOn: '2027-10-01', warrantyStatus: 'IN_WARRANTY' }],
@@ -224,6 +225,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await c.page.goto(base + '/');
     await c.page.locator('.sla-pill-badge', { hasText: 'Phiếu của bạn' }).waitFor(); assertions++;
     assert.equal(await c.page.locator('.hero-dashboard-card .ticket-item-row').count(), customer.tickets.length); assertions++;
+    // Mock: chờ khách xác nhận + đã bàn giao + chờ trả máy → [Tổng phiếu, Chờ nhận máy, Hoàn thành] = 3, 1, 1.
+    assert.deepEqual(await c.page.locator('.hero-dashboard-card .dash-stat-val').allInnerTexts(), ['3', '1', '1']); assertions++;
     await c.page.goto(base + '/account');
     await c.page.getByRole('heading', { name: 'Xin chào, Nguyễn Văn Khách' }).waitFor();
     await c.page.screenshot({ path: fileURLToPath(new URL(`account-${width}.png`, output)), fullPage: true });
@@ -231,6 +234,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await c.page.goto(base + '/account#lich-su');
     await c.page.getByRole('button', { name: /^Hoàn thành/ }).click();
     assert.equal(await c.page.locator('.ticket-card-box').count(), 1); assertions++;
+    // Lọc phía khách: Chờ trả máy (AWAITING_RETURN) nằm ở "Chờ nhận máy", không ở "Chờ linh kiện / xác nhận".
+    assert.deepEqual(await c.page.locator('.filter-pill').allInnerTexts(),
+      ['Tất cả (3)', 'Đang xử lý (0)', 'Chờ linh kiện / xác nhận (1)', 'Chờ nhận máy (1)', 'Hoàn thành (1)']); assertions++;
+    await c.page.getByRole('button', { name: /^Chờ nhận máy/ }).click();
+    assert.deepEqual(await c.page.locator('.ticket-card-box .badge').allInnerTexts(), ['Chờ nhận máy']); assertions++;
     await c.page.screenshot({ path: fileURLToPath(new URL(`history-${width}.png`, output)), fullPage: true });
     await c.page.goto(base + '/account#phieu/TN-2026-1002-00001');
     await c.page.getByRole('button', { name: 'Đồng ý báo giá' }).click();
