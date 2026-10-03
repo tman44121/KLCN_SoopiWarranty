@@ -676,7 +676,7 @@ export default function initialize() {
     let reason = null;
     if (decision === "DECLINE") {
       reason = await ui.promptReason({
-        title: "Khách từ chối báo giá?",
+        title: "Ghi nhận từ chối báo giá?",
         message: `Phiếu ${q.ticketCode} sẽ chuyển sang “Ngừng sửa theo yêu cầu khách” và chờ trả máy.`,
         label: "Lý do khách từ chối",
         confirmLabel: "Ghi nhận khách từ chối",

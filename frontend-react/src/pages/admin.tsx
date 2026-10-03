@@ -5,7 +5,7 @@ import controller from "../behaviors/admin.js";
 import { BrandLogo } from "../customer";
 
 export default function AdminPage() {
-  usePage("admin", {"data-roles": "ADMIN"}, "Soopi — Quản trị viên", controller);
+  usePage("admin", {"data-roles": "ADMIN"}, "Soopi — Quản trị hệ thống", controller);
   return (<>
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">

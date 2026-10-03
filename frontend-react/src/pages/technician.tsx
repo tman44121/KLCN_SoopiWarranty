@@ -5,7 +5,7 @@ import controller from "../behaviors/technician.js";
 import { BrandLogo } from "../customer";
 
 export default function TechnicianPage() {
-  usePage("technician", {"data-roles": "TECHNICIAN"}, "Soopi — Kỹ thuật viên", controller);
+  usePage("technician", {"data-roles": "TECHNICIAN"}, "Soopi — Kỹ thuật", controller);
   return (<>
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">
@@ -235,7 +235,7 @@ export default function TechnicianPage() {
             <div className="card__header">
               <div>
                 <h2 className="card__title" id="queue-title">
-                  {"Hàng đợi của tôi"}
+                  {"Phiếu được phân công"}
                 </h2>
                 <div className="card__title-meta">
                   {"Sắp theo nguy cơ SLA → hạn xử lý"}
@@ -248,7 +248,7 @@ export default function TechnicianPage() {
           <div className="stack stack--loose" data-detail-column="">
             <div className="card">
               <div className="card__body empty-selection-hint">
-                {"\n            Chọn một phiếu trong “Hàng đợi của tôi” để xem chi tiết, chẩn đoán và kiểm tra QC.\n          "}
+                {"\n            Chọn một phiếu trong “Phiếu được phân công” để xem chi tiết, chẩn đoán và kiểm tra QC.\n          "}
               </div>
             </div>
           </div>

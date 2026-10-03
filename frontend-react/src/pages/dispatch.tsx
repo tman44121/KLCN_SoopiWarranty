@@ -5,7 +5,7 @@ import controller from "../behaviors/dispatch.js";
 import { BrandLogo } from "../customer";
 
 export default function DispatchPage() {
-  usePage("dispatch", {"data-roles": "DISPATCHER"}, "Soopi — Điều phối viên", controller);
+  usePage("dispatch", {"data-roles": "DISPATCHER"}, "Soopi — Điều phối", controller);
   return (<>
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Điều hướng chính">

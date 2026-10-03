@@ -139,7 +139,7 @@ export default function ForgotPasswordPage() {
           </ol>
         </div>
         <div className="banner-footer">
-          <h2 className="banner-heading">Quên mật khẩu?<br />Lấy lại chỉ trong vài phút</h2>
+          <h2 className="banner-heading">Lấy lại mật khẩu<br />bằng số điện thoại</h2>
           <p className="banner-subheading">Phiếu sửa chữa, báo giá và lịch sử bảo hành của bạn vẫn được giữ nguyên.</p>
         </div>
       </aside>

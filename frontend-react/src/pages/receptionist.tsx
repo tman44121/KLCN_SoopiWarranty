@@ -476,13 +476,13 @@ export default function ReceptionistPage() {
           <section className="card">
             <div className="card__header">
               <h2 className="card__title">
-                {"Mô tả lỗi khách hàng"}
+                {"Lỗi khách báo"}
               </h2>
             </div>
             <div className="card__body">
               <div className="form-field" data-field="reportedIssue">
                 <label htmlFor="symptom" className="visually-hidden">
-                  {"Mô tả lỗi khách hàng"}
+                  {"Lỗi khách báo"}
                 </label>
                 <textarea id="symptom" name="reportedIssue" placeholder="Khách hàng mô tả tình trạng/lỗi gặp phải…">
                 </textarea>

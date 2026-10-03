@@ -30,7 +30,7 @@ export default function LoginPage() {
           </ol>
         </figure>
         <div className="banner-footer">
-          <h2 className="banner-heading">Quản lý bảo hành thiết bị<br />dễ dàng hơn bao giờ hết</h2>
+          <h2 className="banner-heading">Quản lý bảo hành thiết bị<br />trực tuyến</h2>
           <p className="banner-subheading">Theo dõi tiến độ sửa chữa, xác nhận báo giá và gửi yêu cầu bảo hành ngay trên tài khoản của bạn.</p>
         </div>
       </aside>

@@ -39,7 +39,7 @@ export default function PortalPage() {
 
           <div className="lookup-cta">
             <div>
-              <h2 className="card-heading-title">Thiết bị cần sửa chữa?</h2>
+              <h2 className="card-heading-title">Gửi yêu cầu trước khi mang máy tới</h2>
               <p className="card-heading-desc">Gửi yêu cầu trước khi mang máy tới trạm. Có tài khoản? <a className="dispatch-link" href="/login">Đăng nhập</a> để theo dõi mọi phiếu của bạn.</p>
             </div>
             <button type="button" className="btn-secondary-white" data-open-register="">

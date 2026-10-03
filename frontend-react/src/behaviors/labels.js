@@ -79,7 +79,7 @@ export default function initialize() {
   const QUOTE_APPROVAL = {
     PENDING: { label: "Chờ phê duyệt", tone: "warning" },
     APPROVED: { label: "Đã phê duyệt", tone: "success" },
-    REJECTED: { label: "Bị từ chối", tone: "danger" },
+    REJECTED: { label: "Đã từ chối", tone: "danger" },
   };
 
   const QUOTE_DECISION = {

@@ -248,8 +248,8 @@ export default function initialize() {
   window.LML_AUTH.ready(() => {
     if (ownOnly()) {
       el.tbody.closest("table").classList.add("is-own-only");
-      document.title = "Soopi — Lịch sử phiếu của tôi";
-      document.querySelector(".page-title").textContent = "Lịch sử phiếu của tôi";
+      document.title = "Soopi — Lịch sử phiếu được phân công";
+      document.querySelector(".page-title").textContent = "Lịch sử phiếu được phân công";
       document.querySelector(".page-subtitle").textContent = "Mọi phiếu được phân công cho bạn, kể cả đã hoàn tất, đã bàn giao hoặc đã hủy";
     }
     const params = new URLSearchParams(location.search);

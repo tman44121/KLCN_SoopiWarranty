@@ -685,7 +685,7 @@ function NewRequest({ data, serial, onSubmitted }: { data: Data; serial: string;
           </div>
           <div className="benefit-item-row">
             <span className="benefit-icon-box"><Icon glyph="shield" /></span>
-            <div className="benefit-text"><h5>Báo giá minh bạch</h5><p>Phần sửa chữa tính phí chỉ thực hiện sau khi bạn xác nhận báo giá.</p></div>
+            <div className="benefit-text"><h5>Xác nhận báo giá trước khi sửa</h5><p>Phần sửa chữa tính phí chỉ thực hiện sau khi bạn xác nhận báo giá.</p></div>
           </div>
           {catalog?.stations.length > 0 && (
             <div className="support-box-white">
