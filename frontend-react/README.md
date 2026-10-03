@@ -100,8 +100,8 @@ smoke và axe-core có sẵn trong repo Java, không ghi DB hoặc cài dependen
 
 ## Giao diện khách hàng (KLCN) — 2026-10-02
 
-`/login`, `/register`, `/account`, `/portal` dùng giao diện web khách KLCN (`src/styles/customer.css`, phần dùng chung
-`src/customer.tsx`). `/login` và `/portal` vẫn do `login.js`/`customer-portal.js` điều khiển (giữ id/name); `/register`
+`/` (trang giới thiệu), `/login`, `/register`, `/account`, `/portal` dùng giao diện web khách KLCN (`src/styles/customer.css`, phần dùng chung
+`src/customer.tsx`). `/login` và `/portal` vẫn do `login.js`/`customer-portal.js` điều khiển (giữ id/name); `/`, `/register`
 và `/account` dựng bằng React state, không có controller trong `src/behaviors`. Mục con của `/account` theo hash:
 `#lich-su`, `#phieu/<mã>`, `#yeu-cau-moi[/<serial>]`, `#ho-so`, `#doi-mat-khau`. `node scripts/smoke.mjs` kiểm cả luồng khách.
 

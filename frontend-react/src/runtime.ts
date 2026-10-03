@@ -20,13 +20,13 @@ export async function initializePage(name: string) {
   const startShell = shell();
   ui(window);
   charts(window);
-  const startAuth = !['login', 'portal', 'register'].includes(name) ? auth() : null;
+  const startAuth = !['home', 'login', 'portal', 'register'].includes(name) ? auth() : null;
   // ponytail: one document per page preserves existing DOM handlers; move handlers
   // into React state only if navigation must retain a mounted shell.
   // Bind handlers synchronously before paint: a late import allowed native GET
   // submission of the login form while its submit handler was still loading.
   const module = pages[`./behaviors/${name === 'portal' ? 'customer-portal' : name}.js`];
-  // Trang khách (account, register) dựng bằng React state, không có controller DOM.
+  // Trang khách (home, account, register) dựng bằng React state, không có controller DOM.
   const startPage = module?.default();
   startShell();
   if (typeof startPage === 'function') startPage();

@@ -25,7 +25,7 @@ chưa nghiệm thu toàn bộ API có token và luồng ghi/đồng thời. Xem 
    npm.cmd run dev
    ```
 
-4. Mở `http://localhost:5173/login` hoặc portal `http://localhost:5173/portal`.
+4. Mở trang giới thiệu `http://localhost:5173/`, đăng nhập `http://localhost:5173/login` hoặc portal `http://localhost:5173/portal`.
    Kiểm kết nối bằng `GET http://localhost:8080/actuator/health`.
 
 Đăng nhập, refresh/logout và các form thật có thể ghi DB. Tham số trên chỉ tắt job SLA;

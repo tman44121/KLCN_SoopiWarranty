@@ -69,7 +69,7 @@ export function StatusBadge({ table, code }: { table: string; code: string | nul
 
 export const initial = (name?: string | null) => (name || '?').trim().charAt(0).toUpperCase() || '?';
 
-/** Khách đã đăng nhập đi vào /account; khách vãng lai dùng tra cứu và form yêu cầu công khai trên /portal,
+/** Khách đã đăng nhập đi vào /account; khách vãng lai bắt đầu ở trang giới thiệu /, dùng tra cứu và form yêu cầu công khai trên /portal,
     lịch sử cần đăng nhập nên dẫn qua /login rồi quay lại đúng mục. */
 const NAV_SIGNED_IN = [
   { key: 'home', href: '/account', label: 'Trang chủ' },
@@ -78,6 +78,7 @@ const NAV_SIGNED_IN = [
   { key: 'lookup', href: '/portal', label: 'Tra cứu tiến độ' },
 ];
 const NAV_GUEST = [
+  { key: 'home', href: '/', label: 'Trang chủ' },
   { key: 'lookup', href: '/portal', label: 'Tra cứu tiến độ' },
   { key: 'request', href: '/portal#dang-ky', label: 'Gửi yêu cầu bảo hành' },
   { key: 'history', href: '/login?next=' + encodeURIComponent('/account#lich-su'), label: 'Lịch sử bảo hành' },
@@ -176,7 +177,7 @@ export function CustomerHeader({ name: pageName, active }: { name?: string | nul
   return (
     <header className="navbar-header">
       <nav className="nav-container" aria-label="Điều hướng khách hàng">
-        <Brand href={name ? '/account' : '/portal'} />
+        <Brand href={name ? '/account' : '/'} />
         <ul className="nav-menu">
           {nav.map((item) => (
             <li key={item.key}>
