@@ -224,6 +224,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await c.page.goto(base + '/');
     await c.page.locator('.sla-pill-badge', { hasText: 'Phiếu của bạn' }).waitFor(); assertions++;
     assert.equal(await c.page.locator('.hero-dashboard-card .ticket-item-row').count(), customer.tickets.length); assertions++;
+    // Mock: 1 phiếu chờ khách xác nhận + 1 đã bàn giao → Tổng 2, Đang xử lý 1, Đã xong 1.
+    assert.deepEqual(await c.page.locator('.hero-dashboard-card .dash-stat-val').allInnerTexts(), ['2', '1', '1']); assertions++;
     await c.page.goto(base + '/account');
     await c.page.getByRole('heading', { name: 'Xin chào, Nguyễn Văn Khách' }).waitFor();
     await c.page.screenshot({ path: fileURLToPath(new URL(`account-${width}.png`, output)), fullPage: true });

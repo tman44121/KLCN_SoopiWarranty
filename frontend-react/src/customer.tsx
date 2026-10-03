@@ -142,7 +142,8 @@ function UserMenu({ name, active }: { name: string; active: string }) {
   }, [open]);
   return (
     <div className="user-profile-menu" ref={box}>
-      <button type="button" className="user-profile-trigger" aria-expanded={open} aria-haspopup="true" onClick={() => setOpen(!open)}>
+      <button type="button" className="user-profile-trigger" aria-label={`Tài khoản: ${name}`} aria-expanded={open} aria-haspopup="true"
+        onClick={() => setOpen(!open)}>
         <span className="user-avatar-circle" aria-hidden="true">{initial(name)}</span>
         <span className="user-name-text">{name}</span>
         <Icon glyph="chevron" />
