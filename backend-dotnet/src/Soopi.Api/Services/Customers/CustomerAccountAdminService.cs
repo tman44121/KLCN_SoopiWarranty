@@ -211,7 +211,7 @@ public sealed class CustomerAccountAdminService(
     private static string Describe(Account account, DateTimeOffset now) => AccountStatusOf(account, now) switch
     {
         "LOCKED" => "Đã khóa",
-        "TEMP_LOCKED" => "Tạm khóa do sai mật khẩu",
+        "TEMP_LOCKED" => "Tạm khóa do đăng nhập sai nhiều lần",
         _ => "Đang hoạt động",
     };
 
