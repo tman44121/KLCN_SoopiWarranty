@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { usePage } from "../usePage";
 import {
-  CustomerFooter, CustomerHeader, Icon, PasswordInput, STEP_LABELS, StatusBadge, api, errorText, fmt, initial, useBusy,
+  CustomerFooter, CustomerHeader, Icon, PasswordInput, STEP_LABELS, StatusBadge, api, errorText, fmt, inGroup, initial, newest,
+  useBusy,
 } from "../customer";
 
 /* Khu tài khoản khách hàng Soopi (port các trang khách của web KLCN: trang chủ, lịch sử, chi tiết phiếu, đăng ký bảo hành,
@@ -27,16 +28,6 @@ function parseHash(hash: string): Route {
 const ACTIVE_NAV: Record<Route["view"], string> = {
   home: "home", history: "history", ticket: "history", request: "request", profile: "profile", password: "password",
 };
-
-/** Nhóm lọc như trang Lịch sử bảo hành của bản cũ. */
-const GROUPS: Record<string, string[]> = {
-  PROCESSING: ["RECEIVED", "INSPECTING", "DIAGNOSED", "REPAIRING"],
-  WAITING: ["AWAITING_PARTS", "AWAITING_QUOTE_APPROVAL", "AWAITING_CUSTOMER_CONFIRMATION"],
-  COMPLETED: ["COMPLETED", "DELIVERED"],
-};
-const inGroup = (group: string, status: string) => group === "ALL" || GROUPS[group].includes(status);
-
-const newest = (key: string) => (a: Json, b: Json) => String(b[key] || "").localeCompare(String(a[key] || ""));
 
 type Data = { profile: Json; tickets: Json[]; requests: Json[]; devices: Json[] };
 

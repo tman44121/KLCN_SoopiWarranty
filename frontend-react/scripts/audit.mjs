@@ -9,10 +9,11 @@ const base = process.env.E2E_BASE_URL || 'http://localhost:5173';
 const output = new URL('../test-results/', import.meta.url);
 const result = [];
 try {
-  for (const [name, role] of Object.entries({ login: null, portal: null, dispatch: 'DISPATCHER', receptionist: 'RECEPTIONIST', technician: 'TECHNICIAN', warehouse: 'WAREHOUSE_KEEPER', cashier: 'CASHIER', tickets: 'RECEPTIONIST', reports: 'DISPATCHER', admin: 'ADMIN' })) {
-    const s = await session(role || 'CUSTOMER', '/' + name);
-    if (role) { await login(s.page); await s.page.waitForURL(base + '/' + name); }
-    else await s.page.goto(base + '/' + name);
+  for (const [name, role] of Object.entries({ home: null, login: null, portal: null, dispatch: 'DISPATCHER', receptionist: 'RECEPTIONIST', technician: 'TECHNICIAN', warehouse: 'WAREHOUSE_KEEPER', cashier: 'CASHIER', tickets: 'RECEPTIONIST', reports: 'DISPATCHER', admin: 'ADMIN' })) {
+    const path = name === 'home' ? '/' : '/' + name;
+    const s = await session(role || 'CUSTOMER', path);
+    if (role) { await login(s.page); await s.page.waitForURL(base + path); }
+    else await s.page.goto(base + path);
     await s.page.waitForLoadState('networkidle');
     await s.page.addScriptTag({ content: axe });
     const accessibility = await s.page.evaluate(async () => {
@@ -28,7 +29,7 @@ try {
         smallTargets: Array.from(document.querySelectorAll('button,a,input,select')).filter(n => !n.hidden && n.getBoundingClientRect().width > 0)
           .map(n => ({ id: n.id, label: n.getAttribute('aria-label') || n.innerText || n.getAttribute('type'), width: n.getBoundingClientRect().width, height: n.getBoundingClientRect().height }))
           .filter(n => n.width < 24 || n.height < 24).slice(0, 12) })));
-      if (['login', 'portal', 'warehouse', 'receptionist'].includes(name)) await s.page.screenshot({ path: fileURLToPath(new URL(`audit-${name}-${width}.png`, output)), fullPage: false });
+      if (['home', 'login', 'portal', 'warehouse', 'receptionist'].includes(name)) await s.page.screenshot({ path: fileURLToPath(new URL(`audit-${name}-${width}.png`, output)), fullPage: false });
     }
     if (name === 'login') {
       await s.page.keyboard.press('Tab');

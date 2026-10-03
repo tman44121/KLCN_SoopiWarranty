@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { usePage } from "../usePage";
-import { CustomerFooter, CustomerHeader, Icon, STEP_LABELS, StatusBadge, api, fmt, useCustomerName } from "../customer";
+import {
+  CustomerFooter, CustomerHeader, Icon, STEP_LABELS, StatusBadge, TICKET_GROUPS, api, fmt, newest, portalCatalog, useCustomerName,
+} from "../customer";
 
 /* Trang chủ / giới thiệu của Soopi — port bố cục home/index.html + home.css của web khách KLCN theo DESIGN.md
    (class giữ tên cũ, CSS bọc trong .kh-home). Số liệu cố định của bản cũ (lượt khách, SLA, CSAT, hotline, thương hiệu)
@@ -16,9 +18,10 @@ const SAMPLE_TICKETS: Ticket[] = [
   { code: "TN-2026-0905-00003", productName: "Smart Tivi OLED 55 inch", serialOrImei: "TV-55OLED-88", receivedAt: "2026-09-05T02:00:00Z", status: "COMPLETED", currentStep: 5 },
 ];
 
-/* Nhóm theo TICKET_STATUS (labels.js). Trạng thái chưa biết tính vào "đang sửa" để tổng vẫn khớp. */
-const DONE = ["COMPLETED", "DELIVERED", "RETURNED_UNREPAIRED"];
-const WAITING = ["AWAITING_PARTS", "AWAITING_QUOTE_APPROVAL", "AWAITING_CUSTOMER_CONFIRMATION", "AWAITING_RETURN"];
+/* Nhóm dùng chung với Lịch sử bảo hành; trạng thái chưa biết tính vào "đang sửa" để tổng vẫn khớp. */
+const DONE = TICKET_GROUPS.COMPLETED;
+const WAITING = TICKET_GROUPS.WAITING;
+const iconTone = (status: string) => (DONE.includes(status) ? "type-ok" : WAITING.includes(status) ? "type-sr" : "type-qr");
 const percent = (part: number, total: number) => (total ? Math.round((part * 100) / total) : 0);
 
 const FEATURES = [
@@ -26,19 +29,19 @@ const FEATURES = [
     icon: "search", title: "Tra cứu tiến độ trực tuyến",
     text: "Nhập mã phiếu và số điện thoại để xem thiết bị đang ở bước nào, ghi chú của kỹ thuật viên và ngày hẹn trả máy.",
     checks: ["Tra cứu bằng mã phiếu TN- / YC-", "Không cần đăng nhập", "Xem ghi chú và chi phí sửa chữa"],
-    link: "Tra cứu ngay", href: "/portal",
+    link: "Tra cứu ngay", target: "lookup",
   },
   {
     icon: "file", title: "Lịch sử sửa chữa & linh kiện",
     text: "Xem chi tiết các lần sửa chữa, linh kiện được thay và báo giá từng hạng mục trên tài khoản khách hàng của bạn.",
     checks: ["Báo giá ghi rõ từng linh kiện", "Duyệt báo giá trực tuyến", "Lưu toàn bộ lịch sử theo SĐT"],
-    link: "Xem lịch sử bảo hành", href: "/account#lich-su",
+    link: "Xem lịch sử bảo hành", target: "history",
   },
   {
     icon: "pin", title: "Mạng lưới trạm dịch vụ",
     text: "Mang máy tới trạm dịch vụ gần nhất hoặc chọn trạm và khung giờ khi gửi yêu cầu bảo hành trực tuyến.",
     checks: ["Chọn trạm khi gửi yêu cầu", "Hẹn giờ mang máy tới", "Kỹ thuật viên tiếp nhận và chẩn đoán"],
-    link: "Xem trạm dịch vụ", href: "#tram-dich-vu",
+    link: "Xem trạm dịch vụ", target: "stations",
   },
 ];
 
@@ -74,13 +77,14 @@ const FAQ = [
   },
 ];
 
-/** Phiếu của khách đang đăng nhập (mới nhất trước); null khi chưa đăng nhập hoặc không đọc được. */
+/** Phiếu của khách đang đăng nhập, mới nhất trước: undefined = đang tải, null = không đọc được (phiên hết hạn…).
+    redirect: false — trang công khai không đẩy khách về /login khi phiên cũ hết hạn, chỉ quay về dạng khách vãng lai. */
 function useMyTickets(signedIn: boolean) {
-  const [tickets, setTickets] = useState<Ticket[] | null>(null);
+  const [tickets, setTickets] = useState<Ticket[] | null | undefined>(undefined);
   useEffect(() => {
     if (!signedIn) return;
-    api().get("/portal/my/tickets")
-      .then((rows: Ticket[]) => setTickets([...rows].sort((a, b) => String(b.receivedAt || "").localeCompare(String(a.receivedAt || "")))))
+    api().get("/portal/my/tickets", null, { redirect: false })
+      .then((rows: Ticket[]) => setTickets([...rows].sort(newest("receivedAt"))))
       .catch(() => setTickets(null));
   }, [signedIn]);
   return tickets;
@@ -96,20 +100,26 @@ export default function HomePage() {
   const mine = useMyTickets(Boolean(name));
   useEffect(() => {
     setReady(true);
-    api().portal.catalog()
+    portalCatalog()
       .then((value: Json) => setCatalog({ categories: value.categories || [], stations: value.stations || [] }))
       .catch(() => setCatalog({ categories: [], stations: [] }));
   }, []);
 
+  const loading = Boolean(name) && mine === undefined;
   const sample = !mine?.length;
-  const tickets = sample ? SAMPLE_TICKETS : mine;
+  const tickets = loading ? [] : sample ? SAMPLE_TICKETS : mine!;
   const done = tickets.filter((t) => DONE.includes(t.status)).length;
   const waiting = tickets.filter((t) => WAITING.includes(t.status)).length;
   const processing = tickets.length - done - waiting;
-  const sampleNote = name ? "Bạn chưa có phiếu nào — đây là ví dụ" : "Đăng nhập để xem phiếu thật của bạn";
+  const sampleNote = !name ? "Đăng nhập để xem phiếu thật của bạn"
+    : mine === null ? "Không tải được phiếu của bạn — đây là ví dụ" : "Bạn chưa có phiếu nào — đây là ví dụ";
+  const status = loading ? "Đang tải phiếu của bạn…" : sample ? sampleNote : "Cập nhật theo từng bước xử lý";
   const historyHref = name ? "/account#lich-su" : "/login?next=" + encodeURIComponent("/account#lich-su");
   const signUp = name ? { href: "/account", label: "Vào trang của tôi" } : { href: "/register", label: "Đăng ký bảo hành ngay" };
   const request = name ? "/account#yeu-cau-moi" : "/portal#dang-ky";
+  const targets: Record<string, string> = {
+    lookup: "/portal", history: historyHref, stations: catalog.stations.length ? "#tram-dich-vu" : request,
+  };
   const bars = [
     { key: "delivered", label: "Đã xong", count: done },
     { key: "operating", label: "Đang sửa chữa", count: processing },
@@ -118,7 +128,7 @@ export default function HomePage() {
 
   return (
     <div className="kh-app kh-home">
-      <CustomerHeader active={name ? "" : "home"} />
+      <CustomerHeader name={name} active={name ? "" : "home"} />
       <main className="kh-main">
         {/* HERO */}
         <section className="hero-section">
@@ -144,22 +154,23 @@ export default function HomePage() {
             <div className="hero-dashboard-card" id="tracking">
               <div className="card-top-bar">
                 <h2 className="dispatch-title">Tiến độ sửa chữa thiết bị của bạn</h2>
-                <span className={"sla-pill-badge" + (sample ? " is-sample" : "")}>{sample ? "Ví dụ minh họa" : "Phiếu của bạn"}</span>
+                {!loading && <span className={"sla-pill-badge" + (sample ? " is-sample" : "")}>{sample ? "Ví dụ minh họa" : "Phiếu của bạn"}</span>}
               </div>
-              <dl className="dash-stats-grid">
-                <div className="dash-stat-box"><dt className="dash-stat-label">Tổng phiếu</dt><dd className="dash-stat-val">{tickets.length}</dd></div>
-                <div className="dash-stat-box"><dt className="dash-stat-label">Đang xử lý</dt><dd className="dash-stat-val">{processing + waiting}</dd></div>
-                <div className="dash-stat-box"><dt className="dash-stat-label">Đã xong</dt><dd className="dash-stat-val">{done}</dd></div>
+              <dl className="dash-stats-grid" aria-busy={loading || undefined}>
+                <div className="dash-stat-box"><dt className="dash-stat-label">Tổng phiếu</dt><dd className="dash-stat-val">{loading ? "–" : tickets.length}</dd></div>
+                <div className="dash-stat-box"><dt className="dash-stat-label">Đang xử lý</dt><dd className="dash-stat-val">{loading ? "–" : processing + waiting}</dd></div>
+                <div className="dash-stat-box"><dt className="dash-stat-label">Đã xong</dt><dd className="dash-stat-val">{loading ? "–" : done}</dd></div>
               </dl>
               <div className="dispatch-section-header">
-                <p className="ticket-meta">{sample ? sampleNote : "Cập nhật theo từng bước xử lý"}</p>
+                <p className="ticket-meta" role="status">{status}</p>
                 <a href={historyHref} className="dispatch-link">Xem tất cả thiết bị →</a>
               </div>
               <div className="dispatch-ticket-list">
-                {ready && tickets.slice(0, 3).map((ticket, index) => (
+                {loading && [0, 1].map((i) => <div key={i} className="kh-skeleton" style={{ height: 58 }} />)}
+                {ready && tickets.slice(0, 3).map((ticket) => (
                   <a key={ticket.code} href={sample ? "/portal" : `/account#phieu/${ticket.code}`} className="ticket-item-row">
                     <div className="ticket-info-left">
-                      <span className={"ticket-type-icon " + (DONE.includes(ticket.status) ? "type-ok" : index % 2 ? "type-sr" : "type-qr")}>
+                      <span className={"ticket-type-icon " + iconTone(ticket.status)}>
                         <Icon glyph={DONE.includes(ticket.status) ? "checkCircle" : "wrench"} />
                       </span>
                       <div style={{ minWidth: 0 }}>
@@ -227,7 +238,7 @@ export default function HomePage() {
 
               <div className="dark-monitoring-panel">
                 <div className="dark-panel-header">
-                  <div className="dark-panel-tag">{sample ? "Ví dụ minh họa" : "Phiếu của bạn"}</div>
+                  <div className="dark-panel-tag">{loading ? "Đang tải" : sample ? "Ví dụ minh họa" : "Phiếu của bạn"}</div>
                   <h3 className="dark-panel-title">Tiến độ phục vụ thiết bị</h3>
                 </div>
                 <div className="sla-progress-box">
@@ -265,7 +276,7 @@ export default function HomePage() {
                     {bars.map((bar) => <li key={bar.key}><i className={`legend-${bar.key}`} />{bar.label}: {bar.count}</li>)}
                   </ul>
                 </div>
-                <p className="dark-panel-footer">{sample ? sampleNote : "Số liệu tính từ các phiếu của bạn"}</p>
+                <p className="dark-panel-footer">{loading || sample ? status : "Số liệu tính từ các phiếu của bạn"}</p>
               </div>
             </div>
           </div>
@@ -287,7 +298,9 @@ export default function HomePage() {
                   <ul className="checklist-ul">
                     {card.checks.map((check) => <li key={check}><span className="check-mark" aria-hidden="true">✓</span>{check}</li>)}
                   </ul>
-                  <a href={card.href === "/account#lich-su" ? historyHref : card.href} className="card-action-link">{card.link} →</a>
+                  <a href={targets[card.target]} className="card-action-link">
+                    {card.target === "stations" && !catalog.stations.length ? "Gửi yêu cầu & chọn trạm" : card.link} →
+                  </a>
                 </article>
               ))}
             </div>

@@ -172,8 +172,9 @@ export default function initialize(global = window) {
   }
 
   /**
-   * request(method, path, {body, query, formData, ifMatch, auth})
+   * request(method, path, {body, query, formData, ifMatch, auth, redirect})
    * auth: "staff" (mặc định, access token + refresh), "portal" (portal token), "none".
+   * redirect: false cho lời gọi tùy chọn trên trang công khai: hết phiên thì báo lỗi, không chuyển về /login.
    */
   async function request(method, path, options = {}) {
     const auth = options.auth || "staff";
@@ -185,14 +186,14 @@ export default function initialize(global = window) {
         await refresh();
       } catch (e) {
         tokens.clear();
-        redirectToLogin();
+        if (options.redirect !== false) redirectToLogin();
         throw new ApiError(401, { detail: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại." });
       }
       response = await send(method, path, options, accessToken);
     }
     if (!response.ok) {
       const error = await fail(response);
-      if (error.code === "AUTH_PASSWORD_CHANGE_REQUIRED" && auth === "staff") redirectToLogin("&change=1");
+      if (error.code === "AUTH_PASSWORD_CHANGE_REQUIRED" && auth === "staff" && options.redirect !== false) redirectToLogin("&change=1");
       if (response.status === 401 && auth === "portal") portalTokens.clear();
       throw error;
     }

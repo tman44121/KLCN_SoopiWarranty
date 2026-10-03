@@ -20,7 +20,7 @@ export function internalRoute(value: string | null): string | null {
     const url = new URL(value, location.origin + '/');
     if (url.origin !== location.origin) return null;
     const route = legacyRoutes[url.pathname] || url.pathname;
-    if (!Object.values(legacyRoutes).includes(route)) return null;
+    if (route !== '/' && !Object.values(legacyRoutes).includes(route)) return null;
     return route + url.search + url.hash;
   } catch {
     return null;

@@ -11,6 +11,27 @@ export const fmt = () => w.LML_FMT;
 /** Lỗi API → câu tiếng Việt của máy chủ (ApiError.detail đã gồm fieldErrors). */
 export const errorText = (error: Json) => error?.detail || 'Đã xảy ra lỗi. Vui lòng thử lại.';
 
+/** Nhóm trạng thái phiếu cho khách (lọc Lịch sử bảo hành, số liệu trang chủ) — theo TICKET_STATUS của labels.js. */
+export const TICKET_GROUPS: Record<string, string[]> = {
+  PROCESSING: ['RECEIVED', 'INSPECTING', 'DIAGNOSED', 'REPAIRING'],
+  WAITING: ['AWAITING_PARTS', 'AWAITING_QUOTE_APPROVAL', 'AWAITING_CUSTOMER_CONFIRMATION', 'AWAITING_RETURN'],
+  COMPLETED: ['COMPLETED', 'DELIVERED', 'RETURNED_UNREPAIRED'],
+};
+export const inGroup = (group: string, status: string) => group === 'ALL' || TICKET_GROUPS[group].includes(status);
+
+/** So sánh để xếp mới nhất trước theo một trường thời gian ISO. */
+export const newest = (key: string) => (a: Json, b: Json) => String(b[key] || '').localeCompare(String(a[key] || ''));
+
+let catalogRequest: Promise<Json> | null = null;
+/** Danh mục công khai (/portal/catalog), dùng chung một request cho trang và footer; lỗi thì lần sau gọi lại. */
+export function portalCatalog(): Promise<Json> {
+  catalogRequest ??= api().portal.catalog().catch((error: Json) => {
+    catalogRequest = null;
+    throw error;
+  });
+  return catalogRequest!;
+}
+
 /** Bước tiến độ trên cổng khách — trùng StepLabels của PortalTicketView. */
 export const STEP_LABELS = ['Tiếp nhận', 'Chẩn đoán', 'Chờ linh kiện', 'Đang sửa', 'QC', 'Sẵn sàng nhận máy'];
 
@@ -210,7 +231,7 @@ export function CustomerFooter() {
   const name = useCustomerName();
   const [stations, setStations] = useState<Json[]>([]);
   useEffect(() => {
-    api().portal.catalog().then((catalog: Json) => setStations(catalog.stations || [])).catch(() => setStations([]));
+    portalCatalog().then((catalog: Json) => setStations(catalog.stations || [])).catch(() => setStations([]));
   }, []);
   return (
     <footer className="footer-main">

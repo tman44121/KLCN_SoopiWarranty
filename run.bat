@@ -1,6 +1,6 @@
 @echo off
 rem Chạy Soopi trên bất kỳ máy Windows 10/11 nào (xem docs/SETUP.md).
-rem   run.bat                   kiểm tra/cài mọi thứ còn thiếu, chạy API .NET + Vite, mở trang đăng nhập
+rem   run.bat                   kiểm tra/cài mọi thứ còn thiếu, chạy API .NET + Vite, mở trang chủ (đăng nhập ở góc phải)
 rem   run.bat build             build React vào wwwroot rồi chỉ chạy API (một cổng)
 rem   run.bat check             chỉ kiểm tra/cài công cụ và database, không chạy server
 rem   run.bat initdb [server]   tạo lại cấu hình database: tìm (hoặc dùng [server]) SQL Server, tạo TrungTamBaoHanhDB
