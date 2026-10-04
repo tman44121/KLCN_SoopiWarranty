@@ -205,7 +205,7 @@ export default function initialize() {
     };
     try {
       const created = await window.LML_UI.busy(el.registerSubmit, () => api.portal.submitRequest(data, files));
-      el.registerSuccess.innerHTML = html`<div class="kh-alert kh-alert--success" role="status">Gửi yêu cầu thành công — Mã yêu cầu: <span class="mono">${created.code}</span>. Vui lòng lưu lại mã này để tra cứu.</div>`;
+      el.registerSuccess.innerHTML = html`<div class="kh-alert kh-alert--success" role="status"><span>Gửi yêu cầu thành công — Mã yêu cầu: <span class="mono">${created.code}</span>. Vui lòng lưu lại mã này để tra cứu.</span></div>`;
       el.registerSuccess.hidden = false;
     } catch (error) {
       showError(error);

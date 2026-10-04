@@ -226,9 +226,18 @@ export default function initialize() {
     return overdue ? `Trễ ${text}` : text;
   }
 
-  /** Badge chuẩn mục 4 — luôn có ● + nhãn tiếng Việt, không chỉ dựa vào màu. */
+  /* Icon theo tông (cùng hình với StatusBadge trang khách): tốt / cảnh báo / lỗi phải phân biệt được cả khi
+     không thấy màu — với mù màu đỏ, nền "tốt" và "lỗi" gần như trùng nhau. Đang xử lý / trung tính giữ chấm ●. */
+  const BADGE_ICON = {
+    success: () => window.html`<svg class="status-badge__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>`,
+    warning: () => window.html`<svg class="status-badge__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`,
+    danger: () => window.html`<svg class="status-badge__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>`,
+  };
+
+  /** Badge chuẩn mục 4 — luôn có icon/● + nhãn tiếng Việt, không chỉ dựa vào màu. */
   function badge(tone, label) {
-    return window.html`<span class="status-badge status-badge--${tone}"><span class="status-badge__dot">●</span>${label}</span>`;
+    const icon = BADGE_ICON[tone] ? BADGE_ICON[tone]() : window.html`<span class="status-badge__dot">●</span>`;
+    return window.html`<span class="status-badge status-badge--${tone}">${icon}${label}</span>`;
   }
 
   function badgeOf(table, code) {

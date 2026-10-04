@@ -198,6 +198,18 @@ Bảng màu ấm và trầm của một tấm thẻ in: một màu mực, một 
 
 **The Stamp Pair Rule.** Mỗi trạng thái là một cặp nền nhạt + chữ đậm cùng sắc, đạt ≥ 4,5:1. Không dùng màu bão hòa làm nền cho chữ trạng thái.
 
+**The Shape Not Hue Rule.** Tốt, cảnh báo và lỗi khác nhau bằng icon (✓ tròn, đồng hồ, ✕ tròn), không chỉ bằng màu: với người mù màu đỏ, nền mint và nền đỏ nhạt gần như trùng nhau (ΔE 4). Áp dụng cho badge, thông báo và chú thích biểu đồ. Đang xử lý và trung tính giữ chấm tròn.
+
+**The Dark Accent Rule.** Vàng mật ong và Hồng đào chỉ làm màu chữ trên nền tối (xanh chim cánh cụt, xanh rừng: ≥ 5,4:1). Trên nền sáng chúng chỉ làm nền (chữ xanh chim cánh cụt: 6,9:1 và 7,9:1) hoặc trang trí; làm chữ trên trắng chỉ đạt 1,8:1 và 1,6:1.
+
+**The Quiet On Tint Rule.** Chữ phụ trên nền nhạt có màu (Mint dịu, Tím sương, nền trạng thái) dùng `--text-quiet` (#4a5853, ≥ 6,2:1), không dùng `--text-muted` (#62716c chỉ đạt 4,28:1 trên Mint dịu).
+
+**The Plain Ink Is A Link Rule.** Chữ xanh rừng trơn đọc như liên kết. Báo thành công luôn đi kèm nền Mint và icon, không bao giờ chỉ là chữ xanh rừng.
+
+**The Visible Change Rule.** Xanh rừng → xanh rừng sâu chỉ khác 1,26:1, nên rê chuột không thể chỉ đổi sắc: liên kết thêm gạch chân, trạng thái đang chọn đổi nền hoặc viền xanh rừng. Viền lá (#d9e3db, 1,3:1) chỉ để trang trí, không bao giờ là dấu hiệu duy nhất của trạng thái đang chọn hay lỗi.
+
+Các quy tắc trên được kiểm tự động trong `frontend-react/scripts/contrast.test.mjs` (chạy cùng `npm test`).
+
 ## Typography
 
 **Display Font:** Plus Jakarta Sans (dự phòng Inter, system-ui), chỉ trên trang khách.
@@ -306,7 +318,7 @@ Con dấu trạng thái của phiếu: ô bo 8px viền 1px, đệm 3px 8px, ch�
 - Đang xử lý: tím sương.
 - Trung tính: kem.
 
-Trên header, badge trạm có chấm tròn phía trước.
+Thành công, cảnh báo và lỗi có icon riêng phía trước nhãn (The Shape Not Hue Rule); đang xử lý và trung tính có chấm tròn. Trên header, badge trạm có chấm tròn phía trước.
 
 ### Data table → card
 Bảng dày trên desktop:
@@ -329,4 +341,6 @@ Dưới 768px mỗi hàng thành một thẻ, mỗi ô là một dòng "nhãn �
 - **Don't** đặt hai nút xanh rừng đặc cạnh nhau (The One Ink Rule).
 - **Don't** đổ bóng cho thẻ, bảng hay ô nhập ở trạng thái nghỉ.
 - **Don't** dùng xám nhạt (sage-faint) cho chữ, hay chữ dưới 12px cho nội dung cần đọc.
+- **Don't** dùng Vàng mật ong hoặc Hồng đào làm màu chữ trên nền sáng (The Dark Accent Rule).
+- **Don't** phân biệt tốt / cảnh báo / lỗi chỉ bằng màu (The Shape Not Hue Rule).
 - **Don't** đưa số liệu, lời chứng thực, hotline hay huy hiệu không có thật vào giao diện.
