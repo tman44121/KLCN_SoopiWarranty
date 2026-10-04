@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import QRCode from "qrcode";
 import { usePage } from "../usePage";
 import {
-  CustomerFooter, CustomerHeader, Icon, PasswordInput, STEP_LABELS, StatusBadge, TICKET_FILTERS, api, errorText, fmt, inGroup,
+  CustomerFooter, CustomerHeader, Icon, LiveChatBubble, PasswordInput, STEP_LABELS, StatusBadge, TICKET_FILTERS, api, errorText, fmt, inGroup,
   initial, newest, useBusy,
 } from "../customer";
 
@@ -81,6 +82,7 @@ export default function AccountPage() {
       <CustomerHeader name={data?.profile.fullName || user?.displayName} active={ACTIVE_NAV[route.view]} />
       <main className="kh-main">{body}</main>
       <CustomerFooter />
+      <LiveChatBubble customerName={data?.profile.fullName || user?.displayName} />
     </div>
   );
 }
@@ -135,6 +137,7 @@ function Overview({ data }: { data: Data }) {
   const count = (group: string) => data.tickets.filter((t) => inGroup(group, t.status)).length;
   const awaiting = data.tickets.filter((t) => t.status === "AWAITING_CUSTOMER_CONFIRMATION");
   const name = data.profile.fullName;
+
   return (
     <>
       <section className="hero-section">
@@ -169,8 +172,8 @@ function Overview({ data }: { data: Data }) {
               </a>
             </div>
             <div className="dispatch-section-header">
-              <h2 className="dispatch-title">Tiến độ sửa chữa thiết bị của bạn</h2>
-              {data.tickets.length > 0 && <a href="#lich-su" className="dispatch-link">Xem tất cả →</a>}
+              <h2 className="dispatch-title">Phiếu bảo hành gần đây</h2>
+              {data.tickets.length > 0 && <a href="#lich-su" className="dispatch-link">Xem tất cả ({data.tickets.length}) →</a>}
             </div>
             {data.tickets.length ? (
               <div className="dispatch-ticket-list">
@@ -178,7 +181,7 @@ function Overview({ data }: { data: Data }) {
                   <a key={ticket.code} href={`#phieu/${ticket.code}`} className="ticket-item-row">
                     <div className="ticket-info-left">
                       <span className={"ticket-type-icon " + (ticket.currentStep >= 5 ? "type-ok" : "type-qr")}><Icon glyph="wrench" /></span>
-                      <div style={{ minWidth: 0 }}>
+                      <div>
                         <div className="ticket-title">{ticket.productName || "Thiết bị"}</div>
                         <div className="ticket-meta"><span className="mono">{ticket.code}</span> · Nhận {fmt().date(ticket.receivedAt)}</div>
                       </div>
@@ -188,7 +191,9 @@ function Overview({ data }: { data: Data }) {
                 ))}
               </div>
             ) : (
-              <p className="ticket-meta">Chưa có phiếu sửa chữa nào. Phiếu tạo tại trạm với số điện thoại {data.profile.phone} sẽ tự hiện ở đây.</p>
+              <p className="ticket-meta" style={{ padding: "12px 0" }}>
+                Chưa có phiếu sửa chữa nào. Phiếu tạo tại trạm với số điện thoại <strong className="mono">{data.profile.phone}</strong> sẽ tự động hiện tại đây.
+              </p>
             )}
           </div>
         </div>
@@ -197,8 +202,8 @@ function Overview({ data }: { data: Data }) {
       <div className="page-container">
         {awaiting.map((ticket) => (
           <div key={ticket.code} className="kh-alert kh-alert--warning">
-            <span>Phiếu <span className="mono">{ticket.code}</span> ({ticket.productName}) có báo giá sửa chữa đang chờ bạn xác nhận.</span>
-            <a href={`#phieu/${ticket.code}`} className="btn-primary-teal btn-sm">Xem báo giá</a>
+            <span>Phiếu <span className="mono">{ticket.code}</span> ({ticket.productName}) có báo giá sửa chữa đang chờ bạn phê duyệt.</span>
+            <a href={`#phieu/${ticket.code}`} className="btn-primary-teal btn-sm">Xem &amp; Xác nhận ngay →</a>
           </div>
         ))}
         <div className="detail-grid-2">
@@ -206,7 +211,7 @@ function Overview({ data }: { data: Data }) {
             <div className="panel-head">
               <div>
                 <h2 className="card-heading-title">Yêu cầu bảo hành trực tuyến</h2>
-                <p className="card-heading-desc">Yêu cầu bạn đã gửi trước khi mang máy tới trạm.</p>
+                <p className="card-heading-desc">Yêu cầu bạn đã gửi trước khi mang máy tới trạm dịch vụ.</p>
               </div>
               <a href="#yeu-cau-moi" className="btn-secondary-white btn-sm"><Icon glyph="plus" />Gửi mới</a>
             </div>
@@ -215,8 +220,8 @@ function Overview({ data }: { data: Data }) {
           <section className="content-panel-card">
             <div className="panel-head">
               <div>
-                <h2 className="card-heading-title">Thiết bị của bạn</h2>
-                <p className="card-heading-desc">Hạn bảo hành theo hồ sơ của trung tâm.</p>
+                <h2 className="card-heading-title">Thiết bị đã đăng ký</h2>
+                <p className="card-heading-desc">Hạn bảo hành theo hồ sơ chính hãng tại trung tâm.</p>
               </div>
             </div>
             {data.devices.length ? (
@@ -228,7 +233,7 @@ function Overview({ data }: { data: Data }) {
                   </div>
                 ))}
               </div>
-            ) : <p className="card-heading-desc">Chưa có thiết bị gắn với tài khoản.</p>}
+            ) : <p className="card-heading-desc">Chưa có thiết bị nào được gắn với tài khoản này.</p>}
           </section>
         </div>
       </div>
@@ -370,7 +375,7 @@ function TicketDetail({ code, onChanged }: { code: string; onChanged: () => void
       {crumbs}
       <div className="ticket-hero-card">
         <div>
-          <h1>{[ticket.brandName, ticket.productName].filter(Boolean).join(" ") || "Thiết bị"}</h1>
+          <h1>{[ticket.brandName, ticket.productName].filter(Boolean).join(" ") || "Thiết bị bảo hành"}</h1>
           <div className="ticket-hero-meta">
             <span>Mã phiếu: <strong className="mono">{ticket.code}</strong></span>
             {ticket.serialOrImei && <span>Serial/IMEI: <strong className="mono">{ticket.serialOrImei}</strong></span>}
@@ -388,15 +393,19 @@ function TicketDetail({ code, onChanged }: { code: string; onChanged: () => void
               {ticket.stopped ? "Phiếu đã dừng theo yêu cầu hoặc trả máy không sửa." : "Hành trình kiểm tra, sửa chữa và bàn giao thiết bị."}
             </p>
             <ol className="timeline-stepper">
-              {ticket.steps.map((step: Json, index: number) => (
-                <li key={step.key} className={"timeline-node-item" + (step.state === "DONE" ? " is-done" : step.state === "CURRENT" && !ticket.stopped ? " active" : "")}>
-                  <span className="timeline-dot">{step.state === "DONE" ? <Icon glyph="check" /> : index + 1}</span>
-                  <div className="timeline-title">{step.label}</div>
-                  <div className="timeline-desc">
-                    {step.state === "DONE" ? "Hoàn tất" : step.state === "CURRENT" && !ticket.stopped ? "Đang xử lý" : "Chưa tới"}
-                  </div>
-                </li>
-              ))}
+              {ticket.steps.map((step: Json, index: number) => {
+                const isDone = step.state === "DONE";
+                const isActive = step.state === "CURRENT" && !ticket.stopped;
+                return (
+                  <li key={step.key} className={"timeline-node-item" + (isDone ? " is-done" : isActive ? " active" : "")}>
+                    <span className="timeline-dot">{isDone ? <Icon glyph="check" /> : index + 1}</span>
+                    <div className="timeline-title">{step.label}</div>
+                    <div className="timeline-desc">
+                      {isDone ? "Hoàn tất" : isActive ? "Đang xử lý tại trạm" : "Chưa tới"}
+                    </div>
+                  </li>
+                );
+              })}
             </ol>
           </section>
           <section className="content-panel-card">
@@ -433,7 +442,730 @@ function TicketDetail({ code, onChanged }: { code: string; onChanged: () => void
               <div className="kv-row is-total"><span>Tổng thanh toán</span><span>{fmt().money(costs.total)}</span></div>
             </div>
             )}
+            <PaymentSection
+              ticket={ticket}
+              costs={costs}
+              onPaid={(updatedTicket) => {
+                setTicket(updatedTicket);
+                onChanged();
+              }}
+            />
           </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- Thanh toán trực tuyến */
+
+type PayMethod = "bank_transfer" | "card" | "momo" | "zalopay" | "vnpay";
+type PayState = "select" | "confirm" | "processing" | "success" | "error";
+
+const METHOD_DETAILS: Record<PayMethod, { name: string; desc: string; icon: string }> = {
+  bank_transfer: { name: "Chuyển khoản VietQR", desc: "Quét mã QR 24/7 tức thì", icon: "🏦" },
+  card: { name: "Thẻ Visa / Mastercard", desc: "Thanh toán bảo mật SSL 256-bit", icon: "💳" },
+  momo: { name: "Ví MoMo", desc: "Quét QR hoặc mở App MoMo", icon: "📱" },
+  zalopay: { name: "Ví ZaloPay", desc: "Quét QR hoặc mở App ZaloPay", icon: "📱" },
+  vnpay: { name: "Cổng VNPay", desc: "Thẻ ATM, VNPAY-QR, Internet Banking", icon: "🏧" },
+};
+
+function copyToClipboard(text: string, label: string) {
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      (window as Json).showToast?.(`Đã sao chép ${label}`, "success");
+    }).catch(() => {
+      (window as Json).showToast?.("Không thể sao chép.", "danger");
+    });
+  }
+}
+
+function PaymentSection({ ticket, costs, onPaid }: { ticket: Json; costs: Json; onPaid: (updatedTicket: Json) => void }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [payState, setPayState] = useState<PayState>("select");
+  const [method, setMethod] = useState<PayMethod>("bank_transfer");
+  const [txId, setTxId] = useState("");
+  const [paidAt, setPaidAt] = useState<string | null>(ticket.paidAt || null);
+
+  const canPay = ["COMPLETED", "AWAITING_RETURN"].includes(ticket.status) && (Number(costs?.total) > 0) && !paidAt;
+  const isPaid = Boolean(paidAt || ticket.paidAt);
+
+  const openPayment = () => {
+    setPayState("select");
+    setModalOpen(true);
+  };
+
+  const openReceipt = () => {
+    setPayState("success");
+    setModalOpen(true);
+  };
+
+  const handlePaidSuccess = (newTxId: string, timestamp: string) => {
+    setTxId(newTxId);
+    setPaidAt(timestamp);
+    const updated = { ...ticket, paidAt: timestamp };
+    onPaid(updated);
+  };
+
+  if (!isPaid && !canPay) return null;
+
+  return (
+    <>
+      <div className="payment-section-wrapper">
+        {isPaid ? (
+          <div className="paid-badge-box">
+            <span className="paid-badge-status">
+              <Icon glyph="checkCircle" /> Đã thanh toán · {fmt().dateTime(paidAt || ticket.paidAt)}
+            </span>
+            <button type="button" className="paid-receipt-btn" onClick={openReceipt}>
+              🧾 Xem biên lai
+            </button>
+          </div>
+        ) : canPay ? (
+          <div className="payment-cta-box">
+            <button type="button" className="pay-cta-btn" onClick={openPayment}>
+              💳 Thanh toán trực tuyến ({fmt().money(costs.total)})
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      {modalOpen && (
+        <PaymentModal
+          ticket={ticket}
+          costs={costs}
+          payState={payState}
+          setPayState={setPayState}
+          method={method}
+          setMethod={setMethod}
+          txId={txId}
+          setTxId={setTxId}
+          paidAt={paidAt || ticket.paidAt}
+          onSuccess={handlePaidSuccess}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+function PaymentModal({
+  ticket, costs, payState, setPayState, method, setMethod, txId, setTxId, paidAt, onSuccess, onClose,
+}: {
+  ticket: Json;
+  costs: Json;
+  payState: PayState;
+  setPayState: (s: PayState) => void;
+  method: PayMethod;
+  setMethod: (m: PayMethod) => void;
+  txId: string;
+  setTxId: (id: string) => void;
+  paidAt: string | null;
+  onSuccess: (txId: string, timestamp: string) => void;
+  onClose: () => void;
+}) {
+  const [cardNumber, setCardNumber] = useState("4111 1111 1111 1111");
+  const [cardHolder, setCardHolder] = useState(ticket.customerName ? String(ticket.customerName).toUpperCase() : "NGUYEN MINH TUAN");
+  const [cardExpiry, setCardExpiry] = useState("12/28");
+  const [cardCvv, setCardCvv] = useState("888");
+  const [cardError, setCardError] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const startProcessing = () => {
+    setPayState("processing");
+  };
+
+  const handleCardSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const cleanNum = cardNumber.replace(/\s/g, "");
+    if (cleanNum.length < 15) return setCardError("Số thẻ không hợp lệ (tối thiểu 15-16 chữ số).");
+    if (!cardHolder.trim()) return setCardError("Vui lòng nhập tên chủ thẻ.");
+    if (!/^\d{2}\/\d{2}$/.test(cardExpiry)) return setCardError("Hạn thẻ không hợp lệ (MM/YY).");
+    if (cardCvv.length < 3) return setCardError("Mã CVV không hợp lệ.");
+    setCardError("");
+    startProcessing();
+  };
+
+  return (
+    <div className="payment-overlay" role="dialog" aria-modal="true">
+      <div className="payment-modal">
+        <div className="payment-modal-header">
+          <div className="payment-modal-title">
+            <span>💳</span>
+            <span>
+              {payState === "success"
+                ? "Biên lai thanh toán"
+                : payState === "processing"
+                ? "Đang thanh toán"
+                : payState === "error"
+                ? "Giao dịch không thành công"
+                : `Thanh toán phiếu ${ticket.code}`}
+            </span>
+          </div>
+          {payState !== "processing" && (
+            <button type="button" className="payment-modal-close" onClick={onClose} aria-label="Đóng">
+              <Icon glyph="x" />
+            </button>
+          )}
+        </div>
+
+        <div className="payment-modal-body">
+          {/* STEP 1: SELECT METHOD */}
+          {payState === "select" && (
+            <>
+              <div className="payment-summary-card">
+                <div className="payment-summary-row">
+                  <span>Thiết bị:</span>
+                  <strong>{[ticket.brandName, ticket.productName].filter(Boolean).join(" ") || "Thiết bị bảo hành"}</strong>
+                </div>
+                <div className="payment-summary-row">
+                  <span>Mã phiếu:</span>
+                  <strong className="mono">{ticket.code}</strong>
+                </div>
+                <div className="payment-summary-row is-total">
+                  <span>Tổng thanh toán:</span>
+                  <span className="amount">{fmt().money(costs.total)}</span>
+                </div>
+              </div>
+
+              <div className="payment-section-subtitle">Chọn phương thức thanh toán</div>
+              <div className="payment-method-grid">
+                {(Object.keys(METHOD_DETAILS) as PayMethod[]).map((mKey) => {
+                  const item = METHOD_DETAILS[mKey];
+                  const isSelected = method === mKey;
+                  return (
+                    <div
+                      key={mKey}
+                      className={"payment-method-card" + (isSelected ? " is-selected" : "") + (mKey === "vnpay" ? " full-width" : "")}
+                      onClick={() => setMethod(mKey)}
+                    >
+                      <div className="payment-method-icon-box">{item.icon}</div>
+                      <div>
+                        <div className="payment-method-name">{item.name}</div>
+                        <div className="payment-method-desc">{item.desc}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* STEP 2: CONFIRM SCREENS */}
+          {payState === "confirm" && method === "bank_transfer" && (
+            <BankTransferConfirm
+              ticket={ticket}
+              costs={costs}
+              onConfirm={startProcessing}
+            />
+          )}
+
+          {payState === "confirm" && method === "card" && (
+            <CardPaymentConfirm
+              costs={costs}
+              cardNumber={cardNumber}
+              setCardNumber={setCardNumber}
+              cardHolder={cardHolder}
+              setCardHolder={setCardHolder}
+              cardExpiry={cardExpiry}
+              setCardExpiry={setCardExpiry}
+              cardCvv={cardCvv}
+              setCardCvv={setCardCvv}
+              error={cardError}
+              onSubmit={handleCardSubmit}
+            />
+          )}
+
+          {payState === "confirm" && (method === "momo" || method === "zalopay") && (
+            <WalletConfirm
+              method={method}
+              ticket={ticket}
+              costs={costs}
+              onConfirm={startProcessing}
+            />
+          )}
+
+          {payState === "confirm" && method === "vnpay" && (
+            <VNPayConfirm
+              ticket={ticket}
+              costs={costs}
+              onConfirm={startProcessing}
+            />
+          )}
+
+          {/* STEP 3: PROCESSING */}
+          {payState === "processing" && (
+            <ProcessingScreen
+              method={method}
+              cardNumber={cardNumber}
+              onComplete={(success, errorMsg) => {
+                if (success) {
+                  const newTx = "PAY-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.floor(100000 + Math.random() * 900000);
+                  const newPaidTime = new Date().toISOString();
+                  setTxId(newTx);
+                  onSuccess(newTx, newPaidTime);
+                  setPayState("success");
+                } else {
+                  setErrorMessage(errorMsg || "Giao dịch không thành công.");
+                  setPayState("error");
+                }
+              }}
+            />
+          )}
+
+          {/* STEP 4: ERROR */}
+          {payState === "error" && (
+            <ErrorScreen
+              message={errorMessage}
+              onRetry={() => setPayState("confirm")}
+              onChangeMethod={() => setPayState("select")}
+            />
+          )}
+
+          {/* STEP 5: SUCCESS & RECEIPT */}
+          {payState === "success" && (
+            <ReceiptScreen
+              ticket={ticket}
+              costs={costs}
+              method={method}
+              txId={txId || "PAY-20261004-984211"}
+              paidAt={paidAt || new Date().toISOString()}
+            />
+          )}
+        </div>
+
+        {/* MODAL FOOTER BUTTONS */}
+        {payState === "select" && (
+          <div className="payment-modal-footer">
+            <button type="button" className="btn-back" onClick={onClose}>Hủy</button>
+            <button type="button" className="btn-submit" onClick={() => setPayState("confirm")}>Tiếp theo →</button>
+          </div>
+        )}
+
+        {payState === "confirm" && method !== "card" && (
+          <div className="payment-modal-footer">
+            <button type="button" className="btn-back" onClick={() => setPayState("select")}>← Quay lại</button>
+            <button type="button" className="btn-submit" onClick={startProcessing}>
+              {method === "bank_transfer" ? "Tôi đã chuyển khoản →" : method === "vnpay" ? "Chuyển tiếp tới VNPay →" : "Xác nhận đã thanh toán"}
+            </button>
+          </div>
+        )}
+
+        {payState === "confirm" && method === "card" && (
+          <div className="payment-modal-footer">
+            <button type="button" className="btn-back" onClick={() => setPayState("select")}>← Quay lại</button>
+            <button type="button" className="btn-submit" onClick={handleCardSubmit}>
+              Thanh toán ngay ({fmt().money(costs.total)})
+            </button>
+          </div>
+        )}
+
+        {payState === "success" && (
+          <div className="payment-modal-footer">
+            <button type="button" className="btn-print" onClick={() => window.print()}>
+              🖨 In biên lai
+            </button>
+            <button type="button" className="btn-submit" onClick={onClose}>
+              Đóng
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* --- VietQR Bank Transfer Screen --- */
+function BankTransferConfirm({ ticket, costs, onConfirm }: { ticket: Json; costs: Json; onConfirm: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [seconds, setSeconds] = useState(899); // 14:59
+
+  useEffect(() => {
+    const timer = setInterval(() => setSeconds((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const memoText = `${ticket.code} ${ticket.customerCode || "KH"}`;
+  const qrString = `https://img.vietqr.io/image/970407-190368889999-compact2.png?amount=${costs.total}&addInfo=${encodeURIComponent(memoText)}&accountName=TRUNG%20TAM%20SOOPI`;
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      QRCode.toCanvas(canvasRef.current, qrString, {
+        width: 170,
+        margin: 1,
+        color: { dark: "#0f172a", light: "#ffffff" },
+      }).catch(() => {});
+    }
+  }, [qrString]);
+
+  const minStr = Math.floor(seconds / 60).toString().padStart(2, "0");
+  const secStr = (seconds % 60).toString().padStart(2, "0");
+
+  return (
+    <div className="payment-view-container">
+      <div className="payment-qr-wrap">
+        <div className="payment-countdown-badge">
+          <span>⏱ Hết hạn sau:</span>
+          <strong>{minStr}:{secStr}</strong>
+        </div>
+
+        <div className="payment-qr-canvas-box">
+          <canvas ref={canvasRef} />
+        </div>
+        <div style={{ fontSize: 12.5, color: "#64748b" }}>Mở ứng dụng Ngân hàng bất kỳ để quét mã VietQR</div>
+
+        <div className="payment-bank-details">
+          <div className="payment-bank-row">
+            <span>Ngân hàng:</span>
+            <strong>Techcombank (TCB)</strong>
+          </div>
+          <div className="payment-bank-row">
+            <span>Số tài khoản:</span>
+            <span>
+              <strong className="mono">190368889999</strong>
+              <button type="button" className="payment-copy-btn" onClick={() => copyToClipboard("190368889999", "Số tài khoản")}>Sao chép</button>
+            </span>
+          </div>
+          <div className="payment-bank-row">
+            <span>Chủ tài khoản:</span>
+            <strong>TRUNG TAM SOOPI</strong>
+          </div>
+          <div className="payment-bank-row">
+            <span>Số tiền:</span>
+            <span>
+              <strong style={{ color: "#2563eb" }}>{fmt().money(costs.total)}</strong>
+              <button type="button" className="payment-copy-btn" onClick={() => copyToClipboard(String(costs.total), "Số tiền")}>Sao chép</button>
+            </span>
+          </div>
+          <div className="payment-bank-row">
+            <span>Nội dung CK:</span>
+            <span>
+              <strong className="mono">{memoText}</strong>
+              <button type="button" className="payment-copy-btn" onClick={() => copyToClipboard(memoText, "Nội dung chuyển khoản")}>Sao chép</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* --- Card Payment Screen --- */
+function CardPaymentConfirm({
+  costs, cardNumber, setCardNumber, cardHolder, setCardHolder, cardExpiry, setCardExpiry, cardCvv, setCardCvv, error, onSubmit,
+}: {
+  costs: Json;
+  cardNumber: string;
+  setCardNumber: (s: string) => void;
+  cardHolder: string;
+  setCardHolder: (s: string) => void;
+  cardExpiry: string;
+  setCardExpiry: (s: string) => void;
+  cardCvv: string;
+  setCardCvv: (s: string) => void;
+  error: string;
+  onSubmit: (e: FormEvent) => void;
+}) {
+  const handleNumChange = (val: string) => {
+    const raw = val.replace(/\D/g, "").slice(0, 16);
+    const parts = raw.match(/.{1,4}/g);
+    setCardNumber(parts ? parts.join(" ") : raw);
+  };
+
+  const handleExpiryChange = (val: string) => {
+    const raw = val.replace(/\D/g, "").slice(0, 4);
+    if (raw.length >= 3) {
+      setCardExpiry(raw.slice(0, 2) + "/" + raw.slice(2));
+    } else {
+      setCardExpiry(raw);
+    }
+  };
+
+  return (
+    <form className="payment-card-form" onSubmit={onSubmit}>
+      <div className="payment-summary-card" style={{ marginBottom: 4 }}>
+        <div className="payment-summary-row is-total" style={{ border: "none", margin: 0, padding: 0 }}>
+          <span>Số tiền cần thanh toán:</span>
+          <span className="amount">{fmt().money(costs.total)}</span>
+        </div>
+      </div>
+
+      <div className="payment-form-group">
+        <label className="payment-form-label">Số thẻ tín dụng / ghi nợ</label>
+        <input
+          type="text"
+          className="payment-form-input mono"
+          placeholder="4111 1111 1111 1111"
+          value={cardNumber}
+          onChange={(e) => handleNumChange(e.target.value)}
+          maxLength={19}
+        />
+      </div>
+
+      <div className="payment-form-group">
+        <label className="payment-form-label">Tên in trên thẻ (không dấu)</label>
+        <input
+          type="text"
+          className="payment-form-input"
+          placeholder="NGUYEN MINH TUAN"
+          value={cardHolder}
+          onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
+        />
+      </div>
+
+      <div className="payment-card-grid-row">
+        <div className="payment-form-group">
+          <label className="payment-form-label">Hạn thẻ (MM/YY)</label>
+          <input
+            type="text"
+            className="payment-form-input mono"
+            placeholder="12/28"
+            value={cardExpiry}
+            onChange={(e) => handleExpiryChange(e.target.value)}
+            maxLength={5}
+          />
+        </div>
+        <div className="payment-form-group">
+          <label className="payment-form-label">Mã CVV</label>
+          <input
+            type="password"
+            className="payment-form-input mono"
+            placeholder="•••"
+            value={cardCvv}
+            onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            maxLength={4}
+          />
+        </div>
+      </div>
+
+      {error && <div className="field-error" style={{ margin: "2px 0 0" }}>{error}</div>}
+
+      <div style={{ fontSize: 11.5, color: "#64748b", background: "#f8fafc", padding: "8px 10px", borderRadius: 8 }}>
+        💡 <strong>Demo:</strong> Nhập số thẻ bất kỳ để thanh toán thành công. Nhập số thẻ <code className="mono">4000 0000 0000 0002</code> để kiểm tra phản hồi giao dịch thất bại.
+      </div>
+
+      <div className="payment-security-notice">
+        <span>🔒 Kết nối bảo mật chuẩn SSL 256-bit & PCI-DSS</span>
+      </div>
+    </form>
+  );
+}
+
+/* --- MoMo / ZaloPay Screen --- */
+function WalletConfirm({ method, ticket, costs, onConfirm }: { method: "momo" | "zalopay"; ticket: Json; costs: Json; onConfirm: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isMomo = method === "momo";
+  const walletName = isMomo ? "MoMo" : "ZaloPay";
+  const [seconds, setSeconds] = useState(299); // 4:59
+
+  useEffect(() => {
+    const timer = setInterval(() => setSeconds((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const qrString = isMomo
+    ? `2|99|0987654321|||0|0|${costs.total}|${ticket.code}|transfer_myqr`
+    : `https://qc.zalopay.vn/pay?amount=${costs.total}&desc=${encodeURIComponent(ticket.code)}`;
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      QRCode.toCanvas(canvasRef.current, qrString, {
+        width: 170,
+        margin: 1,
+        color: { dark: isMomo ? "#a21caf" : "#0284c7", light: "#ffffff" },
+      }).catch(() => {});
+    }
+  }, [qrString, isMomo]);
+
+  const minStr = Math.floor(seconds / 60).toString().padStart(2, "0");
+  const secStr = (seconds % 60).toString().padStart(2, "0");
+
+  return (
+    <div className="payment-view-container">
+      <div className="payment-qr-wrap">
+        <div className="payment-countdown-badge">
+          <span>⏱ Hết hạn sau:</span>
+          <strong>{minStr}:{secStr}</strong>
+        </div>
+
+        <div className="payment-qr-canvas-box">
+          <canvas ref={canvasRef} />
+        </div>
+
+        <button
+          type="button"
+          className="btn-secondary-white btn-sm"
+          style={{ width: "100%", justifyContent: "center", borderColor: isMomo ? "#f472b6" : "#38bdf8", color: isMomo ? "#9d174d" : "#0369a1", fontWeight: 600 }}
+          onClick={onConfirm}
+        >
+          📲 Mở ứng dụng {walletName}
+        </button>
+
+        <div style={{ width: "100%", textAlign: "left", marginTop: 6 }}>
+          <div style={{ fontSize: 12, color: "#64748b", display: "flex", justifyContent: "space-between" }}>
+            <span>Đang chờ xác nhận từ {walletName}...</span>
+            <span>{fmt().money(costs.total)}</span>
+          </div>
+          <div className="payment-progress-bar-bg">
+            <div className="payment-progress-bar-fill" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* --- VNPay Screen --- */
+function VNPayConfirm({ ticket, costs, onConfirm }: { ticket: Json; costs: Json; onConfirm: () => void }) {
+  return (
+    <div className="payment-view-container">
+      <div className="payment-summary-card">
+        <div className="payment-summary-row">
+          <span>Đơn vị chấp nhận:</span>
+          <strong>Soopi Warranty Service</strong>
+        </div>
+        <div className="payment-summary-row">
+          <span>Mã đơn hàng:</span>
+          <strong className="mono">{ticket.code}</strong>
+        </div>
+        <div className="payment-summary-row is-total">
+          <span>Tổng tiền thanh toán:</span>
+          <span className="amount">{fmt().money(costs.total)}</span>
+        </div>
+      </div>
+
+      <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 12, padding: "14px 16px", color: "#0369a1", fontSize: 13 }}>
+        <p style={{ margin: "0 0 8px", fontWeight: 600 }}>Cổng thanh toán điện tử VNPAY</p>
+        <p style={{ margin: 0 }}>Hỗ trợ hơn 40+ ngân hàng Việt Nam, thẻ quốc tế Visa/Mastercard và ví điện tử qua VNPAY-QR.</p>
+      </div>
+    </div>
+  );
+}
+
+/* --- Processing Screen --- */
+function ProcessingScreen({
+  method, cardNumber, onComplete,
+}: {
+  method: PayMethod;
+  cardNumber: string;
+  onComplete: (success: boolean, errorMsg?: string) => void;
+}) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const cleanNum = cardNumber.replace(/\s/g, "");
+      if (method === "card" && cleanNum === "4000000000000002") {
+        onComplete(false, "Giao dịch bị từ chối: Thẻ không đủ số dư hoặc đã bị khóa thanh toán trực tuyến. Vui lòng liên hệ ngân hàng hoặc thử phương thức khác.");
+      } else {
+        (window as Json).showToast?.("Thanh toán thành công!", "success");
+        onComplete(true);
+      }
+    }, 2400);
+    return () => clearTimeout(timer);
+  }, [method, cardNumber, onComplete]);
+
+  return (
+    <div className="payment-processing-wrap">
+      <div className="payment-spinner" />
+      <div className="payment-processing-title">Đang xử lý giao dịch...</div>
+      <div className="payment-processing-desc">
+        Vui lòng giữ nguyên màn hình và không đóng trình duyệt trong giây lát.
+      </div>
+    </div>
+  );
+}
+
+/* --- Error Screen --- */
+function ErrorScreen({ message, onRetry, onChangeMethod }: { message: string; onRetry: () => void; onChangeMethod: () => void }) {
+  return (
+    <div className="payment-error-wrap">
+      <div className="payment-error-icon">✕</div>
+      <div style={{ fontSize: 17, fontWeight: 700, color: "#991b1b" }}>Thanh toán thất bại</div>
+      <div style={{ fontSize: 13, color: "#64748b", maxWidth: 360, lineHeight: 1.5 }}>
+        {message || "Đã xảy ra sự cố khi xử lý thanh toán. Vui lòng kiểm tra lại."}
+      </div>
+      <div style={{ display: "flex", gap: 10, width: "100%", marginTop: 8 }}>
+        <button type="button" className="btn-secondary-white" style={{ flex: 1 }} onClick={onChangeMethod}>
+          Đổi phương thức
+        </button>
+        <button type="button" className="btn-primary" style={{ flex: 1 }} onClick={onRetry}>
+          Thử lại
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* --- Success & Printable Receipt Screen --- */
+function ReceiptScreen({ ticket, costs, method, txId, paidAt }: { ticket: Json; costs: Json; method: PayMethod; txId: string; paidAt: string }) {
+  const methodLabel = METHOD_DETAILS[method]?.name || "Trực tuyến";
+  return (
+    <div className="payment-receipt-wrap">
+      <div className="payment-success-badge-icon">✓</div>
+      <div style={{ textAlign: "center", marginBottom: 2 }}>
+        <div style={{ fontSize: 17, fontWeight: 700, color: "#166534" }}>Thanh toán thành công!</div>
+        <div style={{ fontSize: 12.5, color: "#64748b" }}>Cảm ơn bạn đã hoàn tất thanh toán chi phí sửa chữa.</div>
+      </div>
+
+      <div className="payment-receipt">
+        <div className="payment-receipt-header">
+          <div className="payment-receipt-logo">SOOPI WARRANTY SERVICE</div>
+          <div className="payment-receipt-title">🧾 BIÊN LAI ĐIỆN TỬ</div>
+        </div>
+
+        <div className="payment-receipt-meta">
+          <div className="payment-receipt-meta-row">
+            <span>Mã giao dịch:</span>
+            <strong className="mono">{txId}</strong>
+          </div>
+          <div className="payment-receipt-meta-row">
+            <span>Mã phiếu:</span>
+            <strong className="mono">{ticket.code}</strong>
+          </div>
+          <div className="payment-receipt-meta-row">
+            <span>Thiết bị:</span>
+            <strong>{[ticket.brandName, ticket.productName].filter(Boolean).join(" ") || "Thiết bị"}</strong>
+          </div>
+          <div className="payment-receipt-meta-row">
+            <span>Khách hàng:</span>
+            <strong>{ticket.customerName || "Khách hàng"}</strong>
+          </div>
+          <div className="payment-receipt-meta-row">
+            <span>Thời gian:</span>
+            <span>{fmt().dateTime(paidAt)}</span>
+          </div>
+          <div className="payment-receipt-meta-row">
+            <span>Phương thức:</span>
+            <strong>{methodLabel}</strong>
+          </div>
+        </div>
+
+        <div className="payment-receipt-divider" />
+
+        <div className="payment-receipt-items">
+          <div className="payment-receipt-item-row">
+            <span>Chi phí trong bảo hành:</span>
+            <span>{fmt().money(costs?.inWarrantyAmount || 0)}</span>
+          </div>
+          <div className="payment-receipt-item-row">
+            <span>Linh kiện ngoài bảo hành:</span>
+            <span>{fmt().money(costs?.outOfWarrantyParts || 0)}</span>
+          </div>
+          <div className="payment-receipt-item-row">
+            <span>Phí dịch vụ sửa chữa:</span>
+            <span>{fmt().money(costs?.serviceFee || 0)}</span>
+          </div>
+          <div className="payment-receipt-item-row">
+            <span>Thuế VAT (10%):</span>
+            <span>{fmt().money(costs?.vat || 0)}</span>
+          </div>
+          <div className="payment-receipt-total-row">
+            <span>TỔNG CỘNG:</span>
+            <span className="total-val">{fmt().money(costs?.total || 0)}</span>
+          </div>
+        </div>
+
+        <div className="payment-receipt-footer-note">
+          Biên lai điện tử có giá trị xác nhận đã thanh toán toàn bộ chi phí sửa chữa thiết bị.
         </div>
       </div>
     </div>
