@@ -11,13 +11,14 @@ import {
 
 type Json = any; // dữ liệu API đã được backend chiếu (POL-06)
 type Route =
-  | { view: "home" } | { view: "history" } | { view: "ticket"; code: string }
+  | { view: "home" } | { view: "history"; filter: string } | { view: "ticket"; code: string }
   | { view: "request"; serial: string } | { view: "profile" } | { view: "password" };
 
 function parseHash(hash: string): Route {
   const [head, ...rest] = decodeURIComponent(hash.replace(/^#/, "")).split("/");
   const tail = rest.join("/");
-  if (head === "lich-su") return { view: "history" };
+  // #lich-su/<nhóm> mở Lịch sử với sẵn bộ lọc (PROCESSING, WAITING, READY, COMPLETED).
+  if (head === "lich-su") return { view: "history", filter: TICKET_FILTERS.some(([key]) => key === tail) ? tail : "ALL" };
   if (head === "phieu" && tail) return { view: "ticket", code: tail };
   if (head === "yeu-cau-moi") return { view: "request", serial: tail };
   if (head === "ho-so") return { view: "profile" };
@@ -69,7 +70,7 @@ export default function AccountPage() {
   let body: ReactNode;
   if (error) body = <div className="page-container"><LoadError message={error} retry={reload} /></div>;
   else if (!data) body = <div className="page-container"><Skeleton /></div>;
-  else if (route.view === "history") body = <History data={data} />;
+  else if (route.view === "history") body = <History key={route.filter} data={data} filter={route.filter} />;
   else if (route.view === "ticket") body = <TicketDetail key={route.code} code={route.code} onChanged={reload} />;
   else if (route.view === "request") body = <NewRequest key={route.serial} data={data} serial={route.serial} onSubmitted={reload} />;
   else if (route.view === "profile" || route.view === "password") body = <ProfileArea data={data} view={route.view} onChanged={reload} />;
@@ -131,7 +132,7 @@ const stepText = (ticket: Json) => ticket.stopped
 /* ---------------------------------------------------------------- Trang chủ */
 
 function Overview({ data }: { data: Data }) {
-  const active = data.tickets.filter((t) => !t.stopped && t.status !== "DELIVERED");
+  const count = (group: string) => data.tickets.filter((t) => inGroup(group, t.status)).length;
   const awaiting = data.tickets.filter((t) => t.status === "AWAITING_CUSTOMER_CONFIRMATION");
   const name = data.profile.fullName;
   return (
@@ -153,17 +154,18 @@ function Overview({ data }: { data: Data }) {
 
           <div className="hero-dashboard-card">
             <div className="dash-stats-grid">
-              <a href="#lich-su" className="dash-stat-box">
+              {/* Cùng nhóm với bộ lọc Lịch sử bảo hành; bấm ô nào mở Lịch sử với bộ lọc đó. */}
+              <a href="#lich-su/PROCESSING" className="dash-stat-box">
                 <div className="dash-stat-label">Đang xử lý</div>
-                <div className="dash-stat-val">{active.length}</div>
+                <div className="dash-stat-val">{count("PROCESSING")}</div>
               </a>
-              <a href={awaiting[0] ? `#phieu/${awaiting[0].code}` : "#lich-su"} className="dash-stat-box">
+              <a href={awaiting[0] ? `#phieu/${awaiting[0].code}` : "#lich-su/WAITING"} className="dash-stat-box">
                 <div className="dash-stat-label">Chờ bạn xác nhận</div>
                 <div className="dash-stat-val">{awaiting.length}</div>
               </a>
-              <a href="#ho-so" className="dash-stat-box">
-                <div className="dash-stat-label">Thiết bị</div>
-                <div className="dash-stat-val">{data.devices.length}</div>
+              <a href="#lich-su/READY" className="dash-stat-box">
+                <div className="dash-stat-label">Chờ nhận máy</div>
+                <div className="dash-stat-val">{count("READY")}</div>
               </a>
             </div>
             <div className="dispatch-section-header">
@@ -259,8 +261,8 @@ function RequestList({ requests }: { requests: Json[] }) {
 
 /* ---------------------------------------------------------------- Lịch sử */
 
-function History({ data }: { data: Data }) {
-  const [group, setGroup] = useState("ALL");
+function History({ data, filter }: { data: Data; filter: string }) {
+  const [group, setGroup] = useState(filter);
   const [query, setQuery] = useState("");
   const count = (g: string) => data.tickets.filter((t) => inGroup(g, t.status)).length;
   const needle = query.trim().toLowerCase();
