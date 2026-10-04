@@ -88,3 +88,16 @@
   height: 22px;
   width: auto;
 }
+
+/* Icon trong badge trạng thái (labels.js): tốt / cảnh báo / lỗi có hình riêng, không chỉ khác màu. Đặt ở đây vì
+   components.css giữ nguyên byte theo bản gốc. */
+.status-badge__icon {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "lint": "tsc --noEmit && node scripts/check.mjs",
-    "test": "node scripts/check.mjs && node --test scripts/api.test.mjs",
+    "test": "node scripts/check.mjs && node --test scripts/api.test.mjs scripts/contrast.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

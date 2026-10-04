@@ -1287,6 +1287,12 @@ a.ticket-item-row:hover {
   font-weight: 600;
 }
 
+/* Rê chuột: liên kết có thêm gạch chân, không chỉ đổi màu (DESIGN.md → Colors). */
+.breadcrumb-text a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .kh-alert {
   display: flex;
   align-items: center;
@@ -1302,6 +1308,33 @@ a.ticket-item-row:hover {
 .kh-alert--success { background: var(--kh-mint-soft); color: var(--kh-forest); border: 1px solid #c3e2cf; }
 .kh-alert--error { background: var(--kh-bad-bg); color: var(--kh-bad-text); border: 1px solid var(--kh-peach); }
 .kh-alert--warning { background: var(--kh-warn-bg); color: var(--kh-warn-text); border: 1px solid #f3d58a; }
+
+/* Icon theo tông (DESIGN.md: trạng thái không chỉ nói bằng màu — với mù màu đỏ, nền mint và nền đỏ nhạt gần như
+   trùng nhau). Định vị tuyệt đối để không thành một mục flex, giữ nguyên bố cục chữ + nút của từng thông báo. */
+.kh-alert--success,
+.kh-alert--warning,
+.kh-alert--error {
+  position: relative;
+  padding-left: 48px;
+}
+
+.kh-alert--success::before,
+.kh-alert--warning::before,
+.kh-alert--error::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: 16px;
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  -webkit-mask: var(--kh-alert-icon) center / contain no-repeat;
+  mask: var(--kh-alert-icon) center / contain no-repeat;
+}
+
+.kh-alert--success::before { --kh-alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m8.5 12 2.5 2.5 4.5-5'/%3E%3C/svg%3E"); }
+.kh-alert--warning::before { --kh-alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 6v6l4 2'/%3E%3C/svg%3E"); }
+.kh-alert--error::before { --kh-alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m15 9-6 6M9 9l6 6'/%3E%3C/svg%3E"); }
 
 .profile-layout-grid {
   display: grid;
@@ -2405,6 +2438,8 @@ a.method-card:hover {
 
 .footer-links-ul a:hover {
   color: var(--kh-honey);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .footer-bottom-strip {
