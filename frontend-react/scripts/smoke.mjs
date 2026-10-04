@@ -231,6 +231,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await c.page.getByRole('heading', { name: 'Xin chào, Nguyễn Văn Khách' }).waitFor();
     await c.page.screenshot({ path: fileURLToPath(new URL(`account-${width}.png`, output)), fullPage: true });
     assert.equal(await c.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `overview ${width}: horizontal scroll`); assertions++;
+    // Trang tổng quan: 3 ô cùng nhóm với bộ lọc Lịch sử (mock: chờ khách xác nhận + đã bàn giao + chờ trả máy).
+    assert.deepEqual(await c.page.locator('.hero-dashboard-card .dash-stat-label').allInnerTexts(), ['Đang xử lý', 'Chờ bạn xác nhận', 'Chờ nhận máy']); assertions++;
+    assert.deepEqual(await c.page.locator('.hero-dashboard-card .dash-stat-val').allInnerTexts(), ['0', '1', '1']); assertions++;
+    await c.page.locator('.hero-dashboard-card .dash-stat-box', { hasText: 'Chờ nhận máy' }).click();
+    await c.page.waitForURL(base + '/account#lich-su/READY');
+    assert.equal(await c.page.locator('.filter-pill[aria-pressed="true"]').innerText(), 'Chờ nhận máy (1)'); assertions++;
     await c.page.goto(base + '/account#lich-su');
     await c.page.getByRole('button', { name: /^Hoàn thành/ }).click();
     assert.equal(await c.page.locator('.ticket-card-box').count(), 1); assertions++;
