@@ -198,9 +198,13 @@ public sealed class TicketStore(Sql sql)
 
     private async Task SaveHandoverAsync(Ticket ticket)
     {
-        if (ticket.Handover is not { } handover
-            || await sql.ScalarAsync("SELECT 1 FROM PhieuBanGiao WHERE MaBanGiao = ?", handover.Code) is not null)
+        if (ticket.Handover is not { } handover) return;
+        var exists = await sql.ScalarAsync("SELECT 1 FROM PhieuBanGiao WHERE MaBanGiao = ?", handover.Code) is not null;
+        if (exists)
+        {
+            await sql.ExecuteAsync("UPDATE PhieuBanGiao SET DanhGiaHaiLong = ? WHERE MaBanGiao = ?", handover.Rating, handover.Code);
             return;
+        }
         var recheck = handover.Recheck;
         await sql.ExecuteAsync(
             "INSERT INTO PhieuBanGiao (MaBanGiao, MaPhieuTN, LoaiBanGiao, NgayBanGiao, MaNVBanGiao, NguoiNhanMay, HienTrangKhiTra, TraLaiLinhKienCu, "

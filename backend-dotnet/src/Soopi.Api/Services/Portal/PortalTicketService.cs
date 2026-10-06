@@ -1,3 +1,4 @@
+using Soopi.Api.Data;
 using Soopi.Api.Data.Stores;
 using Soopi.Api.Domain.Identity;
 using Soopi.Api.Domain.Quotations;
@@ -7,6 +8,7 @@ using Soopi.Api.Infrastructure.Security;
 using Soopi.Api.Infrastructure.Validation;
 using Soopi.Api.Services.Billing;
 using Soopi.Api.Services.Quotations;
+using Soopi.Api.Services.Shared;
 
 namespace Soopi.Api.Services.Portal;
 
@@ -28,7 +30,7 @@ public sealed record PendingQuotation(
 public sealed record PortalTicketView(
     string Code, string? ProductName, string? BrandName, string? SerialOrImei, DateTimeOffset ReceivedAt, DateTimeOffset? PromisedReturnAt,
     string Status, bool Stopped, IReadOnlyList<PortalStep> Steps, IReadOnlyList<PortalNote> CustomerNotes, PortalCosts Costs,
-    PendingQuotation? PendingQuotation, DateTimeOffset? HandedOverAt)
+    PendingQuotation? PendingQuotation, DateTimeOffset? HandedOverAt, int? Rating, bool CanRate)
 {
     private static readonly string[] StepKeys = ["RECEIVED", "DIAGNOSIS", "AWAITING_PARTS", "REPAIRING", "QC", "READY"];
     private static readonly string[] StepLabels = ["Tiếp nhận", "Chẩn đoán", "Chờ linh kiện", "Đang sửa", "QC", "Sẵn sàng nhận máy"];
@@ -36,6 +38,7 @@ public sealed record PortalTicketView(
     public static PortalTicketView From(Ticket ticket, BillingBreakdown billing, Quotation? pending)
     {
         var device = ticket.DeviceSnapshot;
+        var isDelivered = ticket.Status is TicketStatus.DELIVERED or TicketStatus.RETURNED_UNREPAIRED;
         return new PortalTicketView(
             ticket.Id, device.GetValueOrDefault("productName"), device.GetValueOrDefault("brandName"), device.GetValueOrDefault("serialOrImei"),
             ticket.ReceivedAt, ticket.PromisedReturnAt, ticket.Status.ToString(), IsStopped(ticket.Status), BuildSteps(ticket.Status),
@@ -46,7 +49,9 @@ public sealed record PortalTicketView(
                 : new PendingQuotation(pending.Id, pending.ValidUntil, pending.VatRate,
                     pending.Lines.Select(line => new PortalQuotationLine(line.LineNo, line.Description, line.Quantity, line.UnitPrice, line.LaborFee, line.LineTotal)).ToList(),
                     pending.PartsTotal, pending.LaborTotal, pending.GrandTotal),
-            ticket.Handover?.HandedOverAt);
+            ticket.Handover?.HandedOverAt,
+            ticket.Handover?.Rating,
+            isDelivered);
     }
 
     /// <summary>Bước hiện tại theo mục 11.2; StepKeys.Length nghĩa là mọi bước đã xong.</summary>
@@ -69,12 +74,22 @@ public sealed record PortalTicketView(
     }
 }
 
-public sealed record PortalTicketSummary(string Code, string? ProductName, string? SerialOrImei, DateTimeOffset ReceivedAt, string Status, bool Stopped, int CurrentStep);
+public sealed record PortalTicketSummary(string Code, string? ProductName, string? SerialOrImei, DateTimeOffset ReceivedAt, string Status, bool Stopped, int CurrentStep, int? Rating = null);
 
 public sealed record DecisionRequest([NotNull] Decision? Decision, string? Reason);
 
+public sealed record TicketRatingRequest([property: NotNull, Min(1), Max(5)] int? Rating, string? Comment);
+
 public sealed class PortalTicketService(
-    TicketStore tickets, QuotationStore quotations, BillingCalculator billing, CustomerDecisionService decisions, PortalPolicy policy, CurrentActor actors)
+    TicketStore tickets,
+    QuotationStore quotations,
+    BillingCalculator billing,
+    CustomerDecisionService decisions,
+    PortalPolicy policy,
+    CurrentActor actors,
+    TransactionRunner transactions,
+    AuditService audit,
+    TimeProvider clock)
 {
     public async Task<PortalTicketView> TicketAsync(string code)
     {
@@ -88,7 +103,8 @@ public sealed class PortalTicketService(
         return (await tickets.FindByCustomerAsync(policy.RequireCustomerAccount()))
             .Select(ticket => new PortalTicketSummary(ticket.Id, ticket.DeviceSnapshot.GetValueOrDefault("productName"),
                 ticket.DeviceSnapshot.GetValueOrDefault("serialOrImei"), ticket.ReceivedAt, ticket.Status.ToString(),
-                PortalTicketView.IsStopped(ticket.Status), PortalTicketView.CurrentStep(ticket.Status)))
+                PortalTicketView.IsStopped(ticket.Status), PortalTicketView.CurrentStep(ticket.Status),
+                ticket.Handover?.Rating))
             .ToList();
     }
 
@@ -102,6 +118,34 @@ public sealed class PortalTicketService(
         return await ViewAsync(await RequireTicketAsync(code));
     }
 
+    /// <summary>Khách hàng gửi đánh giá và chấm điểm dịch vụ sau khi nhận máy (bàn giao).</summary>
+    public async Task<PortalTicketView> RateTicketAsync(string code, int? rating, string? comment)
+    {
+        actors.RequireOrPortal(Permission.PORTAL_SELF);
+        if (rating is null or < 1 or > 5) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        var ticket = await RequireTicketAsync(code);
+        if (ticket.Status is not (TicketStatus.DELIVERED or TicketStatus.RETURNED_UNREPAIRED))
+            throw new DomainException(ErrorCode.TICKET_INVALID_STATE);
+
+        var actor = CustomerActing(ticket);
+        var now = clock.GetUtcNow();
+
+        await transactions.InTransactionAsync(async () =>
+        {
+            ticket.UpdateRating(rating.Value);
+            if (!string.IsNullOrWhiteSpace(comment))
+            {
+                var noteText = $"[Khách đánh giá {rating} sao]: {comment.Trim()}";
+                ticket.AddCustomerNote(noteText, now, actor);
+            }
+            await tickets.SaveAsync(ticket);
+            await audit.RecordAsync(actor.AuditId, actor.DisplayName, actor.RoleNames, "TICKET_RATED",
+                $"Đánh giá {rating} sao cho phiếu {code}", "TICKET", code, null, rating.ToString());
+        });
+
+        return await ViewAsync(await RequireTicketAsync(code));
+    }
+
     /// <summary>Khách chỉ thấy phiếu của mình; portal token chỉ thấy đúng mã đã tra cứu; ngoài phạm vi → 404 (POL-03).</summary>
     private async Task<Ticket> RequireTicketAsync(string code)
     {
@@ -111,7 +155,7 @@ public sealed class PortalTicketService(
         return ticket;
     }
 
-    /// <summary>Người quyết định báo giá: tài khoản khách, hoặc chủ phiếu đại diện bởi portal token (lịch sử ghi KH:mã).</summary>
+    /// <summary>Người quyết định báo giá / đánh giá: tài khoản khách, hoặc chủ phiếu đại diện bởi portal token (lịch sử ghi KH:mã).</summary>
     private AuthenticatedActor CustomerActing(Ticket ticket) =>
         actors.Actor is { } actor && OwnsTicket(actor, ticket)
             ? actor

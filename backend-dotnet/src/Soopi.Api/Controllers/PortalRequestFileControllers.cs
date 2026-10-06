@@ -29,6 +29,9 @@ public sealed class PortalController(
     [HttpPost("tickets/{code}/quotation-decision")]
     public Task<PortalTicketView> Decide(string code, [FromBody] DecisionRequest body) => tickets.DecideQuotationAsync(code, body.Decision, body.Reason);
 
+    [HttpPost("tickets/{code}/rating")]
+    public Task<PortalTicketView> Rate(string code, [FromBody] TicketRatingRequest body) => tickets.RateTicketAsync(code, body.Rating, body.Comment);
+
     [HttpGet("my/tickets")]
     public Task<List<PortalTicketSummary>> MyTickets() => tickets.MyTicketsAsync();
 

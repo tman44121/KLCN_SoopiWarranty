@@ -141,4 +141,26 @@ public class TicketTests
         Assert.Equal("NV-005", ticket.RepairOrder!.TechnicianId);
         Assert.Single(ticket.Assignment!.History);
     }
+
+    [Fact]
+    public async Task HandoverRating_CanBeUpdated_AndValidatesRange()
+    {
+        var ticket = Diagnosed(WarrantyClassification.FREE_WARRANTY);
+        ticket.StartFreeRepair(Now, Technician);
+        ticket.RecordRepairResult("KQ-1", "Thay IC", Steps(), "PASS", null, Now, Technician);
+        var input = new HandoverInput("Khách", "Bình thường", false, "6 tháng", 4,
+            new Recheck(true, true, true, true, true), true);
+        var sigPng = new byte[] { 0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A };
+        await ticket.HandOverAsync("PBG-1", input, () => Task.FromResult(new Signature("1", Now)), Now, Receptionist);
+        Assert.Equal(TicketStatus.DELIVERED, ticket.Status);
+        Assert.Equal(4, ticket.Handover!.Rating);
+
+        // Update rating to 5
+        ticket.UpdateRating(5);
+        Assert.Equal(5, ticket.Handover.Rating);
+
+        // Invalid rating range
+        Assert.Throws<DomainException>(() => ticket.UpdateRating(0));
+        Assert.Throws<DomainException>(() => ticket.UpdateRating(6));
+    }
 }

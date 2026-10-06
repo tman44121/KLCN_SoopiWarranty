@@ -358,6 +358,13 @@ public sealed class Ticket
         TransitionTo(Status == TicketStatus.COMPLETED ? TicketStatus.DELIVERED : TicketStatus.RETURNED_UNREPAIRED, actor, null, now, HandoverActorRole(actor));
     }
 
+    public void UpdateRating(int rating)
+    {
+        if (rating is < 1 or > 5) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (Handover is null) throw new DomainException(ErrorCode.HANDOVER_INVALID_STATE);
+        Handover = Handover with { Rating = rating };
+    }
+
     public void MarkQuotationPending(string quotationCode, DateTimeOffset now, AuthenticatedActor actor)
     {
         if (Status != TicketStatus.DIAGNOSED) throw new DomainException(ErrorCode.TICKET_INVALID_STATE);

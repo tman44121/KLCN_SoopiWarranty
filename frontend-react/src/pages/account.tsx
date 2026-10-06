@@ -186,7 +186,18 @@ function Overview({ data }: { data: Data }) {
                         <div className="ticket-meta"><span className="mono">{ticket.code}</span> · Nhận {fmt().date(ticket.receivedAt)}</div>
                       </div>
                     </div>
-                    <StatusBadge table="TICKET_STATUS_CUSTOMER" code={ticket.status} />
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      {ticket.rating ? (
+                        <span className="rating-pill-badge rated" title={`Đánh giá ${ticket.rating}/5 sao`}>
+                          ⭐ {ticket.rating}/5
+                        </span>
+                      ) : (ticket.status === "DELIVERED" || ticket.status === "RETURNED_UNREPAIRED") ? (
+                        <span className="rating-pill-badge unrated" title="Chưa đánh giá dịch vụ">
+                          ⭐ Đánh giá
+                        </span>
+                      ) : null}
+                      <StatusBadge table="TICKET_STATUS_CUSTOMER" code={ticket.status} />
+                    </div>
                   </a>
                 ))}
               </div>
@@ -315,7 +326,16 @@ function History({ data, filter }: { data: Data; filter: string }) {
           <article key={ticket.code} className="ticket-card-box">
             <div className="ticket-card-header">
               <span className="ticket-code-tag">{ticket.code}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                {ticket.rating ? (
+                  <span className="rating-pill-badge rated" title={`Đánh giá ${ticket.rating}/5 sao`}>
+                    ⭐ {ticket.rating}/5
+                  </span>
+                ) : (ticket.status === "DELIVERED" || ticket.status === "RETURNED_UNREPAIRED") ? (
+                  <span className="rating-pill-badge unrated" title="Chưa đánh giá dịch vụ">
+                    ⭐ Đánh giá
+                  </span>
+                ) : null}
                 <StatusBadge table="TICKET_STATUS_CUSTOMER" code={ticket.status} />
                 <span className="ticket-date-info">Ngày nhận: {fmt().date(ticket.receivedAt)}</span>
               </div>
@@ -387,6 +407,7 @@ function TicketDetail({ code, onChanged }: { code: string; onChanged: () => void
       <div className="detail-grid-2">
         <div className="content-stack">
           {ticket.pendingQuotation && <Quotation ticket={ticket} onDecided={(updated) => { setTicket(updated); onChanged(); }} />}
+          <RatingReviewSection ticket={ticket} onRated={(updated) => { setTicket(updated); onChanged(); }} />
           <section className="content-panel-card">
             <h2 className="card-heading-title">Tiến độ xử lý</h2>
             <p className="card-heading-desc">
@@ -1231,6 +1252,201 @@ function Quotation({ ticket, onDecided }: { ticket: Json; onDecided: (ticket: Js
           </>
         )}
       </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- Đánh giá & Chấm điểm dịch vụ */
+
+const RATING_LABELS: Record<number, { text: string; desc: string; emoji: string }> = {
+  1: { text: "Rất không hài lòng", desc: "Dịch vụ chưa đáp ứng kỳ vọng của bạn", emoji: "😞" },
+  2: { text: "Chưa hài lòng", desc: "Cần cải thiện chất lượng sửa chữa hoặc thời gian xử lý", emoji: "🙁" },
+  3: { text: "Bình thường", desc: "Chất lượng dịch vụ ở mức tạm ổn", emoji: "😐" },
+  4: { text: "Hài lòng", desc: "Dịch vụ tốt, sửa chữa chu đáo và đúng hẹn", emoji: "😊" },
+  5: { text: "Rất hài lòng & Xuất sắc", desc: "Chất lượng kỹ thuật và phục vụ vượt mong đợi!", emoji: "🌟" },
+};
+
+const QUICK_TAGS = [
+  "Sửa chữa nhanh chóng",
+  "Kỹ thuật viên nhiệt tình",
+  "Máy hoạt động tốt",
+  "Chi phí minh bạch",
+  "Đóng gói cẩn thận",
+  "Tư vấn chu đáo",
+];
+
+function RatingReviewSection({ ticket, onRated }: { ticket: Json; onRated: (updatedTicket: Json) => void }) {
+  const isDelivered = ticket.canRate || ticket.status === "DELIVERED" || ticket.status === "RETURNED_UNREPAIRED" || Boolean(ticket.handedOverAt);
+  if (!isDelivered) return null;
+
+  const currentRating = Number(ticket.rating) || 0;
+  const [editing, setEditing] = useState(!currentRating);
+  const [stars, setStars] = useState<number>(currentRating || 5);
+  const [hoverStars, setHoverStars] = useState<number>(0);
+  const [comment, setComment] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [error, setError] = useState("");
+  const [busy, run] = useBusy();
+
+  const activeStars = hoverStars || stars;
+  const ratingInfo = RATING_LABELS[activeStars] || RATING_LABELS[5];
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const submit = () => run(async () => {
+    setError("");
+    if (!stars || stars < 1 || stars > 5) return setError("Vui lòng chọn số sao đánh giá (1-5 sao).");
+    try {
+      const fullComment = [
+        selectedTags.length ? `[${selectedTags.join(", ")}]` : "",
+        comment.trim(),
+      ].filter(Boolean).join(" ");
+
+      const updated = await api().post(`/portal/tickets/${encodeURIComponent(ticket.code)}/rating`, {
+        rating: stars,
+        comment: fullComment || null,
+      });
+      (window as Json).showToast?.("Cảm ơn bạn đã gửi đánh giá dịch vụ!", "success");
+      onRated(updated);
+      setEditing(false);
+    } catch (e) {
+      setError(errorText(e));
+    }
+  });
+
+  return (
+    <section className="content-panel-card customer-rating-card">
+      <div className="panel-head">
+        <div>
+          <h2 className="card-heading-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span>⭐</span> Đánh giá chất lượng dịch vụ
+          </h2>
+          <p className="card-heading-desc">
+            Ý kiến đóng góp của bạn giúp trung tâm Soopi nâng cao chất lượng phục vụ và kỹ thuật sửa chữa.
+          </p>
+        </div>
+        {currentRating > 0 && !editing && (
+          <span className="badge badge-completed has-icon">
+            <Icon glyph="checkCircle" /> Đã đánh giá
+          </span>
+        )}
+      </div>
+
+      {currentRating > 0 && !editing ? (
+        <div className="rated-view-box">
+          <div className="rated-header-row">
+            <div className="rated-stars-wrap">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <span key={s} className={"star-glyph " + (s <= currentRating ? "is-filled" : "")}>
+                  ★
+                </span>
+              ))}
+              <span className="rated-score-text">{currentRating}/5 sao</span>
+            </div>
+            <button
+              type="button"
+              className="btn-secondary-white btn-sm"
+              onClick={() => {
+                setStars(currentRating);
+                setEditing(true);
+              }}
+            >
+              Chỉnh sửa đánh giá
+            </button>
+          </div>
+          <div className="rated-feedback-label">
+            <strong>{RATING_LABELS[currentRating]?.text}</strong> — {RATING_LABELS[currentRating]?.desc}
+          </div>
+        </div>
+      ) : (
+        <div className="rating-form-wrap">
+          <div className="star-picker-container">
+            <div className="star-picker-row" role="radiogroup" aria-label="Đánh giá số sao">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={"star-picker-btn " + (s <= activeStars ? "is-active" : "")}
+                  onMouseEnter={() => setHoverStars(s)}
+                  onMouseLeave={() => setHoverStars(0)}
+                  onClick={() => setStars(s)}
+                  aria-label={`${s} sao - ${RATING_LABELS[s]?.text}`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <div className="star-picker-label-box">
+              <span className="star-rating-emoji">{ratingInfo.emoji}</span>
+              <div>
+                <strong className="star-rating-title">{ratingInfo.text}</strong>
+                <div className="star-rating-subtitle">{ratingInfo.desc}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rating-quick-tags-section">
+            <div className="rating-section-caption">Chọn nhanh cảm nhận:</div>
+            <div className="quick-tags-wrap">
+              {QUICK_TAGS.map((tag) => {
+                const isSelected = selectedTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    className={"quick-tag-chip " + (isSelected ? "is-selected" : "")}
+                    onClick={() => toggleTag(tag)}
+                  >
+                    {isSelected ? "✓ " : "+ "}{tag}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rating-comment-box">
+            <label htmlFor="rating-comment-input" className="rating-section-caption">
+              Nhận xét chi tiết (tùy chọn):
+            </label>
+            <textarea
+              id="rating-comment-input"
+              className="regular-input"
+              rows={3}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Chia sẻ thêm về trải nghiệm sửa chữa, thái độ phục vụ hoặc điều bạn mong muốn trung tâm cải thiện..."
+              maxLength={1000}
+            />
+          </div>
+
+          {error && <div className="field-error" role="alert">{error}</div>}
+
+          <div className="rating-actions-bar">
+            {currentRating > 0 && (
+              <button
+                type="button"
+                className="btn-secondary-white btn-sm"
+                onClick={() => { setEditing(false); setError(""); }}
+                disabled={busy}
+              >
+                Hủy bỏ
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn-primary-teal"
+              onClick={submit}
+              disabled={busy}
+            >
+              {busy ? "Đang gửi…" : currentRating > 0 ? "Cập nhật đánh giá" : "Gửi đánh giá dịch vụ"}
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
