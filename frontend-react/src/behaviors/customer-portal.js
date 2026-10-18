@@ -93,13 +93,23 @@ export default function initialize() {
     el.result.hidden = false;
     const accept = el.result.querySelector("[data-quote-accept]");
     const decline = el.result.querySelector("[data-quote-decline]");
-    if (accept) accept.addEventListener("click", (event) => decide(ticket.code, "ACCEPT", null, event.currentTarget));
+    if (accept) accept.addEventListener("click", async (event) => {
+      const quote = ticket.pendingQuotation;
+      const confirmed = await window.LML_UI.confirm({
+        title: "Xác nhận duyệt báo giá sửa chữa?",
+        message: `Tổng chi phí xác nhận thanh toán là ${fmt.money(quote.grandTotal)} (đã gồm linh kiện, tiền công và thuế VAT). Linh kiện thay thế được bảo hành chính hãng. Bạn chỉ thanh toán khi đã kiểm tra và nhận máy hoàn tất.`,
+        confirmLabel: `Tôi đồng ý mức giá (${fmt.money(quote.grandTotal)})`,
+        cancelLabel: "Xem lại",
+        destructive: false,
+      });
+      if (confirmed) await decide(ticket.code, "ACCEPT", null, event.currentTarget);
+    });
     if (decline) decline.addEventListener("click", async (event) => {
       const reason = await window.LML_UI.promptReason({
-        title: "Từ chối báo giá?",
-        message: "Trung tâm sẽ dừng phần sửa chữa tính phí sau khi xác nhận.",
-        confirmLabel: "Từ chối báo giá",
-        placeholder: "Nhập lý do từ chối",
+        title: "Từ chối báo giá sửa chữa?",
+        message: "Lưu ý: Trung tâm sẽ dừng phần sửa chữa tính phí và chuẩn bị thủ tục trả lại thiết bị nguyên trạng.",
+        confirmLabel: "Xác nhận từ chối",
+        placeholder: "Nhập lý do từ chối (bắt buộc)...",
       });
       if (reason) await decide(ticket.code, "DECLINE", reason, event.currentTarget);
     });
@@ -109,15 +119,18 @@ export default function initialize() {
     const quote = ticket.pendingQuotation;
     return html`<section class="content-panel-card quote-card"><div class="panel-head"><div><h2 class="card-heading-title">Xác nhận báo giá sửa chữa</h2><p class="card-heading-desc">Có hiệu lực đến ${fmt.date(quote.validUntil)}</p></div><span class="badge badge-waiting">Chờ khách xác nhận</span></div>
       <div class="kv-list">${quote.lines.map((line) => html`<div class="kv-row"><span>${line.description} × ${line.quantity}</span><span>${fmt.money(line.lineTotal)}</span></div>`)}
-        <div class="kv-row is-total"><span>Tổng khách phải trả</span><span>${fmt.money(quote.grandTotal)}</span></div></div>
-      <div class="quote-actions"><button type="button" class="btn-secondary-white btn-danger-outline" data-quote-decline>Từ chối báo giá</button><button type="button" class="btn-primary-teal" data-quote-accept>Xác nhận báo giá</button></div>
+        <div class="kv-row"><span>Linh kiện thay thế</span><span>${fmt.money(quote.partsTotal)}</span></div>
+        <div class="kv-row"><span>Tiền công kỹ thuật</span><span>${fmt.money(quote.laborTotal)}</span></div>
+        <div class="kv-row"><span>Thuế VAT (${Number(quote.vatRate)}%)</span><span>${fmt.money(quote.grandTotal - quote.partsTotal - quote.laborTotal)}</span></div>
+        <div class="kv-row is-total"><span>Tổng khách phải trả</span><span style="color:var(--kh-forest);font-weight:800;">${fmt.money(quote.grandTotal)}</span></div></div>
+      <div class="quote-actions"><button type="button" class="btn-secondary-white btn-danger-outline" data-quote-decline>Từ chối báo giá</button><button type="button" class="btn-primary-teal" data-quote-accept>Kiểm tra &amp; Xác nhận giá →</button></div>
     </section>`;
   }
 
   async function decide(code, decision, reason, button) {
     try {
       const updated = await window.LML_UI.busy(button, () => api.portal.decide(code, decision, reason));
-      window.showToast(decision === "ACCEPT" ? "Đã xác nhận báo giá." : "Đã từ chối báo giá.", "success");
+      window.showToast(decision === "ACCEPT" ? "Đã xác nhận báo giá. Kỹ thuật viên sẽ tiến hành sửa chữa." : "Đã từ chối báo giá.", "success");
       renderTicket(updated);
     } catch (error) {
       showError(error);
@@ -131,8 +144,32 @@ export default function initialize() {
       <div class="kv-row"><span>Serial/IMEI</span><strong class="mono">${request.serialOrImei}</strong></div>
       <div class="kv-row"><span>Thời gian mong muốn</span><strong>${fmt.dateTime(request.preferredFrom)}</strong></div>
       ${request.ticketCode ? html`<div class="kv-row"><span>Phiếu tiếp nhận</span><strong class="mono">${request.ticketCode}</strong></div>` : ""}
-    </div></section>`;
+    </div>
+    ${request.ticketCode ? html`
+      <div class="kh-alert kh-alert--warning" style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+          <strong>Thiết bị đã được tiếp nhận tại trạm:</strong>
+          <div>Phiếu sửa chữa <span class="mono">${request.ticketCode}</span> đã được lập. Bạn có thể xem chi tiết tiến độ và xác nhận báo giá.</div>
+        </div>
+        <button type="button" class="btn-primary-teal btn-sm" data-load-ticket="${request.ticketCode}">Xem tiến độ &amp; Báo giá →</button>
+      </div>` : ""}
+    </section>`;
     el.result.hidden = false;
+    const loadTicketBtn = el.result.querySelector("[data-load-ticket]");
+    if (loadTicketBtn) {
+      loadTicketBtn.addEventListener("click", async () => {
+        const ticketCode = loadTicketBtn.getAttribute("data-load-ticket");
+        const phone = el.lookupPhone.value.trim();
+        try {
+          const grant = await window.LML_UI.busy(loadTicketBtn, () => api.portal.lookup(ticketCode, phone));
+          api.portalTokens.set(grant);
+          renderTicket(await api.portal.ticket(grant.code));
+          window.scrollTo({ top: el.result.offsetTop - 20, behavior: window.LML_UI.scrollBehavior() });
+        } catch (error) {
+          showError(error);
+        }
+      });
+    }
   }
 
   async function lookup() {

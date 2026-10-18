@@ -370,6 +370,7 @@ type ChatMessage = {
 const DEMO_MESSAGES: ChatMessage[] = [
   { id: 'm0', role: 'system', text: 'Phiên hỗ trợ bắt đầu — Kỹ thuật viên sẽ phản hồi trong giờ làm việc (8:00–17:30).', time: new Date(Date.now() - 60 * 60 * 1000) },
   { id: 'm1', role: 'technician', text: 'Xin chào! Tôi là kỹ thuật viên phụ trách thiết bị của bạn. Tôi có thể giúp gì cho bạn?', time: new Date(Date.now() - 58 * 60 * 1000) },
+  { id: 'm2', role: 'technician', text: 'Thiết bị của bạn sau khi kiểm tra nếu có linh kiện ngoài bảo hành sẽ được gửi báo giá chi tiết. Bạn có thể kiểm tra và bấm "Xác nhận giá" ngay trong chi tiết phiếu để chúng tôi tiến hành sửa chữa nhé!', time: new Date(Date.now() - 15 * 60 * 1000) },
 ];
 
 function formatChatTime(date: Date): string {

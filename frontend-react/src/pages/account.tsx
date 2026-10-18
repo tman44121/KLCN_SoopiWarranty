@@ -129,7 +129,9 @@ function MiniSteps({ current }: { current: number }) {
 
 const stepText = (ticket: Json) => ticket.stopped
   ? "Phiếu đã dừng"
-  : ticket.currentStep >= STEP_LABELS.length ? "Đã bàn giao" : `Bước ${ticket.currentStep + 1}/${STEP_LABELS.length}: ${STEP_LABELS[ticket.currentStep]}`;
+  : ticket.status === "AWAITING_CUSTOMER_CONFIRMATION"
+    ? "Đang chờ bạn xác nhận báo giá"
+    : ticket.currentStep >= STEP_LABELS.length ? "Đã bàn giao" : `Bước ${ticket.currentStep + 1}/${STEP_LABELS.length}: ${STEP_LABELS[ticket.currentStep]}`;
 
 /* ---------------------------------------------------------------- Trang chủ */
 
@@ -226,7 +228,7 @@ function Overview({ data }: { data: Data }) {
               </div>
               <a href="#yeu-cau-moi" className="btn-secondary-white btn-sm"><Icon glyph="plus" />Gửi mới</a>
             </div>
-            <RequestList requests={data.requests.slice(0, 5)} />
+            <RequestList requests={data.requests.slice(0, 5)} tickets={data.tickets} />
           </section>
           <section className="content-panel-card">
             <div className="panel-head">
@@ -252,25 +254,40 @@ function Overview({ data }: { data: Data }) {
   );
 }
 
-function RequestList({ requests }: { requests: Json[] }) {
+function RequestList({ requests, tickets = [] }: { requests: Json[]; tickets?: Json[] }) {
   if (!requests.length) return <p className="card-heading-desc">Bạn chưa gửi yêu cầu trực tuyến nào.</p>;
+  const ticketMap = new Map<string, Json>();
+  tickets.forEach((t) => { if (t.code) ticketMap.set(t.code, t); });
   return (
     <div className="dispatch-ticket-list">
-      {requests.map((request) => (
-        <div key={request.code} className="ticket-item-row">
-          <div className="ticket-info-left">
-            <span className="ticket-type-icon type-sr"><Icon glyph="file" /></span>
-            <div style={{ minWidth: 0 }}>
-              <div className="ticket-title">{request.brandModel || "Thiết bị"}</div>
-              <div className="ticket-meta">
-                <span className="mono">{request.code}</span> · Gửi {fmt().date(request.createdAt)}
-                {request.ticketCode && <> · Phiếu <a className="dispatch-link" href={`#phieu/${request.ticketCode}`}>{request.ticketCode}</a></>}
+      {requests.map((request) => {
+        const linkedTicket = request.ticketCode ? ticketMap.get(request.ticketCode) : null;
+        const awaitingQuote = linkedTicket?.status === "AWAITING_CUSTOMER_CONFIRMATION";
+        return (
+          <div key={request.code} className="ticket-item-row" style={{ alignItems: "center" }}>
+            <div className="ticket-info-left">
+              <span className="ticket-type-icon type-sr"><Icon glyph="file" /></span>
+              <div style={{ minWidth: 0 }}>
+                <div className="ticket-title">{request.brandModel || "Thiết bị"}</div>
+                <div className="ticket-meta">
+                  <span className="mono">{request.code}</span> · Gửi {fmt().date(request.createdAt)}
+                  {request.ticketCode && <> · Phiếu <a className="dispatch-link" href={`#phieu/${request.ticketCode}`}>{request.ticketCode}</a></>}
+                </div>
               </div>
             </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+              {awaitingQuote ? (
+                <>
+                  <span className="badge badge-waiting has-icon"><Icon glyph="clock" />Báo giá chờ duyệt</span>
+                  <a href={`#phieu/${request.ticketCode}`} className="btn-primary-teal btn-sm">Xem &amp; Xác nhận giá →</a>
+                </>
+              ) : (
+                <StatusBadge table="WARRANTY_REQUEST_STATUS" code={request.status} />
+              )}
+            </div>
           </div>
-          <StatusBadge table="WARRANTY_REQUEST_STATUS" code={request.status} />
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -364,7 +381,7 @@ function History({ data, filter }: { data: Data; filter: string }) {
       </div>
 
       <h2 className="section-heading section-gap">Yêu cầu bảo hành trực tuyến</h2>
-      <div className="content-panel-card"><RequestList requests={data.requests} /></div>
+      <div className="content-panel-card"><RequestList requests={data.requests} tickets={data.tickets} /></div>
     </div>
   );
 }
@@ -417,12 +434,16 @@ function TicketDetail({ code, onChanged }: { code: string; onChanged: () => void
               {ticket.steps.map((step: Json, index: number) => {
                 const isDone = step.state === "DONE";
                 const isActive = step.state === "CURRENT" && !ticket.stopped;
+                const isAwaitingQuote = isActive && ticket.status === "AWAITING_CUSTOMER_CONFIRMATION";
                 return (
-                  <li key={step.key} className={"timeline-node-item" + (isDone ? " is-done" : isActive ? " active" : "")}>
+                  <li key={step.key} className={"timeline-node-item" + (isDone ? " is-done" : isActive ? " active" : "") + (isAwaitingQuote ? " awaiting-quote" : "")}>
                     <span className="timeline-dot">{isDone ? <Icon glyph="check" /> : index + 1}</span>
-                    <div className="timeline-title">{step.label}</div>
+                    <div className="timeline-title">
+                      {step.label}
+                      {isAwaitingQuote && <span className="step-quote-tag">Cần xác nhận giá</span>}
+                    </div>
                     <div className="timeline-desc">
-                      {isDone ? "Hoàn tất" : isActive ? "Đang xử lý tại trạm" : "Chưa tới"}
+                      {isAwaitingQuote ? "Đang chờ bạn duyệt báo giá sửa chữa" : isDone ? "Hoàn tất" : isActive ? "Đang xử lý tại trạm" : "Chưa tới"}
                     </div>
                   </li>
                 );
@@ -1195,66 +1216,244 @@ function ReceiptScreen({ ticket, costs, method, txId, paidAt }: { ticket: Json; 
 
 function Quotation({ ticket, onDecided }: { ticket: Json; onDecided: (ticket: Json) => void }) {
   const quote = ticket.pendingQuotation;
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const [busy, run] = useBusy();
+
   const decide = (decision: "ACCEPT" | "DECLINE") => run(async () => {
     setError("");
-    if (decision === "DECLINE" && !reason.trim()) return setError("Vui lòng nhập lý do từ chối.");
+    if (decision === "DECLINE" && !reason.trim()) return setError("Vui lòng nhập lý do từ chối báo giá.");
     try {
-      onDecided(await api().post(`/portal/tickets/${encodeURIComponent(ticket.code)}/quotation-decision`,
-        { decision, reason: decision === "DECLINE" ? reason.trim() : null }));
-      (window as Json).showToast?.(decision === "ACCEPT" ? "Đã xác nhận báo giá." : "Đã từ chối báo giá.", "success");
+      const updated = await api().post(`/portal/tickets/${encodeURIComponent(ticket.code)}/quotation-decision`,
+        { decision, reason: decision === "DECLINE" ? reason.trim() : null });
+      setConfirmOpen(false);
+      onDecided(updated);
+      (window as Json).showToast?.(decision === "ACCEPT" ? "Đã xác nhận báo giá. Kỹ thuật viên sẽ tiến hành sửa chữa." : "Đã ghi nhận từ chối báo giá.", "success");
     } catch (e) {
       setError(errorText(e));
     }
   });
+
   return (
-    <section className="content-panel-card quote-card">
-      <div className="panel-head">
-        <div>
-          <h2 className="card-heading-title">Xác nhận báo giá sửa chữa</h2>
-          <p className="card-heading-desc">Có hiệu lực đến {fmt().date(quote.validUntil)}. Trung tâm chỉ sửa phần tính phí sau khi bạn đồng ý.</p>
+    <>
+      <section className="content-panel-card quote-card">
+        <div className="panel-head">
+          <div>
+            <h2 className="card-heading-title">Xác nhận báo giá sửa chữa</h2>
+            <p className="card-heading-desc">Có hiệu lực đến {fmt().date(quote.validUntil)}. Trung tâm chỉ sửa phần tính phí sau khi bạn đồng ý.</p>
+          </div>
+          <span className="badge badge-waiting">Chờ bạn xác nhận</span>
         </div>
-        <span className="badge badge-waiting">Chờ bạn xác nhận</span>
-      </div>
-      <div className="kv-list">
-        {quote.lines.map((line: Json) => (
-          <div key={line.lineNo} className="kv-row"><span>{line.description} × {line.quantity}</span><span>{fmt().money(line.lineTotal)}</span></div>
-        ))}
-        {/* Dòng hạng mục đã gồm tiền công; tách linh kiện / công / VAT để khách cộng lại được ra tổng. */}
-        <div className="kv-row"><span>Linh kiện</span><span>{fmt().money(quote.partsTotal)}</span></div>
-        <div className="kv-row"><span>Tiền công</span><span>{fmt().money(quote.laborTotal)}</span></div>
-        <div className="kv-row"><span>VAT ({Number(quote.vatRate)}%)</span><span>{fmt().money(quote.grandTotal - quote.partsTotal - quote.laborTotal)}</span></div>
-        <div className="kv-row is-total"><span>Tổng khách phải trả</span><span>{fmt().money(quote.grandTotal)}</span></div>
-      </div>
-      {error && <div className="field-error" role="alert">{error}</div>}
-      {declining && (
-        <div className="form-row-group decline-box">
-          <label htmlFor="decline-reason">Lý do từ chối</label>
-          <textarea id="decline-reason" className="regular-input" value={reason} onChange={(e) => setReason(e.target.value)}
-            placeholder="Ví dụ: chi phí cao hơn dự kiến" />
+        <div className="kv-list">
+          {quote.lines.map((line: Json) => (
+            <div key={line.lineNo} className="kv-row">
+              <span>{line.description} × {line.quantity}</span>
+              <span>{fmt().money(line.lineTotal)}</span>
+            </div>
+          ))}
+          {/* Dòng hạng mục đã gồm tiền công; tách linh kiện / công / VAT để khách cộng lại được ra tổng. */}
+          <div className="kv-row"><span>Linh kiện ngoài bảo hành</span><span>{fmt().money(quote.partsTotal)}</span></div>
+          <div className="kv-row"><span>Tiền công kỹ thuật</span><span>{fmt().money(quote.laborTotal)}</span></div>
+          <div className="kv-row"><span>Thuế VAT ({Number(quote.vatRate)}%)</span><span>{fmt().money(quote.grandTotal - quote.partsTotal - quote.laborTotal)}</span></div>
+          <div className="kv-row is-total"><span>Tổng khách phải trả</span><span style={{ color: "var(--kh-forest)", fontWeight: 800 }}>{fmt().money(quote.grandTotal)}</span></div>
         </div>
-      )}
-      <div className="quote-actions">
+        {error && <div className="field-error" role="alert" style={{ marginTop: 10 }}>{error}</div>}
+
         {declining ? (
-          <>
-            <button type="button" className="btn-secondary-white" onClick={() => { setDeclining(false); setError(""); }} disabled={busy}>Quay lại</button>
-            <button type="button" className="btn-secondary-white btn-danger-outline" onClick={() => decide("DECLINE")} disabled={busy}>Xác nhận từ chối</button>
-          </>
-        ) : (
-          <>
-            <button type="button" className="btn-secondary-white btn-danger-outline" onClick={() => setDeclining(true)} disabled={busy}>Từ chối báo giá</button>
-            <button type="button" className="btn-primary-teal" onClick={() => decide("ACCEPT")} disabled={busy}>
-              {busy ? "Đang gửi…" : "Đồng ý báo giá"}
-            </button>
-          </>
-        )}
-      </div>
-    </section>
+          <div className="form-row-group decline-box" style={{ marginTop: 14 }}>
+            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 10, color: "#991b1b", fontSize: 13 }}>
+              ⚠️ <strong>Lưu ý quan trọng:</strong> Khi từ chối báo giá, trung tâm sẽ ngừng sửa chữa tính phí và chuẩn bị thủ tục trả lại thiết bị nguyên trạng cho bạn.
+            </div>
+            <label htmlFor="decline-reason">Lý do từ chối <span className="required-mark">*</span></label>
+            <textarea id="decline-reason" className="regular-input" value={reason} onChange={(e) => setReason(e.target.value)}
+              placeholder="Ví dụ: chi phí cao hơn dự kiến, muốn mua máy mới..." />
+          </div>
+        ) : null}
+
+        <div className="quote-actions" style={{ marginTop: 16 }}>
+          {declining ? (
+            <>
+              <button type="button" className="btn-secondary-white" onClick={() => { setDeclining(false); setError(""); }} disabled={busy}>Quay lại</button>
+              <button type="button" className="btn-secondary-white btn-danger-outline" onClick={() => decide("DECLINE")} disabled={busy}>
+                {busy ? "Đang xử lý…" : "Xác nhận từ chối báo giá"}
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="btn-secondary-white btn-danger-outline" onClick={() => setDeclining(true)} disabled={busy}>Từ chối báo giá</button>
+              <button type="button" className="btn-primary-teal" onClick={() => setConfirmOpen(true)} disabled={busy}>
+                Kiểm tra &amp; Xác nhận giá →
+              </button>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* MODAL XÁC NHẬN LẠI CHI PHÍ BÁO GIÁ */}
+      {confirmOpen && (
+        <QuoteConfirmModal
+          ticket={ticket}
+          quote={quote}
+          busy={busy}
+          error={error}
+          onConfirm={() => decide("ACCEPT")}
+          onClose={() => { setConfirmOpen(false); setError(""); }}
+        />
+      )}
+    </>
   );
 }
+
+function QuoteConfirmModal({
+  ticket, quote, busy, error, onConfirm, onClose,
+}: {
+  ticket: Json;
+  quote: Json;
+  busy: boolean;
+  error: string;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  const [agreed, setAgreed] = useState(false);
+  const deviceName = [ticket.brandName, ticket.productName].filter(Boolean).join(" ") || "Thiết bị bảo hành";
+
+  return (
+    <div className="payment-overlay" role="dialog" aria-modal="true">
+      <div className="payment-modal quote-confirm-modal">
+        {/* HEADER */}
+        <div className="quote-modal-header">
+          <div className="quote-modal-title-wrap">
+            <div className="quote-modal-icon-badge">🛡️</div>
+            <div>
+              <h2 className="quote-modal-title">Xác nhận chi phí sửa chữa</h2>
+              <div className="quote-modal-subtitle">{deviceName} · Phiếu <span className="mono">{ticket.code}</span></div>
+            </div>
+          </div>
+          <button type="button" className="payment-modal-close" onClick={onClose} aria-label="Đóng" disabled={busy}>
+            <Icon glyph="x" />
+          </button>
+        </div>
+
+        {/* BODY */}
+        <div className="quote-modal-body">
+          {/* BẢNG BÓC TÁCH CHI PHÍ */}
+          <div className="quote-breakdown-card">
+            <div className="quote-breakdown-title">
+              <span>Bóc tách hạng mục chi phí</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "#94a3b8" }}>Hiệu lực đến {fmt().date(quote.validUntil)}</span>
+            </div>
+            <table className="quote-breakdown-table">
+              <thead>
+                <tr>
+                  <th>Hạng mục / Linh kiện</th>
+                  <th className="num-col" style={{ width: 45 }}>SL</th>
+                  <th className="num-col" style={{ width: 110 }}>Thành tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quote.lines.map((line: Json) => (
+                  <tr key={line.lineNo}>
+                    <td>
+                      <div><strong>{line.description}</strong></div>
+                      {line.sku && <div className="mono" style={{ fontSize: 11, color: "#64748b" }}>SKU: {line.sku}</div>}
+                    </td>
+                    <td className="num-col">×{line.quantity}</td>
+                    <td className="num-col">{fmt().money(line.lineTotal)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="quote-breakdown-summary-list">
+              <div className="quote-summary-line">
+                <span>Linh kiện thay thế:</span>
+                <span>{fmt().money(quote.partsTotal)}</span>
+              </div>
+              <div className="quote-summary-line">
+                <span>Tiền công dịch vụ:</span>
+                <span>{fmt().money(quote.laborTotal)}</span>
+              </div>
+              <div className="quote-summary-line">
+                <span>Thuế GTGT ({Number(quote.vatRate)}%):</span>
+                <span>{fmt().money(quote.grandTotal - quote.partsTotal - quote.laborTotal)}</span>
+              </div>
+              <div className="quote-summary-line is-grand-total">
+                <span>TỔNG THANH TOÁN:</span>
+                <span className="quote-grand-amount">{fmt().money(quote.grandTotal)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* CAM KẾT & QUYỀN LỢI */}
+          <div className="quote-commit-card">
+            <div className="quote-commit-card-title">
+              <span>✨ Cam kết dịch vụ &amp; Quyền lợi khách hàng</span>
+            </div>
+            <ul className="quote-commit-list">
+              <li>
+                <span className="quote-commit-icon">🛡️</span>
+                <span><strong>Bảo hành linh kiện:</strong> Linh kiện thay thế chính hãng được bảo hành 3–6 tháng.</span>
+              </li>
+              <li>
+                <span className="quote-commit-icon">🔒</span>
+                <span><strong>Minh bạch chi phí:</strong> Cam kết không phát sinh bất kỳ khoản phụ phí nào ngoài bảng giá đã duyệt.</span>
+              </li>
+              {ticket.promisedReturnAt && (
+                <li>
+                  <span className="quote-commit-icon">⏱️</span>
+                  <span><strong>Hẹn trả máy:</strong> Dự kiến hoàn tất và bàn giao vào <strong>{fmt().dateTime(ticket.promisedReturnAt)}</strong>.</span>
+                </li>
+              )}
+              <li>
+                <span className="quote-commit-icon">💳</span>
+                <span><strong>Thanh toán an tâm:</strong> Bạn chỉ thanh toán khi đã nhận máy, kiểm tra hoạt động ổn định đạt chuẩn QC.</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* CHECKBOX CAM KẾT */}
+          <label className="quote-agreement-box">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              disabled={busy}
+            />
+            <div>
+              <div className="quote-agreement-text">
+                Tôi đã kiểm tra kỹ các hạng mục và đồng ý với tổng chi phí {fmt().money(quote.grandTotal)}.
+              </div>
+              <div className="quote-agreement-sub">
+                Đồng ý cho trung tâm xuất kho linh kiện và tiến hành sửa chữa theo báo giá này.
+              </div>
+            </div>
+          </label>
+
+          {error && <div className="field-error" role="alert">{error}</div>}
+        </div>
+
+        {/* FOOTER */}
+        <div className="payment-modal-footer">
+          <button type="button" className="btn-back" onClick={onClose} disabled={busy}>
+            ← Quay lại xem xét
+          </button>
+          <button
+            type="button"
+            className="btn-submit"
+            onClick={onConfirm}
+            disabled={!agreed || busy}
+            style={{ minWidth: 200, opacity: agreed ? 1 : 0.6 }}
+          >
+            {busy ? "Đang gửi xác nhận…" : `Xác nhận duyệt giá (${fmt().money(quote.grandTotal)})`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 /* ---------------------------------------------------------------- Đánh giá & Chấm điểm dịch vụ */
 
