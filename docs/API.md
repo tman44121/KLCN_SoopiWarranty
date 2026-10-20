@@ -138,3 +138,14 @@ Upload/tạo yêu cầu/bàn giao là luồng ghi, cần DB kiểm được duy�
 
 Tên route cụ thể, cả method và URL đầy đủ, dùng [ENDPOINTS](../verification/ENDPOINTS.md);
 không ghép prefix suy đoán để gọi endpoint.
+
+## Xuất báo cáo Excel
+
+`GET /api/v1/reports/export?from=2026-10-01&to=2026-10-20&station=ST01`
+
+- Phiên nhân viên phải có cả `REPORT_SYSTEM` và `REPORT_OPERATIONS` (quản trị viên).
+- `from`, `to` bắt buộc, dạng `yyyy-MM-dd`, gồm cả hai đầu theo giờ Việt Nam. `station` tùy chọn; bỏ trống là tất cả trạm.
+- Trả file `.xlsx`, MIME `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `Content-Disposition: attachment`, `Cache-Control: no-store`.
+- Sáu sheet: Tổng quan, Doanh thu, Trạng thái phiếu, Thời gian xử lý, Hiệu suất KTV, Tỷ lệ bảo hành. Metadata gồm kỳ, trạm và thời gian xuất giờ Việt Nam.
+- Dùng cùng truy vấn và quy tắc ngày với các báo cáo JSON; file là dữ liệu tại thời điểm xuất. Số tiền/số lượng giữ dạng số; chỉ số chưa có dữ liệu để trống. Kỳ không có dữ liệu vẫn xuất được file có tiêu đề.
+- Không ghi DB, không thay đổi endpoint báo cáo hiện có. Cấu trúc file theo [SpreadsheetML của Microsoft](https://learn.microsoft.com/en-us/office/open-xml/spreadsheet/structure-of-a-spreadsheetml-document), đóng gói bằng `ZipArchive` có sẵn trong .NET.

@@ -36,6 +36,21 @@ public sealed class ReportService(Sql sql, CurrentActor actors, TimeProvider clo
 {
     private sealed record Range(DateTimeOffset? From, DateTimeOffset? To, string? Station);
 
+    public async Task<byte[]> ExportAsync(DateOnly from, DateOnly to, string? station)
+    {
+        actors.Require(Permission.REPORT_SYSTEM);
+        actors.Require(Permission.REPORT_OPERATIONS);
+        if (to == DateOnly.MaxValue) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        RangeOf(from, to, station);
+        // These queries share one scoped connection; execute sequentially, as in other report operations.
+        var revenue = await RevenueMonthlyAsync(from, to, station);
+        var statuses = await TicketsByStatusAsync(from, to, station);
+        var turnaround = await TurnaroundAsync(from, to, station);
+        var technicians = await TechnicianPerformanceAsync(from, to, station);
+        var warranty = await WarrantyRatioAsync(from, to, station);
+        return ReportWorkbook.Create(from, to, station, clock.GetUtcNow(), new(revenue, statuses, turnaround, technicians, warranty));
+    }
+
     /// <summary>R4 — chỉ phiếu thu tính phí (miễn phí 0 đ không tính).</summary>
     public Task<List<MonthlyRevenue>> RevenueMonthlyAsync(DateOnly? from, DateOnly? to, string? station)
     {

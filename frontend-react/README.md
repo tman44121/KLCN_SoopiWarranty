@@ -56,6 +56,10 @@ Thanh toán phía khách hiện là **mô phỏng**: không thu tiền, không c
 Phiếu in và QR đều ghi rõ minh họa; trạng thái đã thanh toán chỉ lấy từ `costs.paymentStatus` của server.
 Chat cũng phản hồi bằng dữ liệu mẫu, có nhãn mô phỏng.
 
+Tại `/admin#reports`, chọn khoảng thời gian/trạm rồi bấm **Xuất Excel** để tải báo cáo `.xlsx` gồm 6 sheet.
+Nút chỉ bật sau khi báo cáo tải thành công; thao tác tải dùng phiên nhân viên và tự làm mới token như các API khác.
+`scripts/report-export-ui.mjs` kiểm bộ lọc, tải file, lỗi mạng, kỳ trống và bố cục 1440/768/390px bằng API mock; chạy cùng `test:ui`.
+
 ## Kết quả thực tế ngày 2026-10-01
 
 - Build và lint: đạt. Build có 2 cảnh báo `MODULE_LEVEL_DIRECTIVE` từ `use client` của React Router

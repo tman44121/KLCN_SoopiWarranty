@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Soopi.Api.DTOs.Shared;
 using Soopi.Api.Infrastructure.Validation;
 using Soopi.Api.Services.Notifications;
@@ -14,6 +15,14 @@ public sealed record DeviceRegistration([NotBlank] string Platform, [NotBlank] s
 [Route("api/v1/reports")]
 public sealed class ReportsController(ReportService reports) : ControllerBase
 {
+    [HttpGet("export")]
+    public async Task<FileContentResult> Export([FromQuery, BindRequired] DateOnly from, [FromQuery, BindRequired] DateOnly to, [FromQuery] string? station)
+    {
+        var content = await reports.ExportAsync(from, to, station);
+        Response.Headers.CacheControl = "no-store";
+        return File(content, ReportWorkbook.ContentType, $"soopi-bao-cao-{from:yyyy-MM-dd}-{to:yyyy-MM-dd}.xlsx");
+    }
+
     [HttpGet("revenue-monthly")]
     public Task<List<MonthlyRevenue>> RevenueMonthly([FromQuery] DateOnly? from, [FromQuery] DateOnly? to, [FromQuery] string? station) =>
         reports.RevenueMonthlyAsync(from, to, station);

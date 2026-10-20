@@ -34,7 +34,7 @@ def normalized(path):
 
 
 # Endpoint chỉ có ở Soopi, không có trong bản Java (DECISIONS D-047). Ngoài các endpoint này, route phải khớp Java 1:1.
-SOOPI_ONLY = {("POST", "/api/v1/auth/mobile/password-reset/verify")}
+SOOPI_ONLY = {("POST", "/api/v1/auth/mobile/password-reset/verify"), ("GET", "/api/v1/reports/export")}
 
 
 def endpoints():

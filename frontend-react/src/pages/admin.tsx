@@ -464,6 +464,12 @@ export default function AdminPage() {
                   {"Chỉ dùng cho quyết định vận hành — lọc theo khoảng thời gian và trạm dịch vụ"}
                 </div>
               </div>
+              <button type="button" className="btn btn--primary btn--sm" data-export-report="" data-perm="REPORT_SYSTEM" disabled>
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                  <path d="M10 3v9m-3-3 3 3 3-3M4 12v4h12v-4" />
+                </svg>
+                {"Xuất Excel"}
+              </button>
             </div>
             <div className="toolbar">
               <div className="toolbar__field">
