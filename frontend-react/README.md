@@ -34,7 +34,7 @@ Các biến `VITE_*` được gửi tới trình duyệt, không đặt secret h
 npm.cmd run build
 npm.cmd run lint
 npm.cmd test
-node scripts/smoke.mjs
+npm.cmd run test:ui
 ```
 
 Build ghi vào `../backend-dotnet/src/Soopi.Api/wwwroot`. ASP.NET phục vụ assets và đúng 10 route
@@ -46,6 +46,15 @@ bên cạnh; không dùng ESLint. `test` dùng `node:test` với fetch giả l�
 Playwright đã cài trong `warranty-system-mysql/e2e` và Edge có sẵn, chặn **mọi API request**
 bằng dữ liệu giả; không cài package mới và không ghi DB. Có thể chọn host build thật bằng
 `$env:E2E_BASE_URL='http://127.0.0.1:18080'`. Cần chạy server trước.
+
+`test:ui` chạy smoke và `scripts/customer-ui.mjs`: kiểm demo của 5 phương thức thanh toán,
+trạng thái thanh toán từ server, bàn phím/Escape, phiếu in mô phỏng và badge chat ở 1440/768/390px.
+Nếu Playwright nằm trong runtime có sẵn khác, đặt `NODE_PATH` tới thư mục `node_modules` đó trước khi chạy.
+Các API đều được giả lập; không cần khởi động backend để chạy với Vite.
+
+Thanh toán phía khách hiện là **mô phỏng**: không thu tiền, không cập nhật trạng thái thật.
+Phiếu in và QR đều ghi rõ minh họa; trạng thái đã thanh toán chỉ lấy từ `costs.paymentStatus` của server.
+Chat cũng phản hồi bằng dữ liệu mẫu, có nhãn mô phỏng.
 
 ## Kết quả thực tế ngày 2026-10-01
 

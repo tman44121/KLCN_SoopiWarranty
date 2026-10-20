@@ -368,7 +368,7 @@ type ChatMessage = {
 };
 
 const DEMO_MESSAGES: ChatMessage[] = [
-  { id: 'm0', role: 'system', text: 'Phiên hỗ trợ bắt đầu — Kỹ thuật viên sẽ phản hồi trong giờ làm việc (8:00–17:30).', time: new Date(Date.now() - 60 * 60 * 1000) },
+  { id: 'm0', role: 'system', text: 'Đây là cuộc trò chuyện mô phỏng. Tin nhắn chưa được gửi đến kỹ thuật viên.', time: new Date(Date.now() - 60 * 60 * 1000) },
   { id: 'm1', role: 'technician', text: 'Xin chào! Tôi là kỹ thuật viên phụ trách thiết bị của bạn. Tôi có thể giúp gì cho bạn?', time: new Date(Date.now() - 58 * 60 * 1000) },
   { id: 'm2', role: 'technician', text: 'Thiết bị của bạn sau khi kiểm tra nếu có linh kiện ngoài bảo hành sẽ được gửi báo giá chi tiết. Bạn có thể kiểm tra và bấm "Xác nhận giá" ngay trong chi tiết phiếu để chúng tôi tiến hành sửa chữa nhé!', time: new Date(Date.now() - 15 * 60 * 1000) },
 ];
@@ -381,7 +381,7 @@ function formatChatTime(date: Date): string {
   return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 }
 
-/** Bóng chat nổi góc phải dưới dành cho khách đã đăng nhập — nhắn tin trực tiếp với kỹ thuật viên. */
+/** Bóng chat mô phỏng dành cho khách đã đăng nhập. */
 export function LiveChatBubble({ customerName }: { customerName?: string | null }) {
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
@@ -396,21 +396,27 @@ export function LiveChatBubble({ customerName }: { customerName?: string | null 
   // Scroll xuống tin mới nhất
   useEffect(() => {
     if (open && !minimized) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      const list = messagesEndRef.current?.parentElement;
+      list?.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
     }
   }, [messages, open, minimized]);
 
   // Xóa badge unread khi mở chat
   useEffect(() => {
     if (open && !minimized) setUnread(0);
-  }, [open, minimized]);
+  }, [open, minimized, messages]);
 
   // Auto-focus input khi mở
   useEffect(() => {
     if (open && !minimized) {
-      setTimeout(() => inputRef.current?.focus(), 120);
+      const timer = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 120);
+      return () => clearTimeout(timer);
     }
   }, [open, minimized]);
+
+  useEffect(() => () => {
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+  }, []);
 
   const handleOpen = () => {
     setOpen(true);
@@ -456,7 +462,7 @@ export function LiveChatBubble({ customerName }: { customerName?: string | null 
         time: new Date(),
       };
       setMessages((prev) => [...prev, reply]);
-      if (!open || minimized) setUnread((n) => n + 1);
+      setUnread((n) => n + 1);
     }, 1800 + Math.random() * 1200);
   };
 
@@ -468,7 +474,7 @@ export function LiveChatBubble({ customerName }: { customerName?: string | null 
   };
 
   const name = customerName || 'Bạn';
-  const techName = 'Kỹ thuật viên';
+  const techName = 'Kỹ thuật viên (mô phỏng)';
 
   return (
     <div className="live-chat-root" aria-label="Chat hỗ trợ trực tiếp">
@@ -503,7 +509,7 @@ export function LiveChatBubble({ customerName }: { customerName?: string | null 
         >
           <svg className="kh-icon" viewBox="0 0 24 24" aria-hidden="true">{PATHS['chatDots']}</svg>
           <span>Chat với kỹ thuật viên</span>
-          {unread > 0 && <span className="chat-fab-badge">{unread}</span>}
+          {unread > 0 && <span className="chat-fab-badge" aria-label={`${unread} tin nhắn chưa đọc`}>{unread}</span>}
           <span className="chat-minimized-expand" aria-hidden="true">▲</span>
         </button>
       )}
@@ -516,7 +522,7 @@ export function LiveChatBubble({ customerName }: { customerName?: string | null 
             <div className="chat-header-info">
               <div className="chat-avatar-wrap">
                 <span className="chat-avatar-circle" aria-hidden="true">KT</span>
-                <span className="chat-online-dot" aria-hidden="true" title="Đang trực tuyến" />
+                <span className="chat-online-dot" aria-hidden="true" title="Phiên mô phỏng" />
               </div>
               <div className="chat-header-text">
                 <div className="chat-header-title">{techName}</div>
@@ -527,7 +533,7 @@ export function LiveChatBubble({ customerName }: { customerName?: string | null 
                       Đang gõ...
                     </span>
                   ) : (
-                    <span>Đang trực tuyến</span>
+                    <span>Phản hồi tự động · mô phỏng</span>
                   )}
                 </div>
               </div>

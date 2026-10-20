@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "lint": "tsc --noEmit && node scripts/check.mjs",
     "test": "node scripts/check.mjs && node --test scripts/api.test.mjs scripts/contrast.test.mjs",
+    "test:ui": "node scripts/smoke.mjs && node scripts/customer-ui.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
