@@ -4,7 +4,8 @@ rem   run.bat                   kiểm tra/cài mọi thứ còn thiếu, chạy
 rem   run.bat build             build React vào wwwroot rồi chỉ chạy API (một cổng)
 rem   run.bat check             chỉ kiểm tra/cài công cụ và database, không chạy server
 rem   run.bat initdb [server]   tạo lại cấu hình database: tìm (hoặc dùng [server]) SQL Server, tạo TrungTamBaoHanhDB
-rem                             (schema + dữ liệu mẫu) bằng đăng nhập Windows và đặt ConnectionStrings:Default
+rem                             (schema + dữ liệu mẫu) bằng đăng nhập Windows và đặt ConnectionStrings:Default;
+rem                             database đã có thì giữ dữ liệu và nâng cấp schema (database\05_upgrade_existing_db.sql)
 rem Tự cài nếu thiếu (qua winget): .NET SDK 10, Node.js 22+, sqlcmd, SQL Server 2022 Express; dependency frontend (npm ci).
 rem Cổng mặc định 8080 (API) và 5173 (web); bị chương trình khác chiếm thì tự chọn cổng trống kế tiếp.
 setlocal
@@ -123,7 +124,11 @@ if not defined DBEXISTS (
   exit /b 1
 )
 if "%DBEXISTS%"=="1" (
-  echo Database TrungTamBaoHanhDB đã có - giữ nguyên dữ liệu.
+  rem Database tạo từ bản script cũ thiếu cột/trạng thái mới, API báo SQL 207 "Invalid column name". Script tự kiểm tra
+  rem trước khi sửa nên chạy lại nhiều lần không sao.
+  echo Database TrungTamBaoHanhDB đã có - giữ nguyên dữ liệu, nâng cấp lên schema hiện tại...
+  sqlcmd -S "%SQLSERVER%" -d TrungTamBaoHanhDB -E -C -I -b -f 65001 -i "database\05_upgrade_existing_db.sql"
+  if errorlevel 1 (echo [Lỗi] Nâng cấp database thất bại - xem thông báo phía trên. & exit /b 1)
 ) else (
   echo Tạo database TrungTamBaoHanhDB và nạp dữ liệu mẫu...
   sqlcmd -S "%SQLSERVER%" -E -C -I -b -f 65001 -i "database\TrungTamBaoHanhDB_SqlServer.sql"

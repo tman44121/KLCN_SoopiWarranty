@@ -52,15 +52,18 @@ không sao, dùng được cho database tạo từ bất kỳ bản script nào 
 sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\05_upgrade_existing_db.sql
 ```
 
-`run.bat` tự làm bước này khi máy chưa có connection string (xem mục 3). Muốn làm riêng:
+`run.bat initdb` tự chạy bước nâng cấp này khi database `TrungTamBaoHanhDB` đã có. Lần chạy `run.bat` thường
+**không** nâng cấp database: sau khi kéo code mới có đổi `database/`, chạy lại `run.bat initdb` (hoặc lệnh `sqlcmd`
+trên với đúng tên database của máy). Dấu hiệu chưa nâng cấp: API ghi `Error Number:207` (Invalid column name) và
+trang báo "Đã xảy ra lỗi hệ thống". Tạo mới hoặc nâng cấp:
 
 ```powershell
 .\run.bat initdb                        # tự tìm SQL Server trên máy, không có thì cài SQL Server 2022 Express
 .\run.bat initdb localhost\SQLEXPRESS   # chỉ định server (tên trong ô Server name của SSMS)
 ```
 
-`initdb` cài `sqlcmd` nếu thiếu, tạo database và nạp dữ liệu mẫu bằng đăng nhập Windows (bỏ qua nếu database
-`TrungTamBaoHanhDB` đã có), rồi đặt `ConnectionStrings:Default` (`Integrated Security=True`). Tài khoản Windows cần
+`initdb` cài `sqlcmd` nếu thiếu, tạo database và nạp dữ liệu mẫu bằng đăng nhập Windows (database
+`TrungTamBaoHanhDB` đã có thì giữ dữ liệu và chạy `05_upgrade_existing_db.sql`), rồi đặt `ConnectionStrings:Default` (`Integrated Security=True`). Tài khoản Windows cần
 quyền tạo database (bản Express thường cấp sẵn quyền quản trị cho tài khoản đã cài nó). Sau đó chạy `run.bat`.
 Không dùng lệnh này trên máy đang trỏ tới database khác: nó ghi đè connection string. Tự chạy bằng SSMS hoặc
 `sqlcmd -S <server> -E -C -I -b -f 65001 -i database\TrungTamBaoHanhDB_SqlServer.sql` cũng được.
