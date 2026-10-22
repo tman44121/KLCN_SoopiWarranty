@@ -1,0 +1,189 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    name: Verify and package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      release-id: ${{ steps.release.outputs.id }}
+    env:
+      DOTNET_NOLOGO: 'true'
+      DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+    steps:
+      - name: Identify immutable release
+        id: release
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$REF_TYPE" == tag ]]; then
+            [[ "$REF_NAME" =~ ^v(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)$ ]]
+            RELEASE_ID="${REF_NAME}-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          else
+            RELEASE_ID="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          fi
+          echo "id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
+          echo "release_id=$RELEASE_ID" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend-react/package-lock.json
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Test deployment rollback logic
+        run: python3 -m unittest discover -s deploy -p 'test_*.py'
+
+      - name: Install frontend dependencies
+        run: npm ci --no-audit
+        working-directory: frontend-react
+
+      - name: Check frontend
+        run: npm run lint
+        working-directory: frontend-react
+
+      - name: Test frontend
+        run: npm test
+        working-directory: frontend-react
+
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high
+        working-directory: frontend-react
+
+      - name: Build frontend into API wwwroot
+        run: npm run build
+        working-directory: frontend-react
+
+      - name: Restore and audit backend dependencies
+        run: dotnet restore backend-dotnet/Soopi.slnx -p:NuGetAudit=true -p:NuGetAuditMode=all -p:NuGetAuditLevel=high -warnaserror
+
+      - name: Build backend
+        run: dotnet build backend-dotnet/Soopi.slnx --configuration Release --no-restore
+
+      - name: Test backend without database access
+        run: dotnet test backend-dotnet/Soopi.slnx --configuration Release --no-build --no-restore
+
+      - name: Publish API with frontend
+        run: dotnet publish backend-dotnet/src/Soopi.Api/Soopi.Api.csproj --configuration Release --no-build --no-restore --output artifacts/publish
+
+      - name: Verify package contents
+        run: |
+          test -f artifacts/publish/Soopi.Api.dll
+          test -f artifacts/publish/wwwroot/index.html
+
+      - name: Build image from verified package
+        run: |
+          set -euo pipefail
+          docker build --pull -f deploy/Dockerfile --tag "soopi:$RELEASE_ID" artifacts/publish
+          test "$(docker image inspect --format '{{.Config.User}}' "soopi:$RELEASE_ID")" = '1654'
+          docker run --rm --entrypoint dotnet "soopi:$RELEASE_ID" --info
+          docker image save "soopi:$RELEASE_ID" | gzip > artifacts/soopi-image.tar.gz
+
+      - name: Upload verified image
+        uses: actions/upload-artifact@v7
+        with:
+          name: soopi-${{ steps.release.outputs.id }}
+          path: artifacts/soopi-image.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+  deploy:
+    name: Deploy to Ubuntu VPS
+    needs: verify
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    concurrency:
+      group: soopi-production
+      cancel-in-progress: false
+    env:
+      VPS_HOST: ${{ vars.VPS_HOST }}
+      PUBLIC_URL: ${{ vars.PUBLIC_URL }}
+      RELEASE_ID: ${{ needs.verify.outputs.release-id }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: soopi-${{ needs.verify.outputs.release-id }}
+          path: artifacts/deploy
+
+      - name: Configure SSH with a pinned host key
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          [[ "$VPS_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
+          [[ "$PUBLIC_URL" =~ ^https://[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
+          test -n "$VPS_SSH_KEY"
+          test -n "$VPS_KNOWN_HOSTS"
+          umask 077
+          mkdir -p "$RUNNER_TEMP/soopi-ssh"
+          printf '%s\n' "$VPS_SSH_KEY" > "$RUNNER_TEMP/soopi-ssh/key"
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > "$RUNNER_TEMP/soopi-ssh/known_hosts"
+          ssh-keygen -y -P '' -f "$RUNNER_TEMP/soopi-ssh/key" > /dev/null
+          ssh-keygen -F "$VPS_HOST" -f "$RUNNER_TEMP/soopi-ssh/known_hosts" > /dev/null
+          cat > "$RUNNER_TEMP/soopi-ssh/config" <<EOF
+          Host soopi
+            HostName $VPS_HOST
+            User soopi-deploy
+            IdentityFile $RUNNER_TEMP/soopi-ssh/key
+            UserKnownHostsFile $RUNNER_TEMP/soopi-ssh/known_hosts
+            StrictHostKeyChecking yes
+            BatchMode yes
+            IdentitiesOnly yes
+            ConnectTimeout 15
+            ServerAliveInterval 15
+            ServerAliveCountMax 3
+          EOF
+
+      - name: Upload and activate verified release
+        run: |
+          set -euo pipefail
+          ssh -F "$RUNNER_TEMP/soopi-ssh/config" soopi "mkdir -p -- /opt/soopi/releases/$RELEASE_ID"
+          scp -F "$RUNNER_TEMP/soopi-ssh/config" artifacts/deploy/soopi-image.tar.gz "soopi:/opt/soopi/releases/$RELEASE_ID/"
+          ssh -F "$RUNNER_TEMP/soopi-ssh/config" soopi \
+            "sudo -n /usr/bin/python3 -I /usr/local/lib/soopi/activate.py $RELEASE_ID $PUBLIC_URL"
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [verify, deploy]
+    if: startsWith(github.ref, 'refs/tags/v') && needs.verify.result == 'success' && needs.deploy.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create release notes from merged changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --verify-tag --generate-notes --title "$TAG"
