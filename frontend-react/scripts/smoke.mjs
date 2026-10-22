@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
 import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-const require = createRequire(new URL('../../../warranty-system-mysql/e2e/package.json', import.meta.url));
+const require = createRequire(process.env.PLAYWRIGHT_PACKAGE || new URL('../../../warranty-system-mysql/e2e/package.json', import.meta.url));
 const { chromium } = require('playwright-core');
 const base = process.env.E2E_BASE_URL || 'http://localhost:5173';
 const output = new URL('../test-results/', import.meta.url);
@@ -65,6 +65,7 @@ export async function session(role, landing, width = 1440) {
     else if (path === '/auth/change-password') { user.mustChangePassword = false; data = {}; }
     else if (path === '/portal/catalog') data = catalog;
     else if (path === '/notifications') data = { unreadCount: 0, items: [] };
+    else if (path === '/chat/contacts') data = { items: [], hasMore: false, unreadCount: 0 };
     else if (path === '/tickets' || path === '/quotations' || path === '/audit-logs') data = { items: [], total: 0, page: 0, size: 25 };
     else if (path === '/catalog/stations') data = [{ _id: 'ST01', name: 'Trạm thử' }];
     else if (path === '/portal/warranty-requests' && request.method() === 'POST') data = { code: 'YC-MOCK' };

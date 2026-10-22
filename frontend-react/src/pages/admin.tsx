@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
 import controller from "../behaviors/admin.js";
 import { BrandLogo } from "../customer";
+import { NotificationBroadcast } from "../NotificationBroadcast";
 
 export default function AdminPage() {
   usePage("admin", {"data-roles": "ADMIN"}, "Soopi — Quản trị hệ thống", controller);
@@ -48,6 +49,9 @@ export default function AdminPage() {
                 </rect>
               </svg>
               {"\n          Danh mục hệ thống\n        "}
+            </a>
+            <a className="sidebar-nav__item" data-roles="ADMIN" data-page-tab="notifications-broadcast" href="#notifications-broadcast">
+              Gửi thông báo khách hàng
             </a>
             <a className="sidebar-nav__item" data-roles="ADMIN" data-page-tab="reports" href="#reports">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -453,6 +457,9 @@ export default function AdminPage() {
             </div>
           </section>
         </div>
+        <div data-page-panel="notifications-broadcast" hidden={true}>
+          <NotificationBroadcast />
+        </div>
         <div data-page-panel="reports" hidden={true}>
           <section className="card" aria-labelledby="reports-title">
             <div className="card__header">
@@ -592,6 +599,46 @@ export default function AdminPage() {
                     <tbody data-techperf-tbody="">
                     </tbody>
                   </table>
+                </div>
+              </section>
+              <section className="report-panel customer-review-report" aria-label="Đánh giá khách hàng">
+                <h3 className="report-panel__title">Đánh giá khách hàng</h3>
+                <p className="report-panel__meta">Ngày gửi/cập nhật gần nhất. Điểm cũ chưa rõ nguồn được ghi riêng và không tính vào điểm trung bình của khách.</p>
+                <div className="toolbar">
+                  <label className="toolbar__field">Thời gian đánh giá
+                    <select className="select-field" aria-label="Thời gian đánh giá" data-review-period="" defaultValue="all">
+                      <option value="all">Tất cả thời gian, gồm dữ liệu cũ</option>
+                      <option value="report">Theo khoảng thời gian báo cáo phía trên</option>
+                    </select>
+                  </label>
+                  <label className="toolbar__field">Số sao
+                    <select className="select-field" aria-label="Số sao" data-review-rating="" defaultValue="">
+                      <option value="">Tất cả số sao</option>
+                      {[5, 4, 3, 2, 1].map(n => <option key={n} value={n}>{n} sao</option>)}
+                    </select>
+                  </label>
+                  <label className="toolbar__field">Tìm đánh giá
+                    <input type="search" className="text-field" aria-label="Tìm đánh giá" data-review-search="" maxLength={100} placeholder="Tên, SĐT hoặc mã phiếu" />
+                  </label>
+                  <label className="toolbar__field">Số dòng
+                    <select className="select-field" aria-label="Số dòng" data-review-size="" defaultValue="25">
+                      {[25, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </label>
+                </div>
+                <p data-review-summary="" role="status"></p>
+                <div className="table-scroll">
+                  <table className="data-table customer-review-table">
+                    <thead><tr><th>Thời điểm</th><th>Khách hàng</th><th>Phiếu / thiết bị</th><th>Trạm</th><th>Số sao</th><th>Nhận xét</th></tr></thead>
+                    <tbody data-review-tbody=""></tbody>
+                  </table>
+                </div>
+                <div className="toolbar">
+                  <span className="toolbar__count" data-review-count=""></span>
+                  <div className="toolbar__spacer"></div>
+                  <button type="button" className="btn btn--secondary btn--sm" data-review-prev="" disabled>Trang trước</button>
+                  <span data-review-page=""></span>
+                  <button type="button" className="btn btn--secondary btn--sm" data-review-next="" disabled>Trang sau</button>
                 </div>
               </section>
             </div>

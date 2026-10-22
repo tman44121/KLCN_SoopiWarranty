@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Soopi.Api.Domain.Identity;
 using Soopi.Api.Domain.Shared;
 
@@ -113,9 +114,11 @@ public sealed record Recheck(bool CosmeticMatches, bool BootsNormally, bool Main
 
 public sealed record Signature(string FileId, DateTimeOffset SignedAt);
 
+// Nhận xét/ngày đánh giá chỉ xuất qua DTO của chủ phiếu và báo cáo admin.
 public sealed record Handover(
     string Code, DateTimeOffset HandedOverAt, string? HandedOverBy, string ReceiverName, string ConditionOnReturn, bool ReturnedOldParts,
-    string? NewWarrantyNote, int? Rating, Recheck? Recheck, Signature? Signature, bool CustomerConfirmed);
+    string? NewWarrantyNote, int? Rating, Recheck? Recheck, Signature? Signature, bool CustomerConfirmed,
+    [property: JsonIgnore] string? RatingComment = null, [property: JsonIgnore] DateTimeOffset? RatedAt = null);
 
 public sealed record HandoverInput(
     string? ReceiverName, string? ConditionOnReturn, bool ReturnedOldParts, string? NewWarrantyNote, int? Rating, Recheck? Recheck, bool CustomerConfirmed);
@@ -358,11 +361,13 @@ public sealed class Ticket
         TransitionTo(Status == TicketStatus.COMPLETED ? TicketStatus.DELIVERED : TicketStatus.RETURNED_UNREPAIRED, actor, null, now, HandoverActorRole(actor));
     }
 
-    public void UpdateRating(int rating)
+    public void UpdateRating(int rating, string? comment, DateTimeOffset now)
     {
-        if (rating is < 1 or > 5) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (rating is < 1 or > 5 || comment?.Length > 1000) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (Status is not (TicketStatus.DELIVERED or TicketStatus.RETURNED_UNREPAIRED))
+            throw new DomainException(ErrorCode.TICKET_INVALID_STATE, "Đã bàn giao hoặc Đã trả máy (không sửa)");
         if (Handover is null) throw new DomainException(ErrorCode.HANDOVER_INVALID_STATE);
-        Handover = Handover with { Rating = rating };
+        Handover = Handover with { Rating = rating, RatingComment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim(), RatedAt = now };
     }
 
     public void MarkQuotationPending(string quotationCode, DateTimeOffset now, AuthenticatedActor actor)

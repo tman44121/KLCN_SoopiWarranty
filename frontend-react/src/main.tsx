@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { legacyRoutes } from './navigation';
@@ -24,6 +24,19 @@ const Portal = lazy(() => import('./pages/portal'));
 const Register = lazy(() => import('./pages/register'));
 const ForgotPassword = lazy(() => import('./pages/forgot-password'));
 const Account = lazy(() => import('./pages/account'));
+const ChatBubble = lazy(() => import('./ChatBubble'));
+
+function ChatEntry() {
+  const { pathname } = useLocation();
+  const [user, setUser] = useState<any>(null);
+  const allowed = ['/account', '/dispatch', '/receptionist', '/technician', '/warehouse', '/cashier', '/tickets', '/reports', '/admin'].includes(pathname);
+  useEffect(() => {
+    let disposed = false;
+    if (allowed) (window as any).LML_AUTH?.ready((value: any) => { if (!disposed) setUser(value); });
+    return () => { disposed = true; };
+  }, [allowed, pathname]);
+  return allowed && user && !user.mustChangePassword ? <Suspense fallback={null}><ChatBubble customer={user.roles.some((r: any) => r.code === 'CUSTOMER')} /></Suspense> : null;
+}
 
 function LegacyRedirect({ to }: { to: string }) {
   const { search, hash } = useLocation();
@@ -52,6 +65,7 @@ createRoot(document.getElementById('root')!).render(
         <Route key={from} path={from} element={<LegacyRedirect to={to} />} />)}
       <Route path="*" element={<main><p role="alert">Không tìm thấy trang.</p><Link to="/" reloadDocument>Về trang chủ</Link></main>} />
     </Routes>
+    <ChatEntry />
     </Suspense>
   </BrowserRouter>,
 );

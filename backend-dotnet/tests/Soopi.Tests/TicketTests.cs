@@ -129,6 +129,8 @@ public class TicketTests
         var input = new HandoverInput("Khách", "Như lúc nhận", false, null, 5, null, true);
         await ticket.HandOverAsync("PBG-1", input, null, Now, Receptionist);
         Assert.Equal(TicketStatus.RETURNED_UNREPAIRED, ticket.Status);
+        ticket.UpdateRating(3, "Đã nhận lại máy", Now.AddHours(1));
+        Assert.Equal(3, ticket.Handover!.Rating);
         Assert.Equal("Trạng thái đổi từ \"Chờ trả máy\" sang \"Đã trả máy (không sửa)\"", ticket.StatusHistory[^1].Description);
     }
 
@@ -156,11 +158,26 @@ public class TicketTests
         Assert.Equal(4, ticket.Handover!.Rating);
 
         // Update rating to 5
-        ticket.UpdateRating(5);
+        ticket.UpdateRating(5, "  Dịch vụ tốt 🌟  ", Now.AddHours(1));
         Assert.Equal(5, ticket.Handover.Rating);
+        Assert.Equal("Dịch vụ tốt 🌟", ticket.Handover.RatingComment);
+        Assert.Equal(Now.AddHours(1), ticket.Handover.RatedAt);
+        var handoverJson = System.Text.Json.JsonSerializer.Serialize(ticket.Handover);
+        Assert.DoesNotContain("\"RatingComment\"", handoverJson);
+        Assert.DoesNotContain("\"RatedAt\"", handoverJson);
+        ticket.UpdateRating(4, " ", Now.AddHours(2));
+        Assert.Null(ticket.Handover.RatingComment);
+        Assert.Equal(Now.AddHours(2), ticket.Handover.RatedAt);
 
         // Invalid rating range
-        Assert.Throws<DomainException>(() => ticket.UpdateRating(0));
-        Assert.Throws<DomainException>(() => ticket.UpdateRating(6));
+        Assert.Throws<DomainException>(() => ticket.UpdateRating(0, null, Now));
+        Assert.Throws<DomainException>(() => ticket.UpdateRating(6, null, Now));
+        ticket.UpdateRating(5, new string('a', 1000), Now);
+        Assert.Equal(1000, ticket.Handover.RatingComment!.Length);
+        Assert.Throws<DomainException>(() => ticket.UpdateRating(5, new string('a', 1001), Now));
     }
+
+    [Fact]
+    public void Rating_RequiresHandoverAndFinalState() =>
+        Assert.Equal(ErrorCode.TICKET_INVALID_STATE, Assert.Throws<DomainException>(() => NewTicket().UpdateRating(5, null, Now)).Code);
 }
