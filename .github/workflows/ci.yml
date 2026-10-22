@@ -40,7 +40,7 @@ jobs:
             RELEASE_ID="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           fi
           echo "id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
-          echo "release_id=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v7
         with:
