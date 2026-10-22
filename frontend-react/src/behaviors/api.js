@@ -351,9 +351,19 @@ export default function initialize(global = window) {
     },
 
     notifications: {
-      inbox: (unread) => get("/notifications", { unread: unread ? "true" : null }),
-      read: (id) => post(`/notifications/${enc(id)}/read`),
-      readAll: () => post("/notifications/read-all"),
+      inbox: (unread, opts) => get("/notifications", { unread: unread ? "true" : null }, opts),
+      read: (id, opts) => post(`/notifications/${enc(id)}/read`, undefined, opts),
+      readAll: (opts) => post("/notifications/read-all", undefined, opts),
+      broadcast: (message, link, customerIds) =>
+        post("/admin/notifications/broadcast", { message, link: link || null, customerIds: customerIds ?? null }),
+    },
+
+    chat: {
+      contacts: (q, page = 0) => get("/chat/contacts", { q, page }),
+      start: (ticketCode, staffAccountId) => post("/chat/conversations", { ticketCode, staffAccountId }),
+      messages: (id, before, after) => get(`/chat/conversations/${enc(id)}/messages`, { before, after }),
+      send: (id, text, requestId) => post(`/chat/conversations/${enc(id)}/messages`, { text, requestId }),
+      read: (id, lastMessageId) => post(`/chat/conversations/${enc(id)}/read`, { lastMessageId }),
     },
 
     search: (q) => get("/search", { q }),

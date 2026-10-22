@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
 import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-const require = createRequire(new URL('../../../warranty-system-mysql/e2e/package.json', import.meta.url));
+const require = createRequire(process.env.PLAYWRIGHT_PACKAGE || new URL('../../../warranty-system-mysql/e2e/package.json', import.meta.url));
 const { chromium } = require('playwright-core');
 const base = process.env.E2E_BASE_URL || 'http://localhost:5173';
 const output = new URL('../test-results/', import.meta.url);
@@ -65,6 +65,7 @@ export async function session(role, landing, width = 1440) {
     else if (path === '/auth/change-password') { user.mustChangePassword = false; data = {}; }
     else if (path === '/portal/catalog') data = catalog;
     else if (path === '/notifications') data = { unreadCount: 0, items: [] };
+    else if (path === '/chat/contacts') data = { items: [], hasMore: false, unreadCount: 0 };
     else if (path === '/tickets' || path === '/quotations' || path === '/audit-logs') data = { items: [], total: 0, page: 0, size: 25 };
     else if (path === '/catalog/stations') data = [{ _id: 'ST01', name: 'Trạm thử' }];
     else if (path === '/portal/warranty-requests' && request.method() === 'POST') data = { code: 'YC-MOCK' };
@@ -247,8 +248,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     assert.deepEqual(await c.page.locator('.ticket-card-box .badge').allInnerTexts(), ['Chờ nhận máy']); assertions++;
     await c.page.screenshot({ path: fileURLToPath(new URL(`history-${width}.png`, output)), fullPage: true });
     await c.page.goto(base + '/account#phieu/TN-2026-1002-00001');
-    await c.page.getByRole('button', { name: 'Đồng ý báo giá' }).click();
-    await c.page.getByText('Đã xác nhận báo giá.').waitFor(); assertions++;
+    await c.page.getByRole('button', { name: 'Kiểm tra & Xác nhận giá →' }).click();
+    assert.equal(await c.page.getByRole('button', { name: /^Xác nhận duyệt giá/ }).isDisabled(), true); assertions++;
+    await c.page.locator('.quote-agreement-box input').check();
+    await c.page.getByRole('button', { name: /^Xác nhận duyệt giá/ }).click();
+    await c.page.getByText('Đã xác nhận báo giá. Kỹ thuật viên sẽ tiến hành sửa chữa.').waitFor(); assertions++;
     await c.page.screenshot({ path: fileURLToPath(new URL(`ticket-${width}.png`, output)), fullPage: true });
     await c.page.goto(base + '/account#yeu-cau-moi/356000000000001');
     await c.page.waitForSelector('#req-category option[value="PHONE"]', { state: 'attached' });

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Soopi.Api.Data;
 using Soopi.Api.Data.Stores;
 using Soopi.Api.Domain.Identity;
@@ -30,7 +31,7 @@ public sealed record PendingQuotation(
 public sealed record PortalTicketView(
     string Code, string? ProductName, string? BrandName, string? SerialOrImei, DateTimeOffset ReceivedAt, DateTimeOffset? PromisedReturnAt,
     string Status, bool Stopped, IReadOnlyList<PortalStep> Steps, IReadOnlyList<PortalNote> CustomerNotes, PortalCosts Costs,
-    PendingQuotation? PendingQuotation, DateTimeOffset? HandedOverAt, int? Rating, bool CanRate)
+    PendingQuotation? PendingQuotation, DateTimeOffset? HandedOverAt, int? Rating, bool CanRate, string? RatingComment, DateTimeOffset? RatedAt)
 {
     private static readonly string[] StepKeys = ["RECEIVED", "DIAGNOSIS", "AWAITING_PARTS", "REPAIRING", "QC", "READY"];
     private static readonly string[] StepLabels = ["Tiếp nhận", "Chẩn đoán", "Chờ linh kiện", "Đang sửa", "QC", "Sẵn sàng nhận máy"];
@@ -51,7 +52,8 @@ public sealed record PortalTicketView(
                     pending.PartsTotal, pending.LaborTotal, pending.GrandTotal),
             ticket.Handover?.HandedOverAt,
             ticket.Handover?.Rating,
-            isDelivered);
+            isDelivered && ticket.Handover is not null,
+            ticket.Handover?.RatingComment, ticket.Handover?.RatedAt);
     }
 
     /// <summary>Bước hiện tại theo mục 11.2; StepKeys.Length nghĩa là mọi bước đã xong.</summary>
@@ -78,7 +80,7 @@ public sealed record PortalTicketSummary(string Code, string? ProductName, strin
 
 public sealed record DecisionRequest([NotNull] Decision? Decision, string? Reason);
 
-public sealed record TicketRatingRequest([property: NotNull, Min(1), Max(5)] int? Rating, string? Comment);
+public sealed record TicketRatingRequest([NotNull, Min(1), Max(5)] int? Rating, [MaxLength(1000)] string? Comment);
 
 public sealed class PortalTicketService(
     TicketStore tickets,
@@ -122,25 +124,19 @@ public sealed class PortalTicketService(
     public async Task<PortalTicketView> RateTicketAsync(string code, int? rating, string? comment)
     {
         actors.RequireOrPortal(Permission.PORTAL_SELF);
-        if (rating is null or < 1 or > 5) throw new DomainException(ErrorCode.VALIDATION_FAILED);
-        var ticket = await RequireTicketAsync(code);
-        if (ticket.Status is not (TicketStatus.DELIVERED or TicketStatus.RETURNED_UNREPAIRED))
-            throw new DomainException(ErrorCode.TICKET_INVALID_STATE);
-
-        var actor = CustomerActing(ticket);
-        var now = clock.GetUtcNow();
+        if (rating is null or < 1 or > 5 || comment?.Length > 1000) throw new DomainException(ErrorCode.VALIDATION_FAILED);
 
         await transactions.InTransactionAsync(async () =>
         {
-            ticket.UpdateRating(rating.Value);
-            if (!string.IsNullOrWhiteSpace(comment))
-            {
-                var noteText = $"[Khách đánh giá {rating} sao]: {comment.Trim()}";
-                ticket.AddCustomerNote(noteText, now, actor);
-            }
+            var ticket = await RequireTicketAsync(code);
+            var actor = CustomerActing(ticket);
+            var normalized = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim();
+            var existing = ticket.Handover;
+            ticket.UpdateRating(rating.Value, comment, clock.GetUtcNow());
+            if (existing is { RatedAt: not null } && existing.Rating == rating && existing.RatingComment == normalized) return;
             await tickets.SaveAsync(ticket);
             await audit.RecordAsync(actor.AuditId, actor.DisplayName, actor.RoleNames, "TICKET_RATED",
-                $"Đánh giá {rating} sao cho phiếu {code}", "TICKET", code, null, rating.ToString());
+                $"Đánh giá {rating} sao cho phiếu {code}", "TICKET", code, existing?.Rating?.ToString(), rating.ToString());
         });
 
         return await ViewAsync(await RequireTicketAsync(code));

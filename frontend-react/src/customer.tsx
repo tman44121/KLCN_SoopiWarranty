@@ -1,6 +1,7 @@
 /* Phần dùng chung của giao diện khách (port từ web khách KLCN): header, footer, icon, badge.
    API, nhãn và định dạng lấy từ các module behaviors đã gắn lên window (api.js, labels.js). */
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { internalRoute } from './navigation';
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const w = window as unknown as { LML_API: Json; LML_LABELS: Json; LML_FMT: Json; LML_AUTH?: Json };
@@ -74,6 +75,7 @@ const PATHS: Record<string, ReactNode> = {
   x: <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>,
   minimize: <><line x1="5" y1="12" x2="19" y2="12" /></>,
   star: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />,
+  bell: <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></>,
 };
 
 export function Icon({ glyph }: { glyph: string }) {
@@ -206,6 +208,149 @@ function UserMenu({ name, active }: { name: string; active: string }) {
   );
 }
 
+/** Chuông thông báo khách hàng — chỉ hiển thị khi đăng nhập; polling mỗi 60s. */
+export function NotificationBell() {
+  type NotifItem = { id: string; type: string; message: string; link: string | null; createdAt: string | null; read: boolean };
+  const [inbox, setInbox] = useState<{ items: NotifItem[]; unreadCount: number }>({ items: [], unreadCount: 0 });
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [busy, run] = useBusy();
+  const version = useRef(0);
+  const writing = useRef(false);
+
+  const load = useCallback(async () => {
+    if (writing.current) return;
+    const current = ++version.current;
+    try {
+      const data = await api().notifications.inbox(false, { redirect: false });
+      if (current === version.current) {
+        setInbox(data);
+        setError('');
+      }
+    } catch (e) {
+      if (current === version.current) setError(errorText(e));
+    } finally {
+      if (current === version.current) setLoading(false);
+    }
+  }, []);
+
+  // Load thông báo ban đầu + polling mỗi 60 giây
+  useEffect(() => {
+    void load();
+    const id = setInterval(() => void load(), 60_000);
+    return () => { clearInterval(id); version.current++; };
+  }, [load]);
+
+  // Đóng dropdown khi click bên ngoài hoặc nhấn Escape
+  useEffect(() => {
+    if (!open) return;
+    const onOutside = (e: MouseEvent) => { if (!boxRef.current?.contains(e.target as Node)) setOpen(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); bellRef.current?.focus(); } };
+    document.addEventListener('mousedown', onOutside);
+    document.addEventListener('keydown', onEsc);
+    return () => { document.removeEventListener('mousedown', onOutside); document.removeEventListener('keydown', onEsc); };
+  }, [open]);
+
+  const markRead = (item: NotifItem) => {
+    const link = internalRoute(item.link);
+    if (item.read) {
+      if (link) window.location.href = link;
+      return;
+    }
+    void run(async () => {
+      writing.current = true;
+      version.current++;
+      try {
+        await api().notifications.read(item.id, { redirect: false });
+        setInbox(prev => ({
+          items: prev.items.map(n => n.id === item.id ? { ...n, read: true } : n),
+          unreadCount: Math.max(0, prev.unreadCount - (prev.items.some(n => n.id === item.id && !n.read) ? 1 : 0)),
+        }));
+        setError('');
+        if (link) window.location.href = link;
+      } catch (e) { setError(errorText(e)); }
+      finally { writing.current = false; }
+    });
+  };
+
+  const markAll = () => {
+    void run(async () => {
+      writing.current = true;
+      version.current++;
+      try {
+        await api().notifications.readAll({ redirect: false });
+        setInbox(prev => ({ items: prev.items.map(n => ({ ...n, read: true })), unreadCount: 0 }));
+        setError('');
+      } catch (e) { setError(errorText(e)); }
+      finally { writing.current = false; }
+    });
+  };
+
+  return (
+    <div className="notif-bell-wrap" ref={boxRef}>
+      <button
+        type="button"
+        ref={bellRef}
+        className={'notif-bell-btn' + (open ? ' is-open' : '')}
+        aria-label={`Thông báo${inbox.unreadCount > 0 ? ` (${inbox.unreadCount} chưa đọc)` : ''}`}
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => { setOpen(o => !o); if (!open && !busy) void load(); }}
+      >
+        <Icon glyph="bell" />
+        {inbox.unreadCount > 0 && (
+          <span className="notif-badge" aria-hidden="true">
+            {inbox.unreadCount > 99 ? '99+' : inbox.unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <section id={panelId} className="notif-dropdown" aria-label="Danh sách thông báo">
+          <div className="notif-dropdown-head">
+            <span className="notif-dropdown-title">Thông báo</span>
+            {inbox.unreadCount > 0 && (
+              <button type="button" className="notif-mark-all-btn" disabled={busy} onClick={markAll}>
+                Đọc tất cả
+              </button>
+            )}
+          </div>
+          {error && <div className="notif-error" role="alert">{error} <button type="button" disabled={busy} onClick={() => void load()}>Thử lại</button></div>}
+          <ul className="notif-list" role="list">
+            {loading ? <li className="notif-empty" role="status">Đang tải thông báo…</li> : inbox.items.length === 0 ? (
+              <li className="notif-empty">
+                <Icon glyph="bell" />
+                <span>Chưa có thông báo nào</span>
+              </li>
+            ) : (
+              inbox.items.map(n => (
+                <li key={n.id} className={'notif-item' + (n.read ? '' : ' notif-item--unread')}>
+                  <button type="button" className="notif-item-btn" disabled={busy} onClick={() => markRead(n)} aria-label={`${n.read ? 'Đã đọc' : 'Chưa đọc'}: ${n.message}`}>
+                    <span className="notif-item-dot" aria-hidden="true" />
+                    <span className="notif-item-body">
+                      <span className="notif-item-msg">{n.message}</span>
+                      <span className="notif-item-time">{fmt().dateTime(n.createdAt)}</span>
+                    </span>
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+          {inbox.items.length > 0 && (
+            <div className="notif-dropdown-footer">
+              Hiển thị tối đa 50 thông báo mới nhất
+            </div>
+          )}
+        </section>
+      )}
+    </div>
+  );
+}
+
 /** Header khách. Có tên → menu tài khoản; chưa đăng nhập → nút Đăng nhập/Đăng ký. */
 export function CustomerHeader({ name: pageName, active }: { name?: string | null; active: string }) {
   const name = useCustomerName(pageName);
@@ -226,6 +371,7 @@ export function CustomerHeader({ name: pageName, active }: { name?: string | nul
           {name ? (
             <>
               <a href="/account#yeu-cau-moi" className="btn-primary-teal">Gửi yêu cầu</a>
+              <NotificationBell />
               <UserMenu name={name} active={active} />
             </>
           ) : (
@@ -353,261 +499,4 @@ export function useAuthScale() {
     return () => removeEventListener('resize', fit);
   }, []);
   return ref;
-}
-
-/* ==========================================================================
-   LIVE CHAT BUBBLE — Chat trực tiếp khách ↔ kỹ thuật viên
-   ========================================================================== */
-
-type ChatMessage = {
-  id: string;
-  role: 'customer' | 'technician' | 'system';
-  text: string;
-  time: Date;
-  pending?: boolean;
-};
-
-const DEMO_MESSAGES: ChatMessage[] = [
-  { id: 'm0', role: 'system', text: 'Phiên hỗ trợ bắt đầu — Kỹ thuật viên sẽ phản hồi trong giờ làm việc (8:00–17:30).', time: new Date(Date.now() - 60 * 60 * 1000) },
-  { id: 'm1', role: 'technician', text: 'Xin chào! Tôi là kỹ thuật viên phụ trách thiết bị của bạn. Tôi có thể giúp gì cho bạn?', time: new Date(Date.now() - 58 * 60 * 1000) },
-  { id: 'm2', role: 'technician', text: 'Thiết bị của bạn sau khi kiểm tra nếu có linh kiện ngoài bảo hành sẽ được gửi báo giá chi tiết. Bạn có thể kiểm tra và bấm "Xác nhận giá" ngay trong chi tiết phiếu để chúng tôi tiến hành sửa chữa nhé!', time: new Date(Date.now() - 15 * 60 * 1000) },
-];
-
-function formatChatTime(date: Date): string {
-  const now = new Date();
-  const diff = (now.getTime() - date.getTime()) / 1000;
-  if (diff < 60) return 'Vừa xong';
-  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
-  return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-}
-
-/** Bóng chat nổi góc phải dưới dành cho khách đã đăng nhập — nhắn tin trực tiếp với kỹ thuật viên. */
-export function LiveChatBubble({ customerName }: { customerName?: string | null }) {
-  const [open, setOpen] = useState(false);
-  const [minimized, setMinimized] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>(DEMO_MESSAGES);
-  const [input, setInput] = useState('');
-  const [typing, setTyping] = useState(false);
-  const [unread, setUnread] = useState(1);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Scroll xuống tin mới nhất
-  useEffect(() => {
-    if (open && !minimized) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, open, minimized]);
-
-  // Xóa badge unread khi mở chat
-  useEffect(() => {
-    if (open && !minimized) setUnread(0);
-  }, [open, minimized]);
-
-  // Auto-focus input khi mở
-  useEffect(() => {
-    if (open && !minimized) {
-      setTimeout(() => inputRef.current?.focus(), 120);
-    }
-  }, [open, minimized]);
-
-  const handleOpen = () => {
-    setOpen(true);
-    setMinimized(false);
-    setUnread(0);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    setMinimized(false);
-  };
-
-  const handleMinimize = () => setMinimized(true);
-  const handleRestore = () => { setMinimized(false); setUnread(0); };
-
-  const sendMessage = () => {
-    const text = input.trim();
-    if (!text) return;
-    const newMsg: ChatMessage = {
-      id: 'm' + Date.now(),
-      role: 'customer',
-      text,
-      time: new Date(),
-    };
-    setMessages((prev) => [...prev, newMsg]);
-    setInput('');
-
-    // Giả lập kỹ thuật viên đang gõ rồi trả lời
-    setTyping(true);
-    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
-    typingTimerRef.current = setTimeout(() => {
-      setTyping(false);
-      const replies = [
-        'Cảm ơn bạn đã nhắn tin! Tôi đang kiểm tra thiết bị và sẽ cập nhật ngay.',
-        'Thiết bị của bạn đang được xử lý. Dự kiến hoàn thành trong hôm nay.',
-        'Tôi đã ghi nhận yêu cầu. Vui lòng chờ tôi xác nhận lại nhé!',
-        'Linh kiện đang được đặt hàng, khi về sẽ thông báo cho bạn ngay.',
-      ];
-      const reply: ChatMessage = {
-        id: 'm' + (Date.now() + 1),
-        role: 'technician',
-        text: replies[Math.floor(Math.random() * replies.length)],
-        time: new Date(),
-      };
-      setMessages((prev) => [...prev, reply]);
-      if (!open || minimized) setUnread((n) => n + 1);
-    }, 1800 + Math.random() * 1200);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  const name = customerName || 'Bạn';
-  const techName = 'Kỹ thuật viên';
-
-  return (
-    <div className="live-chat-root" aria-label="Chat hỗ trợ trực tiếp">
-      {/* Nút bóng nổi */}
-      {!open && (
-        <button
-          id="live-chat-bubble-btn"
-          type="button"
-          className="chat-bubble-fab"
-          aria-label="Mở chat hỗ trợ"
-          onClick={handleOpen}
-        >
-          <svg className="chat-fab-icon" viewBox="0 0 24 24" aria-hidden="true">
-            {PATHS['chatDots']}
-          </svg>
-          {unread > 0 && (
-            <span className="chat-fab-badge" aria-label={`${unread} tin nhắn chưa đọc`}>
-              {unread}
-            </span>
-          )}
-          <span className="chat-fab-pulse" aria-hidden="true" />
-        </button>
-      )}
-
-      {/* Cửa sổ chat — thu nhỏ */}
-      {open && minimized && (
-        <button
-          type="button"
-          className="chat-minimized-bar"
-          aria-label="Khôi phục chat hỗ trợ"
-          onClick={handleRestore}
-        >
-          <svg className="kh-icon" viewBox="0 0 24 24" aria-hidden="true">{PATHS['chatDots']}</svg>
-          <span>Chat với kỹ thuật viên</span>
-          {unread > 0 && <span className="chat-fab-badge">{unread}</span>}
-          <span className="chat-minimized-expand" aria-hidden="true">▲</span>
-        </button>
-      )}
-
-      {/* Cửa sổ chat — đầy đủ */}
-      {open && !minimized && (
-        <div className="chat-window" role="dialog" aria-label="Chat hỗ trợ kỹ thuật viên" aria-modal="false">
-          {/* Header */}
-          <div className="chat-window-header">
-            <div className="chat-header-info">
-              <div className="chat-avatar-wrap">
-                <span className="chat-avatar-circle" aria-hidden="true">KT</span>
-                <span className="chat-online-dot" aria-hidden="true" title="Đang trực tuyến" />
-              </div>
-              <div className="chat-header-text">
-                <div className="chat-header-title">{techName}</div>
-                <div className="chat-header-sub">
-                  {typing ? (
-                    <span className="chat-typing-label">
-                      <span className="chat-typing-dots"><span /><span /><span /></span>
-                      Đang gõ...
-                    </span>
-                  ) : (
-                    <span>Đang trực tuyến</span>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="chat-header-actions">
-              <button type="button" className="chat-icon-btn" aria-label="Thu nhỏ" onClick={handleMinimize}>
-                <Icon glyph="minimize" />
-              </button>
-              <button type="button" className="chat-icon-btn" aria-label="Đóng chat" onClick={handleClose}>
-                <Icon glyph="x" />
-              </button>
-            </div>
-          </div>
-
-          {/* Tin nhắn */}
-          <div className="chat-messages" role="log" aria-live="polite" aria-label="Lịch sử tin nhắn">
-            {messages.map((msg) => {
-              if (msg.role === 'system') {
-                return (
-                  <div key={msg.id} className="chat-system-msg">
-                    <span>{msg.text}</span>
-                  </div>
-                );
-              }
-              const isMe = msg.role === 'customer';
-              return (
-                <div key={msg.id} className={`chat-msg-row ${isMe ? 'chat-msg-row--me' : 'chat-msg-row--them'}`}>
-                  {!isMe && (
-                    <span className="chat-msg-avatar" aria-hidden="true">KT</span>
-                  )}
-                  <div className="chat-bubble-wrap">
-                    <div className={`chat-bubble-msg ${isMe ? 'chat-bubble-msg--me' : 'chat-bubble-msg--them'}`}>
-                      {msg.text}
-                    </div>
-                    <div className={`chat-msg-time ${isMe ? 'chat-msg-time--me' : ''}`}>
-                      {isMe ? `${name} · ` : `${techName} · `}{formatChatTime(msg.time)}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Typing indicator */}
-            {typing && (
-              <div className="chat-msg-row chat-msg-row--them">
-                <span className="chat-msg-avatar" aria-hidden="true">KT</span>
-                <div className="chat-typing-bubble">
-                  <span /><span /><span />
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input */}
-          <div className="chat-input-area">
-            <textarea
-              ref={inputRef}
-              className="chat-input-field"
-              placeholder="Nhắn tin với kỹ thuật viên…"
-              value={input}
-              rows={1}
-              aria-label="Nhập tin nhắn"
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <button
-              type="button"
-              className={`chat-send-btn ${input.trim() ? 'chat-send-btn--active' : ''}`}
-              aria-label="Gửi tin nhắn"
-              disabled={!input.trim()}
-              onClick={sendMessage}
-            >
-              <Icon glyph="send" />
-            </button>
-          </div>
-          <div className="chat-input-hint">Nhấn Enter để gửi · Shift+Enter xuống dòng</div>
-        </div>
-      )}
-    </div>
-  );
 }

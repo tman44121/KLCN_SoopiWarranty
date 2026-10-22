@@ -3,6 +3,7 @@ using Soopi.Api.Domain.Identity;
 using Soopi.Api.Domain.Shared;
 using Soopi.Api.Domain.Tickets;
 using Soopi.Api.Infrastructure.Security;
+using Soopi.Api.DTOs.Shared;
 
 namespace Soopi.Api.Services.Reporting;
 
@@ -28,6 +29,11 @@ public sealed record StatusCount(string Status, long Count);
 
 public sealed record SlaBucket(string Level, long Breached, long AtRisk, long OnTrack);
 
+public sealed record CustomerReviewRow(string TicketCode, string CustomerCode, string FullName, string Phone,
+    string? ProductName, string StationCode, string StationName, int Rating, string? Comment, DateTimeOffset? RatedAt);
+
+public sealed record CustomerReviewReport(PageResponse<CustomerReviewRow> Reviews, long CustomerReviewCount, decimal? AverageRating, long LegacyCount);
+
 /// <summary>
 /// Báo cáo mục 14 (R4–R12). Khoảng ngày theo giờ Việt Nam, gồm cả hai đầu; trạm tùy chọn. Số giờ = số giây / 3600 làm tròn
 /// xuống (như TIMESTAMPDIFF(HOUR) của bản MySQL), không dùng DATEDIFF(HOUR) vì hàm đó đếm số lần qua mốc giờ.
@@ -35,6 +41,37 @@ public sealed record SlaBucket(string Level, long Breached, long AtRisk, long On
 public sealed class ReportService(Sql sql, CurrentActor actors, TimeProvider clock, IConfiguration configuration)
 {
     private sealed record Range(DateTimeOffset? From, DateTimeOffset? To, string? Station);
+
+    public async Task<CustomerReviewReport> CustomerReviewsAsync(DateOnly? from, DateOnly? to, string? station, int? rating, string? query, int page, int size)
+    {
+        if (!actors.Require(Permission.REPORT_SYSTEM).Roles.Contains(Role.ADMIN)) throw new DomainException(ErrorCode.ACCESS_DENIED);
+        new PageRequestParams(page, size, null).Validate();
+        if (rating is < 1 or > 5 || query?.Length > 100 || page > int.MaxValue / size)
+            throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        var (where, args) = Filter("bg.NgayDanhGia", RangeOf(from, to, station));
+        if (rating is not null) { where += " AND bg.DanhGiaHaiLong = ?"; args.Add(rating); }
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            where += " AND (ptn.MaPhieuTN LIKE ? OR kh.HoTen LIKE ? OR kh.SDT LIKE ?)";
+            var pattern = SqlLike.Contains(query.Trim());
+            args.AddRange([pattern, pattern, pattern]);
+        }
+        const string joins = " FROM PhieuBanGiao bg JOIN PhieuTiepNhan ptn ON ptn.MaPhieuTN = bg.MaPhieuTN "
+            + "JOIN KhachHang kh ON kh.MaKH = ptn.MaKH JOIN TramDichVu tram ON tram.MaTram = ptn.MaTram "
+            + "JOIN ThietBi tb ON tb.MaThietBi = ptn.MaThietBi JOIN SanPham sp ON sp.MaSP = tb.MaSP "
+            + "WHERE bg.DanhGiaHaiLong IS NOT NULL AND ptn.TrangThaiXuLy IN ('DELIVERED', 'RETURNED_UNREPAIRED')";
+        var summary = (await sql.QueryAsync("SELECT COUNT_BIG(*) AS Total, COUNT_BIG(bg.NgayDanhGia) AS CustomerCount, "
+            + "AVG(CASE WHEN bg.NgayDanhGia IS NOT NULL THEN CAST(bg.DanhGiaHaiLong AS DECIMAL(10,2)) END) AS AverageRating" + joins + where,
+            row => (Total: row.Long("Total"), Customers: row.Long("CustomerCount"), Average: row.DecOrNull("AverageRating")), [.. args]))[0];
+        var rows = await sql.QueryAsync("SELECT ptn.MaPhieuTN, kh.MaKH, kh.HoTen, kh.SDT, sp.TenSP, tram.MaTram, tram.TenTram, "
+            + "bg.DanhGiaHaiLong, bg.NhanXetDanhGia, bg.NgayDanhGia" + joins + where
+            + " ORDER BY bg.NgayDanhGia DESC, ptn.MaPhieuTN DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY",
+            row => new CustomerReviewRow(row.Str("MaPhieuTN")!, row.Str("MaKH")!, row.Str("HoTen")!, row.Str("SDT")!, row.Str("TenSP"),
+                row.Str("MaTram")!, row.Str("TenTram")!, row.Int("DanhGiaHaiLong"), row.Str("NhanXetDanhGia"), row.Time("NgayDanhGia")),
+            [.. args, page * size, size]);
+        return new CustomerReviewReport(PageResponse<CustomerReviewRow>.Of(rows, page, size, summary.Total), summary.Customers,
+            Scaled(summary.Average, 2), summary.Total - summary.Customers);
+    }
 
     /// <summary>R4 — chỉ phiếu thu tính phí (miễn phí 0 đ không tính).</summary>
     public Task<List<MonthlyRevenue>> RevenueMonthlyAsync(DateOnly? from, DateOnly? to, string? station)

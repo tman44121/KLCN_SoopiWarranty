@@ -1,4 +1,5 @@
 using Soopi.Api.Data;
+using Soopi.Api.Domain.Shared;
 
 namespace Soopi.Api.Services.Shared;
 
@@ -7,9 +8,10 @@ namespace Soopi.Api.Services.Shared;
 /// các thiết bị di động mà tài khoản đó đã đăng ký nhận push. Đường dẫn lưu theo route React (thông báo cũ trong DB vẫn
 /// là đường dẫn *.html, frontend tự dịch).
 /// </summary>
-public sealed class NotificationService(Sql sql, TimeProvider clock, PushDispatcher pushes)
+public sealed class NotificationService(Sql sql, TimeProvider clock, PushDispatcher pushes, TransactionRunner transactions)
 {
     public const string CustomerPortal = "/portal";
+    public const string CustomAnnouncementType = "CUSTOM_ANNOUNCEMENT";
 
     public Task ForRoleAsync(string role, string type, string message, string? link, string? entityId) =>
         InsertAsync(role, null, type, message, link, entityId);
@@ -47,6 +49,34 @@ public sealed class NotificationService(Sql sql, TimeProvider clock, PushDispatc
             phone);
         if (accounts.Count > 0) await InsertAsync(null, accounts[0], type, message, CustomerPortal, entityId);
     }
+
+    /// <summary>Gửi thông báo thủ công tới một danh sách khách hàng cụ thể (theo MaKH).</summary>
+    public Task BroadcastToCustomersAsync(IReadOnlyList<string> customerIds, string message, string? link) =>
+        BroadcastAsync(customerIds, message, link);
+
+    /// <summary>Gửi thông báo thủ công tới TẤT CẢ khách hàng đang hoạt động.</summary>
+    public Task BroadcastToAllCustomersAsync(string message, string? link) => BroadcastAsync(null, message, link);
+
+    private Task BroadcastAsync(IReadOnlyList<string>? customerIds, string message, string? link) => transactions.InTransactionAsync(async () =>
+    {
+        const string recipients = "SELECT tk.MaTaiKhoan FROM KhachHang kh JOIN TaiKhoan tk ON tk.MaTaiKhoan = kh.MaTaiKhoan "
+            + "WHERE kh.TrangThai = 'ACTIVE' AND tk.TrangThai = 'ACTIVE'";
+        var accounts = new List<long>();
+        if (customerIds is null)
+            accounts = await sql.QueryAsync(recipients, row => row.Long("MaTaiKhoan"));
+        else
+        {
+            var ids = customerIds.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            if (ids.Length == 0) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+            foreach (var chunk in SqlInList.Chunks(ids))
+                accounts.AddRange(await sql.QueryAsync(recipients + $" AND kh.MaKH IN ({string.Join(", ", chunk.Select(_ => "?"))})",
+                    row => row.Long("MaTaiKhoan"), [.. chunk.Cast<object?>()]));
+            // Không gửi một phần rồi báo thành công khi có khách không thể nhận.
+            if (accounts.Count != ids.Length) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        }
+        foreach (var accountId in accounts.Distinct())
+            await InsertAsync(null, accountId, CustomAnnouncementType, message, link, null);
+    });
 
     public async Task<bool> ExistsAsync(string type, string entityId) =>
         await sql.ScalarAsync("SELECT TOP 1 1 FROM ThongBao WHERE Loai = ? AND MaDoiTuong = ?", type, entityId) is not null;

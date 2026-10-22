@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
 import controller from "../behaviors/receptionist.js";
 import { BrandLogo } from "../customer";
+import { NotificationBroadcast } from "../NotificationBroadcast";
 
 export default function ReceptionistPage() {
   usePage("receptionist", {"data-roles": "RECEPTIONIST"}, "Soopi — Tiếp nhận", controller);
@@ -230,6 +231,10 @@ export default function ReceptionistPage() {
             </div>
           </div>
         </div>
+        <details className="broadcast-section">
+          <summary>Gửi thông báo khách hàng</summary>
+          <NotificationBroadcast />
+        </details>
         <section className="card" aria-labelledby="yc-title" data-perm="WARRANTY_REQUEST_HANDLE">
           <div className="card__header">
             <div>

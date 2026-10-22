@@ -1,9 +1,11 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Soopi.Api.DTOs.Shared;
 using Soopi.Api.Infrastructure.Validation;
 using Soopi.Api.Services.Notifications;
 using Soopi.Api.Services.Reporting;
+using Soopi.Api.Services.Shared;
 
 namespace Soopi.Api.Controllers;
 
@@ -14,6 +16,12 @@ public sealed record DeviceRegistration([NotBlank] string Platform, [NotBlank] s
 [Route("api/v1/reports")]
 public sealed class ReportsController(ReportService reports) : ControllerBase
 {
+    [HttpGet("customer-reviews")]
+    [Authorize(Roles = "ADMIN")]
+    public Task<CustomerReviewReport> CustomerReviews([FromQuery] DateOnly? from, [FromQuery] DateOnly? to, [FromQuery] string? station,
+        [FromQuery] int? rating, [FromQuery] string? q, [FromQuery] int page = 0, [FromQuery] int size = 25) =>
+        reports.CustomerReviewsAsync(from, to, station, rating, q, page, size);
+
     [HttpGet("revenue-monthly")]
     public Task<List<MonthlyRevenue>> RevenueMonthly([FromQuery] DateOnly? from, [FromQuery] DateOnly? to, [FromQuery] string? station) =>
         reports.RevenueMonthlyAsync(from, to, station);
@@ -85,6 +93,57 @@ public sealed class AuditAndNotificationsController(AuditQueryService audits, No
     public async Task<IActionResult> UnregisterDevice(string installationId)
     {
         await pushDevices.UnregisterAsync(installationId);
+        return NoContent();
+    }
+}
+
+/// <summary>Request body cho endpoint phát thông báo thủ công tới khách hàng.</summary>
+public sealed record BroadcastRequest(
+    [NotBlank, MaxLength(255)] string Message,
+    [MaxLength(255)] string? Link = null,
+    [MaxLength(20)] string? CustomerId = null,
+    [MaxLength(22000)] string? CustomerIds = null
+) : IValidatableObject
+{
+    public string[] Recipients() => (CustomerIds ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Concat(CustomerId is null ? [] : new[] { CustomerId.Trim() }).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if ((CustomerId is not null || CustomerIds is not null)
+            && (Recipients().Length == 0 || Recipients().Any(id => id.Length is 0 or > 20)))
+            yield return new ValidationResult("Chọn ít nhất một mã khách hàng hợp lệ (tối đa 20 ký tự mỗi mã).", [nameof(CustomerIds)]);
+        var link = Link?.Trim();
+        if (!string.IsNullOrEmpty(link) && (!link.StartsWith('/') || link.StartsWith("//") || link.Contains('\\') || link.Any(char.IsControl)))
+            yield return new ValidationResult("Đường dẫn phải nằm trong website, ví dụ /account#lich-su.", [nameof(Link)]);
+    }
+}
+
+[ApiController]
+[Authorize(Roles = "ADMIN,RECEPTIONIST")]
+[Route("api/v1/admin/notifications")]
+public sealed class NotificationBroadcastController(NotificationService notifications) : ControllerBase
+{
+    /// <summary>
+    /// Phát thông báo thủ công (CUSTOM_ANNOUNCEMENT) tới khách hàng.
+    /// • Không truyền CustomerId/CustomerIds → gửi tất cả khách đang ACTIVE.
+    /// • CustomerIds có giá trị → chỉ gửi cho các khách trong danh sách (phân cách bằng dấu phẩy).
+    /// </summary>
+    [HttpPost("broadcast")]
+    public async Task<IActionResult> Broadcast([FromBody] BroadcastRequest body)
+    {
+        var message = body.Message.Trim();
+        var link = string.IsNullOrWhiteSpace(body.Link) ? null : body.Link.Trim();
+
+        if (body.CustomerId is null && body.CustomerIds is null)
+        {
+            await notifications.BroadcastToAllCustomersAsync(message, link);
+        }
+        else
+        {
+            await notifications.BroadcastToCustomersAsync(body.Recipients(), message, link);
+        }
+
         return NoContent();
     }
 }

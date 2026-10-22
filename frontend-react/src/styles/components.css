@@ -2768,3 +2768,15 @@ button.queue-item {
   display: none;
 }
 
+.broadcast-section { margin-bottom: 20px; }
+.broadcast-section > summary { cursor: pointer; padding: 12px 0; font-weight: 600; }
+.broadcast-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.broadcast-fields legend { font-weight: 600; margin-bottom: 12px; }
+.broadcast-customers { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.broadcast-customers:empty { display: none; }
+.broadcast-customers .btn { white-space: normal; text-align: left; }
+
+.customer-review-table { min-width: 800px; }
+.customer-review-comment { min-width: 0; max-width: 480px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.customer-review-report .toolbar__field { min-width: 0; max-width: 100%; }
+
