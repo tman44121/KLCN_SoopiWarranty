@@ -3,7 +3,7 @@
 Soopi chuyển ứng dụng Spring Boot sang ASP.NET Core Web API và React, giữ nghiệp vụ và schema SQL Server hiện có.
 Project Java `../warranty-system-mysql` là nguồn đối chiếu chỉ đọc.
 
-**Trạng thái 02/10/2026:** backend có 114 endpoint như bản Java + 1 endpoint riêng (D-047), frontend có 10 trang nội bộ/cổng khách và các trang tài khoản khách. Giai đoạn 4 đã đối chiếu một phần;
+**Trạng thái 20/10/2026:** backend có 114 endpoint như bản Java + 2 endpoint riêng (D-047, D-050), frontend có 10 trang nội bộ/cổng khách và các trang tài khoản khách. Giai đoạn 4 đã đối chiếu một phần;
 chưa nghiệm thu toàn bộ API có token và luồng ghi/đồng thời. Xem [báo cáo kiểm chứng](docs/MIGRATION_VERIFICATION.md).
 
 ## Bắt đầu
@@ -55,6 +55,7 @@ Không có EF migration hay tự tạo schema. Bản build React được phục
 | Hiểu luồng xử lý, lưu trữ, phân quyền và phạm vi migration | [ARCHITECTURE](docs/ARCHITECTURE.md) |
 | Gọi API, đăng nhập, JSON, phân trang, lỗi và upload | [API](docs/API.md) |
 | Kiểm thử, đóng gói và vận hành | [OPERATIONS](docs/OPERATIONS.md) |
+| CI/CD với Caddy, aaPanel và Docker | [DEPLOY_VPS](docs/DEPLOY_VPS.md) |
 | Danh sách đủ 114 method/URL | [ENDPOINTS](verification/ENDPOINTS.md) |
 | Entity/bảng, trang UI và logic Java gốc | [MIGRATION_PLAN](MIGRATION_PLAN.md) |
 | Lý do các lựa chọn đã chốt | [DECISIONS](docs/DECISIONS.md) |

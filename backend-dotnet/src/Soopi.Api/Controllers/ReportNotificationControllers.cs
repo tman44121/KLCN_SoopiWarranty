@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Soopi.Api.DTOs.Shared;
 using Soopi.Api.Infrastructure.Validation;
 using Soopi.Api.Services.Notifications;
@@ -21,6 +22,14 @@ public sealed class ReportsController(ReportService reports) : ControllerBase
     public Task<CustomerReviewReport> CustomerReviews([FromQuery] DateOnly? from, [FromQuery] DateOnly? to, [FromQuery] string? station,
         [FromQuery] int? rating, [FromQuery] string? q, [FromQuery] int page = 0, [FromQuery] int size = 25) =>
         reports.CustomerReviewsAsync(from, to, station, rating, q, page, size);
+
+    [HttpGet("export")]
+    public async Task<FileContentResult> Export([FromQuery, BindRequired] DateOnly from, [FromQuery, BindRequired] DateOnly to, [FromQuery] string? station)
+    {
+        var content = await reports.ExportAsync(from, to, station);
+        Response.Headers.CacheControl = "no-store";
+        return File(content, ReportWorkbook.ContentType, $"soopi-bao-cao-{from:yyyy-MM-dd}-{to:yyyy-MM-dd}.xlsx");
+    }
 
     [HttpGet("revenue-monthly")]
     public Task<List<MonthlyRevenue>> RevenueMonthly([FromQuery] DateOnly? from, [FromQuery] DateOnly? to, [FromQuery] string? station) =>

@@ -56,6 +56,52 @@ ASP.NET Core Web API + React. Định dạng như `docs/DECISIONS.md` của bả
 | D-048 | Trang chủ `/` của web khách KLCN (home/index.html + home.css) chưa được chuyển; `/` chỉ chuyển hướng về `/login` | `/` port đủ bố cục cũ (`src/pages/home.tsx`): hero + thẻ tiến độ, dải nhóm thiết bị, khối giới thiệu + bảng giám sát tối, 2 lưới tiện ích, quy trình 4 bước, hỏi đáp, băng CTA; giữ tên class cũ, CSS bọc `.kh-home` trong `customer.css`, đổi sang bộ màu soopiwarranty. Số liệu lấy thật: nhóm thiết bị/trạm từ `/portal/catalog`, phiếu của khách đăng nhập từ `/portal/my/tickets`; khách vãng lai thấy phiếu mẫu ghi “Ví dụ minh họa” như bản cũ. ASP.NET trả `index.html` cho `/` thay vì redirect | Không thêm endpoint; bỏ số liệu/hotline/thương hiệu cố định của bản cũ như D-045 |
 | D-049 | Nhóm trạng thái phiếu phía khách theo luồng trung tâm (yêu cầu của chủ dự án): máy sửa xong hoặc không sửa đang chờ lấy không phải "chờ linh kiện / xác nhận" hay "hoàn thành" | Bộ lọc `/account` và số liệu `/`: Tất cả · Đang xử lý (RECEIVED, INSPECTING, DIAGNOSED, REPAIRING) · Chờ linh kiện / xác nhận (AWAITING_PARTS, AWAITING_QUOTE_APPROVAL, AWAITING_CUSTOMER_CONFIRMATION) · Chờ nhận máy (COMPLETED, AWAITING_RETURN) · Hoàn thành (DELIVERED, RETURNED_UNREPAIRED); khai báo một nơi (`TICKET_GROUPS`, `TICKET_FILTERS` trong `customer.tsx`). Nhãn khách `TICKET_STATUS_CUSTOMER` (labels.js): AWAITING_RETURN → "Chờ nhận máy", COMPLETED → "Sửa xong – Chờ nhận máy". Trang tổng quan `/account` (chủ dự án chọn phương án A): Đang xử lý · Chờ bạn xác nhận · Chờ nhận máy, đếm theo cùng nhóm; bấm ô mở Lịch sử với bộ lọc đó (`#lich-su/<nhóm>`). Phiếu chờ linh kiện không có ô riêng ở đây, xem ở bộ lọc "Chờ linh kiện / xác nhận" | Không đổi mã trạng thái, DB hay nhãn màn nhân viên ("Chờ trả máy"); hệ thống không có trạng thái hủy phiếu nên không có bộ lọc "Đã hủy" |
 
+## D-050 — Xuất báo cáo thống kê Excel (2026-10-20)
+
+Quản trị viên tải `.xlsx` từ `/admin#reports`, theo khoảng thời gian và trạm đang chọn. Endpoint bổ sung `GET /api/v1/reports/export`
+đòi cả `REPORT_SYSTEM` và `REPORT_OPERATIONS`; giữ các API JSON hiện có. Sáu sheet dùng lại các truy vấn thống kê,
+không ghi DB. File là snapshot tại thời điểm xuất, có bộ lọc/giờ Việt Nam và ghi rõ cách tính kỳ của từng chỉ số.
+Đóng gói SpreadsheetML bằng `ZipArchive`/XML có sẵn trong .NET để không thêm dependency. Chuỗi luôn là `inlineStr`
+(kể cả tên bắt đầu bằng `=`); số giữ dạng số, chỉ số chưa có dữ liệu để trống. UI tắt xuất khi báo cáo đang tải/lỗi
+và giữ bộ lọc tại lúc bấm tải, kể cả khi người dùng đổi bộ lọc trong lúc chờ. Kiểm bằng unit test file/quyền/biên ngày,
+API blob có refresh và browser mock ở 1440/768/390px.
+
+## D-051 — Vá dependency Pkcs chặn CI (2026-10-22)
+
+Chủ dự án yêu cầu xử lý cảnh báo bảo mật trước khi triển khai CI/CD. Thêm tham chiếu trực tiếp
+`System.Security.Cryptography.Pkcs 10.0.13` trong API để thay bản gián tiếp 9.0.11 do SqlClient kéo vào;
+đây là bản vá theo dòng .NET 10 cho [CVE-2026-84008](https://github.com/advisories/GHSA-846f-f764-76mx).
+Chỉ nâng EF Core lên 10.0.13 chưa đủ: [SqlClient 6.1.7](https://www.nuget.org/packages/Microsoft.Data.SqlClient/6.1.7#dependencies-body-tab)
+vẫn khai báo Pkcs >= 9.0.11 cho net9.0. Bỏ tham chiếu trực tiếp khi chuỗi dependency upstream
+đã yêu cầu bản vá hoặc mới hơn; kiểm lại audit trước khi bỏ. Không đổi SQL/schema hay cấu hình xác thực.
+Chọn dòng 10 để bản publish ưu tiên DLL đã vá so với DLL dòng 10 của shared runtime cũ;
+đã kiểm `Soopi.Api.deps.json` và file version của DLL trong artifact là 10.0.13.
+Restore/audit theo lệnh CI đạt; NuGet không báo lỗ hổng kể cả dependency gián tiếp; Release build
+0 warning/error, 60/60 unit test và publish đạt. npm audit vẫn timeout, chưa xác nhận phần frontend.
+
+## D-052 — GitHub Actions deploy lên Ubuntu VPS (2026-10-22)
+
+Chủ dự án chọn VPS Ubuntu 24.04 x64, 4 GB RAM vật lý, SQL Server cùng máy;
+domain `soopiwarranty.id.vn` đã có A về VPS.
+Kiểm tra VPS mới ngày 22/10/2026: aaPanel và Docker/Compose đã có, không có container,
+Nginx không chạy, 80/443 đang trống; fingerprint SSH mới khớp console.
+GitHub Actions build/test/audit rồi publish React + .NET, đóng thành image runtime .NET 10,
+lưu artifact nén và tải qua SSH. Compose chạy Caddy reverse proxy HTTPS, app và SQL Server 2025;
+aaPanel giữ chức năng quản lý host, không cài Nginx thứ hai.
+Job deploy chỉ chạy từ `main` sau CI và khi `DEPLOY_ENABLED=true`, dùng SSH key riêng của
+`soopi-deploy` và host key pin. Secrets DB/RSA ở VPS, upload bind mount và DB volume ngoài release.
+App chạy non-root UID 1654; chỉ publish app/SQL ra loopback. Không cấp group Docker cho CI user;
+sudo chỉ chạy script activation cố định, Compose/script do root sở hữu. Load image, chuyển symlink
+release, recreate riêng app và kiểm health local + HTTPS; fail thì quay lại image trước, lần đầu fail
+thì dừng app. Không tự chạy DDL/seed, không xóa image/volume/release/backup hoặc recreate DB
+theo mỗi deploy. Có gián đoạn ngắn lúc recreate app. Rerun deploy dùng đúng artifact của job verify.
+Chi tiết vận hành: [DEPLOY_VPS](DEPLOY_VPS.md). VPS mới báo 3916 MiB RAM và 4096 MiB swap;
+đã đăng nhập chỉ đọc sau khi người dùng nhập mật khẩu, pin SSH được xác minh.
+Compose thêm Caddy; Let’s Encrypt cấp TLS, HTTP chuyển 308, health HTTPS trả `UP` và trang chủ trả 200.
+App và SQL Server 2025 Express đang chạy; `TrungTamBaoHanhDB` đã restore từ `_Dev` (17.469 hàng),
+và user CI chỉ có sudo cho script activation. GitHub secrets/variables chưa cấu hình, nên CI deploy tự động
+chưa bật. Release đầu được build từ gói publish local; các lần sau sẽ dùng GitHub Actions sau khi repo cập nhật.
+
 ## Giai đoạn 3 — cách triển khai theo yêu cầu Ponytail
 
 - React Router + 10 trang TSX giữ markup và CSS cũ; module JavaScript giữ xử lý bảng/form động.

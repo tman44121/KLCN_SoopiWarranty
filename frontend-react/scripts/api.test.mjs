@@ -39,6 +39,25 @@ test('expired portal access is cleared and never uses staff refresh', async () =
   assert.equal(calls, 1);
   assert.equal(api.portalTokens.get(), null);
 });
+
+test('Excel downloads preserve binary content, filters and staff refresh', async () => {
+  const payload = new Uint8Array([80, 75, 3, 4, 0, 255]);
+  const api = setup(async (input, options) => {
+    const url = new URL(input);
+    if (url.pathname.endsWith('/auth/refresh')) return json({ accessToken: 'test-new', user: { roles: [] } });
+    assert.equal(url.pathname, '/api/v1/reports/export');
+    assert.equal(url.searchParams.get('from'), '2026-10-01');
+    assert.equal(url.searchParams.get('to'), '2026-10-20');
+    assert.equal(url.searchParams.get('station'), 'ST01');
+    return options.headers.Authorization === 'Bearer test-new'
+      ? new Response(payload, { headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' } })
+      : json({}, 401);
+  });
+  api.tokens.set('test-old');
+  const file = await api.get('/reports/export', { from: '2026-10-01', to: '2026-10-20', station: 'ST01' });
+  assert(file instanceof Blob);
+  assert.deepEqual(new Uint8Array(await file.arrayBuffer()), payload);
+});
 test('JSON field errors remain available to forms; 204 succeeds', async () => {
   const api = setup(async () => json({ code: 'VALIDATION_FAILED', detail: 'Dữ liệu không hợp lệ', fieldErrors: [{ field: 'phone', message: 'Sai số điện thoại' }] }, 400));
   await assert.rejects(api.post('/customers', {}), error => error.fieldErrors[0].field === 'phone' && error.status === 400 && error.detail.includes('Sai số điện thoại'));

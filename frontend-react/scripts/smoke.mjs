@@ -249,10 +249,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await c.page.screenshot({ path: fileURLToPath(new URL(`history-${width}.png`, output)), fullPage: true });
     await c.page.goto(base + '/account#phieu/TN-2026-1002-00001');
     await c.page.getByRole('button', { name: 'Kiểm tra & Xác nhận giá →' }).click();
-    assert.equal(await c.page.getByRole('button', { name: /^Xác nhận duyệt giá/ }).isDisabled(), true); assertions++;
-    await c.page.locator('.quote-agreement-box input').check();
-    await c.page.getByRole('button', { name: /^Xác nhận duyệt giá/ }).click();
-    await c.page.getByText('Đã xác nhận báo giá. Kỹ thuật viên sẽ tiến hành sửa chữa.').waitFor(); assertions++;
+    const quoteDialog = c.page.getByRole('dialog');
+    const approveQuote = quoteDialog.getByRole('button', { name: /^Xác nhận duyệt giá/ });
+    assert.equal(await approveQuote.isDisabled(), true); assertions++;
+    await quoteDialog.getByRole('checkbox').check();
+    await approveQuote.click();
+    await c.page.getByText('Đã xác nhận báo giá. Kỹ thuật viên sẽ tiến hành sửa chữa.', { exact: true }).waitFor(); assertions++;
     await c.page.screenshot({ path: fileURLToPath(new URL(`ticket-${width}.png`, output)), fullPage: true });
     await c.page.goto(base + '/account#yeu-cau-moi/356000000000001');
     await c.page.waitForSelector('#req-category option[value="PHONE"]', { state: 'attached' });

@@ -500,3 +500,266 @@ export function useAuthScale() {
   }, []);
   return ref;
 }
+
+/* ==========================================================================
+   LIVE CHAT BUBBLE — Chat trực tiếp khách ↔ kỹ thuật viên
+   ========================================================================== */
+
+type ChatMessage = {
+  id: string;
+  role: 'customer' | 'technician' | 'system';
+  text: string;
+  time: Date;
+  pending?: boolean;
+};
+
+const DEMO_MESSAGES: ChatMessage[] = [
+  { id: 'm0', role: 'system', text: 'Đây là cuộc trò chuyện mô phỏng. Tin nhắn chưa được gửi đến kỹ thuật viên.', time: new Date(Date.now() - 60 * 60 * 1000) },
+  { id: 'm1', role: 'technician', text: 'Xin chào! Tôi là kỹ thuật viên phụ trách thiết bị của bạn. Tôi có thể giúp gì cho bạn?', time: new Date(Date.now() - 58 * 60 * 1000) },
+  { id: 'm2', role: 'technician', text: 'Thiết bị của bạn sau khi kiểm tra nếu có linh kiện ngoài bảo hành sẽ được gửi báo giá chi tiết. Bạn có thể kiểm tra và bấm "Xác nhận giá" ngay trong chi tiết phiếu để chúng tôi tiến hành sửa chữa nhé!', time: new Date(Date.now() - 15 * 60 * 1000) },
+];
+
+function formatChatTime(date: Date): string {
+  const now = new Date();
+  const diff = (now.getTime() - date.getTime()) / 1000;
+  if (diff < 60) return 'Vừa xong';
+  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+  return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+}
+
+/** Bóng chat mô phỏng dành cho khách đã đăng nhập. */
+export function LiveChatBubble({ customerName }: { customerName?: string | null }) {
+  const [open, setOpen] = useState(false);
+  const [minimized, setMinimized] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>(DEMO_MESSAGES);
+  const [input, setInput] = useState('');
+  const [typing, setTyping] = useState(false);
+  const [unread, setUnread] = useState(1);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Scroll xuống tin mới nhất
+  useEffect(() => {
+    if (open && !minimized) {
+      const list = messagesEndRef.current?.parentElement;
+      list?.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
+    }
+  }, [messages, open, minimized]);
+
+  // Xóa badge unread khi mở chat
+  useEffect(() => {
+    if (open && !minimized) setUnread(0);
+  }, [open, minimized, messages]);
+
+  // Auto-focus input khi mở
+  useEffect(() => {
+    if (open && !minimized) {
+      const timer = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 120);
+      return () => clearTimeout(timer);
+    }
+  }, [open, minimized]);
+
+  useEffect(() => () => {
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+  }, []);
+
+  const handleOpen = () => {
+    setOpen(true);
+    setMinimized(false);
+    setUnread(0);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setMinimized(false);
+  };
+
+  const handleMinimize = () => setMinimized(true);
+  const handleRestore = () => { setMinimized(false); setUnread(0); };
+
+  const sendMessage = () => {
+    const text = input.trim();
+    if (!text) return;
+    const newMsg: ChatMessage = {
+      id: 'm' + Date.now(),
+      role: 'customer',
+      text,
+      time: new Date(),
+    };
+    setMessages((prev) => [...prev, newMsg]);
+    setInput('');
+
+    // Giả lập kỹ thuật viên đang gõ rồi trả lời
+    setTyping(true);
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(() => {
+      setTyping(false);
+      const replies = [
+        'Cảm ơn bạn đã nhắn tin! Tôi đang kiểm tra thiết bị và sẽ cập nhật ngay.',
+        'Thiết bị của bạn đang được xử lý. Dự kiến hoàn thành trong hôm nay.',
+        'Tôi đã ghi nhận yêu cầu. Vui lòng chờ tôi xác nhận lại nhé!',
+        'Linh kiện đang được đặt hàng, khi về sẽ thông báo cho bạn ngay.',
+      ];
+      const reply: ChatMessage = {
+        id: 'm' + (Date.now() + 1),
+        role: 'technician',
+        text: replies[Math.floor(Math.random() * replies.length)],
+        time: new Date(),
+      };
+      setMessages((prev) => [...prev, reply]);
+      setUnread((n) => n + 1);
+    }, 1800 + Math.random() * 1200);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const name = customerName || 'Bạn';
+  const techName = 'Kỹ thuật viên (mô phỏng)';
+
+  return (
+    <div className="live-chat-root" aria-label="Chat hỗ trợ trực tiếp">
+      {/* Nút bóng nổi */}
+      {!open && (
+        <button
+          id="live-chat-bubble-btn"
+          type="button"
+          className="chat-bubble-fab"
+          aria-label="Mở chat hỗ trợ"
+          onClick={handleOpen}
+        >
+          <svg className="chat-fab-icon" viewBox="0 0 24 24" aria-hidden="true">
+            {PATHS['chatDots']}
+          </svg>
+          {unread > 0 && (
+            <span className="chat-fab-badge" aria-label={`${unread} tin nhắn chưa đọc`}>
+              {unread}
+            </span>
+          )}
+          <span className="chat-fab-pulse" aria-hidden="true" />
+        </button>
+      )}
+
+      {/* Cửa sổ chat — thu nhỏ */}
+      {open && minimized && (
+        <button
+          type="button"
+          className="chat-minimized-bar"
+          aria-label="Khôi phục chat hỗ trợ"
+          onClick={handleRestore}
+        >
+          <svg className="kh-icon" viewBox="0 0 24 24" aria-hidden="true">{PATHS['chatDots']}</svg>
+          <span>Chat với kỹ thuật viên</span>
+          {unread > 0 && <span className="chat-fab-badge" aria-label={`${unread} tin nhắn chưa đọc`}>{unread}</span>}
+          <span className="chat-minimized-expand" aria-hidden="true">▲</span>
+        </button>
+      )}
+
+      {/* Cửa sổ chat — đầy đủ */}
+      {open && !minimized && (
+        <div className="chat-window" role="dialog" aria-label="Chat hỗ trợ kỹ thuật viên" aria-modal="false">
+          {/* Header */}
+          <div className="chat-window-header">
+            <div className="chat-header-info">
+              <div className="chat-avatar-wrap">
+                <span className="chat-avatar-circle" aria-hidden="true">KT</span>
+                <span className="chat-online-dot" aria-hidden="true" title="Phiên mô phỏng" />
+              </div>
+              <div className="chat-header-text">
+                <div className="chat-header-title">{techName}</div>
+                <div className="chat-header-sub">
+                  {typing ? (
+                    <span className="chat-typing-label">
+                      <span className="chat-typing-dots"><span /><span /><span /></span>
+                      Đang gõ...
+                    </span>
+                  ) : (
+                    <span>Phản hồi tự động · mô phỏng</span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="chat-header-actions">
+              <button type="button" className="chat-icon-btn" aria-label="Thu nhỏ" onClick={handleMinimize}>
+                <Icon glyph="minimize" />
+              </button>
+              <button type="button" className="chat-icon-btn" aria-label="Đóng chat" onClick={handleClose}>
+                <Icon glyph="x" />
+              </button>
+            </div>
+          </div>
+
+          {/* Tin nhắn */}
+          <div className="chat-messages" role="log" aria-live="polite" aria-label="Lịch sử tin nhắn">
+            {messages.map((msg) => {
+              if (msg.role === 'system') {
+                return (
+                  <div key={msg.id} className="chat-system-msg">
+                    <span>{msg.text}</span>
+                  </div>
+                );
+              }
+              const isMe = msg.role === 'customer';
+              return (
+                <div key={msg.id} className={`chat-msg-row ${isMe ? 'chat-msg-row--me' : 'chat-msg-row--them'}`}>
+                  {!isMe && (
+                    <span className="chat-msg-avatar" aria-hidden="true">KT</span>
+                  )}
+                  <div className="chat-bubble-wrap">
+                    <div className={`chat-bubble-msg ${isMe ? 'chat-bubble-msg--me' : 'chat-bubble-msg--them'}`}>
+                      {msg.text}
+                    </div>
+                    <div className={`chat-msg-time ${isMe ? 'chat-msg-time--me' : ''}`}>
+                      {isMe ? `${name} · ` : `${techName} · `}{formatChatTime(msg.time)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Typing indicator */}
+            {typing && (
+              <div className="chat-msg-row chat-msg-row--them">
+                <span className="chat-msg-avatar" aria-hidden="true">KT</span>
+                <div className="chat-typing-bubble">
+                  <span /><span /><span />
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="chat-input-area">
+            <textarea
+              ref={inputRef}
+              className="chat-input-field"
+              placeholder="Nhắn tin với kỹ thuật viên…"
+              value={input}
+              rows={1}
+              aria-label="Nhập tin nhắn"
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            <button
+              type="button"
+              className={`chat-send-btn ${input.trim() ? 'chat-send-btn--active' : ''}`}
+              aria-label="Gửi tin nhắn"
+              disabled={!input.trim()}
+              onClick={sendMessage}
+            >
+              <Icon glyph="send" />
+            </button>
+          </div>
+          <div className="chat-input-hint">Nhấn Enter để gửi · Shift+Enter xuống dòng</div>
+        </div>
+      )}
+    </div>
+  );
+}

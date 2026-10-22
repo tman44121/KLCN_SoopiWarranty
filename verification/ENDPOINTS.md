@@ -119,8 +119,9 @@
 | GET | `/api/v1/warranty-requests/{code}` | `/api/v1/warranty-requests/{code}` | WarrantyRequestController | WarrantyRequestsController |
 | POST | `/api/v1/warranty-requests/{code}/cancel` | `/api/v1/warranty-requests/{code}/cancel` | WarrantyRequestController | WarrantyRequestsController |
 
-## Chỉ có ở Soopi (D-047)
+## Chỉ có ở Soopi (D-047, D-050)
 
 | Method | .NET URL | .NET controller |
 |---|---|---|
 | POST | `/api/v1/auth/mobile/password-reset/verify` | MobileAuthController |
+| GET | `/api/v1/reports/export` | ReportsController |

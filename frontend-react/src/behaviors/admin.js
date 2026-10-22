@@ -426,6 +426,41 @@ export default function initialize() {
   const charts = window.LML_CHARTS;
   const STATUS_ORDER = Object.keys(L.TICKET_STATUS);
   let reportLoad = 0;
+  let reportQuery = null;
+  let exporting = false;
+
+  function updateExportButton() {
+    $("[data-export-report]").disabled = !reportQuery || exporting;
+  }
+
+  async function exportReport() {
+    if (!reportQuery || exporting) return;
+    const query = { ...reportQuery };
+    const button = $("[data-export-report]");
+    exporting = true;
+    updateExportButton();
+    button.classList.add("btn--loading");
+    button.setAttribute("aria-busy", "true");
+    try {
+      const file = await api.get("/reports/export", query);
+      const url = URL.createObjectURL(file);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `soopi-bao-cao-${query.from}-${query.to}.xlsx`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      window.showToast("Đã tải báo cáo Excel.", "success");
+    } catch (error) {
+      ui.showError(error);
+    } finally {
+      exporting = false;
+      button.classList.remove("btn--loading");
+      button.removeAttribute("aria-busy");
+      updateExportButton();
+    }
+  }
 
   function isoDate(date) {
     const pad = (n) => String(n).padStart(2, "0");
@@ -612,6 +647,8 @@ export default function initialize() {
   function refreshReports() { void loadReports(); refreshReviews(); }
 
   async function loadReports() {
+    reportQuery = null;
+    updateExportButton();
     const body = $("[data-report-body]");
     const first = body.getAttribute("aria-busy") === "true" && !body.hasAttribute("data-loaded");
     const load = ++reportLoad;
@@ -638,6 +675,8 @@ export default function initialize() {
       renderTechnicians(technicians);
       renderWarranty(warranty);
       renderPerformance(technicians);
+      reportQuery = query;
+      updateExportButton();
       body.setAttribute("data-loaded", "");
     } catch (error) {
       if (load !== reportLoad) return;
@@ -700,6 +739,7 @@ export default function initialize() {
     });
     $("[data-review-prev]").addEventListener("click", () => { if (reviews.page > 0) { reviews.page--; void loadReviews(); } });
     $("[data-review-next]").addEventListener("click", () => { if (reviews.page + 1 < reviews.totalPages) { reviews.page++; void loadReviews(); } });
+    $("[data-export-report]").addEventListener("click", exportReport);
   }
 
   window.LML_AUTH.ready(async () => {
