@@ -484,6 +484,9 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+__pycache__/
+deploy/soopi.env
+deploy/compose.env
 
 # Tệp đính kèm do API lưu khi chạy dev (Storage:Directory = ./data/files)
 backend-dotnet/data/

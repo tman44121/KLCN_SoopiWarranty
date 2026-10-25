@@ -40,22 +40,28 @@ Set-Location ..
 ### Máy mới: tạo database từ script
 
 Thư mục `database/` có script SQL Server mới nhất (lấy từ `warranty-system-mysql/db/sqlserver`): `01_schema.sql`
-(47 bảng), `02_reference_data.sql`, `03_demo_data.sql` (tài khoản demo, xem [TAI_KHOAN_DEMO.md](TAI_KHOAN_DEMO.md)),
+(49 bảng), `02_reference_data.sql`, `03_demo_data.sql` (tài khoản demo, xem [TAI_KHOAN_DEMO.md](TAI_KHOAN_DEMO.md)),
 `04_app_user.sql` (tài khoản ứng dụng cho production) và file ghép `TrungTamBaoHanhDB_SqlServer.sql` (= 01 + 02 + 03,
 tự tạo database `TrungTamBaoHanhDB` collation `Latin1_General_100_CI_AI`).
 
 Database tạo từ một bản script trước (còn trạng thái phiếu `CANCELLED`, `YeuCauBaoHanh` chưa có cột `MaKH`, chưa có
-quyền quản lý tài khoản khách) phải nâng cấp trước khi chạy backend hiện tại — giữ nguyên dữ liệu, chạy lại nhiều lần
+quyền quản lý tài khoản khách, nhãn thông báo `CUSTOM_ANNOUNCEMENT` hoặc các cột nhận xét/thời điểm đánh giá khách) phải nâng cấp trước khi chạy backend hiện tại — giữ nguyên dữ liệu, chạy lại nhiều lần
 không sao, dùng được cho database tạo từ bất kỳ bản script nào trước đây:
 
 ```powershell
 sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\05_upgrade_existing_db.sql
+sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\06_chat.sql
 ```
 
-`run.bat initdb` tự chạy bước nâng cấp này khi database `TrungTamBaoHanhDB` đã có. Lần chạy `run.bat` thường
-**không** nâng cấp database: sau khi kéo code mới có đổi `database/`, chạy lại `run.bat initdb` (hoặc lệnh `sqlcmd`
-trên với đúng tên database của máy). Dấu hiệu chưa nâng cấp: API ghi `Error Number:207` (Invalid column name) và
-trang báo "Đã xảy ra lỗi hệ thống". Tạo mới hoặc nâng cấp:
+`06_chat.sql` thêm hai bảng hội thoại/tin nhắn, không tạo tin nhắn mẫu và không xóa dữ liệu. Chạy trước khi dùng chat.
+Chat chỉ dành cho tài khoản đăng nhập: khách và nhân viên tiếp nhận/KTV hiện đang phụ trách phiếu. Khi đổi KTV,
+cuộc trò chuyện cũ chỉ xem lịch sử; người mới không được đọc cuộc trò chuyện riêng của người cũ.
+Danh bạ nội bộ tìm theo tên/mã khách, mã phiếu, sản phẩm hoặc serial; không mở quyền đọc liên hệ khách toàn hệ thống cho KTV.
+
+`run.bat initdb` tự chạy hai script nâng cấp trên khi database `TrungTamBaoHanhDB` đã có. Lần chạy `run.bat` thường
+**không** nâng cấp database: sau khi kéo code mới có đổi `database/`, chạy lại `run.bat initdb` (hoặc các lệnh
+`sqlcmd` trên với đúng tên database của máy). Dấu hiệu chưa nâng cấp: API ghi `Error Number:207` (Invalid column name)
+hoặc `208` (Invalid object name) và trang báo "Đã xảy ra lỗi hệ thống". Tạo mới hoặc nâng cấp:
 
 ```powershell
 .\run.bat initdb                        # tự tìm SQL Server trên máy, không có thì cài SQL Server 2022 Express

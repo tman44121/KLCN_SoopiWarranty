@@ -131,6 +131,7 @@ builder.Services.AddScoped<PortalTicketService>();
 builder.Services.AddScoped<ReportService>();
 builder.Services.AddScoped<AuditQueryService>();
 builder.Services.AddScoped<NotificationQueryService>();
+builder.Services.AddScoped<Soopi.Api.Services.Chat.ChatService>();
 builder.Services.AddHostedService<SlaAlertJob>();
 builder.Services.AddSoopiAuthentication();
 

@@ -48,6 +48,66 @@ Login/logout để đọc API có token vẫn ghi tài khoản, refresh token v�
 Luồng nghiệp vụ ghi/đồng thời dùng DB `_IT` **có sẵn, được duyệt**; không tự clone/tạo/seed DB.
 Danh sách nghiệm thu cần tiếp tục nằm ở mục 9 của báo cáo migration.
 
+## CI trên GitHub Actions
+
+Workflow [CI](../.github/workflows/ci.yml) chạy khi mở/cập nhật PR vào `main`, push vào `main`,
+hoặc chọn **Actions → CI → Run workflow**. Runner Ubuntu dùng Node.js 24 và .NET SDK 10.
+
+Pipeline cài dependency từ npm lockfile, chạy lint/test frontend, kiểm lỗ hổng npm/NuGet mức
+High/Critical (kể cả dependency gián tiếp), build React vào API `wwwroot`, build/test backend rồi
+publish. Gói phải có cả `Soopi.Api.dll` và `wwwroot/index.html`; sau đó CI build image .NET,
+kiểm user non-root/runtime và lưu `soopi-image.tar.gz` trong artifact
+`soopi-<SHA>-<run>-<attempt>` trong 14 ngày.
+
+CI không cần connection string, RSA key hoặc database thật. Test backend dùng snapshot Java
+đã commit; frontend bỏ qua đối chiếu ID/name với source Java khi repo Java không có trên runner,
+như behavior hiện tại của checker. CI này chưa chạy browser smoke hay luồng ghi DB.
+
+**Đã vá ngày 22/10/2026:** `Microsoft.EntityFrameworkCore.SqlServer 10.0.12`
+kéo `Microsoft.Data.SqlClient 6.1.6` → `System.Security.Cryptography.Pkcs 9.0.11`, bị cảnh báo
+NU1903 theo [advisory của Microsoft](https://github.com/advisories/GHSA-846f-f764-76mx).
+API tham chiếu trực tiếp `System.Security.Cryptography.Pkcs 10.0.13` để dùng bản vá cho cả API
+và test (D-051). Giữ nguyên audit và ngưỡng chặn High/Critical trong CI.
+
+Kiểm local cùng ngày: npm ci đạt; frontend lint/build và 15/15 test đạt. Sau bản vá, backend
+Release build có 0 warning/error, 60/60 test và publish đạt; restore/audit theo đúng lệnh CI đạt,
+`dotnet list ... package --vulnerable --include-transitive --no-restore` không báo package có lỗ hổng.
+Gói publish có API, React và DLL Pkcs 10.0.13 đã kiểm cả version và runtime dependency manifest.
+Vite được nâng từ 8.3.2 lên 8.3.5 theo bản vá upstream; `npm audit --audit-level=high` hiện đạt
+0 lỗ hổng. Frontend build, backend Release build/publish và 11 test activation đạt.
+Chưa chạy workflow trên GitHub; các kết quả local không thay thế lần chạy CI đầu tiên.
+
+Workflow có job deploy Docker tới Ubuntu VPS, chỉ bật khi repository variable `DEPLOY_ENABLED=true`;
+job dùng artifact đã qua CI, chỉ chạy từ `main`, xác minh host key SSH, kiểm health local/HTTPS
+và quay lại release trước nếu restart/health fail. Test logic rollback chạy trong CI.
+Chủ dự án chọn Ubuntu 24.04, 4 GB RAM, SQL Server cùng VPS; domain `soopiwarranty.id.vn`
+đã có bản ghi A về `180.93.114.36`. VPS kiểm tra ngày 22/10/2026 báo 3916 MiB RAM,
+4096 MiB swap; aaPanel và Docker/Compose đã cài, Caddy, SQL Express và app đều đang chạy,
+Nginx không chạy. Fingerprint SSH mới đã được xác minh qua console và key setup đã cài.
+Compose thêm Caddy để cấp/gia hạn HTTPS và proxy tới app trong Docker; cú pháp đã được Docker kiểm tra.
+Caddy đã chạy, Let’s Encrypt cấp chứng thư; HTTP chuyển 308, health HTTPS trả `UP`, trang chủ trả 200
+với TLS hợp lệ. Release hiện tại `063acbba7d7d64c7608fd96558e3968703a6140c-0-2` được build từ gói
+publish local, không phải GitHub Actions. User `soopi-deploy`,
+public key CI và sudo rule giới hạn đã cấu hình; private key được giữ trong thư mục `artifacts/ssh`
+bị gitignore. GitHub secrets/variables chưa cấu hình nên auto deploy chưa bật.
+SQL Server 2025 Express đang healthy; `TrungTamBaoHanhDB` đã restore từ `_Dev` với 17.469 hàng,
+compatibility 170, recovery SIMPLE và login `soopi_app` trong role `warranty_app_role`. Ba file upload
+đã chuyển và SHA-256 khớp; 428 bản ghi cùng trỏ tới blob mẫu `seed/signatures/blank.png` hiện không có
+file trên máy nguồn. Backup mới đã VERIFYONLY + CHECKSUM thành công; giữ bản local trong `artifacts/`
+và bản tạm trên VPS cho tới khi có lịch backup production.
+Frontend build, backend Release build/publish, npm audit và 11 test activation đạt. Docker Desktop daemon chưa chạy
+trên máy quản trị nên image được build trên VPS. GitHub secrets/variables chưa cấu hình và thay đổi
+trong repo chưa commit/push; CI deploy vẫn tắt. Auto deploy chỉ hoạt động sau khi cấu hình secrets/variables,
+commit và push lên `main`.
+Xem [hướng dẫn cài VPS và GitHub Secrets](DEPLOY_VPS.md). DB/schema/seed không nằm trong pipeline. Secret production ở VPS/deployment
+environment, không đưa vào job PR hay artifact. Chưa cấu hình branch protection trên GitHub;
+sau lần chạy đầu, đặt `Verify and package` làm required status check cho `main`.
+
+Tham chiếu chính thức: [cú pháp workflow](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax),
+[setup-node](https://github.com/actions/setup-node), [setup-dotnet](https://github.com/actions/setup-dotnet),
+[upload-artifact](https://github.com/actions/upload-artifact),
+[NuGet Audit](https://learn.microsoft.com/en-us/nuget/concepts/auditing-packages).
+
 ## Đóng gói
 
 Tại `frontend-react`, build React trước. Sau đó tại `backend-dotnet`, publish riêng API:

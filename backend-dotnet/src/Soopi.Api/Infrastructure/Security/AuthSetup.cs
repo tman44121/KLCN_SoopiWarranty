@@ -28,6 +28,7 @@ public static class AuthSetup
                 {
                     ValidIssuer = security.Value.Jwt.Issuer,
                     ValidateAudience = false,
+                    RoleClaimType = "roles",
                     IssuerSigningKey = keys.Verifying,
                     ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
                     ClockSkew = TimeSpan.FromSeconds(60),

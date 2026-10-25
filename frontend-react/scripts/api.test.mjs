@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import initializeApi from '../src/behaviors/api.js';
 import initializeHtml from '../src/behaviors/html.js';
 import { internalRoute } from '../src/navigation.ts';
+import { MAX_REVIEW_LENGTH, QUICK_TAGS, joinReviewComment, splitReviewComment } from '../src/reviews.ts';
 
 function setup(fetch) {
   const values = new Map();
@@ -104,4 +105,60 @@ test('HTML rendering escapes data and keeps nested safe markup', () => {
   initializeHtml(window);
   assert.equal(String(window.html`<p>${'<img src=x onerror=alert(1)>'}</p>`), '<p>&lt;img src=x onerror=alert(1)&gt;</p>');
   assert.equal(String(window.html`<p>${window.html`<b>${'a&b'}</b>`}</p>`), '<p><b>a&amp;b</b></p>');
+});
+
+test('notification broadcasts preserve explicit empty selections and send one request', async () => {
+  const bodies = [];
+  const api = setup(async (url, options) => {
+    assert.equal(new URL(url).pathname, '/api/v1/admin/notifications/broadcast');
+    assert.equal(options.method, 'POST');
+    bodies.push(JSON.parse(options.body));
+    return new Response(null, { status: 204 });
+  });
+  await api.notifications.broadcast('Thông báo', '/account#lich-su', 'KH-01,KH-02');
+  await api.notifications.broadcast('Tất cả', null, null);
+  await api.notifications.broadcast('Không được gửi tất cả', null, '');
+  assert.deepEqual(bodies, [
+    { message: 'Thông báo', link: '/account#lich-su', customerIds: 'KH-01,KH-02' },
+    { message: 'Tất cả', link: null, customerIds: null },
+    { message: 'Không được gửi tất cả', link: null, customerIds: '' },
+  ]);
+});
+
+test('customer notification requests can fail without redirecting a public page', async () => {
+  const api = setup(async () => json({}, 401));
+  for (const call of [() => api.notifications.inbox(false, { redirect: false }),
+    () => api.notifications.read('12', { redirect: false }), () => api.notifications.readAll({ redirect: false })]) {
+    await assert.rejects(call, error => error.status === 401);
+  }
+  assert.equal(location.redirect, undefined);
+});
+
+test('review comments round-trip selected tags, multiline text, Unicode and empty comments', () => {
+  for (const tags of [[], [QUICK_TAGS[0]], QUICK_TAGS]) {
+    for (const comment of ['', 'Tốt 🌟\nNhận máy đúng hẹn', '<img src=x onerror=alert(1)>']) {
+      const combined = joinReviewComment(tags, comment);
+      assert.deepEqual(splitReviewComment(combined), { tags, comment });
+    }
+  }
+  for (const raw of ['[Nội dung tự nhập] cần giữ nguyên', '[Sửa chữa nhanh chóng, nhãn không rõ] Nội dung'])
+    assert.deepEqual(splitReviewComment(raw), { tags: [], comment: raw });
+  const full = joinReviewComment(QUICK_TAGS, 'a'.repeat(MAX_REVIEW_LENGTH));
+  assert(full.length > MAX_REVIEW_LENGTH, 'combined tags must be counted in the limit');
+  assert.equal(joinReviewComment([], '🌟'.repeat(500)).length, MAX_REVIEW_LENGTH);
+});
+
+test('chat preserves opaque ids, pagination cursors and idempotency keys', async () => {
+  const requests = [];
+  const api = setup(async (url, options) => { requests.push({ url: new URL(url), options }); return json({}); });
+  const id = '9007199254740993';
+  await api.chat.messages(id, undefined, '0');
+  await api.chat.messages(id, id);
+  await api.chat.send(id, 'Nội dung 🌟', '12345678-1234-1234-1234-123456789abc');
+  await api.chat.read(id, id);
+  assert.equal(requests[0].url.pathname, `/api/v1/chat/conversations/${id}/messages`);
+  assert.equal(requests[0].url.searchParams.get('after'), '0');
+  assert.equal(requests[1].url.searchParams.get('before'), id);
+  assert.deepEqual(JSON.parse(requests[2].options.body), { text: 'Nội dung 🌟', requestId: '12345678-1234-1234-1234-123456789abc' });
+  assert.deepEqual(JSON.parse(requests[3].options.body), { lastMessageId: id });
 });

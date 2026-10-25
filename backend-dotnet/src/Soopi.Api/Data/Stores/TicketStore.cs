@@ -202,19 +202,20 @@ public sealed class TicketStore(Sql sql)
         var exists = await sql.ScalarAsync("SELECT 1 FROM PhieuBanGiao WHERE MaBanGiao = ?", handover.Code) is not null;
         if (exists)
         {
-            await sql.ExecuteAsync("UPDATE PhieuBanGiao SET DanhGiaHaiLong = ? WHERE MaBanGiao = ?", handover.Rating, handover.Code);
+            await sql.ExecuteAsync("UPDATE PhieuBanGiao SET DanhGiaHaiLong = ?, NhanXetDanhGia = ?, NgayDanhGia = ? WHERE MaBanGiao = ?",
+                handover.Rating, handover.RatingComment, handover.RatedAt, handover.Code);
             return;
         }
         var recheck = handover.Recheck;
         await sql.ExecuteAsync(
             "INSERT INTO PhieuBanGiao (MaBanGiao, MaPhieuTN, LoaiBanGiao, NgayBanGiao, MaNVBanGiao, NguoiNhanMay, HienTrangKhiTra, TraLaiLinhKienCu, "
             + "ThoiHanBaoHanhMoi, DanhGiaHaiLong, KT_NgoaiQuanDungBienBan, KT_KhoiDongBinhThuong, KT_ChucNangChinhOK, KT_PhuKienDayDu, "
-            + "KT_KhongLoiPhatSinh, MaTepChuKy, KhachXacNhanNhanMay) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            + "KT_KhongLoiPhatSinh, MaTepChuKy, KhachXacNhanNhanMay, NhanXetDanhGia, NgayDanhGia) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             handover.Code, ticket.Id, ticket.Status == TicketStatus.DELIVERED ? "DELIVERED" : "RETURNED_UNREPAIRED", handover.HandedOverAt,
             handover.HandedOverBy, Limit(handover.ReceiverName, 100), Limit(handover.ConditionOnReturn, 255), handover.ReturnedOldParts,
             Limit(handover.NewWarrantyNote, 100), handover.Rating, recheck?.CosmeticMatches, recheck?.BootsNormally, recheck?.MainFunctionsOk,
             recheck?.AccessoriesComplete, recheck?.NoNewIssues, handover.Signature is null ? null : long.Parse(handover.Signature.FileId),
-            handover.CustomerConfirmed);
+            handover.CustomerConfirmed, handover.RatingComment, handover.RatedAt);
     }
 
     // ------------------------------------------------------------------ đọc
@@ -462,7 +463,8 @@ public sealed class TicketStore(Sql sql)
         var at = row.Time("NgayBanGiao")!.Value;
         return new Handover(row.Str("MaBanGiao")!, at, row.Str("MaNVBanGiao"), row.Str("NguoiNhanMay")!, row.Str("HienTrangKhiTra")!,
             row.Bool("TraLaiLinhKienCu"), row.Str("ThoiHanBaoHanhMoi"), row.IntOrNull("DanhGiaHaiLong"), recheck,
-            row.LongOrNull("MaTepChuKy") is { } file ? new Signature(file.ToString(), at) : null, row.Bool("KhachXacNhanNhanMay"));
+            row.LongOrNull("MaTepChuKy") is { } file ? new Signature(file.ToString(), at) : null, row.Bool("KhachXacNhanNhanMay"),
+            row.Str("NhanXetDanhGia"), row.Time("NgayDanhGia"));
     }
 
     private static string? Text(Dictionary<string, System.Text.Json.JsonElement> item, string key) =>

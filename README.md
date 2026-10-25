@@ -55,6 +55,7 @@ Không có EF migration hay tự tạo schema. Bản build React được phục
 | Hiểu luồng xử lý, lưu trữ, phân quyền và phạm vi migration | [ARCHITECTURE](docs/ARCHITECTURE.md) |
 | Gọi API, đăng nhập, JSON, phân trang, lỗi và upload | [API](docs/API.md) |
 | Kiểm thử, đóng gói và vận hành | [OPERATIONS](docs/OPERATIONS.md) |
+| CI/CD với Caddy, aaPanel và Docker | [DEPLOY_VPS](docs/DEPLOY_VPS.md) |
 | Danh sách đủ 114 method/URL | [ENDPOINTS](verification/ENDPOINTS.md) |
 | Entity/bảng, trang UI và logic Java gốc | [MIGRATION_PLAN](MIGRATION_PLAN.md) |
 | Lý do các lựa chọn đã chốt | [DECISIONS](docs/DECISIONS.md) |
