@@ -58,10 +58,14 @@ Login, refresh, logout và đổi mật khẩu ghi tài khoản/token/audit; kh�
 ## Mobile và portal
 
 Mobile dùng `/api/v1/auth/mobile`: login, refresh, logout, change-password, otp, register, password-reset.
-Riêng Soopi (D-047): `POST /auth/mobile/password-reset/verify` `{phone, otp}` kiểm OTP đặt lại mật khẩu mà không tiêu mã
+Riêng Soopi (D-047): `POST /auth/mobile/password-reset/verify` `{email, otp}` kiểm OTP đặt lại mật khẩu mà không tiêu mã
 (204 hoặc 422 `OTP_INVALID`); trang web `/forgot-password` gọi nó trước khi hiện ô mật khẩu mới.
 Login chỉ nhận tài khoản khách; response thêm `refreshToken,refreshExpiresIn`, refresh gửi token trong JSON body.
-OTP purpose là `REGISTER` hoặc `RESET_PASSWORD`; SMS hiện chỉ `log`, không gửi thật.
+OTP gửi qua email (D-050): `otp` nhận `{email, phone?, purpose}` với purpose `REGISTER` hoặc `RESET_PASSWORD`;
+`register` nhận `{phone, email, otp, fullName, password}` (email bắt buộc, SĐT vẫn là tên đăng nhập);
+`password-reset` nhận `{email, otp, newPassword}`. Lỗi mới: 409 `CUSTOMER_EMAIL_DUPLICATE`, 404 `CUSTOMER_EMAIL_NOT_FOUND`.
+Hồ sơ cũ chưa có tài khoản chỉ được liên kết khi email OTP khớp email đã lưu; thiếu hoặc khác email trả 409
+`CUSTOMER_PROFILE_VERIFICATION_REQUIRED` và yêu cầu trung tâm xác minh/cập nhật liên hệ trước khi đăng ký.
 
 `POST /api/v1/portal/lookup` nhận `{code,phone}` để cấp token phạm vi cho một ticket/request.
 Portal token có `typ=portal`, không dùng refresh của nhân viên và không được quyền truy cập các phiếu khác.

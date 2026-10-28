@@ -911,10 +911,10 @@ CREATE TABLE ThongBao_DaDoc (
     FOREIGN KEY (MaTaiKhoan) REFERENCES TaiKhoan(MaTaiKhoan) ON DELETE CASCADE
 );
 
--- App di động khách hàng (docs/MOBILE_API.md). OTP chỉ lưu SHA-256 của mã, dùng một lần.
+-- Tài khoản khách (web + app di động). OTP gửi qua email, chỉ lưu SHA-256 của mã, dùng một lần.
 CREATE TABLE MaXacThucOTP (
     MaOTP         BIGINT IDENTITY(1,1) PRIMARY KEY,
-    SDT           NVARCHAR(15)  NOT NULL,
+    Email         NVARCHAR(100) NOT NULL,
     MucDich       NVARCHAR(20)  NOT NULL,
     MaHash        NCHAR(64)     NOT NULL,
     NgayTao       DATETIME2(0)  NOT NULL,
@@ -922,10 +922,8 @@ CREATE TABLE MaXacThucOTP (
     SoLanNhapSai  INT           NOT NULL DEFAULT 0,
     DaDungLuc     DATETIME2(0)  NULL,
     DiaChiIP      NVARCHAR(45)  NULL,
-    INDEX IX_MaXacThucOTP_SDT (SDT, MucDich, NgayTao),
+    INDEX IX_MaXacThucOTP_Email (Email, MucDich, NgayTao),
     CONSTRAINT CK_MaXacThucOTP_MucDich CHECK (MucDich IN ('REGISTER', 'RESET_PASSWORD')),
-    CONSTRAINT CK_MaXacThucOTP_SDT CHECK (SDT LIKE '0[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
-                                          OR SDT LIKE '0[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'),
     CONSTRAINT CK_MaXacThucOTP_Han CHECK (HetHan > NgayTao),
     CONSTRAINT CK_MaXacThucOTP_SoLan CHECK (SoLanNhapSai >= 0)
 );

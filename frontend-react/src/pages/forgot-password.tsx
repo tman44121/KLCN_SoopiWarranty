@@ -2,11 +2,11 @@ import { useEffect, useState, type FormEvent } from "react";
 import { usePage } from "../usePage";
 import { BrandLogo, Icon, PasswordInput, api, errorText, useAuthScale, useBusy } from "../customer";
 
-type Field = "phone" | "otp" | "password" | "confirm";
-const EMPTY: Record<Field, string> = { phone: "", otp: "", password: "", confirm: "" };
+type Field = "email" | "otp" | "password" | "confirm";
+const EMPTY: Record<Field, string> = { email: "", otp: "", password: "", confirm: "" };
 
 /* Quên mật khẩu cho khách, hai bước:
-   1. Gửi OTP tới SĐT đã đăng ký (/auth/mobile/otp, RESET_PASSWORD) và xác nhận mã (/auth/mobile/password-reset/verify,
+   1. Gửi OTP tới email đã đăng ký (/auth/mobile/otp, RESET_PASSWORD) và xác nhận mã (/auth/mobile/password-reset/verify,
       chưa tiêu mã — D-047). Chỉ khi mã đúng mới sang bước 2.
    2. Đặt mật khẩu mới (/auth/mobile/password-reset): backend kiểm lại mã, tiêu mã và thu hồi mọi phiên cũ.
    Nhân viên không tự đặt lại được — quản trị viên đặt lại trong màn Quản trị. */
@@ -35,19 +35,19 @@ export default function ForgotPasswordPage() {
   }, [step]);
 
   const set = (field: Field) => (value: string) => {
-    if (field === "phone" && otpSentTo && value.trim() !== otpSentTo) setOtpSentTo("");
+    if (field === "email" && otpSentTo && value.trim() !== otpSentTo) setOtpSentTo("");
     setForm((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
   };
 
   async function sendOtp() {
     setSummary("");
-    const phone = form.phone.trim();
-    if (!phone) return setErrors({ ...errors, phone: "Vui lòng nhập số điện thoại đã đăng ký." });
+    const email = form.email.trim();
+    if (!email) return setErrors({ ...errors, email: "Vui lòng nhập email đã đăng ký." });
     await runSend(async () => {
       try {
-        const issued = await api().request("POST", "/auth/mobile/otp", { body: { phone, purpose: "RESET_PASSWORD" }, auth: "none" });
-        setOtpSentTo(phone);
+        const issued = await api().request("POST", "/auth/mobile/otp", { body: { email, purpose: "RESET_PASSWORD" }, auth: "none" });
+        setOtpSentTo(email);
         setResendIn(Number(issued.resendAfter) || 60);
         document.getElementById("otp")?.focus();
       } catch (error) {
@@ -60,14 +60,14 @@ export default function ForgotPasswordPage() {
     event.preventDefault();
     setSummary("");
     const next: Partial<Record<Field, string>> = {};
-    if (!form.phone.trim()) next.phone = "Vui lòng nhập số điện thoại đã đăng ký.";
+    if (!form.email.trim()) next.email = "Vui lòng nhập email đã đăng ký.";
     if (!otpSentTo) next.otp = "Bấm “Gửi mã OTP” để nhận mã xác thực.";
     else if (!form.otp.trim()) next.otp = "Vui lòng nhập mã OTP.";
     setErrors(next);
     if (Object.keys(next).length) return;
     await runVerify(async () => {
       try {
-        await api().request("POST", "/auth/mobile/password-reset/verify", { body: { phone: otpSentTo, otp: form.otp.trim() }, auth: "none" });
+        await api().request("POST", "/auth/mobile/password-reset/verify", { body: { email: otpSentTo, otp: form.otp.trim() }, auth: "none" });
         setStep("password");
       } catch (error) {
         setErrors({ otp: errorText(error) });
@@ -86,7 +86,7 @@ export default function ForgotPasswordPage() {
     await runSubmit(async () => {
       try {
         await api().request("POST", "/auth/mobile/password-reset", {
-          body: { phone: otpSentTo, otp: form.otp.trim(), newPassword: form.password },
+          body: { email: otpSentTo, otp: form.otp.trim(), newPassword: form.password },
           auth: "none",
         });
         setStep("done");
@@ -101,7 +101,7 @@ export default function ForgotPasswordPage() {
     });
   }
 
-  function changePhone() {
+  function changeEmail() {
     setForm(EMPTY);
     setErrors({});
     setSummary("");
@@ -126,11 +126,11 @@ export default function ForgotPasswordPage() {
           <ol className="process-steps">
             <li className="process-step-item">
               <span className="step-number">01</span>
-              <div className="step-text"><h4>Nhập số điện thoại</h4><p>Số điện thoại bạn đã dùng để đăng ký tài khoản.</p></div>
+              <div className="step-text"><h4>Nhập email</h4><p>Email bạn đã dùng để đăng ký tài khoản.</p></div>
             </li>
             <li className="process-step-item">
               <span className="step-number">02</span>
-              <div className="step-text"><h4>Xác thực mã OTP</h4><p>Mã gửi qua SMS, dùng một lần trong 5 phút.</p></div>
+              <div className="step-text"><h4>Xác thực mã OTP</h4><p>Mã gửi qua email, dùng một lần trong 5 phút.</p></div>
             </li>
             <li className="process-step-item">
               <span className="step-number">03</span>
@@ -139,7 +139,7 @@ export default function ForgotPasswordPage() {
           </ol>
         </div>
         <div className="banner-footer">
-          <h2 className="banner-heading">Lấy lại mật khẩu<br />bằng số điện thoại</h2>
+          <h2 className="banner-heading">Lấy lại mật khẩu<br />bằng email</h2>
           <p className="banner-subheading">Phiếu sửa chữa, báo giá và lịch sử bảo hành của bạn vẫn được giữ nguyên.</p>
         </div>
       </aside>
@@ -165,7 +165,7 @@ export default function ForgotPasswordPage() {
             <>
               <div className="form-header">
                 <h1>Đặt mật khẩu mới</h1>
-                <p>Mã OTP đã được xác nhận cho số {otpSentTo}. <button type="button" className="link-button" onClick={changePhone}>Đổi số điện thoại</button></p>
+                <p>Mã OTP đã được xác nhận cho email {otpSentTo}. <button type="button" className="link-button" onClick={changeEmail}>Đổi email</button></p>
               </div>
               {summary && <div className="validation-summary-errors" role="alert">{summary}</div>}
 
@@ -193,27 +193,27 @@ export default function ForgotPasswordPage() {
             <>
               <div className="form-header">
                 <h1>Quên mật khẩu</h1>
-                <p>Nhận mã OTP qua số điện thoại đã đăng ký và xác nhận mã để đặt mật khẩu mới.</p>
+                <p>Nhận mã OTP qua email đã đăng ký và xác nhận mã để đặt mật khẩu mới.</p>
               </div>
               {summary && <div className="validation-summary-errors" role="alert">{summary}</div>}
 
               <form onSubmit={verify} noValidate={true}>
                 <div className="form-group">
-                  <label htmlFor="phone">Số điện thoại đã đăng ký</label>
+                  <label htmlFor="email">Email đã đăng ký</label>
                   <div className="input-wrapper">
                     <div className="input-wrapper" style={{ flex: 1 }}>
-                      <span className="input-icon"><Icon glyph="phone" /></span>
-                      <input type="tel" id="phone" className="form-input" inputMode="tel" autoComplete="tel" placeholder="09xxxxxxxx"
-                        value={form.phone} onChange={(e) => set("phone")(e.target.value)} aria-invalid={invalid("phone")} aria-describedby="phone-note phone-error" />
+                      <span className="input-icon"><Icon glyph="mail" /></span>
+                      <input type="email" id="email" className="form-input" autoComplete="email" placeholder="name@example.com"
+                        value={form.email} onChange={(e) => set("email")(e.target.value)} aria-invalid={invalid("email")} aria-describedby="email-note email-error" />
                     </div>
                     <button type="button" className="btn-otp" onClick={sendOtp} disabled={sending || resendIn > 0}>
                       {sending ? "Đang gửi…" : resendIn > 0 ? `Gửi lại sau ${resendIn}s` : otpSentTo ? "Gửi lại mã" : "Gửi mã OTP"}
                     </button>
                   </div>
-                  <div className="input-subnote" id="phone-note">
-                    {otpSentTo ? `Mã OTP đã gửi tới ${otpSentTo}.` : "Cũng là tên đăng nhập của bạn."}
+                  <div className="input-subnote" id="email-note">
+                    {otpSentTo ? `Mã OTP đã gửi tới ${otpSentTo}. Không thấy thư? Xem cả mục Spam.` : "Email đã xác minh khi đăng ký tài khoản."}
                   </div>
-                  {fieldError("phone")}
+                  {fieldError("email")}
                 </div>
 
                 <div className="form-group">

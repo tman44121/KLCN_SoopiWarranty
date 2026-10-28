@@ -49,20 +49,21 @@ public enum OtpPurpose
     RESET_PASSWORD,
 }
 
-public sealed record OtpBody([NotBlank] string Phone, [NotNull] OtpPurpose? Purpose);
+/// <summary>Mã gửi tới <c>Email</c>; <c>Phone</c> chỉ dùng khi đăng ký để báo SĐT đã có tài khoản ngay từ bước lấy mã.</summary>
+public sealed record OtpBody([NotBlank][Email] string Email, string? Phone, [NotNull] OtpPurpose? Purpose);
 
 public sealed record OtpIssued(long ExpiresIn, long ResendAfter);
 
 public sealed record RegisterBody(
     [NotBlank] string Phone,
+    [NotBlank][Email] string Email,
     [NotBlank] string Otp,
     string? FullName,
-    [NotBlank] string Password,
-    [Email] string? Email);
+    [NotBlank] string Password);
 
-public sealed record PasswordResetBody([NotBlank] string Phone, [NotBlank] string Otp, [NotBlank] string NewPassword);
+public sealed record PasswordResetBody([NotBlank][Email] string Email, [NotBlank] string Otp, [NotBlank] string NewPassword);
 
-public sealed record PasswordResetVerifyBody([NotBlank] string Phone, [NotBlank] string Otp);
+public sealed record PasswordResetVerifyBody([NotBlank][Email] string Email, [NotBlank] string Otp);
 
 public sealed record EmployeeCreateRequest(
     [NotBlank] string FullName,

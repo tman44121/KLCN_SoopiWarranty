@@ -64,25 +64,43 @@ public sealed class EmployeeRecordStore(Sql sql)
             row.LongOrNull("MaTaiKhoan"));
 }
 
-public sealed record CustomerProfile(string Code, string FullName, long? AccountId);
+public sealed record CustomerProfile(string Code, string FullName, long? AccountId, string? Email)
+{
+    public void RequireMatchingEmail(string verifiedEmail)
+    {
+        if (EmailAddress.Normalize(Email) != verifiedEmail)
+            throw new DomainException(ErrorCode.CUSTOMER_PROFILE_VERIFICATION_REQUIRED);
+    }
+}
 
 /// <summary>Hồ sơ KhachHang mà luồng tài khoản khách cần: tìm theo SĐT, tạo mới, gắn tài khoản.</summary>
 public sealed class CustomerProfileStore(Sql sql)
 {
     public Task<CustomerProfile?> FindActiveByPhoneAsync(string phone) =>
         sql.FirstOrDefaultAsync(
-            "SELECT MaKH, HoTen, MaTaiKhoan FROM KhachHang WHERE SDT = ? AND TrangThai = 'ACTIVE'",
-            row => new CustomerProfile(row.Str("MaKH")!, row.Str("HoTen")!, row.LongOrNull("MaTaiKhoan")),
+            "SELECT MaKH, HoTen, MaTaiKhoan, Email FROM KhachHang WHERE SDT = ? AND TrangThai = 'ACTIVE'",
+            row => new CustomerProfile(row.Str("MaKH")!, row.Str("HoTen")!, row.LongOrNull("MaTaiKhoan"), row.Str("Email")),
             phone);
+
+    /// <summary>Hồ sơ đang dùng có tài khoản gắn với email này (email dùng để nhận OTP quên mật khẩu).</summary>
+    public Task<CustomerProfile?> FindActiveWithAccountByEmailAsync(string email) =>
+        sql.FirstOrDefaultAsync(
+            "SELECT TOP 1 MaKH, HoTen, MaTaiKhoan FROM KhachHang WHERE Email = ? AND TrangThai = 'ACTIVE' AND MaTaiKhoan IS NOT NULL ORDER BY MaKH",
+            row => new CustomerProfile(row.Str("MaKH")!, row.Str("HoTen")!, row.LongOrNull("MaTaiKhoan"), email),
+            email);
 
     public Task CreateAsync(string code, string fullName, string phone, string? email, DateTimeOffset now) =>
         sql.ExecuteAsync("INSERT INTO KhachHang (MaKH, HoTen, SDT, Email, NgayTao) VALUES (?, ?, ?, ?, ?)", code, fullName, phone, email, now);
 
-    /// <summary>Chỉ gắn khi hồ sơ chưa có tài khoản — hai lượt đăng ký song song thì lượt sau thất bại.</summary>
-    public async Task LinkAccountAsync(string customerCode, long accountId)
+    /// <summary>
+    /// Chỉ gắn khi hồ sơ chưa có tài khoản — hai lượt đăng ký song song thì lượt sau thất bại. Ghi luôn email khách vừa xác
+    /// minh bằng OTP để sau này nhận mã quên mật khẩu.
+    /// </summary>
+    public async Task LinkAccountAsync(string customerCode, long accountId, string email)
     {
         var updated = await sql.ExecuteAsync(
-            "UPDATE KhachHang SET MaTaiKhoan = ? WHERE MaKH = ? AND MaTaiKhoan IS NULL", accountId, customerCode);
+            "UPDATE KhachHang SET MaTaiKhoan = ?, Email = ? WHERE MaKH = ? AND MaTaiKhoan IS NULL AND LOWER(LTRIM(RTRIM(Email))) = ?",
+            accountId, email, customerCode, email);
         if (updated != 1) throw new DomainException(ErrorCode.CUSTOMER_ACCOUNT_EXISTS);
     }
 }
@@ -92,25 +110,25 @@ public sealed record PendingOtp(long Id, string CodeHash, int FailedAttempts);
 /// <summary>Bảng MaXacThucOTP: chỉ lưu SHA-256 của mã.</summary>
 public sealed class OtpStore(Sql sql, TransactionRunner transactions)
 {
-    /// <summary>Vô hiệu mọi mã chưa dùng của SĐT + mục đích rồi lưu mã mới; trả về mã số bản ghi.</summary>
-    public Task<long> ReplaceAsync(string phone, string purpose, string codeHash, DateTimeOffset now, DateTimeOffset expiresAt, string? clientIp) =>
+    /// <summary>Vô hiệu mọi mã chưa dùng của email + mục đích rồi lưu mã mới; trả về mã số bản ghi.</summary>
+    public Task<long> ReplaceAsync(string email, string purpose, string codeHash, DateTimeOffset now, DateTimeOffset expiresAt, string? clientIp) =>
         transactions.InTransactionAsync(async () =>
         {
             await sql.ExecuteAsync(
-                "UPDATE MaXacThucOTP SET DaDungLuc = ? WHERE SDT = ? AND MucDich = ? AND DaDungLuc IS NULL", now, phone, purpose);
+                "UPDATE MaXacThucOTP SET DaDungLuc = ? WHERE Email = ? AND MucDich = ? AND DaDungLuc IS NULL", now, email, purpose);
             var id = await sql.ScalarAsync(
-                "INSERT INTO MaXacThucOTP (SDT, MucDich, MaHash, NgayTao, HetHan, DiaChiIP) OUTPUT inserted.MaOTP VALUES (?, ?, ?, ?, ?, ?)",
-                phone, purpose, codeHash, now, expiresAt, clientIp is null ? null : clientIp[..Math.Min(45, clientIp.Length)]);
+                "INSERT INTO MaXacThucOTP (Email, MucDich, MaHash, NgayTao, HetHan, DiaChiIP) OUTPUT inserted.MaOTP VALUES (?, ?, ?, ?, ?, ?)",
+                email, purpose, codeHash, now, expiresAt, clientIp is null ? null : clientIp[..Math.Min(45, clientIp.Length)]);
             return Convert.ToInt64(id);
         });
 
     /// <summary>Mã mới nhất chưa dùng và chưa hết hạn.</summary>
-    public Task<PendingOtp?> LatestAsync(string phone, string purpose, DateTimeOffset now) =>
+    public Task<PendingOtp?> LatestAsync(string email, string purpose, DateTimeOffset now) =>
         sql.FirstOrDefaultAsync(
-            "SELECT TOP 1 MaOTP, MaHash, SoLanNhapSai FROM MaXacThucOTP WHERE SDT = ? AND MucDich = ? "
+            "SELECT TOP 1 MaOTP, MaHash, SoLanNhapSai FROM MaXacThucOTP WHERE Email = ? AND MucDich = ? "
             + "AND DaDungLuc IS NULL AND HetHan > ? ORDER BY NgayTao DESC, MaOTP DESC",
             row => new PendingOtp(row.Long("MaOTP"), row.Str("MaHash")!, row.Int("SoLanNhapSai")),
-            phone, purpose, now);
+            email, purpose, now);
 
     public Task RecordFailureAsync(long id) =>
         sql.ExecuteAsync("UPDATE MaXacThucOTP SET SoLanNhapSai = SoLanNhapSai + 1 WHERE MaOTP = ?", id);

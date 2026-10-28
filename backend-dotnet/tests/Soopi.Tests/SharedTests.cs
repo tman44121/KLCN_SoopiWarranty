@@ -10,6 +10,24 @@ namespace Soopi.Tests;
 
 public class SharedTests
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("other@example.com")]
+    public void ExistingCustomerProfile_CannotBeClaimedWithAnUnrelatedVerifiedEmail(string? storedEmail)
+    {
+        var profile = new Soopi.Api.Data.Stores.CustomerProfile("KH-001", "Khách cũ", null, storedEmail);
+        var error = Assert.Throws<DomainException>(() => profile.RequireMatchingEmail("verified@example.com"));
+        Assert.Equal(ErrorCode.CUSTOMER_PROFILE_VERIFICATION_REQUIRED, error.Code);
+    }
+
+    [Fact]
+    public void ExistingCustomerProfile_AcceptsItsOwnVerifiedEmailIgnoringCaseAndOuterSpaces()
+    {
+        var profile = new Soopi.Api.Data.Stores.CustomerProfile("KH-001", "Khách cũ", null, " Verified@Example.COM ");
+        profile.RequireMatchingEmail("verified@example.com");
+    }
+
     [Fact]
     public void Messages_FormatLikeJavaMessageFormat()
     {
@@ -41,6 +59,19 @@ public class SharedTests
         Assert.Equal("09123456789", PhoneNumber.Require("09123456789"));
         Assert.Equal(ErrorCode.VALIDATION_FAILED, Assert.Throws<DomainException>(() => PhoneNumber.Require("12345")).Code);
     }
+
+    [Theory]
+    [InlineData("  Khach.Hang@Gmail.COM ", "khach.hang@gmail.com")]
+    [InlineData(null, "")]
+    public void EmailAddress_Normalizes(string? raw, string expected) => Assert.Equal(expected, EmailAddress.Normalize(raw));
+
+    [Theory]
+    [InlineData("khach")]
+    [InlineData("khach@gmail")]
+    [InlineData("kh ach@gmail.com")]
+    [InlineData("")]
+    public void EmailAddress_RejectsInvalid(string raw) =>
+        Assert.Equal(ErrorCode.VALIDATION_FAILED, Assert.Throws<DomainException>(() => EmailAddress.Require(raw)).Code);
 
     [Fact]
     public void Imei_ChecksLuhn()

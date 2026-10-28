@@ -87,9 +87,26 @@ Máy mới: tại `backend-dotnet`, thay các placeholder trong ví dụ bằng 
 ```powershell
 dotnet user-secrets set 'ConnectionStrings:Default' 'Server=<SQL_HOST>,<SQL_PORT>;Database=<EXISTING_DATABASE>;User ID=<SQL_USER>;Password=<SQL_PASSWORD>;Encrypt=True;TrustServerCertificate=True;' --project src/Soopi.Api
 dotnet user-secrets set 'Security:DefaultResetPassword' '<TEMPORARY_RESET_PASSWORD>' --project src/Soopi.Api
+dotnet user-secrets set 'Email:Smtp:Password' '<GMAIL_APP_PASSWORD>' --project src/Soopi.Api
 ```
 
 UserSecretsId đã có trong `Soopi.Api.csproj`; không cần `user-secrets init`. Tệp User Secrets nằm ngoài repo.
+OTP đăng ký/quên mật khẩu gửi từ `hsostd74@gmail.com` qua Gmail SMTP; `<GMAIL_APP_PASSWORD>` là App Password 16 ký tự
+(Google Account → Security → bật 2-Step Verification → App passwords), không phải mật khẩu Gmail. Chưa đặt thì mã chỉ
+ghi vào log của API.
+Muốn dùng tài khoản gửi khác, đặt thêm `Email:Smtp:Username` và `Email:Smtp:From` bằng User Secrets; dùng App Password
+của đúng tài khoản đó. Không chép mật khẩu vào `appsettings.json` hoặc commit file cấu hình chứa secret.
+
+### Máy khác vừa pull bản OTP email
+
+1. Giữ connection string riêng của máy. DB đã có từ trước phải chạy `database/05_upgrade_existing_db.sql` bằng tài khoản
+   có quyền nâng cấp, theo lệnh ở mục 2; script thay cột OTP `SDT` bằng `Email` và xóa mã OTP đang chờ. Không chạy lại seed trên DB có dữ liệu.
+2. Đặt SMTP App Password bằng lệnh User Secrets phía trên để gửi email thật; dùng `Email:Provider=log` chỉ khi thử local.
+   Production cần SMTP hợp lệ; cấu hình môi trường mẫu nằm ở `deploy/soopi.env.example`.
+3. Chạy `npm.cmd ci` trong `frontend-react`, rồi chạy `run.bat` tại gốc repo (hoặc các lệnh thủ công ở mục 3).
+
+Tên đăng nhập vẫn là số điện thoại; OTP đăng ký/quên mật khẩu gửi qua email. Hồ sơ khách cũ chưa có tài khoản chỉ được
+gắn với tài khoản mới khi email OTP khớp email đã lưu. Nếu chưa có email hoặc email sai, trung tâm phải xác minh và cập nhật trước.
 Không chạy `user-secrets list` khi chia sẻ màn hình/log vì lệnh hiển thị giá trị secret.
 `TrustServerCertificate=True` là cấu hình local hiện tại; môi trường dùng chứng thư tin cậy đặt `False`.
 

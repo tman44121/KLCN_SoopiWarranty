@@ -9,11 +9,12 @@ using Soopi.Api.Services.Shared;
 
 namespace Soopi.Api.Services.Identity;
 
-public sealed record RegisterCommand(string Phone, string Otp, string? FullName, string Password, string? Email);
+public sealed record RegisterCommand(string Phone, string Email, string Otp, string? FullName, string Password);
 
 /// <summary>
-/// Tài khoản khách tự phục vụ qua app di động: đăng ký và quên mật khẩu bằng OTP SMS. Tên đăng nhập là SĐT. Hồ sơ khách có
-/// sẵn cùng SĐT (khách từng mang máy tới) được gắn vào tài khoản để thấy phiếu cũ.
+/// Tài khoản khách tự phục vụ: đăng ký và quên mật khẩu bằng OTP gửi qua email. Tên đăng nhập vẫn là SĐT; email đã xác minh
+/// lưu vào hồ sơ khách và là nơi nhận mã quên mật khẩu, nên mỗi email chỉ gắn với một tài khoản. Hồ sơ khách có sẵn cùng SĐT
+/// (khách từng mang máy tới) được gắn vào tài khoản để thấy phiếu cũ.
 /// </summary>
 public sealed class CustomerAccountService(
     CustomerProfileStore profiles,
@@ -29,33 +30,44 @@ public sealed class CustomerAccountService(
     TimeProvider clock)
 {
     /// <summary>
-    /// Báo rõ SĐT đã/chưa có tài khoản để app dẫn khách sang đúng luồng (D-070) — đánh đổi quyền riêng tư nhỏ, được hạn chế
-    /// bằng rate limit theo IP trước khi tra cứu.
+    /// Báo rõ SĐT/email đã/chưa có tài khoản để app dẫn khách sang đúng luồng (D-070) — đánh đổi quyền riêng tư nhỏ, được hạn
+    /// chế bằng rate limit theo IP trước khi tra cứu. Đăng ký gửi kèm SĐT (không bắt buộc) để báo trùng ngay từ bước lấy mã.
     /// </summary>
-    public async Task<OtpIssued> RequestOtpAsync(string rawPhone, OtpPurpose? purpose, string? clientIp)
+    public async Task<OtpIssued> RequestOtpAsync(string rawEmail, string? rawPhone, OtpPurpose? purpose, string? clientIp)
     {
         if (purpose is null) throw new DomainException(ErrorCode.VALIDATION_FAILED);
         limiter.Acquire("otp-ip:" + clientIp, 20, TimeSpan.FromHours(1));
-        var phone = PhoneNumber.Require(rawPhone);
-        var registered = await RegisteredAsync(phone);
-        if (purpose == OtpPurpose.REGISTER && registered) throw new DomainException(ErrorCode.CUSTOMER_ACCOUNT_EXISTS);
-        if (purpose == OtpPurpose.RESET_PASSWORD && !registered) throw new DomainException(ErrorCode.CUSTOMER_ACCOUNT_NOT_FOUND);
-        return await otp.IssueAsync(phone, purpose.Value, clientIp);
+        var email = EmailAddress.Require(rawEmail);
+        if (purpose == OtpPurpose.REGISTER)
+        {
+            if (!JavaText.IsBlank(rawPhone) && await RegisteredAsync(PhoneNumber.Require(rawPhone)))
+                throw new DomainException(ErrorCode.CUSTOMER_ACCOUNT_EXISTS);
+            if (await profiles.FindActiveWithAccountByEmailAsync(email) is not null)
+                throw new DomainException(ErrorCode.CUSTOMER_EMAIL_DUPLICATE);
+        }
+        else if (await profiles.FindActiveWithAccountByEmailAsync(email) is null)
+        {
+            throw new DomainException(ErrorCode.CUSTOMER_EMAIL_NOT_FOUND);
+        }
+        return await otp.IssueAsync(email, purpose.Value, clientIp);
     }
 
     /// <summary>Kiểm tra mọi thứ rẻ (mật khẩu, họ tên) trước khi tiêu OTP để khách không phải xin mã lại vì gõ sai mật khẩu.</summary>
     public async Task<AuthResult> RegisterAsync(RegisterCommand command, string? clientIp, string? userAgent)
     {
         var phone = PhoneNumber.Require(command.Phone);
+        var email = EmailAddress.Require(command.Email);
         passwordPolicy.Validate(phone, command.Password);
         var profile = await profiles.FindActiveByPhoneAsync(phone);
         if (await RegisteredAsync(phone)) throw new DomainException(ErrorCode.CUSTOMER_ACCOUNT_EXISTS);
+        profile?.RequireMatchingEmail(email);
+        if (await profiles.FindActiveWithAccountByEmailAsync(email) is not null) throw new DomainException(ErrorCode.CUSTOMER_EMAIL_DUPLICATE);
         if (profile is null && string.IsNullOrWhiteSpace(command.FullName)) throw new DomainException(ErrorCode.VALIDATION_FAILED);
-        await otp.ConsumeAsync(phone, OtpPurpose.REGISTER, command.Otp);
+        await otp.ConsumeAsync(email, OtpPurpose.REGISTER, command.Otp);
         long accountId;
         try
         {
-            accountId = await transactions.InTransactionAsync(() => CreateAccountAsync(phone, command));
+            accountId = await transactions.InTransactionAsync(() => CreateAccountAsync(phone, email, command));
         }
         catch (DomainException exception)
             when (exception.Code is ErrorCode.ACCOUNT_USERNAME_DUPLICATE or ErrorCode.CUSTOMER_PHONE_DUPLICATE)
@@ -66,42 +78,42 @@ public sealed class CustomerAccountService(
     }
 
     /// <summary>Bước 1 của quên mật khẩu trên web: xác nhận mã đúng trước khi khách nhập mật khẩu mới (mã chưa bị tiêu).</summary>
-    public async Task VerifyResetOtpAsync(string rawPhone, string code)
+    public async Task VerifyResetOtpAsync(string rawEmail, string code)
     {
-        var phone = PhoneNumber.Require(rawPhone);
-        var profile = await profiles.FindActiveByPhoneAsync(phone);
-        if (profile?.AccountId is null) throw new DomainException(ErrorCode.CUSTOMER_ACCOUNT_NOT_FOUND);
-        await otp.VerifyAsync(phone, OtpPurpose.RESET_PASSWORD, code);
+        var email = EmailAddress.Require(rawEmail);
+        if (await profiles.FindActiveWithAccountByEmailAsync(email) is null) throw new DomainException(ErrorCode.CUSTOMER_EMAIL_NOT_FOUND);
+        await otp.VerifyAsync(email, OtpPurpose.RESET_PASSWORD, code);
     }
 
     /// <summary>Thu hồi mọi phiên và mọi thiết bị nhận push: máy bị mất không còn đăng nhập hay nhận thông báo được nữa.</summary>
-    public async Task ResetPasswordAsync(string rawPhone, string code, string newPassword)
+    public async Task ResetPasswordAsync(string rawEmail, string code, string newPassword)
     {
-        var phone = PhoneNumber.Require(rawPhone);
-        var profile = await profiles.FindActiveByPhoneAsync(phone);
+        var email = EmailAddress.Require(rawEmail);
+        var profile = await profiles.FindActiveWithAccountByEmailAsync(email);
         var account = profile?.AccountId is { } id ? await accounts.FindByIdAsync(id) : null;
-        if (account is null) throw new DomainException(ErrorCode.CUSTOMER_ACCOUNT_NOT_FOUND);
+        if (account is null) throw new DomainException(ErrorCode.CUSTOMER_EMAIL_NOT_FOUND);
         passwordPolicy.Validate(account.Username, newPassword);
-        await otp.ConsumeAsync(phone, OtpPurpose.RESET_PASSWORD, code);
+        await otp.ConsumeAsync(email, OtpPurpose.RESET_PASSWORD, code);
         await auth.RecoverPasswordAsync(account.Id, newPassword);
         await pushDevices.ForgetAllAsync(account.Id);
     }
 
-    private async Task<long> CreateAccountAsync(string phone, RegisterCommand command)
+    private async Task<long> CreateAccountAsync(string phone, string email, RegisterCommand command)
     {
         var now = clock.GetUtcNow();
         var existing = await profiles.FindActiveByPhoneAsync(phone);
         if (existing?.AccountId is not null) throw new DomainException(ErrorCode.CUSTOMER_ACCOUNT_EXISTS);
+        existing?.RequireMatchingEmail(email);
         var customerCode = existing?.Code;
         var fullName = existing?.FullName;
         if (customerCode is null)
         {
             customerCode = await codes.NextAsync(BusinessCodeType.Customer);
             fullName = command.FullName!.Trim();
-            await profiles.CreateAsync(customerCode, fullName, phone, string.IsNullOrWhiteSpace(command.Email) ? null : command.Email.Trim(), now);
+            await profiles.CreateAsync(customerCode, fullName, phone, email, now);
         }
         var account = await accounts.AddAsync(Account.Customer(phone, PasswordHasher.Encode(command.Password), customerCode, false));
-        await profiles.LinkAccountAsync(customerCode, account.Id);
+        await profiles.LinkAccountAsync(customerCode, account.Id, email);
         await audit.RecordAsync(
             "KH:" + customerCode, fullName, ["CUSTOMER"], "CUSTOMER_ACCOUNT_REGISTERED",
             "Đăng ký tài khoản qua ứng dụng di động", "ACCOUNT", account.Id.ToString());

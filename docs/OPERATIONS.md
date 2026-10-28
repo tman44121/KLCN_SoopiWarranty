@@ -129,7 +129,8 @@ Host chạy `Soopi.Api.dll` từ thư mục publish và nhận cấu hình ngoà
 - Hai đường dẫn PEM `Security__Jwt__PrivateKeyLocation`/`PublicKeyLocation`; Production bắt buộc RSA key.
   Development không có key tự sinh khóa tạm, access/portal token cũ mất hiệu lực khi restart.
 - `Storage__Directory` là thư mục bền vững ngoài repo/artifact, nên dùng đường dẫn tuyệt đối.
-- `Security__AllowedOrigins` khớp origin thật, `Sms__Provider=log`, `Push__Provider=log` theo phạm vi đã chốt.
+- `Security__AllowedOrigins` khớp origin thật, `Push__Provider=log` theo phạm vi đã chốt.
+- `Email__Smtp__Password` (Gmail App Password của `hsostd74@gmail.com`) để gửi OTP; Production thiếu thì startup lỗi.
 
 ASP.NET phục vụ React cùng origin; HTTPS cần cho cookie Secure. Với proxy, cấu hình host/network chỉ cho
 proxy được duyệt truy cập backend vì app nhận forwarded headers khi Production.
@@ -152,14 +153,15 @@ tài liệu này không thực hiện backup, restore hoặc copy dữ liệu.
 |---|---|---|
 | SLA alerts | Bật, mỗi 5 phút; ngưỡng sắp trễ 2 giờ | Đọc phiếu và ghi thông báo/audit liên quan theo use case |
 | RefreshTokenCleanup | 02:00 giờ Việt Nam mỗi ngày | Xóa refresh token hết hạn quá 7 ngày |
-| SMS/push | `log` | Không gửi SMS/FCM thật; log có thể chứa nội dung OTP/thông báo |
+| Email OTP | `smtp` (Gmail) | Gửi mã đăng ký/quên mật khẩu; chế độ `log` (chỉ ngoài Production) ghi mã vào log |
+| Push | `log` | Không gửi FCM thật; log có thể chứa nội dung thông báo |
 
 Tắt SLA bằng `--Sla:Alerts:Enabled=false` hoặc `Sla__Alerts__Enabled=false`.
 Cleanup hiện không có cấu hình bật/tắt: phiên kiểm chỉ đọc không được giữ API chạy qua 02:00.
 Mỗi instance API đăng ký job nền; chạy nhiều instance cần nghiệm thu behavior/concurrency và job trước,
 không suy từ unit test hiện tại rằng đã có điều phối job phân tán.
 
-Provider SMS/push ngoài `log` làm startup lỗi, không âm thầm gửi giả. Không có email provider trong app hiện tại.
+Provider push ngoài `log` làm startup lỗi, không âm thầm gửi giả. `Email:Provider=smtp` thiếu Username/Password: Production dừng khi khởi động, máy dev ghi OTP vào log.
 Không đưa log chứa OTP/token, User Secrets, connection string hoặc private key vào Git/báo cáo chia sẻ.
 
 ## Khi có sự cố

@@ -5,8 +5,9 @@ import { BrandLogo, Icon, PasswordInput, api, errorText, useAuthScale, useBusy }
 type Field = "fullName" | "phone" | "email" | "otp" | "password" | "confirm";
 const EMPTY: Record<Field, string> = { fullName: "", phone: "", email: "", otp: "", password: "", confirm: "" };
 
-/* Đăng ký tài khoản khách (giao diện web khách KLCN). Backend xác thực SĐT bằng OTP qua /auth/mobile; đăng ký xong
-   đăng nhập phiên web (cookie refresh) rồi thu hồi refresh token kiểu mobile mà /register trả về. */
+/* Đăng ký tài khoản khách (giao diện web khách KLCN). SĐT là tên đăng nhập; backend xác thực email bằng OTP gửi qua email
+   (/auth/mobile/otp). Đăng ký xong đăng nhập phiên web (cookie refresh) rồi thu hồi refresh token kiểu mobile mà /register
+   trả về. */
 export default function RegisterPage() {
   usePage("register", {}, "Đăng ký — Soopi");
   const scaled = useAuthScale();
@@ -25,18 +26,22 @@ export default function RegisterPage() {
   }, [resendIn]);
 
   const set = (field: Field) => (value: string) => {
+    if (field === "email" && otpSentTo && value.trim() !== otpSentTo) setOtpSentTo("");
     setForm((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
   };
 
   async function sendOtp() {
     setSummary("");
-    const phone = form.phone.trim();
-    if (!phone) return setErrors({ ...errors, phone: "Vui lòng nhập số điện thoại." });
+    const email = form.email.trim();
+    if (!email) return setErrors({ ...errors, email: "Vui lòng nhập email để nhận mã OTP." });
     await runSend(async () => {
       try {
-        const issued = await api().request("POST", "/auth/mobile/otp", { body: { phone, purpose: "REGISTER" }, auth: "none" });
-        setOtpSentTo(phone);
+        const issued = await api().request("POST", "/auth/mobile/otp", {
+          body: { email, phone: form.phone.trim() || null, purpose: "REGISTER" },
+          auth: "none",
+        });
+        setOtpSentTo(email);
         setResendIn(Number(issued.resendAfter) || 60);
         document.getElementById("otp")?.focus();
       } catch (error) {
@@ -51,6 +56,7 @@ export default function RegisterPage() {
     const next: Partial<Record<Field, string>> = {};
     if (!form.fullName.trim()) next.fullName = "Vui lòng nhập họ và tên.";
     if (!form.phone.trim()) next.phone = "Vui lòng nhập số điện thoại.";
+    if (!form.email.trim()) next.email = "Vui lòng nhập email để nhận mã OTP.";
     if (!otpSentTo) next.otp = "Bấm “Gửi mã OTP” để nhận mã xác thực.";
     else if (!form.otp.trim()) next.otp = "Vui lòng nhập mã OTP.";
     if (!form.password) next.password = "Vui lòng nhập mật khẩu.";
@@ -60,7 +66,7 @@ export default function RegisterPage() {
     await runSubmit(async () => {
       try {
         const created = await api().request("POST", "/auth/mobile/register", {
-          body: { phone: form.phone.trim(), otp: form.otp.trim(), fullName: form.fullName.trim(), password: form.password, email: form.email.trim() || null },
+          body: { phone: form.phone.trim(), email: otpSentTo, otp: form.otp.trim(), fullName: form.fullName.trim(), password: form.password },
           auth: "none",
         });
         void api().request("POST", "/auth/mobile/logout", { body: { refreshToken: created.refreshToken }, auth: "none" }).catch(() => undefined);
@@ -90,7 +96,7 @@ export default function RegisterPage() {
           <ol className="process-steps">
             <li className="process-step-item">
               <span className="step-number">01</span>
-              <div className="step-text"><h4>Xác thực số điện thoại</h4><p>Nhận mã OTP qua SMS và nhập vào form.</p></div>
+              <div className="step-text"><h4>Xác thực email</h4><p>Nhận mã OTP qua email và nhập vào form.</p></div>
             </li>
             <li className="process-step-item">
               <span className="step-number">02</span>
@@ -137,19 +143,30 @@ export default function RegisterPage() {
             <div className="form-group">
               <label htmlFor="phone">Số điện thoại</label>
               <div className="input-wrapper">
+                <span className="input-icon"><Icon glyph="phone" /></span>
+                <input type="tel" id="phone" className="form-input" inputMode="tel" autoComplete="tel" placeholder="09xxxxxxxx"
+                  value={form.phone} onChange={(e) => set("phone")(e.target.value)} aria-invalid={invalid("phone")} aria-describedby="phone-note phone-error" />
+              </div>
+              <div className="input-subnote" id="phone-note">Dùng làm tên đăng nhập.</div>
+              {fieldError("phone")}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
+              <div className="input-wrapper">
                 <div className="input-wrapper" style={{ flex: 1 }}>
-                  <span className="input-icon"><Icon glyph="phone" /></span>
-                  <input type="tel" id="phone" className="form-input" inputMode="tel" autoComplete="tel" placeholder="09xxxxxxxx"
-                    value={form.phone} onChange={(e) => set("phone")(e.target.value)} aria-invalid={invalid("phone")} aria-describedby="phone-note phone-error" />
+                  <span className="input-icon"><Icon glyph="mail" /></span>
+                  <input type="email" id="email" className="form-input" autoComplete="email" placeholder="name@example.com"
+                    value={form.email} onChange={(e) => set("email")(e.target.value)} aria-invalid={invalid("email")} aria-describedby="email-note email-error" />
                 </div>
                 <button type="button" className="btn-otp" onClick={sendOtp} disabled={sending || resendIn > 0}>
                   {sending ? "Đang gửi…" : resendIn > 0 ? `Gửi lại sau ${resendIn}s` : otpSentTo ? "Gửi lại mã" : "Gửi mã OTP"}
                 </button>
               </div>
-              <div className="input-subnote" id="phone-note">
-                {otpSentTo ? `Mã OTP đã gửi tới ${otpSentTo}.` : "Dùng làm tên đăng nhập và để nhận mã OTP."}
+              <div className="input-subnote" id="email-note">
+                {otpSentTo ? `Mã OTP đã gửi tới ${otpSentTo}. Không thấy thư? Xem cả mục Spam.` : "Nhận mã OTP và dùng để lấy lại mật khẩu."}
               </div>
-              {fieldError("phone")}
+              {fieldError("email")}
             </div>
 
             <div className="form-group">
@@ -160,15 +177,6 @@ export default function RegisterPage() {
                   value={form.otp} onChange={(e) => set("otp")(e.target.value)} aria-invalid={invalid("otp")} aria-describedby="otp-error" />
               </div>
               {fieldError("otp")}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="email">Email <span style={{ textTransform: "none", fontWeight: 500 }}>(không bắt buộc)</span></label>
-              <div className="input-wrapper">
-                <span className="input-icon"><Icon glyph="mail" /></span>
-                <input type="email" id="email" className="form-input" autoComplete="email" placeholder="name@example.com"
-                  value={form.email} onChange={(e) => set("email")(e.target.value)} />
-              </div>
             </div>
 
             <div className="form-group">

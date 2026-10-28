@@ -5,34 +5,12 @@ using Soopi.Api.Data.Stores;
 using Soopi.Api.Domain.Shared;
 using Soopi.Api.DTOs.Identity;
 using Soopi.Api.Infrastructure.Security;
+using Soopi.Api.Services.Shared;
 
 namespace Soopi.Api.Services.Identity;
 
-public sealed class SmsDeliveryException(string message) : Exception(message);
-
-/// <summary>Gửi SMS (OTP). Chế độ <c>Sms:Provider = log</c>; gửi eSMS thật để đợt sau.</summary>
-public interface ISmsSender
-{
-    /// <exception cref="SmsDeliveryException">Nhà cung cấp không nhận tin.</exception>
-    Task SendAsync(string phone, string content);
-}
-
 /// <summary>
-/// Không có nhà cung cấp SMS: ghi nội dung tin (kể cả OTP) vào log để người thử lấy mã. Ở Production tuyệt đối không ghi
-/// OTP ra log — coi như chưa cấu hình SMS và báo gửi thất bại.
-/// </summary>
-public sealed class LoggingSmsSender(ILogger<LoggingSmsSender> logger, IHostEnvironment environment) : ISmsSender
-{
-    public Task SendAsync(string phone, string content)
-    {
-        if (environment.IsProduction()) throw new SmsDeliveryException("Chưa cấu hình nhà cung cấp SMS (Sms:Provider=esms)");
-        logger.LogInformation("[SMS] tới {Phone}: {Content}", phone, content);
-        return Task.CompletedTask;
-    }
-}
-
-/// <summary>
-/// OTP 6 chữ số gửi qua SMS: sống 5 phút, dùng một lần, tối đa 5 lần nhập sai. Không chạy trong transaction của người gọi
+/// OTP 6 chữ số gửi qua email: sống 5 phút, dùng một lần, tối đa 5 lần nhập sai. Không chạy trong transaction của người gọi
 /// để lần nhập sai luôn được ghi lại kể cả khi thao tác chính thất bại.
 /// </summary>
 public sealed partial class OtpService
@@ -40,43 +18,49 @@ public sealed partial class OtpService
     private static readonly TimeSpan Ttl = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan ResendAfter = TimeSpan.FromSeconds(60);
     private const int MaxFailedAttempts = 5;
-    private const string DefaultTemplate = "Ma xac minh Soopi: {code}. Ma het han sau 5 phut.";
+    private const string DefaultSubject = "Mã xác minh Soopi: {code}";
+    private const string DefaultTemplate =
+        "Mã xác minh Soopi của bạn là: {code}\n\nMã có hiệu lực trong 5 phút và chỉ dùng được một lần. "
+        + "Không chia sẻ mã này cho bất kỳ ai, kể cả nhân viên Soopi.\n\nNếu bạn không yêu cầu mã, hãy bỏ qua email này.";
 
     private readonly OtpStore store;
-    private readonly ISmsSender sms;
+    private readonly IEmailSender email;
     private readonly RateLimiter limiter;
     private readonly TimeProvider clock;
     private readonly ILogger<OtpService> logger;
+    private readonly string subject;
     private readonly string template;
 
-    public OtpService(OtpStore store, ISmsSender sms, RateLimiter limiter, TimeProvider clock, IConfiguration configuration, ILogger<OtpService> logger)
+    public OtpService(OtpStore store, IEmailSender email, RateLimiter limiter, TimeProvider clock, IConfiguration configuration, ILogger<OtpService> logger)
     {
         this.store = store;
-        this.sms = sms;
+        this.email = email;
         this.limiter = limiter;
         this.clock = clock;
         this.logger = logger;
-        var configured = configuration["Sms:OtpTemplate"];
+        var configuredSubject = configuration["Email:OtpSubject"];
+        subject = string.IsNullOrWhiteSpace(configuredSubject) ? DefaultSubject : configuredSubject;
+        var configured = configuration["Email:OtpTemplate"];
         template = string.IsNullOrWhiteSpace(configured) ? DefaultTemplate : configured;
         if (!template.Contains("{code}", StringComparison.Ordinal))
-            throw new InvalidOperationException("Sms:OtpTemplate phải chứa {code}");
+            throw new InvalidOperationException("Email:OtpTemplate phải chứa {code}");
     }
 
-    /// <summary>Chờ 60 giây mới gửi lại trong cùng một luồng; trần 5 tin/giờ tính chung mọi luồng để giữ chi phí SMS.</summary>
-    public async Task<OtpIssued> IssueAsync(string phone, OtpPurpose purpose, string? clientIp)
+    /// <summary>Chờ 60 giây mới gửi lại trong cùng một luồng; trần 5 thư/giờ tính chung mọi luồng để không bị coi là spam.</summary>
+    public async Task<OtpIssued> IssueAsync(string address, OtpPurpose purpose, string? clientIp)
     {
-        limiter.Acquire("otp-phone:" + phone + ":" + purpose, 1, ResendAfter);
-        limiter.Acquire("otp-phone-hour:" + phone, 5, TimeSpan.FromHours(1));
+        limiter.Acquire("otp-email:" + address + ":" + purpose, 1, ResendAfter);
+        limiter.Acquire("otp-email-hour:" + address, 5, TimeSpan.FromHours(1));
         var code = RandomNumberGenerator.GetInt32(1_000_000).ToString("D6");
         var now = clock.GetUtcNow();
-        var id = await store.ReplaceAsync(phone, purpose.ToString(), Hash(code), now, now + Ttl, clientIp);
+        var id = await store.ReplaceAsync(address, purpose.ToString(), Hash(code), now, now + Ttl, clientIp);
         try
         {
-            await sms.SendAsync(phone, template.Replace("{code}", code));
+            await email.SendAsync(new EmailMessage(address, subject.Replace("{code}", code), template.Replace("{code}", code)));
         }
-        catch (SmsDeliveryException exception)
+        catch (EmailDeliveryException exception)
         {
-            logger.LogWarning("Không gửi được OTP {Purpose} tới {Phone}: {Message}", purpose, Mask(phone), exception.Message);
+            logger.LogWarning("Không gửi được OTP {Purpose} tới {Email}: {Message}", purpose, Mask(address), exception.Message);
             await store.ConsumeAsync(id, now);
             throw new DomainException(ErrorCode.OTP_SEND_FAILED);
         }
@@ -84,9 +68,9 @@ public sealed partial class OtpService
     }
 
     /// <summary>Sai mã, hết hạn, đã dùng hay sai quá số lần đều trả cùng một lỗi.</summary>
-    public async Task ConsumeAsync(string phone, OtpPurpose purpose, string? code)
+    public async Task ConsumeAsync(string address, OtpPurpose purpose, string? code)
     {
-        var pending = await MatchAsync(phone, purpose, code);
+        var pending = await MatchAsync(address, purpose, code);
         if (!await store.ConsumeAsync(pending.Id, clock.GetUtcNow())) throw new DomainException(ErrorCode.OTP_INVALID);
     }
 
@@ -94,11 +78,11 @@ public sealed partial class OtpService
     /// Kiểm mã mà không tiêu (web chỉ mở bước đặt mật khẩu khi mã đúng). Lần sai vẫn được đếm chung với ConsumeAsync nên
     /// tổng số lần thử của một mã vẫn tối đa 5.
     /// </summary>
-    public Task VerifyAsync(string phone, OtpPurpose purpose, string? code) => MatchAsync(phone, purpose, code);
+    public Task VerifyAsync(string address, OtpPurpose purpose, string? code) => MatchAsync(address, purpose, code);
 
-    private async Task<PendingOtp> MatchAsync(string phone, OtpPurpose purpose, string? code)
+    private async Task<PendingOtp> MatchAsync(string address, OtpPurpose purpose, string? code)
     {
-        var pending = await store.LatestAsync(phone, purpose.ToString(), clock.GetUtcNow());
+        var pending = await store.LatestAsync(address, purpose.ToString(), clock.GetUtcNow());
         if (pending is null || pending.FailedAttempts >= MaxFailedAttempts) throw new DomainException(ErrorCode.OTP_INVALID);
         var matches = code is not null
             && SixDigits().IsMatch(code)
@@ -113,7 +97,12 @@ public sealed partial class OtpService
 
     private static string Hash(string code) => AuthService.Hash(code);
 
-    private static string Mask(string phone) => phone.Length <= 4 ? "****" : new string('*', phone.Length - 4) + phone[^4..];
+    /// <summary>Giữ 2 ký tự đầu và tên miền: <c>hs****@gmail.com</c>.</summary>
+    private static string Mask(string address)
+    {
+        var at = address.IndexOf('@');
+        return at <= 2 ? "****" + address[Math.Max(at, 0)..] : address[..2] + "****" + address[at..];
+    }
 
     [GeneratedRegex("^[0-9]{6}$")]
     private static partial Regex SixDigits();

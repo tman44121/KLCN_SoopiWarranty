@@ -9,6 +9,7 @@
 --      gộp hồ sơ khách, Lễ tân được đặt lại mật khẩu khách.
 --   3. Nhãn thông báo thủ công CUSTOM_ANNOUNCEMENT.
 --   4. Nhận xét và thời điểm đánh giá khách hàng; giữ điểm/ghi chú cũ, chỉ khôi phục từ nhật ký xác định được.
+--   5. OTP gửi qua email thay SMS: MaXacThucOTP.SDT → Email (xóa mã đang chờ — mã chỉ sống 5 phút).
 -- Chạy bằng tài khoản quản trị (cần ALTER TABLE):
 --   sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\05_upgrade_existing_db.sql
 -- ============================================================================
@@ -142,6 +143,23 @@ OUTER APPLY (
           = CONCAT(N'[Khách đánh giá ', bg.DanhGiaHaiLong, N' sao]:')
 ) n
 WHERE bg.NgayDanhGia IS NULL AND bg.DanhGiaHaiLong = TRY_CONVERT(INT, a.GiaTriSau);
+GO
+
+-- 5. OTP gửi qua email
+IF COL_LENGTH(N'dbo.MaXacThucOTP', N'Email') IS NULL
+BEGIN
+    DELETE FROM MaXacThucOTP;
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'dbo.MaXacThucOTP') AND name = N'IX_MaXacThucOTP_SDT')
+        DROP INDEX IX_MaXacThucOTP_SDT ON MaXacThucOTP;
+    IF OBJECT_ID(N'dbo.CK_MaXacThucOTP_SDT', N'C') IS NOT NULL
+        ALTER TABLE MaXacThucOTP DROP CONSTRAINT CK_MaXacThucOTP_SDT;
+    ALTER TABLE MaXacThucOTP DROP COLUMN SDT;
+    ALTER TABLE MaXacThucOTP ADD Email NVARCHAR(100) NOT NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'dbo.MaXacThucOTP') AND name = N'IX_MaXacThucOTP_Email')
+    CREATE INDEX IX_MaXacThucOTP_Email ON MaXacThucOTP (Email, MucDich, NgayTao);
 GO
 
 COMMIT;

@@ -54,15 +54,35 @@ builder.Services.AddScoped<PushDeviceStore>();
 builder.Services.AddSingleton<IPushGateway, LoggingPushGateway>();
 
 // Xác thực và tài khoản.
-if (config["Sms:Provider"] is { } sms && sms != "log")
-    throw new InvalidOperationException($"Sms:Provider={sms} chưa được hỗ trợ ở bản .NET — dùng \"log\"");
 builder.Services.Configure<SecurityOptions>(config.GetSection("Security"));
 builder.Services.AddSingleton<JwtKeys>();
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddSingleton<SecurityVersionCache>();
 builder.Services.AddSingleton<RateLimiter>();
 builder.Services.AddSingleton<PasswordPolicy>();
-builder.Services.AddSingleton<ISmsSender, LoggingSmsSender>();
+// OTP gửi qua email. smtp thiếu tài khoản/mật khẩu: Production dừng khi khởi động, máy dev ghi mã ra log.
+var smtp = config.GetSection("Email:Smtp").Get<SmtpOptions>() ?? new SmtpOptions();
+switch (config["Email:Provider"] ?? "log")
+{
+    case "smtp" when smtp.Configured:
+        builder.Services.AddSingleton<IEmailSender>(new SmtpEmailSender(smtp));
+        break;
+    case "smtp" when builder.Environment.IsProduction():
+        throw new InvalidOperationException("Email:Provider=smtp cần Email:Smtp:Username và Email:Smtp:Password");
+    case "smtp":
+        builder.Services.AddSingleton<IEmailSender>(services =>
+        {
+            services.GetRequiredService<ILogger<Program>>().LogWarning(
+                "Email:Smtp chưa có Username/Password — OTP chỉ ghi vào log, không gửi email thật");
+            return ActivatorUtilities.CreateInstance<LoggingEmailSender>(services);
+        });
+        break;
+    case "log":
+        builder.Services.AddSingleton<IEmailSender, LoggingEmailSender>();
+        break;
+    case var provider:
+        throw new InvalidOperationException($"Email:Provider={provider} chưa được hỗ trợ — dùng \"smtp\" hoặc \"log\"");
+}
 builder.Services.AddScoped<CurrentActor>();
 builder.Services.AddScoped<AccountStore>();
 builder.Services.AddScoped<PrincipalDirectory>();

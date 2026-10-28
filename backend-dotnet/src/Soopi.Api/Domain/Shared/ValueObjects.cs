@@ -38,6 +38,23 @@ public static partial class PhoneNumber
     private static partial Regex Valid();
 }
 
+public static partial class EmailAddress
+{
+    /// <summary>Bỏ khoảng trắng hai đầu, chữ thường.</summary>
+    public static string Normalize(string? raw) => raw is null ? "" : JavaText.Trim(raw).ToLowerInvariant();
+
+    /// <summary>Email đã chuẩn hóa, tối đa 100 ký tự (cột Email); sai → VALIDATION_FAILED.</summary>
+    public static string Require(string? raw)
+    {
+        var value = Normalize(raw);
+        if (value.Length > 100 || !Valid().IsMatch(value)) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        return value;
+    }
+
+    [GeneratedRegex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$")]
+    private static partial Regex Valid();
+}
+
 public static partial class SerialNumber
 {
     public static string Normalize(string? raw) => raw is null ? "" : Whitespace().Replace(raw, "").ToUpperInvariant();
