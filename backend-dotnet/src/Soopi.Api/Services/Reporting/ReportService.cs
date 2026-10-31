@@ -30,7 +30,7 @@ public sealed record StatusCount(string Status, long Count);
 public sealed record SlaBucket(string Level, long Breached, long AtRisk, long OnTrack);
 
 public sealed record CustomerReviewRow(string TicketCode, string CustomerCode, string FullName, string Phone,
-    string? ProductName, string StationCode, string StationName, int Rating, string? Comment, DateTimeOffset? RatedAt);
+    string? ProductName, string StationCode, string StationName, int Rating, string? Comment, DateTimeOffset? RatedAt, bool Published = false);
 
 public sealed record CustomerReviewReport(PageResponse<CustomerReviewRow> Reviews, long CustomerReviewCount, decimal? AverageRating, long LegacyCount);
 
@@ -64,10 +64,11 @@ public sealed class ReportService(Sql sql, CurrentActor actors, TimeProvider clo
             + "AVG(CASE WHEN bg.NgayDanhGia IS NOT NULL THEN CAST(bg.DanhGiaHaiLong AS DECIMAL(10,2)) END) AS AverageRating" + joins + where,
             row => (Total: row.Long("Total"), Customers: row.Long("CustomerCount"), Average: row.DecOrNull("AverageRating")), [.. args]))[0];
         var rows = await sql.QueryAsync("SELECT ptn.MaPhieuTN, kh.MaKH, kh.HoTen, kh.SDT, sp.TenSP, tram.MaTram, tram.TenTram, "
-            + "bg.DanhGiaHaiLong, bg.NhanXetDanhGia, bg.NgayDanhGia" + joins + where
+            + "bg.DanhGiaHaiLong, bg.NhanXetDanhGia, bg.NgayDanhGia,CASE WHEN EXISTS (SELECT 1 FROM DanhGiaCongKhai pub WHERE pub.MaPhieuTN=bg.MaPhieuTN AND "
+            + Services.Portal.PublicReviewService.Matches + ") THEN 1 ELSE 0 END AS CongKhai" + joins + where
             + " ORDER BY bg.NgayDanhGia DESC, ptn.MaPhieuTN DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY",
             row => new CustomerReviewRow(row.Str("MaPhieuTN")!, row.Str("MaKH")!, row.Str("HoTen")!, row.Str("SDT")!, row.Str("TenSP"),
-                row.Str("MaTram")!, row.Str("TenTram")!, row.Int("DanhGiaHaiLong"), row.Str("NhanXetDanhGia"), row.Time("NgayDanhGia")),
+                row.Str("MaTram")!, row.Str("TenTram")!, row.Int("DanhGiaHaiLong"), row.Str("NhanXetDanhGia"), row.Time("NgayDanhGia"), row.Bool("CongKhai")),
             [.. args, page * size, size]);
         return new CustomerReviewReport(PageResponse<CustomerReviewRow>.Of(rows, page, size, summary.Total), summary.Customers,
             Scaled(summary.Average, 2), summary.Total - summary.Customers);

@@ -103,8 +103,12 @@ SOOPI_RELEASE=initial docker compose --env-file /etc/soopi/compose.env -f /etc/s
 App có limit 768 MB, SQL 2 GB; đây là điểm khởi đầu cho máy ít nhất 4 GB RAM, cần đo khi có tải.
 SQL healthcheck dùng `SELECT 1`; app health còn yêu cầu DB nghiệp vụ đúng và truy cập được.
 Database `TrungTamBaoHanhDB` đã restore từ `_Dev`, và login riêng `soopi_app` đã vào role
-`warranty_app_role`. CI/CD **không chạy DDL, seed hoặc migration**. Không chạy
-`docker compose down -v` vì sẽ xóa volume dữ liệu.
+`warranty_app_role`. CI/CD **không chạy DDL, seed hoặc migration**.
+Trước khi phát hành bản có thống kê truy cập, quản trị DB phải chạy `database/07_access_statistics.sql`
+trên DB đích (sau các nâng cấp 05/06 nếu chưa có). Ba bảng thống kê lưu tích lũy từ 31/10/2026;
+không drop/reset khi nâng cấp. Xem [ACCESS_STATISTICS.md](ACCESS_STATISTICS.md).
+Trước bản có đánh giá trên trang chủ, chạy thêm `database/08_public_reviews.sql`. Bảng duyệt ban đầu trống;
+admin tự chọn nhận xét sau khi kiểm tra thông tin riêng. Xem [PUBLIC_REVIEWS.md](PUBLIC_REVIEWS.md).
 Không chạy `docker compose down -v` vì sẽ xóa volume dữ liệu.
 
 ## 3. Domain và HTTPS trong Caddy

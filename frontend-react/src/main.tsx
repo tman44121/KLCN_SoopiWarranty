@@ -29,13 +29,31 @@ const ChatBubble = lazy(() => import('./ChatBubble'));
 function ChatEntry() {
   const { pathname } = useLocation();
   const [user, setUser] = useState<any>(null);
+  const [launcherTarget, setLauncherTarget] = useState<HTMLElement | null>(null);
+  const [ticketRequest, setTicketRequest] = useState<{ ticketCode: string } | null>(null);
+  const publicPage = ['/', '/portal'].includes(pathname);
   const allowed = ['/account', '/dispatch', '/receptionist', '/technician', '/warehouse', '/cashier', '/tickets', '/reports', '/admin'].includes(pathname);
   useEffect(() => {
     let disposed = false;
     if (allowed) (window as any).LML_AUTH?.ready((value: any) => { if (!disposed) setUser(value); });
+    else if (publicPage) {
+      const api = (window as any).LML_API;
+      const cached = api?.tokens.get() ? api.session.user() : null;
+      setUser(cached?.roles?.some((role: any) => role.code === 'CUSTOMER') ? cached : null);
+    } else setUser(null);
     return () => { disposed = true; };
-  }, [allowed, pathname]);
-  return allowed && user && !user.mustChangePassword ? <Suspense fallback={null}><ChatBubble customer={user.roles.some((r: any) => r.code === 'CUSTOMER')} /></Suspense> : null;
+  }, [allowed, publicPage, pathname]);
+  useEffect(() => { setLauncherTarget(user ? document.querySelector<HTMLElement>('[data-chat-launcher]') : null); }, [user, pathname]);
+  useEffect(() => {
+    const openTicket = (event: Event) => {
+      const ticketCode = (event as CustomEvent).detail?.ticketCode;
+      if (typeof ticketCode === 'string' && ticketCode.length > 0 && ticketCode.length <= 30) setTicketRequest({ ticketCode });
+    };
+    window.addEventListener('soopi:open-ticket-chat', openTicket);
+    return () => window.removeEventListener('soopi:open-ticket-chat', openTicket);
+  }, []);
+  return (allowed || publicPage) && user && !user.mustChangePassword && launcherTarget ? <Suspense fallback={null}><ChatBubble
+    customer={user.roles.some((r: any) => r.code === 'CUSTOMER')} launcherTarget={launcherTarget} ticketRequest={ticketRequest} /></Suspense> : null;
 }
 
 function LegacyRedirect({ to }: { to: string }) {

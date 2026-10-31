@@ -5,11 +5,15 @@ import shell from './behaviors/shell.js';
 import ui from './behaviors/ui.js';
 import charts from './behaviors/charts.js';
 import auth from './behaviors/auth.js';
+import startAccess from './behaviors/access.js';
+
+let stopPublicAccess: (() => void) | undefined;
 
 /** Controller DOM của một trang; có thể trả về hàm chạy sau khi shell sẵn sàng. */
 export type Controller = () => unknown;
 
 export async function initializePage(name: string, controller?: Controller) {
+  stopPublicAccess?.();
   html();
   labels();
   api();
@@ -26,4 +30,5 @@ export async function initializePage(name: string, controller?: Controller) {
   startShell();
   if (typeof startPage === 'function') startPage();
   await startAuth?.();
+  if (['home', 'portal'].includes(name) && (window as any).LML_API.tokens.get()) stopPublicAccess = startAccess();
 }

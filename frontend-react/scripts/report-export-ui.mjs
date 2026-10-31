@@ -58,8 +58,8 @@ try {
     assert(exportedQuery.get('from').endsWith('-01')); checks++;
     assert.deepEqual(await readFile(await download.path()), payload); checks++;
     await s.page.locator('[data-export-report]:not([disabled])').waitFor();
-    const from = s.page.getByLabel('Từ ngày', { exact: true });
-    const to = s.page.getByLabel('Đến ngày', { exact: true });
+    const from = s.page.locator('#admin-report-from');
+    const to = s.page.locator('#admin-report-to');
     assert.equal(await from.isVisible(), true); checks++;
     assert.equal(await to.isVisible(), true); checks++;
     await from.fill('2026-09-05');

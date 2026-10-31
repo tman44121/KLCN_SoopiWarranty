@@ -1,6 +1,13 @@
 # Chat khách hàng và người phụ trách phiếu
 
-Chat xuất hiện ở góc dưới trang tài khoản khách và các trang nội bộ sau khi đăng nhập.
+Nút **Tin nhắn** nằm trên header, cạnh chuông, có badge tổng tin chưa đọc; không còn nút nổi che bảng/phân trang.
+Nút mở cửa sổ nhỏ ở góc phải dưới (tối đa 340 × 440 px), không khóa cuộn hay làm mờ trang; điện thoại tự co theo màn hình.
+Bấm **Thu gọn (−)** hoặc Escape trong chat để hiện nút tròn nhỏ với tên viết tắt và badge. Bấm nút tròn để mở lại đúng cuộc chat;
+bản nháp vẫn giữ trong cùng trang. Bấm **Đóng (×)** để ẩn cả cửa sổ và nút tròn; vẫn mở lại được từ header.
+Nút × cạnh vòng tròn đóng nhanh chat đã thu gọn. Thao tác ngoài cửa sổ vẫn dùng được bình thường.
+Khách đã đăng nhập cũng có nút trên header trang chủ/tra cứu; khách vãng lai không thấy nút.
+Trong chi tiết phiếu, nút **Nhắn người phụ trách** mở danh bạ đúng phiếu để chọn người tiếp nhận hoặc KTV;
+**Tất cả liên hệ** bỏ bộ lọc phiếu.
 Khách tìm/chọn nhân viên tiếp nhận hoặc KTV hiện được phân công, theo tên, mã phiếu hoặc thiết bị.
 Nội bộ tìm khách theo tên/mã khách, mã phiếu, sản phẩm hoặc serial trong phạm vi phiếu mình phụ trách.
 Khách/nhân viên cần có hồ sơ và tài khoản hoạt động để bắt đầu hoặc gửi tin.
@@ -50,10 +57,8 @@ dotnet build verification/chat-probe -o artifacts/chat-probe-build
 dotnet artifacts/chat-probe-build/ChatProbe.dll
 # Cần Vite đang chạy và Playwright/Edge có sẵn; đặt PLAYWRIGHT_PACKAGE nếu khác đường dẫn mặc định của smoke.mjs.
 node frontend-react/scripts/chat.mjs
+node frontend-react/scripts/chat-header.mjs
 ```
 
 ChatProbe tự rollback tin nhắn, phân công và trạng thái tài khoản thử. Không chạy với dữ liệu production.
 Browser regression dùng API giả lập chung giữa hai phiên, không gửi tin thật.
-
-Build ChatProbe còn báo NU1902/NU1903 cho dependency gián tiếp có sẵn của backend
-`System.Security.Cryptography.Pkcs 9.0.11`; thay đổi chat không nâng phiên bản dependency này.

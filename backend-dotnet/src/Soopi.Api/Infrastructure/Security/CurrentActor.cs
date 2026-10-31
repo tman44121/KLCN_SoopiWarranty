@@ -16,6 +16,8 @@ public sealed class CurrentActor(IHttpContextAccessor http)
 
     public PortalGrant? PortalGrant => http.HttpContext?.Items[PortalKey] as PortalGrant;
 
+    public string? SessionId => Guid.TryParseExact(http.HttpContext?.User.FindFirst("sid")?.Value, "D", out var id) ? id.ToString() : null;
+
     public AuthenticatedActor Current => Actor ?? throw new DomainException(ErrorCode.AUTH_TOKEN_INVALID);
 
     /// <summary>Cần ít nhất một trong các quyền.</summary>
