@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { legacyRoutes } from './navigation';
@@ -24,6 +24,37 @@ const Portal = lazy(() => import('./pages/portal'));
 const Register = lazy(() => import('./pages/register'));
 const ForgotPassword = lazy(() => import('./pages/forgot-password'));
 const Account = lazy(() => import('./pages/account'));
+const ChatBubble = lazy(() => import('./ChatBubble'));
+
+function ChatEntry() {
+  const { pathname } = useLocation();
+  const [user, setUser] = useState<any>(null);
+  const [launcherTarget, setLauncherTarget] = useState<HTMLElement | null>(null);
+  const [ticketRequest, setTicketRequest] = useState<{ ticketCode: string } | null>(null);
+  const publicPage = ['/', '/portal'].includes(pathname);
+  const allowed = ['/account', '/dispatch', '/receptionist', '/technician', '/warehouse', '/cashier', '/tickets', '/reports', '/admin'].includes(pathname);
+  useEffect(() => {
+    let disposed = false;
+    if (allowed) (window as any).LML_AUTH?.ready((value: any) => { if (!disposed) setUser(value); });
+    else if (publicPage) {
+      const api = (window as any).LML_API;
+      const cached = api?.tokens.get() ? api.session.user() : null;
+      setUser(cached?.roles?.some((role: any) => role.code === 'CUSTOMER') ? cached : null);
+    } else setUser(null);
+    return () => { disposed = true; };
+  }, [allowed, publicPage, pathname]);
+  useEffect(() => { setLauncherTarget(user ? document.querySelector<HTMLElement>('[data-chat-launcher]') : null); }, [user, pathname]);
+  useEffect(() => {
+    const openTicket = (event: Event) => {
+      const ticketCode = (event as CustomEvent).detail?.ticketCode;
+      if (typeof ticketCode === 'string' && ticketCode.length > 0 && ticketCode.length <= 30) setTicketRequest({ ticketCode });
+    };
+    window.addEventListener('soopi:open-ticket-chat', openTicket);
+    return () => window.removeEventListener('soopi:open-ticket-chat', openTicket);
+  }, []);
+  return (allowed || publicPage) && user && !user.mustChangePassword && launcherTarget ? <Suspense fallback={null}><ChatBubble
+    customer={user.roles.some((r: any) => r.code === 'CUSTOMER')} launcherTarget={launcherTarget} ticketRequest={ticketRequest} /></Suspense> : null;
+}
 
 function LegacyRedirect({ to }: { to: string }) {
   const { search, hash } = useLocation();
@@ -52,6 +83,7 @@ createRoot(document.getElementById('root')!).render(
         <Route key={from} path={from} element={<LegacyRedirect to={to} />} />)}
       <Route path="*" element={<main><p role="alert">Không tìm thấy trang.</p><Link to="/" reloadDocument>Về trang chủ</Link></main>} />
     </Routes>
+    <ChatEntry />
     </Suspense>
   </BrowserRouter>,
 );

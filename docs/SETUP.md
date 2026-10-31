@@ -40,19 +40,32 @@ Set-Location ..
 ### Máy mới: tạo database từ script
 
 Thư mục `database/` có script SQL Server mới nhất (lấy từ `warranty-system-mysql/db/sqlserver`): `01_schema.sql`
-(47 bảng), `02_reference_data.sql`, `03_demo_data.sql` (tài khoản demo, xem [TAI_KHOAN_DEMO.md](TAI_KHOAN_DEMO.md)),
+(53 bảng), `02_reference_data.sql`, `03_demo_data.sql` (tài khoản demo, xem [TAI_KHOAN_DEMO.md](TAI_KHOAN_DEMO.md)),
 `04_app_user.sql` (tài khoản ứng dụng cho production) và file ghép `TrungTamBaoHanhDB_SqlServer.sql` (= 01 + 02 + 03,
 tự tạo database `TrungTamBaoHanhDB` collation `Latin1_General_100_CI_AI`).
 
 Database tạo từ một bản script trước (còn trạng thái phiếu `CANCELLED`, `YeuCauBaoHanh` chưa có cột `MaKH`, chưa có
-quyền quản lý tài khoản khách) phải nâng cấp trước khi chạy backend hiện tại — giữ nguyên dữ liệu, chạy lại nhiều lần
+quyền quản lý tài khoản khách, nhãn thông báo `CUSTOM_ANNOUNCEMENT` hoặc các cột nhận xét/thời điểm đánh giá khách) phải nâng cấp trước khi chạy backend hiện tại — giữ nguyên dữ liệu, chạy lại nhiều lần
 không sao, dùng được cho database tạo từ bất kỳ bản script nào trước đây:
 
 ```powershell
 sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\05_upgrade_existing_db.sql
+sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\06_chat.sql
+sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\07_access_statistics.sql
+sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\08_public_reviews.sql
 ```
 
-`run.bat` tự làm bước này khi máy chưa có connection string (xem mục 3). Muốn làm riêng:
+`06_chat.sql` thêm hai bảng hội thoại/tin nhắn, không tạo tin nhắn mẫu và không xóa dữ liệu. Chạy trước khi dùng chat.
+`07_access_statistics.sql` thêm thống kê truy cập tích lũy từ **31/10/2026**, không tự xóa/reset lịch sử khi sang ngày,
+khởi động lại ứng dụng hoặc dọn refresh token. Cần chạy trước khi dùng backend mới. Admin xem tại `/admin#access`;
+xem [ACCESS_STATISTICS.md](ACCESS_STATISTICS.md) để biết cách đếm và kiểm thử.
+`08_public_reviews.sql` thêm bảng duyệt đánh giá cho trang chủ; chạy trước backend mới. Không tự công khai nhận xét cũ.
+Admin chọn tại `/admin#reports`, cột **Trang chủ**; xem [PUBLIC_REVIEWS.md](PUBLIC_REVIEWS.md).
+Chat chỉ dành cho tài khoản đăng nhập: khách và nhân viên tiếp nhận/KTV hiện đang phụ trách phiếu. Khi đổi KTV,
+cuộc trò chuyện cũ chỉ xem lịch sử; người mới không được đọc cuộc trò chuyện riêng của người cũ.
+Danh bạ nội bộ tìm theo tên/mã khách, mã phiếu, sản phẩm hoặc serial; không mở quyền đọc liên hệ khách toàn hệ thống cho KTV.
+
+`run.bat` tự tạo database mới khi máy chưa có connection string (xem mục 3); database hiện có cần chạy các script nâng cấp ở trên. Muốn tạo DB riêng:
 
 ```powershell
 .\run.bat initdb                        # tự tìm SQL Server trên máy, không có thì cài SQL Server 2022 Express

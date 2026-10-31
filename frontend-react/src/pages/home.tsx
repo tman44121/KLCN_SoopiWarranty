@@ -1,25 +1,13 @@
 import { useEffect, useState } from "react";
 import { usePage } from "../usePage";
+import { isReviewPreview, PublicReviewsPanel } from "../PublicReviews";
 import {
   CustomerFooter, CustomerHeader, Icon, STEP_LABELS, StatusBadge, TICKET_FILTERS, TICKET_GROUPS, api, fmt, newest, portalCatalog,
   useCustomerName,
 } from "../customer";
 
-/* Trang chủ / giới thiệu của Soopi — port bố cục home/index.html + home.css của web khách KLCN theo DESIGN.md
-   (class giữ tên cũ, CSS bọc trong .kh-home). Số liệu cố định của bản cũ (lượt khách, SLA, CSAT, hotline, thương hiệu)
-   không có nguồn thật nên thay bằng dữ liệu thật: danh mục công khai /portal/catalog, phiếu của khách đăng nhập qua
-   /portal/my/tickets. Chưa đăng nhập hoặc chưa có phiếu → danh sách mẫu như bản cũ, ghi rõ "Ví dụ minh họa". */
-
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 type Ticket = { code: string; productName?: string; serialOrImei?: string; receivedAt?: string; status: string; currentStep: number };
-
-const SAMPLE_TICKETS: Ticket[] = [
-  { code: "TN-2026-0908-00001", productName: "MacBook Air M2 2023", serialOrImei: "C02G789X01", receivedAt: "2026-09-08T02:00:00Z", status: "REPAIRING", currentStep: 3 },
-  { code: "TN-2026-0907-00002", productName: "Máy lọc không khí Pro X", serialOrImei: "MLK-992011", receivedAt: "2026-09-07T02:00:00Z", status: "AWAITING_PARTS", currentStep: 2 },
-  { code: "TN-2026-0905-00003", productName: "Smart Tivi OLED 55 inch", serialOrImei: "TV-55OLED-88", receivedAt: "2026-09-05T02:00:00Z", status: "COMPLETED", currentStep: 5 },
-  // Không hiện trong danh sách (chỉ 3 phiếu mới nhất) nhưng có trong số liệu, để ví dụ đủ cả 4 nhóm.
-  { code: "TN-2026-0820-00004", productName: "Tai nghe không dây", serialOrImei: "TWS-20260820", receivedAt: "2026-08-20T02:00:00Z", status: "DELIVERED", currentStep: 6 },
-];
 
 /* Nhóm và tên giống bộ lọc Lịch sử bảo hành (/account); trạng thái chưa biết tính vào "Đang xử lý" để tổng vẫn khớp. */
 const GROUP_KEYS = ["PROCESSING", "WAITING", "READY", "COMPLETED"] as const;
@@ -110,13 +98,11 @@ export default function HomePage() {
   }, []);
 
   const loading = Boolean(name) && mine === undefined;
-  const sample = !mine?.length;
-  const tickets = loading ? [] : sample ? SAMPLE_TICKETS : mine!;
+  const tickets = mine || [];
   const count = Object.fromEntries(GROUP_KEYS.map((key) => [key, tickets.filter((t) => groupOf(t.status) === key).length]));
   const doneRate = percent(count.COMPLETED, tickets.length);
-  const sampleNote = !name ? "Đăng nhập để xem phiếu thật của bạn"
-    : mine === null ? "Không tải được phiếu của bạn — đây là ví dụ" : "Bạn chưa có phiếu nào — đây là ví dụ";
-  const status = loading ? "Đang tải phiếu của bạn…" : sample ? sampleNote : "Cập nhật theo từng bước xử lý";
+  const status = loading ? "Đang tải phiếu của bạn…" : mine === null ? "Chưa tải được phiếu. Xem lại trong tài khoản của bạn."
+    : tickets.length ? "Cập nhật theo từng bước xử lý" : "Bạn chưa có phiếu bảo hành.";
   const historyHref = name ? "/account#lich-su" : "/login?next=" + encodeURIComponent("/account#lich-su");
   const signUp = name ? { href: "/account", label: "Vào trang của tôi" } : { href: "/register", label: "Đăng ký bảo hành ngay" };
   const request = name ? "/account#yeu-cau-moi" : "/portal#dang-ky";
@@ -150,10 +136,10 @@ export default function HomePage() {
               </dl>
             </div>
 
-            <div className="hero-dashboard-card" id="tracking">
+            {!name || isReviewPreview ? <PublicReviewsPanel /> : <div className="hero-dashboard-card" id="tracking">
               <div className="card-top-bar">
                 <h2 className="dispatch-title">Tiến độ sửa chữa thiết bị của bạn</h2>
-                {!loading && <span className={"sla-pill-badge" + (sample ? " is-sample" : "")}>{sample ? "Ví dụ minh họa" : "Phiếu của bạn"}</span>}
+                {!loading && <span className="sla-pill-badge">Phiếu của bạn</span>}
               </div>
               <dl className="dash-stats-grid" aria-busy={loading || undefined}>
                 <div className="dash-stat-box"><dt className="dash-stat-label">Tổng phiếu</dt><dd className="dash-stat-val">{loading ? "–" : tickets.length}</dd></div>
@@ -167,7 +153,7 @@ export default function HomePage() {
               <div className="dispatch-ticket-list">
                 {loading && [0, 1].map((i) => <div key={i} className="kh-skeleton" style={{ height: 58 }} />)}
                 {ready && tickets.slice(0, 3).map((ticket) => (
-                  <a key={ticket.code} href={sample ? "/portal" : `/account#phieu/${ticket.code}`} className="ticket-item-row">
+                  <a key={ticket.code} href={`/account#phieu/${ticket.code}`} className="ticket-item-row">
                     <div className="ticket-info-left">
                       <span className={"ticket-type-icon " + iconTone(ticket.status)}>
                         <Icon glyph={iconTone(ticket.status) === "type-ok" ? "checkCircle" : "wrench"} />
@@ -191,7 +177,7 @@ export default function HomePage() {
                 </span>
                 <span aria-hidden="true">→</span>
               </a>
-            </div>
+            </div>}
           </div>
         </section>
 
@@ -235,9 +221,9 @@ export default function HomePage() {
                 </a>
               </div>
 
-              <div className="dark-monitoring-panel">
+              {name ? <div className="dark-monitoring-panel">
                 <div className="dark-panel-header">
-                  <div className="dark-panel-tag">{loading ? "Đang tải" : sample ? "Ví dụ minh họa" : "Phiếu của bạn"}</div>
+                  <div className="dark-panel-tag">{loading ? "Đang tải" : "Phiếu của bạn"}</div>
                   <h3 className="dark-panel-title">Tiến độ phục vụ thiết bị</h3>
                 </div>
                 <div className="sla-progress-box">
@@ -275,8 +261,14 @@ export default function HomePage() {
                     {bars.map((bar) => <li key={bar.key}><i className={`legend-${bar.key}`} />{bar.label}: {bar.count}</li>)}
                   </ul>
                 </div>
-                <p className="dark-panel-footer">{loading || sample ? status : "Số liệu tính từ các phiếu của bạn"}</p>
-              </div>
+                <p className="dark-panel-footer">{loading || !tickets.length ? status : "Số liệu tính từ các phiếu của bạn"}</p>
+              </div> : <div className="dark-monitoring-panel home-service-promise">
+                <div className="dark-panel-header"><div className="dark-panel-tag">Minh bạch từng bước</div><h3 className="dark-panel-title">Bạn luôn nắm rõ</h3></div>
+                <ul><li><Icon glyph="file" /><div><strong>Thiết bị được ghi nhận</strong><p>Nhận mã phiếu để theo dõi quá trình xử lý.</p></div></li>
+                  <li><Icon glyph="checkCircle" /><div><strong>Chủ động duyệt báo giá</strong><p>Xem từng hạng mục và xác nhận trước khi sửa tính phí.</p></div></li>
+                  <li><Icon glyph="chatDots" /><div><strong>Có người phụ trách</strong><p>Trao đổi với người tiếp nhận và kỹ thuật viên trong tài khoản.</p></div></li></ul>
+                <a href="/portal" className="btn-secondary-white">Tra cứu tiến độ →</a>
+              </div>}
             </div>
           </div>
         </section>

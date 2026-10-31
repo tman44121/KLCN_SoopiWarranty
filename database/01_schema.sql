@@ -1,6 +1,6 @@
 -- ============================================================================
 -- LongManLoc Service Center — schema SQL Server / Azure SQL Database (D-077).
--- Chuyển từ TrungTamBaoHanhDB_MySQL_v2.sql: cùng 47 bảng, cùng tên bảng/cột/ràng buộc, nhưng CHỈ lưu dữ liệu:
+-- Chuyển từ TrungTamBaoHanhDB_MySQL_v2.sql: 47 bảng nghiệp vụ, 2 bảng chat, 3 bảng thống kê truy cập và 1 bảng duyệt đánh giá, CHỈ lưu dữ liệu:
 -- không stored procedure, không trigger, không view, không event. Nghiệp vụ (máy trạng thái, lịch sử trạng thái,
 -- tổng tiền báo giá, hạn bảo hành linh kiện, đối soát thu tiền, sinh mã) do Spring Boot thực hiện.
 --
@@ -816,6 +816,8 @@ CREATE TABLE PhieuBanGiao (
     TraLaiLinhKienCu        BIT           NOT NULL DEFAULT 0,
     ThoiHanBaoHanhMoi       NVARCHAR(100) NULL,
     DanhGiaHaiLong          INT           NULL,
+    NhanXetDanhGia          NVARCHAR(1000) NULL,
+    NgayDanhGia             DATETIME2(0)  NULL,
     KT_NgoaiQuanDungBienBan BIT           NULL,
     KT_KhoiDongBinhThuong   BIT           NULL,
     KT_ChucNangChinhOK      BIT           NULL,
@@ -828,6 +830,7 @@ CREATE TABLE PhieuBanGiao (
     FOREIGN KEY (MaTepChuKy) REFERENCES TepDinhKem(MaTep),
     CONSTRAINT CK_PBGi_Loai CHECK (LoaiBanGiao IN ('DELIVERED', 'RETURNED_UNREPAIRED')),
     CONSTRAINT CK_PBGi_DanhGia CHECK (DanhGiaHaiLong IS NULL OR DanhGiaHaiLong BETWEEN 1 AND 5),
+    CONSTRAINT CK_PBGi_DanhGiaKhach CHECK (NgayDanhGia IS NULL OR DanhGiaHaiLong IS NOT NULL),
     CONSTRAINT CK_PBGi_MaySua CHECK (LoaiBanGiao <> 'DELIVERED' OR (
         KT_NgoaiQuanDungBienBan = 1 AND KT_KhoiDongBinhThuong = 1 AND KT_ChucNangChinhOK = 1
         AND KT_PhuKienDayDu = 1 AND KT_KhongLoiPhatSinh = 1
@@ -916,4 +919,97 @@ CREATE TABLE ThietBiNhanThongBao (
     CONSTRAINT CK_ThietBiNhanThongBao_MaCaiDat CHECK (LEN(MaCaiDat) >= 8
         AND MaCaiDat COLLATE Latin1_General_100_BIN2 NOT LIKE '%[^A-Za-z0-9-]%')
 );
+GO
+
+-- Chat khách hàng theo phiếu
+IF OBJECT_ID(N'dbo.HoiThoai', N'U') IS NULL
+BEGIN
+    CREATE TABLE HoiThoai (
+        MaHoiThoai       BIGINT IDENTITY(1,1) PRIMARY KEY,
+        MaPhieuTN        NVARCHAR(30) NOT NULL,
+        MaTaiKhoanKhach  BIGINT NOT NULL,
+        MaTaiKhoanNV     BIGINT NOT NULL,
+        KhachDaDocDen    BIGINT NOT NULL DEFAULT 0,
+        NVDaDocDen       BIGINT NOT NULL DEFAULT 0,
+        NgayCapNhat      DATETIME2(0) NOT NULL,
+        CONSTRAINT UX_HoiThoai_Participants UNIQUE (MaPhieuTN, MaTaiKhoanKhach, MaTaiKhoanNV),
+        FOREIGN KEY (MaPhieuTN) REFERENCES PhieuTiepNhan(MaPhieuTN),
+        FOREIGN KEY (MaTaiKhoanKhach) REFERENCES TaiKhoan(MaTaiKhoan),
+        FOREIGN KEY (MaTaiKhoanNV) REFERENCES TaiKhoan(MaTaiKhoan),
+        CONSTRAINT CK_HoiThoai_Participants CHECK (MaTaiKhoanKhach <> MaTaiKhoanNV),
+        CONSTRAINT CK_HoiThoai_Read CHECK (KhachDaDocDen >= 0 AND NVDaDocDen >= 0),
+        INDEX IX_HoiThoai_Khach (MaTaiKhoanKhach, NgayCapNhat),
+        INDEX IX_HoiThoai_NV (MaTaiKhoanNV, NgayCapNhat)
+    );
+END;
+GO
+IF OBJECT_ID(N'dbo.TinNhan', N'U') IS NULL
+BEGIN
+    CREATE TABLE TinNhan (
+        MaTinNhan    BIGINT IDENTITY(1,1) PRIMARY KEY,
+        MaHoiThoai   BIGINT NOT NULL,
+        MaNguoiGui   BIGINT NOT NULL,
+        MaYeuCau     UNIQUEIDENTIFIER NOT NULL,
+        NoiDung      NVARCHAR(2000) NOT NULL,
+        NgayTao      DATETIME2(0) NOT NULL,
+        CONSTRAINT UX_TinNhan_Retry UNIQUE (MaHoiThoai, MaYeuCau),
+        FOREIGN KEY (MaHoiThoai) REFERENCES HoiThoai(MaHoiThoai),
+        FOREIGN KEY (MaNguoiGui) REFERENCES TaiKhoan(MaTaiKhoan),
+        CONSTRAINT CK_TinNhan_Text CHECK (LEN(LTRIM(RTRIM(NoiDung))) > 0),
+        INDEX IX_TinNhan_HoiThoai (MaHoiThoai, MaTinNhan) INCLUDE (MaNguoiGui)
+    );
+END;
+GO
+
+-- Thống kê truy cập được lưu lâu dài
+IF OBJECT_ID(N'dbo.MocThongKeTruyCap', N'U') IS NULL
+BEGIN
+    CREATE TABLE MocThongKeTruyCap (
+        Id INT PRIMARY KEY CHECK (Id=1),
+        NgayBatDau DATE NOT NULL
+    );
+END;
+IF NOT EXISTS (SELECT 1 FROM MocThongKeTruyCap WHERE Id=1)
+    INSERT MocThongKeTruyCap (Id,NgayBatDau) VALUES (1,CONVERT(DATE,'20261031',112));
+GO
+IF OBJECT_ID(N'dbo.LuotTruyCap', N'U') IS NULL
+BEGIN
+    CREATE TABLE LuotTruyCap (
+        MaLuot BIGINT IDENTITY(1,1) PRIMARY KEY,
+        MaTaiKhoan BIGINT NOT NULL REFERENCES TaiKhoan(MaTaiKhoan),
+        MaPhien NCHAR(36) NOT NULL,
+        BatDau DATETIME2(0) NOT NULL,
+        HoatDongCuoi DATETIME2(0) NOT NULL,
+        KetThuc DATETIME2(0) NULL,
+        CONSTRAINT CK_LuotTruyCap_Time CHECK (HoatDongCuoi>=BatDau AND (KetThuc IS NULL OR KetThuc>=HoatDongCuoi)),
+        INDEX IX_LuotTruyCap_Ngay (BatDau) INCLUDE (MaTaiKhoan),
+        INDEX IX_LuotTruyCap_TaiKhoan (MaTaiKhoan,MaPhien),
+        INDEX IX_LuotTruyCap_Online (HoatDongCuoi) INCLUDE (MaTaiKhoan,MaPhien,KetThuc)
+    );
+    CREATE UNIQUE INDEX UX_LuotTruyCap_PhienMo ON LuotTruyCap(MaPhien) WHERE KetThuc IS NULL;
+END;
+GO
+IF OBJECT_ID(N'dbo.TruyCapTheoNgay', N'U') IS NULL
+BEGIN
+    CREATE TABLE TruyCapTheoNgay (
+        Ngay DATE NOT NULL,
+        MaTaiKhoan BIGINT NOT NULL REFERENCES TaiKhoan(MaTaiKhoan),
+        PRIMARY KEY (Ngay,MaTaiKhoan)
+    );
+END;
+GO
+
+-- Duyệt đánh giá công khai trên trang chủ
+IF OBJECT_ID(N'dbo.DanhGiaCongKhai', N'U') IS NULL
+BEGIN
+    CREATE TABLE DanhGiaCongKhai (
+        MaPhieuTN NVARCHAR(30) PRIMARY KEY REFERENCES PhieuBanGiao(MaPhieuTN),
+        MaCongKhai UNIQUEIDENTIFIER NOT NULL UNIQUE,
+        SoSao INT NOT NULL CHECK (SoSao BETWEEN 1 AND 5),
+        NoiDung NVARCHAR(1000) NULL,
+        NgayDanhGia DATETIME2(0) NOT NULL,
+        MaNguoiDuyet BIGINT NOT NULL REFERENCES TaiKhoan(MaTaiKhoan),
+        NgayDuyet DATETIME2(0) NOT NULL
+    );
+END;
 GO

@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import initializeApi from '../src/behaviors/api.js';
 import initializeHtml from '../src/behaviors/html.js';
 import { internalRoute } from '../src/navigation.ts';
+import { MAX_REVIEW_LENGTH, QUICK_TAGS, joinReviewComment, splitReviewComment } from '../src/reviews.ts';
+import startAccess from '../src/behaviors/access.js';
 
 function setup(fetch) {
   const values = new Map();
@@ -14,6 +16,40 @@ function setup(fetch) {
   return window.LML_API;
 }
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/problem+json' } });
+
+test('public reviews omit stale bearer tokens; approval submits the exact reviewed snapshot', async () => {
+  const calls = [];
+  const api = setup(async (url, options) => { calls.push({ url, options }); return json({ reviewCount: 0, averageRating: null, items: [] }); });
+  api.tokens.set('stale-private-token');
+  await api.reviews.public();
+  assert.equal(calls[0].options.headers.Authorization, undefined);
+  assert(calls[0].url.endsWith('/public/reviews'));
+  const review = { rating: 2, ratedAt: '2026-10-31T03:00:00Z', comment: 'Chưa tốt 🌟' };
+  await api.reviews.publish('TN/1', true, review);
+  assert(calls[1].url.endsWith('/admin/reviews/TN%2F1/publication'));
+  assert.deepEqual(JSON.parse(calls[1].options.body), { published: true, ...review });
+});
+
+test('presence pauses for hidden tabs, retries connectivity and stops on logout', async () => {
+  const global = new EventTarget(); global.document = Object.assign(new EventTarget(), { hidden: false }); global.navigator = { onLine: true };
+  let tick, calls = 0, cleared = false;
+  global.setInterval = (fn, ms) => { tick = fn; assert.equal(ms, 30000); return 1; }; global.clearInterval = () => { cleared = true; };
+  global.LML_API = { post: async (path, body, options) => { assert.equal(path, '/access/heartbeat'); assert.equal(body, undefined); assert.equal(options.redirect, false); calls++; return { tracked: true }; } };
+  const stop = startAccess(global); await new Promise(resolve => setImmediate(resolve)); assert.equal(calls, 1);
+  global.document.hidden = true; await tick(); assert.equal(calls, 1);
+  global.document.hidden = false; global.document.dispatchEvent(new Event('visibilitychange')); await new Promise(resolve => setImmediate(resolve)); assert.equal(calls, 2);
+  global.navigator.onLine = false; await tick(); assert.equal(calls, 2);
+  stop(); assert(cleared); global.navigator.onLine = true; await tick(); global.dispatchEvent(new Event('online')); assert.equal(calls, 2);
+});
+
+test('presence upgrades a legacy token only once and never submits account identity', async () => {
+  const global = new EventTarget(); global.document = Object.assign(new EventTarget(), { hidden: false }); global.navigator = { onLine: true };
+  let tick, calls = 0, refreshes = 0;
+  global.setInterval = fn => { tick = fn; return 1; }; global.clearInterval = () => {};
+  global.LML_API = { post: async (_path, body) => { assert.equal(body, undefined); calls++; return { tracked: false }; }, refresh: async () => { refreshes++; } };
+  const stop = startAccess(global); await new Promise(resolve => setImmediate(resolve)); assert.equal(calls, 2); assert.equal(refreshes, 1);
+  await tick(); assert.equal(refreshes, 1); stop();
+});
 
 test('parallel staff 401 responses share one refresh and retry with the new token', async () => {
   let refreshes = 0;
@@ -104,4 +140,67 @@ test('HTML rendering escapes data and keeps nested safe markup', () => {
   initializeHtml(window);
   assert.equal(String(window.html`<p>${'<img src=x onerror=alert(1)>'}</p>`), '<p>&lt;img src=x onerror=alert(1)&gt;</p>');
   assert.equal(String(window.html`<p>${window.html`<b>${'a&b'}</b>`}</p>`), '<p><b>a&amp;b</b></p>');
+});
+
+test('notification broadcasts preserve explicit empty selections and send one request', async () => {
+  const bodies = [];
+  const api = setup(async (url, options) => {
+    assert.equal(new URL(url).pathname, '/api/v1/admin/notifications/broadcast');
+    assert.equal(options.method, 'POST');
+    bodies.push(JSON.parse(options.body));
+    return new Response(null, { status: 204 });
+  });
+  await api.notifications.broadcast('Thông báo', '/account#lich-su', 'KH-01,KH-02');
+  await api.notifications.broadcast('Tất cả', null, null);
+  await api.notifications.broadcast('Không được gửi tất cả', null, '');
+  assert.deepEqual(bodies, [
+    { message: 'Thông báo', link: '/account#lich-su', customerIds: 'KH-01,KH-02' },
+    { message: 'Tất cả', link: null, customerIds: null },
+    { message: 'Không được gửi tất cả', link: null, customerIds: '' },
+  ]);
+});
+
+test('customer notification requests can fail without redirecting a public page', async () => {
+  const api = setup(async () => json({}, 401));
+  for (const call of [() => api.notifications.inbox(false, { redirect: false }),
+    () => api.notifications.read('12', { redirect: false }), () => api.notifications.readAll({ redirect: false })]) {
+    await assert.rejects(call, error => error.status === 401);
+  }
+  assert.equal(location.redirect, undefined);
+});
+
+test('review comments round-trip selected tags, multiline text, Unicode and empty comments', () => {
+  for (const tags of [[], [QUICK_TAGS[0]], QUICK_TAGS]) {
+    for (const comment of ['', 'Tốt 🌟\nNhận máy đúng hẹn', '<img src=x onerror=alert(1)>']) {
+      const combined = joinReviewComment(tags, comment);
+      assert.deepEqual(splitReviewComment(combined), { tags, comment });
+    }
+  }
+  for (const raw of ['[Nội dung tự nhập] cần giữ nguyên', '[Sửa chữa nhanh chóng, nhãn không rõ] Nội dung'])
+    assert.deepEqual(splitReviewComment(raw), { tags: [], comment: raw });
+  const full = joinReviewComment(QUICK_TAGS, 'a'.repeat(MAX_REVIEW_LENGTH));
+  assert(full.length > MAX_REVIEW_LENGTH, 'combined tags must be counted in the limit');
+  assert.equal(joinReviewComment([], '🌟'.repeat(500)).length, MAX_REVIEW_LENGTH);
+});
+
+test('chat preserves opaque ids, pagination cursors and idempotency keys', async () => {
+  const requests = [];
+  const api = setup(async (url, options) => { requests.push({ url: new URL(url), options }); return json({}); });
+  const id = '9007199254740993';
+  await api.chat.messages(id, undefined, '0');
+  await api.chat.messages(id, id);
+  await api.chat.send(id, 'Nội dung 🌟', '12345678-1234-1234-1234-123456789abc');
+  await api.chat.read(id, id);
+  assert.equal(requests[0].url.pathname, `/api/v1/chat/conversations/${id}/messages`);
+  assert.equal(requests[0].url.searchParams.get('after'), '0');
+  assert.equal(requests[1].url.searchParams.get('before'), id);
+  assert.deepEqual(JSON.parse(requests[2].options.body), { text: 'Nội dung 🌟', requestId: '12345678-1234-1234-1234-123456789abc' });
+  assert.deepEqual(JSON.parse(requests[3].options.body), { lastMessageId: id });
+});
+
+test('expired chat on a public page reports an error without redirecting', async () => {
+  const api = setup(async () => json({ detail: 'Phiên đã hết hạn' }, 401));
+  location.pathname = '/'; api.tokens.set('expired');
+  await assert.rejects(api.chat.contacts('TN1'), error => error.status === 401);
+  assert.equal(location.redirect, undefined);
 });

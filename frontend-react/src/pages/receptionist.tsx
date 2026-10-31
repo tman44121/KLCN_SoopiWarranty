@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
 import controller from "../behaviors/receptionist.js";
 import { BrandLogo } from "../customer";
+import { NotificationBroadcast } from "../NotificationBroadcast";
 
 export default function ReceptionistPage() {
   usePage("receptionist", {"data-roles": "RECEPTIONIST"}, "Soopi — Tiếp nhận", controller);
@@ -187,6 +188,7 @@ export default function ReceptionistPage() {
         <div className="header-spacer">
         </div>
         <div className="header-right">
+          <span data-chat-launcher="" />
           <button type="button" className="icon-button" data-notification-bell="" aria-haspopup="true" aria-expanded="false" aria-label="Thông báo">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
               <path d="M5 8a5 5 0 0110 0c0 4 1.5 5 1.5 5h-13S5 12 5 8z">
@@ -230,6 +232,10 @@ export default function ReceptionistPage() {
             </div>
           </div>
         </div>
+        <details className="broadcast-section">
+          <summary>Gửi thông báo khách hàng</summary>
+          <NotificationBroadcast />
+        </details>
         <section className="card" aria-labelledby="yc-title" data-perm="WARRANTY_REQUEST_HANDLE">
           <div className="card__header">
             <div>

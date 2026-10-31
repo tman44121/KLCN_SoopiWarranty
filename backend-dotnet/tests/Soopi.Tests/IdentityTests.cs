@@ -2,6 +2,8 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Soopi.Api.Data.Entities;
@@ -15,6 +17,28 @@ namespace Soopi.Tests;
 public class IdentityTests
 {
     private static readonly DateTimeOffset Now = new(2026, 9, 26, 3, 0, 0, TimeSpan.Zero);
+
+    [Fact]
+    public async Task Jwt_RoleAuthorizationUsesIssuedRolesClaim()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IHostEnvironment>(new Environment("Development"));
+        services.AddSingleton<JwtKeys>();
+        services.AddSoopiAuthentication();
+        using var provider = services.BuildServiceProvider();
+        var bearer = provider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>().Get(JwtBearerDefaults.AuthenticationScheme);
+        var keys = provider.GetRequiredService<JwtKeys>();
+        var options = provider.GetRequiredService<IOptions<SecurityOptions>>();
+        var account = Account.Employee("admin", "{bcrypt}x", [Role.ADMIN, Role.RECEPTIONIST], "NV-006", false);
+        var token = new JwtService(keys, options, TimeProvider.System).IssueAccessToken(account, "Admin");
+        var result = await new JsonWebTokenHandler().ValidateTokenAsync(token, bearer.TokenValidationParameters);
+        Assert.True(result.IsValid);
+        var principal = new System.Security.Claims.ClaimsPrincipal(result.ClaimsIdentity);
+        Assert.True(principal.IsInRole("ADMIN"));
+        Assert.True(principal.IsInRole("RECEPTIONIST"));
+        Assert.False(principal.IsInRole("CUSTOMER"));
+    }
 
     [Fact]
     public void PasswordHasher_VerifiesHashWrittenBySpring()
@@ -151,7 +175,9 @@ public class IdentityTests
         var options = Options.Create(new SecurityOptions());
         var keys = new JwtKeys(options, new Environment("Development"));
         var account = Account.Employee("letan", "{bcrypt}x", [Role.RECEPTIONIST, Role.CASHIER], "NV-004", false);
-        var token = new JwtService(keys, options, TimeProvider.System).IssueAccessToken(account, "Lễ tân");
+        var sessionId = Guid.NewGuid().ToString();
+        var jwtService = new JwtService(keys, options, TimeProvider.System);
+        var token = jwtService.IssueAccessToken(account, "Lễ tân", sessionId);
         var result = await new JsonWebTokenHandler().ValidateTokenAsync(token, new TokenValidationParameters
         {
             ValidIssuer = "longmanloc-service-center",
@@ -160,6 +186,10 @@ public class IdentityTests
         });
         Assert.True(result.IsValid, result.Exception?.Message);
         var jwt = (JsonWebToken)result.SecurityToken;
+        Assert.Equal(sessionId, jwt.GetClaim("sid").Value);
+        var refreshed = new JsonWebToken(jwtService.IssueAccessToken(account, "Lễ tân", sessionId));
+        Assert.Equal(sessionId, refreshed.GetClaim("sid").Value);
+        Assert.NotEqual(jwt.GetClaim("jti").Value, refreshed.GetClaim("jti").Value);
         Assert.Equal("access", jwt.GetClaim("typ").Value);
         Assert.Equal("NV-004", jwt.GetClaim("employeeId").Value);
         Assert.Equal("1", jwt.GetClaim("ver").Value);

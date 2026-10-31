@@ -10,6 +10,7 @@ using Soopi.Api.Domain.Shared;
 using Soopi.Api.DTOs.Identity;
 using Soopi.Api.Infrastructure.Security;
 using Soopi.Api.Services.Shared;
+using Soopi.Api.Services.Reporting;
 
 namespace Soopi.Api.Services.Identity;
 
@@ -24,7 +25,8 @@ public sealed class AuthService(
     IOptions<SecurityOptions> options,
     SecurityVersionCache securityVersions,
     TransactionRunner transactions,
-    TimeProvider clock)
+    TimeProvider clock,
+    AccessTrackingService access)
 {
     private SecurityOptions Settings => options.Value;
 
@@ -32,14 +34,14 @@ public sealed class AuthService(
     public async Task<AuthResult> LoginAsync(string username, string password, bool remember, string? ip, string? userAgent)
     {
         var (account, displayName) = await AuthenticateAsync(username, password, ip, customerOnly: false);
-        return await IssueAsync(account, displayName, remember, Guid.NewGuid().ToString(), ip, userAgent);
+        return await IssueAsync(account, displayName, remember, Guid.NewGuid().ToString(), ip, userAgent, login: true);
     }
 
     /// <summary>App di động: chỉ tài khoản khách hàng; phiên luôn "ghi nhớ" như ứng dụng thường làm.</summary>
     public async Task<AuthResult> LoginCustomerAsync(string username, string password, string? ip, string? userAgent)
     {
         var (account, displayName) = await AuthenticateAsync(username, password, ip, customerOnly: true);
-        return await IssueAsync(account, displayName, true, Guid.NewGuid().ToString(), ip, userAgent);
+        return await IssueAsync(account, displayName, true, Guid.NewGuid().ToString(), ip, userAgent, login: true);
     }
 
     /// <summary>Mở phiên cho tài khoản khách vừa đăng ký (đã xác minh OTP thay cho mật khẩu).</summary>
@@ -49,7 +51,7 @@ public sealed class AuthService(
             var account = await RequireActiveAccountAsync(accountId);
             account.RegisterSuccessfulLogin(clock.GetUtcNow());
             await accounts.SaveAsync();
-            return await IssueAsync(account, await principals.DisplayNameAsync(account), true, Guid.NewGuid().ToString(), ip, userAgent);
+            return await IssueAsync(account, await principals.DisplayNameAsync(account), true, Guid.NewGuid().ToString(), ip, userAgent, login: true);
         });
 
     public async Task<AuthResult> RefreshAsync(string rawToken, string? ip, string? userAgent)
@@ -60,6 +62,7 @@ public sealed class AuthService(
         if (token.RevokedAt is not null)
         {
             await RevokeFamilyAsync(token.FamilyId, now);
+            await access.EndAsync(token.AccountId, token.FamilyId, now);
             await AuditReuseAsync(token);
             throw new DomainException(ErrorCode.AUTH_REFRESH_REUSED);
         }
@@ -75,19 +78,24 @@ public sealed class AuthService(
     }
 
     /// <summary>Trả về tài khoản của refresh token (nếu còn nhận ra) để app di động gỡ luôn thiết bị nhận push.</summary>
-    public async Task<long?> LogoutAsync(string? rawToken, bool all)
+    public Task<long?> LogoutAsync(string? rawToken, bool all) => transactions.InTransactionAsync<long?>(async () =>
     {
         if (string.IsNullOrWhiteSpace(rawToken)) return null;
         var token = await db.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == Hash(rawToken));
         if (token is null) return null;
-        if (all) await RevokeAccountAsync(token.AccountId, clock.GetUtcNow());
+        var now = clock.GetUtcNow();
+        await access.EndAsync(token.AccountId, all ? null : token.FamilyId, now);
+        var active = db.RefreshTokens.Where(t => t.AccountId == token.AccountId && t.RevokedAt == null && t.ExpiresAt > now);
+        var changed = await (all ? active : active.Where(t => t.FamilyId == token.FamilyId)).AnyAsync();
+        if (all) await RevokeAccountAsync(token.AccountId, now);
         else
         {
-            token.Revoke(clock.GetUtcNow());
-            await db.SaveChangesAsync();
+            await RevokeFamilyAsync(token.FamilyId, now);
         }
+        if (changed && await accounts.FindByIdAsync(token.AccountId) is { } account)
+            await AuditAsync(account, all ? "AUTH_LOGOUT_ALL" : "AUTH_LOGOUT", all ? "Đăng xuất mọi thiết bị" : "Đăng xuất");
         return token.AccountId;
-    }
+    });
 
     public async Task<UserView> MeAsync(AuthenticatedActor actor)
     {
@@ -132,9 +140,12 @@ public sealed class AuthService(
             await AuditAsync(account, "AUTH_PASSWORD_RECOVERED", "Đặt lại mật khẩu bằng OTP");
         });
 
-    public Task RevokeAccountAsync(long accountId, DateTimeOffset at) =>
-        db.RefreshTokens.Where(t => t.AccountId == accountId && t.RevokedAt == null)
+    public async Task RevokeAccountAsync(long accountId, DateTimeOffset at)
+    {
+        await db.RefreshTokens.Where(t => t.AccountId == accountId && t.RevokedAt == null)
             .ExecuteUpdateAsync(set => set.SetProperty(t => t.RevokedAt, at));
+        await access.EndAsync(accountId, null, at);
+    }
 
     public static string Hash(string value) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
@@ -168,7 +179,6 @@ public sealed class AuthService(
         if (customerOnly && account.PrincipalType != PrincipalType.CUSTOMER) throw new DomainException(ErrorCode.ACCESS_DENIED);
         account.RegisterSuccessfulLogin(now);
         await accounts.SaveAsync();
-        await AuditAsync(account, "AUTH_LOGIN_SUCCESS", "Đăng nhập thành công");
         return (account, displayName);
     }
 
@@ -190,21 +200,23 @@ public sealed class AuthService(
         throw new DomainException(ErrorCode.AUTH_INVALID_CREDENTIALS);
     }
 
-    private async Task<AuthResult> IssueAsync(Account account, string displayName, bool remember, string familyId, string? ip, string? userAgent)
+    private Task<AuthResult> IssueAsync(Account account, string displayName, bool remember, string familyId, string? ip, string? userAgent, bool login = false) => transactions.InTransactionAsync(async () =>
     {
         var rawRefresh = RandomToken();
         var now = clock.GetUtcNow();
         var refreshTtl = remember ? Settings.Jwt.RefreshTokenRememberTtl : Settings.Jwt.RefreshTokenTtl;
         db.RefreshTokens.Add(new RefreshToken(Hash(rawRefresh), account.Id, familyId, now, now + refreshTtl, remember, Safe(ip), Safe(userAgent)));
         await db.SaveChangesAsync();
+        var accessToken = jwt.IssueAccessToken(account, displayName, familyId);
+        if (login) await AuditAsync(account, "AUTH_LOGIN_SUCCESS", "Đăng nhập thành công");
         return new AuthResult(
-            jwt.IssueAccessToken(account, displayName),
+            accessToken,
             (long)Settings.Jwt.AccessTokenTtl.TotalSeconds,
             rawRefresh,
             remember,
             (long)refreshTtl.TotalSeconds,
             View(account, displayName));
-    }
+    });
 
     private async Task<Account> RequireActiveAccountAsync(long id)
     {

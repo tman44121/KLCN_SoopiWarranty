@@ -521,7 +521,7 @@ export default function initialize() {
     const byMonth = new Map(revenue.map((row) => [row.month, row]));
     if (!revenue.some((row) => Number(row.total) > 0)) return empty(target, "Chưa có khoản thu nào trong khoảng thời gian này.");
     if (months.length < 2) {
-      return empty(target, "Khoảng thời gian chỉ gồm một tháng, tổng doanh thu ở ô phía trên. Chọn Quý này, Năm nay hoặc 12 tháng gần nhất để xem xu hướng.");
+      return empty(target, "Chọn nhiều tháng để xem xu hướng.");
     }
     charts.columns(target, {
       title: "Doanh thu theo tháng",
@@ -603,6 +603,61 @@ export default function initialize() {
 
   const REPORT_TARGETS = ["[data-revenue-chart]", "[data-status-chart]", "[data-turnaround-chart]", "[data-technician-chart]", "[data-warranty-ratio-chart]"];
 
+  const reviews = { page: 0, totalPages: 1, load: 0 };
+  async function loadReviews() {
+    const load = ++reviews.load;
+    const tbody = $("[data-review-tbody]");
+    const period = $("[data-review-period]").value === "report" ? reportPeriod() : {};
+    const query = { from: period.from, to: period.to, station: $("[data-admin-station]").value || null,
+      rating: $("[data-review-rating]").value || null, q: $("[data-review-search]").value.trim() || null,
+      page: reviews.page, size: Number($("[data-review-size]").value) };
+    $("[data-review-prev]").disabled = true;
+    $("[data-review-next]").disabled = true;
+    $("[data-review-summary]").textContent = "Đang tải đánh giá…";
+    $("[data-review-count]").textContent = "";
+    $("[data-review-page]").textContent = "";
+    ui.skeletonRows(tbody, 7);
+    try {
+      const result = await api.reports.get("customer-reviews", query);
+      if (load !== reviews.load) return;
+      const page = result.reviews;
+      reviews.totalPages = Math.max(1, page.totalPages);
+      if (reviews.page >= reviews.totalPages) { reviews.page = reviews.totalPages - 1; return loadReviews(); }
+      $("[data-review-summary]").textContent = `${result.customerReviewCount} đánh giá khách hàng · Điểm trung bình: ${result.averageRating == null ? "Chưa có" : `${charts.number(result.averageRating, 2)} / 5`}${result.legacyCount ? ` · ${result.legacyCount} điểm cũ chưa rõ nguồn/ngày` : ""}`;
+      $("[data-review-count]").textContent = `${page.totalItems} dòng`;
+      $("[data-review-page]").textContent = `Trang ${reviews.page + 1} / ${reviews.totalPages}`;
+      $("[data-review-prev]").disabled = reviews.page <= 0;
+      $("[data-review-next]").disabled = reviews.page + 1 >= reviews.totalPages;
+      if (!page.items.length) return ui.tableState(tbody, 7, "empty", { title: "Không có đánh giá phù hợp", desc: "Thử đổi bộ lọc hoặc chọn Tất cả thời gian." });
+      tbody.innerHTML = html`${page.items.map(row => html`<tr>
+        <td>${row.ratedAt ? fmt.dateTime(row.ratedAt) : html`<span class="cell-muted">Chưa xác định nguồn/ngày</span>`}</td>
+        <td><div>${row.fullName}<br><span class="mono cell-muted">${row.phone}</span></div></td>
+        <td><div><span class="mono">${row.ticketCode}</span><br>${row.productName || "—"}</div></td>
+        <td>${row.stationName}</td><td>${row.rating} / 5 sao</td>
+        <td class="customer-review-comment">${row.comment || "Không có nhận xét"}</td>
+        <td><button type="button" class="btn btn--secondary btn--sm" data-review-publish="${row.ticketCode}"
+          ${row.ratedAt ? "" : "disabled"} title="${row.ratedAt ? "Nhận xét hiển thị ẩn danh trên trang chủ" : "Chưa xác định đánh giá từ khách"}">${row.published ? "Ẩn" : "Hiển thị"}</button></td>
+      </tr>`)}`;
+      tbody.querySelectorAll('[data-review-publish]').forEach(button => button.addEventListener('click', async () => {
+        const row = page.items.find(item => item.ticketCode === button.dataset.reviewPublish);
+        const published = !row.published;
+        if (published && !await ui.confirm({ title: 'Hiển thị đánh giá trên trang chủ?', message: 'Nhận xét sẽ công khai ẩn danh. Kiểm tra nội dung không chứa thông tin riêng của khách.', confirmLabel: 'Hiển thị', destructive: false })) return;
+        try {
+          await ui.busy(button, () => api.reviews.publish(row.ticketCode, published, row));
+          window.showToast(published ? 'Đã hiển thị đánh giá trên trang chủ.' : 'Đã ẩn đánh giá.', 'success');
+          await loadReviews();
+        } catch (error) { ui.showError(error); }
+      }));
+    } catch (error) {
+      if (load !== reviews.load) return;
+      $("[data-review-summary]").textContent = "";
+      ui.tableState(tbody, 7, "error", { desc: error.detail }, loadReviews);
+    }
+  }
+
+  function refreshReviews() { reviews.page = 0; void loadReviews(); }
+  function refreshReports() { void loadReports(); refreshReviews(); }
+
   async function loadReports() {
     reportQuery = null;
     updateExportButton();
@@ -682,8 +737,20 @@ export default function initialize() {
     ["category", "brand", "sku", "policy", "service"].forEach((name) => bindClose(`add-${name}`, `[data-add-${name}-drawer]`));
     bindCatalogActions();
     bindCustomers();
-    $("[data-admin-station]").addEventListener("change", loadReports);
-    $("[data-admin-range]").addEventListener("change", loadReports);
+    $("[data-admin-station]").addEventListener("change", refreshReports);
+    $("[data-admin-range]").addEventListener("change", refreshReports);
+    ["period", "rating", "size"].forEach(field => $(`[data-review-${field}]`).addEventListener("change", refreshReviews));
+    let reviewSearchTimer;
+    $("[data-review-search]").addEventListener("input", () => {
+      clearTimeout(reviewSearchTimer);
+      // Bỏ ngay request cũ khi đổi từ khóa, trước khi debounce tải request mới.
+      reviews.load++;
+      $("[data-review-prev]").disabled = true;
+      $("[data-review-next]").disabled = true;
+      reviewSearchTimer = setTimeout(refreshReviews, 300);
+    });
+    $("[data-review-prev]").addEventListener("click", () => { if (reviews.page > 0) { reviews.page--; void loadReviews(); } });
+    $("[data-review-next]").addEventListener("click", () => { if (reviews.page + 1 < reviews.totalPages) { reviews.page++; void loadReviews(); } });
     $("[data-export-report]").addEventListener("click", exportReport);
   }
 
@@ -692,6 +759,6 @@ export default function initialize() {
     await Promise.all([loadEmployees(), loadCatalogs(), window.LML_AUTH.hasPermission("CUSTOMER_ACCOUNT_MANAGE") ? loadCustomers() : null]);
     const stations = await api.catalog.list("stations");
     $("[data-admin-station]").innerHTML = html`<option value="">Tất cả trạm</option>${stations.map((station) => html`<option value="${station._id}">${station.name}</option>`)}`;
-    loadReports();
+    refreshReports();
   });
 }

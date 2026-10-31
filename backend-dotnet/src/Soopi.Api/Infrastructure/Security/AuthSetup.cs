@@ -28,6 +28,7 @@ public static class AuthSetup
                 {
                     ValidIssuer = security.Value.Jwt.Issuer,
                     ValidateAudience = false,
+                    RoleClaimType = "roles",
                     IssuerSigningKey = keys.Verifying,
                     ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
                     ClockSkew = TimeSpan.FromSeconds(60),
@@ -118,7 +119,7 @@ public sealed class SpringSecurityBoundaryMiddleware(RequestDelegate next, IRead
         if (path.StartsWithSegments("/api", StringComparison.Ordinal))
         {
             var anonymous = PublicApiPaths.Contains(value)
-                || (HttpMethods.IsGet(context.Request.Method) && value == "/api/v1/portal/catalog")
+                || (HttpMethods.IsGet(context.Request.Method) && value is "/api/v1/portal/catalog" or "/api/v1/public/reviews")
                 || (HttpMethods.IsPost(context.Request.Method) && value == "/api/v1/portal/warranty-requests");
             var hasBearer = context.Request.Headers.Authorization.ToString().StartsWith("Bearer", StringComparison.OrdinalIgnoreCase);
             // Spring từ chối bearer không hợp lệ ngay cả trên URL permitAll.

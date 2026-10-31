@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
 import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-const require = createRequire(new URL('../../../warranty-system-mysql/e2e/package.json', import.meta.url));
+const require = createRequire(process.env.PLAYWRIGHT_PACKAGE || new URL('../../../warranty-system-mysql/e2e/package.json', import.meta.url));
 const { chromium } = require('playwright-core');
 const base = process.env.E2E_BASE_URL || 'http://localhost:5173';
 const output = new URL('../test-results/', import.meta.url);
@@ -32,8 +32,8 @@ const ticketView = (quoted) => ({ code: 'TN-2026-1002-00001', productName: 'Gala
 export const browser = await chromium.launch({ channel: 'msedge', headless: true });
 let assertions = 0;
 let mockedWrites = 0;
-export async function session(role, landing, width = 1440) {
-  const context = await browser.newContext({ viewport: { width, height: 900 } });
+export async function session(role, landing, width = 1440, { hasTouch = false } = {}) {
+  const context = await browser.newContext({ viewport: { width, height: 900 }, hasTouch });
   const errors = [];
   let expectedResource404 = 0;
   const page = await context.newPage();
@@ -64,7 +64,10 @@ export async function session(role, landing, width = 1440) {
     else if (path === '/auth/me') data = user;
     else if (path === '/auth/change-password') { user.mustChangePassword = false; data = {}; }
     else if (path === '/portal/catalog') data = catalog;
+    else if (path === '/public/reviews') data = { reviewCount: 0, averageRating: null, items: [] };
     else if (path === '/notifications') data = { unreadCount: 0, items: [] };
+    else if (path === '/chat/contacts') data = { items: [], hasMore: false, unreadCount: 0 };
+    else if (path === '/access/heartbeat') data = { tracked: true };
     else if (path === '/tickets' || path === '/quotations' || path === '/audit-logs') data = { items: [], total: 0, page: 0, size: 25 };
     else if (path === '/catalog/stations') data = [{ _id: 'ST01', name: 'Trạm thử' }];
     else if (path === '/portal/warranty-requests' && request.method() === 'POST') data = { code: 'YC-MOCK' };
@@ -107,6 +110,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     assert.equal(await s.page.getByText('Không thể tải trang. Vui lòng tải lại.', { exact: true }).count(), 0); assertions++;
     assert.deepEqual(s.errors, [], `${route}: browser errors`); assertions++;
     assert(s.calls.includes('/auth/me'), `${route}: auth not initialized`); assertions++;
+    await s.page.locator('.app-header [data-chat-open]').waitFor();
+    assert.equal(await s.page.locator('.chat-bubble-fab').count(), 0, `${route}: no floating chat`); assertions++;
     await s.page.screenshot({ path: fileURLToPath(new URL(`staff-${route}.png`, output)) });
     if (route === 'warehouse') {
       await s.page.goto(base + '/pages/warehouse.html?station=ST01#stockout');
@@ -158,7 +163,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await h.page.goto(base + '/');
     await h.page.getByRole('heading', { name: 'Tra cứu & quản lý bảo hành sản phẩm' }).waitFor(); assertions++;
     await h.page.getByRole('heading', { name: 'Trạm thử' }).waitFor(); assertions++;
-    await h.page.locator('.sla-pill-badge', { hasText: 'Ví dụ minh họa' }).waitFor(); assertions++;
+    await h.page.getByRole('heading', { name: 'An tâm bảo hành tại Soopi', exact: true }).waitFor(); assertions++;
+    assert.equal(await h.page.getByText('Ví dụ minh họa', { exact: true }).count(), 0); assertions++;
     assert.equal(await h.page.locator('.nav-link.active').getAttribute('href'), '/'); assertions++;
     assert.equal(await h.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `home ${width}: horizontal scroll`); assertions++;
     assert.deepEqual(h.errors, [], 'home: browser errors'); assertions++;

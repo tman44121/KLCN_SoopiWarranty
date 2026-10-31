@@ -1,4 +1,41 @@
 /* ==========================================================================
+   Đánh giá công khai — chỉ dữ liệu khách đã nhận thiết bị
+   ========================================================================== */
+.home-reviews-card .card-top-bar { gap: 12px; }
+.home-reviews-card .card-top-bar > .kh-icon { color: #166534; flex-shrink: 0; }
+.home-review-summary { display: flex; align-items: center; gap: 20px; padding: 16px 0; border-bottom: 1px solid #e2e8f0; }
+.home-review-summary > div { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.home-review-summary strong { font-size: 36px; color: #174c41; line-height: 1.1; }
+.home-review-summary strong span { font-size: 16px; color: #475569; margin-left: 3px; }
+.home-review-summary p { margin: 0; font-size: 14px; }
+.home-review-summary p > span { display: block; font-size: 12px; color: #475569; margin-top: 4px; }
+.home-review-list { display: grid; max-height: 480px; overflow-y: auto; scrollbar-gutter: stable; }
+.home-review { padding: 16px 0; border-bottom: 1px solid #e2e8f0; min-width: 0; }
+.home-review-heading { display: flex; align-items: center; gap: 10px; }
+.home-review-avatar { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; background: #e3f2eb; color: #166534; font-size: 12px; font-weight: 700; }
+.home-review-heading strong { font-size: 13px; }
+.home-review-heading time { margin-left: auto; color: #475569; font-size: 12px; white-space: nowrap; }
+.home-review-verified { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #166534; }
+.home-review-verified .kh-icon { width: 13px; height: 13px; }
+.home-review-stars { color: #9b6700; font-size: 18px; letter-spacing: 2px; margin: 6px 0; }
+.home-review-stars > span { color: #cbd5e1; }
+.home-review-stars > .is-filled { color: #9b6700; }
+.home-review blockquote { margin: 0; font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.home-review-expand { border: 0; background: none; padding: 6px 0; color: #174c41; cursor: pointer; text-decoration: underline; font: inherit; font-size: 13px; }
+.home-reviews-note { margin: 10px 0; font-size: 12px; color: #475569; }
+.home-review-preview { padding: 12px; border: 1px solid #e5c47b; border-radius: 8px; background: #fff7e6; color: #664400; font-size: 13px; }
+.home-review-preview a { color: inherit; font-weight: 700; }
+.home-reviews-loading { padding: 24px 0; color: #475569; }
+.home-trust-points, .home-service-promise ul { display: grid; gap: 20px; padding: 12px 0; margin: 0; list-style: none; }
+.home-trust-points li, .home-service-promise li { display: flex; gap: 12px; align-items: start; }
+.home-trust-points li > .kh-icon, .home-service-promise li > .kh-icon { flex-shrink: 0; width: 22px; height: 22px; }
+.home-trust-points li > span { display: grid; gap: 4px; color: #475569; font-size: 13px; }
+.home-trust-points strong { color: #174c41; font-size: 14px; }
+.home-service-promise p { margin: 5px 0 0; line-height: 1.6; }
+.home-service-promise .btn-secondary-white { margin-top: 24px; }
+@media (max-width: 480px) { .home-review-summary { gap: 12px; } .home-review-summary strong { font-size: 30px; } .home-review-heading { gap: 8px; } }
+
+/* ==========================================================================
    Giao diện khách hàng — port từ web khách KLCN (auth.css, home.css và style
    trong warranty/register.html). Tên class giữ như bản cũ, không trùng
    components.css; rule cho thẻ HTML chỉ áp trong .kh-app nên không ảnh hưởng
@@ -1015,6 +1052,252 @@
   background: var(--kh-bad-bg);
   color: var(--kh-bad-text);
 }
+
+/* ==========================================================================
+   CHUÔNG THÔNG BÁO KHÁCH HÀNG — NotificationBell
+   ========================================================================== */
+
+.notif-bell-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.notif-bell-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: var(--kh-cream);
+  border: 1px solid var(--kh-border);
+  border-radius: 10px;
+  color: var(--kh-navy);
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.notif-bell-btn .kh-icon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+  transition: transform 0.3s ease;
+}
+
+.notif-bell-btn:hover,
+.notif-bell-btn.is-open {
+  background: #ffffff;
+  border-color: var(--kh-forest);
+  box-shadow: 0 4px 12px rgba(36, 76, 67, 0.15);
+}
+
+.notif-bell-btn:hover .kh-icon {
+  transform: rotate(-8deg) scale(1.1);
+}
+
+.notif-bell-btn.is-open .kh-icon {
+  transform: rotate(0deg);
+}
+
+/* Badge đếm chưa đọc */
+.notif-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--color-destructive);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 9999px;
+  border: 2px solid #ffffff;
+  animation: notif-badge-pop 0.3s var(--kh-ease);
+  pointer-events: none;
+}
+
+@keyframes notif-badge-pop {
+  0%   { transform: scale(0); }
+  60%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Dropdown panel */
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: -8px;
+  width: 360px;
+  max-height: 480px;
+  background: #ffffff;
+  border: 1px solid var(--kh-border);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(41, 53, 74, 0.18), 0 4px 16px rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  z-index: 120;
+  animation: kh-drop 0.22s var(--kh-ease);
+}
+
+/* Header của dropdown */
+.notif-dropdown-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--kh-divider);
+  flex-shrink: 0;
+}
+
+.notif-dropdown-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--kh-navy);
+}
+
+.notif-mark-all-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--kh-forest-hover);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.notif-mark-all-btn:hover {
+  background: var(--kh-cream);
+}
+
+/* Danh sách thông báo */
+.notif-list {
+  list-style: none;
+  padding: 8px;
+  margin: 0;
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: var(--kh-border) transparent;
+}
+
+/* Trạng thái rỗng */
+.notif-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 24px;
+  color: var(--kh-muted);
+  font-size: 13px;
+}
+
+.notif-empty .kh-icon {
+  width: 36px;
+  height: 36px;
+  opacity: 0.35;
+}
+
+/* Item thông báo */
+.notif-item {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.notif-item + .notif-item {
+  margin-top: 2px;
+}
+
+.notif-item--unread {
+  background: rgba(36, 76, 67, 0.045);
+}
+
+.notif-item-btn {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 11px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+
+.notif-item-btn:hover {
+  background: var(--kh-cream);
+}
+
+/* Chấm tròn chưa đọc */
+.notif-item-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.notif-item--unread .notif-item-dot {
+  background: var(--kh-forest);
+  box-shadow: 0 0 0 3px rgba(36, 76, 67, 0.15);
+}
+
+.notif-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.notif-item-msg {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--kh-navy);
+  line-height: 1.45;
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.notif-item--unread .notif-item-msg {
+  font-weight: 600;
+}
+
+.notif-item-time {
+  font-size: 11.5px;
+  color: var(--kh-quiet);
+  font-weight: 500;
+}
+
+/* Giới hạn danh sách theo API */
+.notif-dropdown-footer {
+  padding: 10px 16px;
+  border-top: 1px solid var(--kh-divider);
+  text-align: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--kh-quiet);
+}
+
+.notif-error { padding: 12px 18px; color: var(--kh-bad-text); }
+.notif-item-btn:disabled, .notif-mark-all-btn:disabled { cursor: wait; opacity: 0.7; }
+
+@media (max-width: 600px) {
+  .notif-bell-wrap { position: static; }
+  .notif-dropdown { top: calc(100% + 8px); right: 12px; width: calc(100vw - 24px); max-height: min(480px, 60dvh); }
+}
+
 
 .kh-main {
   flex: 1;
@@ -3687,6 +3970,28 @@ a.method-card:hover {
   100% { transform: scale(1.65); opacity: 0; }
 }
 
+.chat-window { color: #1f2937; }
+.chat-window-header .chat-header-text { flex: 1; min-width: 0; }
+.chat-window-header .chat-header-sub { white-space: normal; }
+.chat-bubble-fab > .kh-icon { width: 28px; height: 28px; }
+.chat-search { display: grid; gap: 6px; padding: 12px; font-size: 12px; }
+.chat-search input { width: 100%; min-width: 0; padding: 8px; border: 1px solid #94a3b8; border-radius: 6px; }
+.chat-contact-list { min-height: 100px; overflow-y: auto; flex: 1; }
+.chat-contact { display: grid; gap: 4px; width: 100%; padding: 12px; border: 0; border-bottom: 1px solid #e2e8f0; background: white; color: #1f2937; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.chat-contact:hover { background: #f0fdf4; }
+.chat-contact:disabled { cursor: wait; }
+.chat-contact span { font-size: 12px; }
+.chat-contact-badge { display: inline-block; margin-left: 8px; padding: 1px 6px; border-radius: 12px; background: #b91c1c; color: white; }
+.chat-directory-pages { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px; border-top: 1px solid #e2e8f0; font-size: 12px; }
+.chat-directory-pages button, .chat-error button, .chat-messages > button { padding: 6px 10px; border: 1px solid #94a3b8; background: white; color: #1f2937; border-radius: 6px; cursor: pointer; }
+.chat-directory-pages button:disabled { opacity: .5; cursor: default; }
+.chat-ticket-context { padding: 8px 12px; font-size: 12px; background: #f1f5f9; overflow-wrap: anywhere; }
+.chat-error { margin: 0; padding: 10px 12px; color: #991b1b; background: #fef2f2; font-size: 13px; }
+.chat-bubble-msg { white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat-msg-time { display: block; }
+.chat-window .chat-messages { min-height: 100px; }
+.chat-window button:focus-visible, .chat-window input:focus-visible, .chat-window textarea:focus-visible { outline: 3px solid #0284c7; outline-offset: 2px; }
+
 /* ---- Thanh thu nhỏ (minimized bar) ---- */
 .chat-minimized-bar {
   display: flex;
@@ -3926,7 +4231,7 @@ a.method-card:hover {
 
 .chat-msg-time {
   font-size: 10.5px;
-  color: #94a3b8;
+  color: #475569;
   margin-top: 3px;
   padding: 0 4px;
 }
@@ -4046,7 +4351,7 @@ a.method-card:hover {
 
 .chat-input-hint {
   font-size: 10px;
-  color: #94a3b8;
+  color: #475569;
   text-align: center;
   padding-bottom: 6px;
   background: #fff;
@@ -5027,6 +5332,9 @@ a.method-card:hover {
   min-height: 80px;
 }
 
+.rating-saved-comment { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--kh-navy); }
+.star-picker-btn:disabled, .quick-tag-chip:disabled { cursor: wait; opacity: 0.65; }
+
 .rating-actions-bar {
   display: flex;
   justify-content: flex-end;
@@ -5302,3 +5610,37 @@ a.method-card:hover {
 
 
 
+
+/* Compact chat appears on demand; minimize keeps a small chat head. */
+[data-chat-launcher]:empty { display: none; }
+[data-chat-launcher] { display: inline-flex; flex-shrink: 0; }
+.chat-header-launcher { flex-shrink: 0; cursor: pointer; }
+.nav-right-actions .chat-header-launcher { width: 40px; height: 40px; }
+.chat-header-launcher .kh-icon { width: 21px; height: 21px; }
+.chat-header-launcher .chat-fab-badge { min-width: 18px; height: 18px; line-height: 16px; font-size: 10px; top: -3px; right: -4px; }
+.chat-window.chat-popover { position: fixed; right: 20px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: var(--z-dropdown); width: min(340px, calc(100vw - 32px)); height: 440px; max-height: calc(100dvh - 32px); border-radius: 12px; animation: chat-window-in .2s ease-out; }
+.chat-popover .chat-contact-list, .chat-popover .chat-messages { min-height: 0; overscroll-behavior: contain; }
+.chat-popover .chat-messages { max-height: none; }
+.chat-popover .chat-system-msg { margin: 0; padding: 8px 12px; white-space: normal; overflow-wrap: anywhere; flex-shrink: 0; }
+.chat-popover .chat-window-header { padding: 10px 12px; }
+.chat-popover .chat-header-title, .chat-popover .chat-header-sub { overflow-wrap: anywhere; }
+.chat-mini { position: fixed; right: 20px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: var(--z-dropdown); }
+.chat-mini-restore { position: relative; display: grid; place-items: center; width: 48px; height: 48px; border: 2px solid white; border-radius: 50%; background: #174c41; color: white; box-shadow: 0 3px 14px rgb(15 23 42 / 22%); cursor: pointer; font-size: 14px; font-weight: 700; }
+.chat-mini-restore .kh-icon { width: 23px; height: 23px; }
+.chat-mini-dismiss { position: absolute; top: -9px; left: -12px; display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid #cbd5e1; border-radius: 50%; background: white; color: #334155; cursor: pointer; }
+.chat-mini-dismiss .kh-icon { width: 14px; height: 14px; }
+.chat-mini button:focus-visible { outline: 3px solid #0284c7; outline-offset: 3px; }
+.chat-ticket-filter { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+.chat-ticket-filter button { border: 0; background: none; color: #174c41; cursor: pointer; text-decoration: underline; }
+.ticket-hero-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; }
+@media (max-width: 600px) {
+  .chat-window.chat-popover { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); width: min(340px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); }
+  .chat-mini { right: 16px; }
+  .chat-popover input, .chat-popover textarea { font-size: 16px; }
+  .ticket-hero-actions { justify-content: flex-start; }
+}
+@media (pointer: coarse) {
+  .chat-popover .chat-icon-btn { min-width: 44px; min-height: 44px; }
+  .chat-ticket-filter button { min-height: 44px; }
+}
+@media print { .chat-popover, .chat-mini, [data-chat-launcher], .ticket-hero-actions button { display: none !important; } }

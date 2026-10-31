@@ -7,6 +7,8 @@
 --      DanhMucNhan: nhãn TICKET_STATUS mới.
 --   2. Quản lý tài khoản khách: quyền CUSTOMER_ACCOUNT_MANAGE, CUSTOMER_PASSWORD_RESET; Quản trị viên được xem/sửa/lưu trữ/
 --      gộp hồ sơ khách, Lễ tân được đặt lại mật khẩu khách.
+--   3. Nhãn thông báo thủ công CUSTOM_ANNOUNCEMENT.
+--   4. Nhận xét và thời điểm đánh giá khách hàng; giữ điểm/ghi chú cũ, chỉ khôi phục từ nhật ký xác định được.
 -- Chạy bằng tài khoản quản trị (cần ALTER TABLE):
 --   sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\05_upgrade_existing_db.sql
 -- ============================================================================
@@ -101,6 +103,45 @@ FROM (VALUES
 WHERE NOT EXISTS (SELECT 1 FROM VaiTro_QuyenHan v WHERE v.MaVaiTro = s.MaVaiTro AND v.MaQuyen = s.MaQuyen);
 
 UPDATE VaiTro SET MoTa = N'Tài khoản & phân quyền, tài khoản khách, danh mục, báo cáo, nhật ký' WHERE MaVaiTro = N'ADMIN';
+GO
+
+IF NOT EXISTS (SELECT 1 FROM DanhMucNhan WHERE Nhom = N'NOTIFICATION_TYPE' AND Ma = N'CUSTOM_ANNOUNCEMENT')
+    INSERT INTO DanhMucNhan (Nhom, Ma, NhanNghiepVu, NhanGiaoDien, Tone, ThuTu)
+    VALUES (N'NOTIFICATION_TYPE', N'CUSTOM_ANNOUNCEMENT', N'Thông báo từ trung tâm', N'📢 Thông báo', N'processing', 99);
+GO
+
+-- 4. Đánh giá khách hàng
+IF COL_LENGTH(N'dbo.PhieuBanGiao', N'NhanXetDanhGia') IS NULL
+    ALTER TABLE PhieuBanGiao ADD NhanXetDanhGia NVARCHAR(1000) NULL;
+IF COL_LENGTH(N'dbo.PhieuBanGiao', N'NgayDanhGia') IS NULL
+    ALTER TABLE PhieuBanGiao ADD NgayDanhGia DATETIME2(0) NULL;
+GO
+
+IF OBJECT_ID(N'dbo.CK_PBGi_DanhGiaKhach', N'C') IS NULL
+    ALTER TABLE PhieuBanGiao ADD CONSTRAINT CK_PBGi_DanhGiaKhach CHECK (NgayDanhGia IS NULL OR DanhGiaHaiLong IS NOT NULL);
+GO
+
+-- Lấy lần khách gửi cuối cùng; không gán ngày bàn giao thành ngày đánh giá.
+;WITH Rated AS (
+    SELECT MaDoiTuong, MaNguoiThaoTac, ThoiGian, GiaTriSau, COUNT(*) OVER (PARTITION BY MaDoiTuong, ThoiGian) AS SameSecond,
+           ROW_NUMBER() OVER (PARTITION BY MaDoiTuong ORDER BY ThoiGian DESC, MaNhatKy DESC) AS rn
+    FROM NhatKyThaoTac
+    WHERE HanhDong = N'TICKET_RATED' AND LoaiDoiTuong = N'TICKET' AND N',' + VaiTro + N',' LIKE N'%,CUSTOMER,%'
+)
+UPDATE bg SET NgayDanhGia = a.ThoiGian,
+    NhanXetDanhGia = CASE WHEN a.SameSecond = 1 AND n.SoLuong = 1 THEN n.NhanXet ELSE NULL END
+FROM PhieuBanGiao bg JOIN PhieuTiepNhan ptn ON ptn.MaPhieuTN = bg.MaPhieuTN
+JOIN Rated a ON a.MaDoiTuong = bg.MaPhieuTN AND a.rn = 1 AND a.MaNguoiThaoTac = N'KH:' + ptn.MaKH
+OUTER APPLY (
+    SELECT COUNT(*) AS SoLuong, MIN(SUBSTRING(g.NoiDung, CHARINDEX(N']: ', g.NoiDung) + 3, 1000)) AS NhanXet
+    FROM GhiChuPhieu g
+    WHERE g.MaPhieuTN = bg.MaPhieuTN AND g.Loai = N'CUSTOMER' AND g.VaiTroNguoiViet = N'CUSTOMER'
+      AND g.NguoiViet = a.MaNguoiThaoTac
+      AND g.ThoiGian = a.ThoiGian
+      AND LEFT(g.NoiDung, LEN(CONCAT(N'[Khách đánh giá ', bg.DanhGiaHaiLong, N' sao]:')))
+          = CONCAT(N'[Khách đánh giá ', bg.DanhGiaHaiLong, N' sao]:')
+) n
+WHERE bg.NgayDanhGia IS NULL AND bg.DanhGiaHaiLong = TRY_CONVERT(INT, a.GiaTriSau);
 GO
 
 COMMIT;

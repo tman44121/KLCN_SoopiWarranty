@@ -47,6 +47,7 @@ INSERT INTO DanhMucNhan (Nhom, Ma, NhanNghiepVu, NhanGiaoDien, Tone, ThuTu) VALU
   (N'CUSTOMER_STATUS', N'ACTIVE', N'Đang hoạt động', N'Đang hoạt động', N'success', 1),
   (N'CUSTOMER_STATUS', N'ARCHIVED', N'Đã lưu trữ', N'Đã lưu trữ', N'neutral', 2),
   (N'CUSTOMER_STATUS', N'MERGED', N'Đã gộp', N'Đã gộp', N'neutral', 3),
+  (N'NOTIFICATION_TYPE', N'CUSTOM_ANNOUNCEMENT', N'Thông báo từ trung tâm', N'📢 Thông báo', N'processing', 99),
   (N'PAYMENT_METHOD', N'BANK_TRANSFER', N'Chuyển khoản', N'Chuyển khoản', NULL, 2),
   (N'PAYMENT_METHOD', N'CARD', N'Thẻ', N'Thẻ', NULL, 4),
   (N'PAYMENT_METHOD', N'CASH', N'Tiền mặt', N'Tiền mặt', NULL, 1),

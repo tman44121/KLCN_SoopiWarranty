@@ -187,6 +187,7 @@ export default function WarehousePage() {
         <div className="header-spacer">
         </div>
         <div className="header-right">
+          <span data-chat-launcher="" />
           <button type="button" className="icon-button" data-notification-bell="" aria-haspopup="true" aria-expanded="false" aria-label="Thông báo">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
               <path d="M5 8a5 5 0 0110 0c0 4 1.5 5 1.5 5h-13S5 12 5 8z">

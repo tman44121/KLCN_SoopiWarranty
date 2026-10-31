@@ -1,6 +1,7 @@
 /* Phần dùng chung của giao diện khách (port từ web khách KLCN): header, footer, icon, badge.
    API, nhãn và định dạng lấy từ các module behaviors đã gắn lên window (api.js, labels.js). */
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { internalRoute } from './navigation';
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const w = window as unknown as { LML_API: Json; LML_LABELS: Json; LML_FMT: Json; LML_AUTH?: Json };
@@ -74,6 +75,7 @@ const PATHS: Record<string, ReactNode> = {
   x: <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>,
   minimize: <><line x1="5" y1="12" x2="19" y2="12" /></>,
   star: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />,
+  bell: <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></>,
 };
 
 export function Icon({ glyph }: { glyph: string }) {
@@ -206,6 +208,149 @@ function UserMenu({ name, active }: { name: string; active: string }) {
   );
 }
 
+/** Chuông thông báo khách hàng — chỉ hiển thị khi đăng nhập; polling mỗi 60s. */
+export function NotificationBell() {
+  type NotifItem = { id: string; type: string; message: string; link: string | null; createdAt: string | null; read: boolean };
+  const [inbox, setInbox] = useState<{ items: NotifItem[]; unreadCount: number }>({ items: [], unreadCount: 0 });
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [busy, run] = useBusy();
+  const version = useRef(0);
+  const writing = useRef(false);
+
+  const load = useCallback(async () => {
+    if (writing.current) return;
+    const current = ++version.current;
+    try {
+      const data = await api().notifications.inbox(false, { redirect: false });
+      if (current === version.current) {
+        setInbox(data);
+        setError('');
+      }
+    } catch (e) {
+      if (current === version.current) setError(errorText(e));
+    } finally {
+      if (current === version.current) setLoading(false);
+    }
+  }, []);
+
+  // Load thông báo ban đầu + polling mỗi 60 giây
+  useEffect(() => {
+    void load();
+    const id = setInterval(() => void load(), 60_000);
+    return () => { clearInterval(id); version.current++; };
+  }, [load]);
+
+  // Đóng dropdown khi click bên ngoài hoặc nhấn Escape
+  useEffect(() => {
+    if (!open) return;
+    const onOutside = (e: MouseEvent) => { if (!boxRef.current?.contains(e.target as Node)) setOpen(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); bellRef.current?.focus(); } };
+    document.addEventListener('mousedown', onOutside);
+    document.addEventListener('keydown', onEsc);
+    return () => { document.removeEventListener('mousedown', onOutside); document.removeEventListener('keydown', onEsc); };
+  }, [open]);
+
+  const markRead = (item: NotifItem) => {
+    const link = internalRoute(item.link);
+    if (item.read) {
+      if (link) window.location.href = link;
+      return;
+    }
+    void run(async () => {
+      writing.current = true;
+      version.current++;
+      try {
+        await api().notifications.read(item.id, { redirect: false });
+        setInbox(prev => ({
+          items: prev.items.map(n => n.id === item.id ? { ...n, read: true } : n),
+          unreadCount: Math.max(0, prev.unreadCount - (prev.items.some(n => n.id === item.id && !n.read) ? 1 : 0)),
+        }));
+        setError('');
+        if (link) window.location.href = link;
+      } catch (e) { setError(errorText(e)); }
+      finally { writing.current = false; }
+    });
+  };
+
+  const markAll = () => {
+    void run(async () => {
+      writing.current = true;
+      version.current++;
+      try {
+        await api().notifications.readAll({ redirect: false });
+        setInbox(prev => ({ items: prev.items.map(n => ({ ...n, read: true })), unreadCount: 0 }));
+        setError('');
+      } catch (e) { setError(errorText(e)); }
+      finally { writing.current = false; }
+    });
+  };
+
+  return (
+    <div className="notif-bell-wrap" ref={boxRef}>
+      <button
+        type="button"
+        ref={bellRef}
+        className={'notif-bell-btn' + (open ? ' is-open' : '')}
+        aria-label={`Thông báo${inbox.unreadCount > 0 ? ` (${inbox.unreadCount} chưa đọc)` : ''}`}
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => { setOpen(o => !o); if (!open && !busy) void load(); }}
+      >
+        <Icon glyph="bell" />
+        {inbox.unreadCount > 0 && (
+          <span className="notif-badge" aria-hidden="true">
+            {inbox.unreadCount > 99 ? '99+' : inbox.unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <section id={panelId} className="notif-dropdown" aria-label="Danh sách thông báo">
+          <div className="notif-dropdown-head">
+            <span className="notif-dropdown-title">Thông báo</span>
+            {inbox.unreadCount > 0 && (
+              <button type="button" className="notif-mark-all-btn" disabled={busy} onClick={markAll}>
+                Đọc tất cả
+              </button>
+            )}
+          </div>
+          {error && <div className="notif-error" role="alert">{error} <button type="button" disabled={busy} onClick={() => void load()}>Thử lại</button></div>}
+          <ul className="notif-list" role="list">
+            {loading ? <li className="notif-empty" role="status">Đang tải thông báo…</li> : inbox.items.length === 0 ? (
+              <li className="notif-empty">
+                <Icon glyph="bell" />
+                <span>Chưa có thông báo nào</span>
+              </li>
+            ) : (
+              inbox.items.map(n => (
+                <li key={n.id} className={'notif-item' + (n.read ? '' : ' notif-item--unread')}>
+                  <button type="button" className="notif-item-btn" disabled={busy} onClick={() => markRead(n)} aria-label={`${n.read ? 'Đã đọc' : 'Chưa đọc'}: ${n.message}`}>
+                    <span className="notif-item-dot" aria-hidden="true" />
+                    <span className="notif-item-body">
+                      <span className="notif-item-msg">{n.message}</span>
+                      <span className="notif-item-time">{fmt().dateTime(n.createdAt)}</span>
+                    </span>
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+          {inbox.items.length > 0 && (
+            <div className="notif-dropdown-footer">
+              Hiển thị tối đa 50 thông báo mới nhất
+            </div>
+          )}
+        </section>
+      )}
+    </div>
+  );
+}
+
 /** Header khách. Có tên → menu tài khoản; chưa đăng nhập → nút Đăng nhập/Đăng ký. */
 export function CustomerHeader({ name: pageName, active }: { name?: string | null; active: string }) {
   const name = useCustomerName(pageName);
@@ -226,6 +371,8 @@ export function CustomerHeader({ name: pageName, active }: { name?: string | nul
           {name ? (
             <>
               <a href="/account#yeu-cau-moi" className="btn-primary-teal">Gửi yêu cầu</a>
+              <NotificationBell />
+              <span data-chat-launcher="" />
               <UserMenu name={name} active={active} />
             </>
           ) : (

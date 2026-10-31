@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { usePage } from "../usePage";
 import controller from "../behaviors/admin.js";
 import { BrandLogo } from "../customer";
+import { NotificationBroadcast } from "../NotificationBroadcast";
+import { AccessStatistics } from "../AccessStatistics";
 
 export default function AdminPage() {
   usePage("admin", {"data-roles": "ADMIN"}, "Soopi — Quản trị hệ thống", controller);
@@ -12,9 +14,6 @@ export default function AdminPage() {
         <div className="sidebar-brand">
           <div className="sidebar-brand__logo">
             <BrandLogo />
-          </div>
-          <div className="sidebar-brand__system">
-            {"Hệ thống quản lý bảo hành & sửa chữa nội bộ"}
           </div>
         </div>
         <nav className="sidebar-nav">
@@ -49,12 +48,25 @@ export default function AdminPage() {
               </svg>
               {"\n          Danh mục hệ thống\n        "}
             </a>
+            <a className="sidebar-nav__item" data-roles="ADMIN" data-page-tab="notifications-broadcast" href="#notifications-broadcast">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 8a5 5 0 0 1 10 0c0 5 2 6 2 6H3s2-1 2-6M8 17a2 2 0 0 0 4 0" />
+              </svg>
+              Gửi thông báo khách hàng
+            </a>
             <a className="sidebar-nav__item" data-roles="ADMIN" data-page-tab="reports" href="#reports">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M4 16V9M10 16V4M16 16v-6">
                 </path>
               </svg>
               {"\n          Báo cáo & Thống kê\n        "}
+            </a>
+            <a className="sidebar-nav__item" data-roles="ADMIN" data-page-tab="access" href="#access">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="10" cy="10" r="7" />
+                <path d="M10 6v4l3 2" />
+              </svg>
+              Nhật ký đăng nhập &amp; Truy cập
             </a>
           </div>
         </nav>
@@ -67,22 +79,17 @@ export default function AdminPage() {
             <path d="M17 17l-4-4">
             </path>
           </svg>
-          <input type="text" placeholder="Tìm theo số Serial/IMEI, Mã phiếu TN, SĐT..." data-global-search="" aria-label="Tìm kiếm toàn hệ thống" autoComplete="off" />
+          <input type="text" placeholder="Serial/IMEI, mã phiếu, SĐT" data-global-search="" aria-label="Tìm kiếm toàn hệ thống" autoComplete="off" />
           <span className="header-search__shortcut">
             {"Ctrl K"}
           </span>
           <div className="header-search__results" data-global-search-results="" hidden={true}>
           </div>
         </div>
-        <span className="status-badge status-badge--success">
-          <span className="status-badge__dot">
-            {"●"}
-          </span>
-          {"Trạm HCM đang hoạt động\n    "}
-        </span>
         <div className="header-spacer">
         </div>
         <div className="header-right">
+          <span data-chat-launcher="" />
           <button type="button" className="icon-button" data-notification-bell="" aria-haspopup="true" aria-expanded="false" aria-label="Thông báo">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
               <path d="M5 8a5 5 0 0110 0c0 4 1.5 5 1.5 5h-13S5 12 5 8z">
@@ -121,9 +128,6 @@ export default function AdminPage() {
             <h1 className="page-title">
               {"Quản trị hệ thống"}
             </h1>
-            <div className="page-subtitle">
-              {"Quản lý tài khoản, danh mục dùng chung và báo cáo vận hành toàn hệ thống"}
-            </div>
           </div>
         </div>
         <div data-page-panel="accounts">
@@ -134,7 +138,7 @@ export default function AdminPage() {
                   {"Tài khoản & phân quyền"}
                 </h2>
                 <div className="card__title-meta">
-                  {"Danh sách nhân viên và vai trò được gán trong hệ thống — bấm vào một dòng để sửa vai trò, khóa hoặc đặt lại mật khẩu"}
+                  {"Chọn nhân viên để chỉnh sửa."}
                 </div>
               </div>
               <button type="button" className="btn btn--primary btn--sm" data-open-add-employee="">
@@ -176,7 +180,7 @@ export default function AdminPage() {
                   {"Tài khoản khách hàng"}
                 </h2>
                 <div className="card__title-meta">
-                  {"Hồ sơ khách và tài khoản đăng nhập cổng khách hàng — bấm vào một dòng để xem chi tiết và thao tác"}
+                  {"Chọn khách để xem chi tiết."}
                 </div>
               </div>
             </div>
@@ -284,9 +288,6 @@ export default function AdminPage() {
                 <h2 className="card__title" id="catalogs-title">
                   {"Danh mục hệ thống"}
                 </h2>
-                <div className="card__title-meta">
-                  {"Dùng chung cho Tiếp nhận, báo giá của kỹ thuật viên, Kho vật tư và việc xác định bảo hành khi tiếp nhận máy"}
-                </div>
               </div>
             </div>
             <div className="section-divider">
@@ -422,7 +423,7 @@ export default function AdminPage() {
                   {"Chính sách bảo hành"}
                 </h3>
                 <div className="card__title-meta">
-                  {"Khi tiếp nhận, hệ thống dùng chính sách riêng của model nếu có, không thì dùng chính sách của hãng"}
+                  {"Ưu tiên chính sách theo model, sau đó theo hãng."}
                 </div>
               </div>
               <button type="button" className="btn btn--secondary btn--sm" data-open-add-policy="">
@@ -453,6 +454,10 @@ export default function AdminPage() {
             </div>
           </section>
         </div>
+        <div data-page-panel="notifications-broadcast" hidden={true}>
+          <NotificationBroadcast />
+        </div>
+        <div data-page-panel="access" hidden={true}><AccessStatistics /></div>
         <div data-page-panel="reports" hidden={true}>
           <section className="card" aria-labelledby="reports-title">
             <div className="card__header">
@@ -460,9 +465,6 @@ export default function AdminPage() {
                 <h2 className="card__title" id="reports-title">
                   {"Báo cáo & thống kê"}
                 </h2>
-                <div className="card__title-meta">
-                  {"Chỉ dùng cho quyết định vận hành — lọc theo khoảng thời gian và trạm dịch vụ"}
-                </div>
               </div>
               <button type="button" className="btn btn--primary btn--sm" data-export-report="" data-perm="REPORT_SYSTEM" disabled>
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
@@ -509,14 +511,17 @@ export default function AdminPage() {
             <div className="report-body" data-report-body="" aria-live="polite" aria-busy="true">
               <div className="stat-row" data-report-stats="">
               </div>
+              <details className="admin-help"><summary>Cách tính báo cáo</summary><ul>
+                <li>Doanh thu theo ngày thu tiền; trạng thái và hiệu suất theo ngày tiếp nhận.</li>
+                <li>Thời gian xử lý: từ tiếp nhận đến bàn giao, lọc theo ngày bàn giao.</li>
+                <li>Bảo hành theo kết quả và ngày phân loại.</li>
+                <li>Điểm cũ thiếu nguồn/ngày không tính vào điểm trung bình của khách.</li>
+              </ul></details>
               <div className="report-grid">
                 <section className="report-panel report-panel--wide" aria-labelledby="report-revenue-title">
                   <h3 className="report-panel__title" id="report-revenue-title">
                     {"Doanh thu theo tháng"}
                   </h3>
-                  <p className="report-panel__meta">
-                    {"Tổng tiền đã thu trong tháng, gồm mọi phiếu thu của trạm được chọn"}
-                  </p>
                   <div data-revenue-chart="">
                   </div>
                 </section>
@@ -524,19 +529,13 @@ export default function AdminPage() {
                   <h3 className="report-panel__title" id="report-status-title">
                     {"Số phiếu theo trạng thái"}
                   </h3>
-                  <p className="report-panel__meta">
-                    {"Phiếu tiếp nhận trong khoảng thời gian, xếp theo thứ tự quy trình"}
-                  </p>
                   <div data-status-chart="">
                   </div>
                 </section>
                 <section className="report-panel" aria-labelledby="report-turnaround-title">
                   <h3 className="report-panel__title" id="report-turnaround-title">
-                    {"Thời gian xử lý trung bình theo nhóm thiết bị"}
+                    {"Thời gian xử lý trung bình"}
                   </h3>
-                  <p className="report-panel__meta">
-                    {"Từ lúc tiếp nhận tới lúc bàn giao, tính trên máy đã bàn giao"}
-                  </p>
                   <div data-turnaround-chart="">
                   </div>
                 </section>
@@ -544,19 +543,13 @@ export default function AdminPage() {
                   <h3 className="report-panel__title" id="report-technician-title">
                     {"Phiếu hoàn tất theo kỹ thuật viên"}
                   </h3>
-                  <p className="report-panel__meta">
-                    {"Số phiếu sửa chữa đã hoàn tất; chi tiết ở bảng hiệu suất bên dưới"}
-                  </p>
                   <div data-technician-chart="">
                   </div>
                 </section>
                 <section className="report-panel" aria-labelledby="report-warranty-title">
                   <h3 className="report-panel__title" id="report-warranty-title">
-                    {"Tỷ lệ trong bảo hành / ngoài bảo hành"}
+                    {"Tỷ lệ bảo hành"}
                   </h3>
-                  <p className="report-panel__meta">
-                    {"Theo kết quả phân loại lúc chẩn đoán"}
-                  </p>
                   <div data-warranty-ratio-chart="">
                   </div>
                 </section>
@@ -565,9 +558,6 @@ export default function AdminPage() {
                 <h3 className="report-panel__title" id="report-performance-title">
                   {"Hiệu suất từng kỹ thuật viên"}
                 </h3>
-                <p className="report-panel__meta">
-                  {"Trong khoảng thời gian và trạm đã chọn"}
-                </p>
                 <div className="table-scroll">
                   <table className="data-table">
                     <thead>
@@ -592,6 +582,45 @@ export default function AdminPage() {
                     <tbody data-techperf-tbody="">
                     </tbody>
                   </table>
+                </div>
+              </section>
+              <section className="report-panel customer-review-report" aria-label="Đánh giá khách hàng">
+                <h3 className="report-panel__title">Đánh giá khách hàng</h3>
+                <div className="toolbar">
+                  <label className="toolbar__field">Thời gian đánh giá
+                    <select className="select-field" aria-label="Thời gian đánh giá" data-review-period="" defaultValue="all">
+                      <option value="all">Tất cả thời gian, gồm dữ liệu cũ</option>
+                      <option value="report">Theo khoảng thời gian báo cáo phía trên</option>
+                    </select>
+                  </label>
+                  <label className="toolbar__field">Số sao
+                    <select className="select-field" aria-label="Số sao" data-review-rating="" defaultValue="">
+                      <option value="">Tất cả số sao</option>
+                      {[5, 4, 3, 2, 1].map(n => <option key={n} value={n}>{n} sao</option>)}
+                    </select>
+                  </label>
+                  <label className="toolbar__field">Tìm đánh giá
+                    <input type="search" className="text-field" aria-label="Tìm đánh giá" data-review-search="" maxLength={100} placeholder="Tên, SĐT hoặc mã phiếu" />
+                  </label>
+                  <label className="toolbar__field">Số dòng
+                    <select className="select-field" aria-label="Số dòng" data-review-size="" defaultValue="25">
+                      {[25, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </label>
+                </div>
+                <p data-review-summary="" role="status"></p>
+                <div className="table-scroll">
+                  <table className="data-table customer-review-table">
+                    <thead><tr><th>Thời điểm</th><th>Khách hàng</th><th>Phiếu / thiết bị</th><th>Trạm</th><th>Số sao</th><th>Nhận xét</th><th>Trang chủ</th></tr></thead>
+                    <tbody data-review-tbody=""></tbody>
+                  </table>
+                </div>
+                <div className="toolbar">
+                  <span className="toolbar__count" data-review-count=""></span>
+                  <div className="toolbar__spacer"></div>
+                  <button type="button" className="btn btn--secondary btn--sm" data-review-prev="" disabled>Trang trước</button>
+                  <span data-review-page=""></span>
+                  <button type="button" className="btn btn--secondary btn--sm" data-review-next="" disabled>Trang sau</button>
                 </div>
               </section>
             </div>

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import QRCode from "qrcode";
 import { usePage } from "../usePage";
+import { MAX_REVIEW_LENGTH, QUICK_TAGS, joinReviewComment, splitReviewComment } from "../reviews";
 import {
-  CustomerFooter, CustomerHeader, Icon, LiveChatBubble, PasswordInput, STEP_LABELS, StatusBadge, TICKET_FILTERS, api, errorText, fmt, inGroup,
+  CustomerFooter, CustomerHeader, Icon, PasswordInput, STEP_LABELS, StatusBadge, TICKET_FILTERS, api, errorText, fmt, inGroup,
   initial, newest, useBusy,
 } from "../customer";
 
@@ -82,7 +83,6 @@ export default function AccountPage() {
       <CustomerHeader name={data?.profile.fullName || user?.displayName} active={ACTIVE_NAV[route.view]} />
       <main className="kh-main">{body}</main>
       <CustomerFooter />
-      <LiveChatBubble customerName={data?.profile.fullName || user?.displayName} />
     </div>
   );
 }
@@ -418,13 +418,18 @@ function TicketDetail({ code, onChanged }: { code: string; onChanged: () => void
             {ticket.serialOrImei && <span>Serial/IMEI: <strong className="mono">{ticket.serialOrImei}</strong></span>}
           </div>
         </div>
-        <StatusBadge table="TICKET_STATUS_CUSTOMER" code={ticket.status} />
+        <div className="ticket-hero-actions">
+          <StatusBadge table="TICKET_STATUS_CUSTOMER" code={ticket.status} />
+          <button type="button" className="btn-secondary-white btn-sm" onClick={() => window.dispatchEvent(new CustomEvent('soopi:open-ticket-chat', { detail: { ticketCode: ticket.code } }))}>
+            <Icon glyph="chatDots" />Nhắn người phụ trách
+          </button>
+        </div>
       </div>
 
       <div className="detail-grid-2">
         <div className="content-stack">
           {ticket.pendingQuotation && <Quotation ticket={ticket} onDecided={(updated) => { setTicket(updated); onChanged(); }} />}
-          <RatingReviewSection ticket={ticket} onRated={(updated) => { setTicket(updated); onChanged(); }} />
+          {ticket.canRate && <RatingReviewSection key={ticket.code} ticket={ticket} onRated={(updated) => { setTicket(updated); onChanged(); }} />}
           <section className="content-panel-card">
             <h2 className="card-heading-title">Tiến độ xử lý</h2>
             <p className="card-heading-desc">
@@ -1456,52 +1461,43 @@ const RATING_LABELS: Record<number, { text: string; desc: string; emoji: string 
   5: { text: "Rất hài lòng & Xuất sắc", desc: "Chất lượng kỹ thuật và phục vụ vượt mong đợi!", emoji: "🌟" },
 };
 
-const QUICK_TAGS = [
-  "Sửa chữa nhanh chóng",
-  "Kỹ thuật viên nhiệt tình",
-  "Máy hoạt động tốt",
-  "Chi phí minh bạch",
-  "Đóng gói cẩn thận",
-  "Tư vấn chu đáo",
-];
-
 function RatingReviewSection({ ticket, onRated }: { ticket: Json; onRated: (updatedTicket: Json) => void }) {
-  const isDelivered = ticket.canRate || ticket.status === "DELIVERED" || ticket.status === "RETURNED_UNREPAIRED" || Boolean(ticket.handedOverAt);
-  if (!isDelivered) return null;
-
   const currentRating = Number(ticket.rating) || 0;
+  const saved = splitReviewComment(ticket.ratingComment);
   const [editing, setEditing] = useState(!currentRating);
   const [stars, setStars] = useState<number>(currentRating || 5);
   const [hoverStars, setHoverStars] = useState<number>(0);
-  const [comment, setComment] = useState("");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [comment, setComment] = useState(saved.comment);
+  const [selectedTags, setSelectedTags] = useState<string[]>(saved.tags);
   const [error, setError] = useState("");
   const [busy, run] = useBusy();
 
   const activeStars = hoverStars || stars;
   const ratingInfo = RATING_LABELS[activeStars] || RATING_LABELS[5];
+  const fullComment = joinReviewComment(selectedTags, comment);
 
   const toggleTag = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+    const next = selectedTags.includes(tag) ? selectedTags.filter(t => t !== tag) : [...selectedTags, tag];
+    if (joinReviewComment(next, comment).length > MAX_REVIEW_LENGTH) return setError('Nội dung gồm cảm nhận và nhận xét chỉ được tối đa 1.000 ký tự.');
+    setSelectedTags(next);
+    setError('');
   };
 
   const submit = () => run(async () => {
     setError("");
     if (!stars || stars < 1 || stars > 5) return setError("Vui lòng chọn số sao đánh giá (1-5 sao).");
+    if (fullComment.length > MAX_REVIEW_LENGTH) return setError('Nội dung gồm cảm nhận và nhận xét chỉ được tối đa 1.000 ký tự.');
     try {
-      const fullComment = [
-        selectedTags.length ? `[${selectedTags.join(", ")}]` : "",
-        comment.trim(),
-      ].filter(Boolean).join(" ");
-
       const updated = await api().post(`/portal/tickets/${encodeURIComponent(ticket.code)}/rating`, {
         rating: stars,
         comment: fullComment || null,
       });
       (window as Json).showToast?.("Cảm ơn bạn đã gửi đánh giá dịch vụ!", "success");
       onRated(updated);
+      const restored = splitReviewComment(updated.ratingComment);
+      setComment(restored.comment);
+      setSelectedTags(restored.tags);
+      setStars(updated.rating);
       setEditing(false);
     } catch (e) {
       setError(errorText(e));
@@ -1542,6 +1538,9 @@ function RatingReviewSection({ ticket, onRated }: { ticket: Json; onRated: (upda
               className="btn-secondary-white btn-sm"
               onClick={() => {
                 setStars(currentRating);
+                setComment(saved.comment);
+                setSelectedTags(saved.tags);
+                setError('');
                 setEditing(true);
               }}
             >
@@ -1551,6 +1550,8 @@ function RatingReviewSection({ ticket, onRated }: { ticket: Json; onRated: (upda
           <div className="rated-feedback-label">
             <strong>{RATING_LABELS[currentRating]?.text}</strong> — {RATING_LABELS[currentRating]?.desc}
           </div>
+          {ticket.ratingComment && <p className="rating-saved-comment">{ticket.ratingComment}</p>}
+          <p className="card-heading-desc">{ticket.ratedAt ? `Cập nhật: ${fmt().dateTime(ticket.ratedAt)}` : 'Điểm cũ chưa xác định thời điểm và nguồn đánh giá.'}</p>
         </div>
       ) : (
         <div className="rating-form-wrap">
@@ -1560,10 +1561,20 @@ function RatingReviewSection({ ticket, onRated }: { ticket: Json; onRated: (upda
                 <button
                   key={s}
                   type="button"
+                  role="radio"
+                  aria-checked={s === stars}
+                  tabIndex={s === stars ? 0 : -1}
+                  disabled={busy}
                   className={"star-picker-btn " + (s <= activeStars ? "is-active" : "")}
                   onMouseEnter={() => setHoverStars(s)}
                   onMouseLeave={() => setHoverStars(0)}
                   onClick={() => setStars(s)}
+                  onKeyDown={e => {
+                    const next = e.key === 'Home' ? 1 : e.key === 'End' ? 5 : ['ArrowRight', 'ArrowUp'].includes(e.key) ? (s % 5) + 1 : ['ArrowLeft', 'ArrowDown'].includes(e.key) ? ((s + 3) % 5) + 1 : null;
+                    if (next === null) return;
+                    e.preventDefault(); setStars(next);
+                    e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next - 1]?.focus();
+                  }}
                   aria-label={`${s} sao - ${RATING_LABELS[s]?.text}`}
                 >
                   ★
@@ -1588,6 +1599,8 @@ function RatingReviewSection({ ticket, onRated }: { ticket: Json; onRated: (upda
                   <button
                     key={tag}
                     type="button"
+                    aria-pressed={isSelected}
+                    disabled={busy}
                     className={"quick-tag-chip " + (isSelected ? "is-selected" : "")}
                     onClick={() => toggleTag(tag)}
                   >
@@ -1607,10 +1620,12 @@ function RatingReviewSection({ ticket, onRated }: { ticket: Json; onRated: (upda
               className="regular-input"
               rows={3}
               value={comment}
+              disabled={busy}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Chia sẻ thêm về trải nghiệm sửa chữa, thái độ phục vụ hoặc điều bạn mong muốn trung tâm cải thiện..."
-              maxLength={1000}
+              maxLength={Math.max(0, MAX_REVIEW_LENGTH - (selectedTags.length ? joinReviewComment(selectedTags, '').length + 1 : 0))}
             />
+            <span className="card-heading-desc">{fullComment.length} / {MAX_REVIEW_LENGTH} ký tự, gồm cảm nhận đã chọn</span>
           </div>
 
           {error && <div className="field-error" role="alert">{error}</div>}
