@@ -103,6 +103,22 @@ App và SQL Server 2025 Express đang chạy; `TrungTamBaoHanhDB` đã restore t
 và user CI chỉ có sudo cho script activation. GitHub secrets/variables chưa cấu hình, nên CI deploy tự động
 chưa bật. Release đầu được build từ gói publish local; các lần sau sẽ dùng GitHub Actions sau khi repo cập nhật.
 
+## D-053 — Phân cấp quản trị gốc (2026-10-31)
+
+Chủ dự án chọn tài khoản `admin` hiện tại làm quản trị gốc. Chỉ tài khoản này khi có vai trò `ADMIN`
+được cấp vai trò quản trị và quản lý các quản trị viên khác. Quản trị thường vẫn quản lý nhân viên thường.
+Áp dụng ở service cho tạo tài khoản, đổi vai trò, khóa/mở khóa, đặt lại mật khẩu và sửa/ngừng hoạt động hồ sơ;
+giữ bảo vệ tự khóa/tự bỏ vai trò. Không thêm vai trò, cấu hình hoặc API xóa nhân viên.
+UserView bổ sung `isRootAdmin` để giao diện chỉ hiện các lựa chọn được phép; API tự quyết định quyền.
+Khóa `UPDLOCK, HOLDLOCK` tài khoản trước khi đọc vai trò và ghi thay đổi, giữ tới cuối transaction,
+để yêu cầu dựa trên vai trò cũ không sửa được tài khoản vừa được nâng lên quản trị khi RCSI bật.
+Các luồng tài khoản khách/khôi phục mật khẩu từ chối liên kết sai tới tài khoản nhân viên hoặc vai trò hỗn hợp.
+
+Kiểm tra: 11 trường hợp policy, 54 kiểm tra giao diện giả lập và 27 kiểm tra service trên database SQL Server
+tạm riêng (schema/reference của dự án, RCSI bật), gồm nâng quyền đồng thời với đặt lại mật khẩu,
+rollback các lệnh bị từ chối và liên kết khách sai. Database thử đã xóa; không sửa tài khoản đang sử dụng.
+Lượt rà soát độc lập không còn lỗi nghiêm trọng; chủ dự án chọn không thêm lượt kiểm tra bằng công cụ khác.
+
 ## Giai đoạn 3 — cách triển khai theo yêu cầu Ponytail
 
 - React Router + 10 trang TSX giữ markup và CSS cũ; module JavaScript giữ xử lý bảng/form động.

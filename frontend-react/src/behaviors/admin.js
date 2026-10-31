@@ -8,6 +8,9 @@ export default function initialize() {
   const $ = (selector) => document.querySelector(selector);
   const state = { employees: [], categories: [], brands: [], products: [], parts: [], services: [], policies: [] };
   const roles = Object.entries(L.ROLE).filter(([code]) => code !== "CUSTOMER");
+  const isRootAdmin = () => window.LML_AUTH.user()?.isRootAdmin === true;
+  const assignableRoles = () => roles.filter(([code]) => code !== "ADMIN" || isRootAdmin());
+  const canManageEmployee = (employee) => isRootAdmin() || !employee.roles.some(role => role.code === "ADMIN");
 
   function slug(value) {
     return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D")
@@ -72,7 +75,9 @@ export default function initialize() {
       ${kv("Số điện thoại", html`<span class="mono">${employee.phone}</span>`)}
       ${kv("Lần đăng nhập gần nhất", employee.lastLoginAt ? fmt.dateTime(employee.lastLoginAt) : "—")}
     </div>`;
-    $("[data-emp-modal-actions]").innerHTML = html`
+    $("[data-emp-modal-actions]").innerHTML = !canManageEmployee(employee)
+      ? html`<p class="cell-muted">Chỉ quản trị gốc mới được thay đổi vai trò, khóa/mở khóa hoặc đặt lại mật khẩu của quản trị viên.</p>`
+      : html`
       <button type="button" class="btn btn--secondary" data-emp-action="roles">Sửa vai trò</button>
       <button type="button" class="btn btn--secondary" data-emp-action="reset">Đặt lại mật khẩu</button>
       <button type="button" class="btn ${locked ? "btn--primary" : "btn--destructive"}" data-emp-action="lock">${locked ? "Mở khóa tài khoản" : "Khóa tài khoản"}</button>`;
@@ -87,13 +92,15 @@ export default function initialize() {
   let editingEmployee = null;
   function editRoles(code) {
     editingEmployee = state.employees.find((employee) => employee.employeeId === code);
+    if (!canManageEmployee(editingEmployee)) return window.showToast("Chỉ quản trị gốc mới được thay đổi tài khoản quản trị.", "error");
     $("[data-edit-roles-subtitle]").textContent = `${editingEmployee.fullName} — ${code}`;
-    checks($("[data-edit-roles-list]"), roles, editingEmployee.roles.map((role) => role.code), "edit-role");
+    checks($("[data-edit-roles-list]"), assignableRoles(), editingEmployee.roles.map((role) => role.code), "edit-role");
     open("[data-edit-roles-modal]");
   }
 
   async function saveRoles(button) {
     const selected = checked($("[data-edit-roles-list]"));
+    if (selected.includes("ADMIN") && !isRootAdmin()) return window.showToast("Chỉ quản trị gốc mới được cấp quyền quản trị.", "error");
     if (!selected.length) return window.showToast("Vui lòng chọn ít nhất một vai trò.", "error");
     try {
       await ui.busy(button, () => api.admin.changeRoles(editingEmployee.employeeId, selected));
@@ -105,6 +112,7 @@ export default function initialize() {
 
   async function toggleLock(code) {
     const employee = state.employees.find((item) => item.employeeId === code);
+    if (!canManageEmployee(employee)) return window.showToast("Chỉ quản trị gốc mới được thay đổi tài khoản quản trị.", "error");
     if (employee.accountStatus !== "LOCKED") {
       const confirmed = await ui.confirm({ title: "Khóa tài khoản này?", message: `${employee.fullName} sẽ không thể đăng nhập cho tới khi được mở khóa.`, confirmLabel: "Khóa tài khoản" });
       if (!confirmed) return;
@@ -117,6 +125,8 @@ export default function initialize() {
   }
 
   async function resetPassword(code) {
+    const employee = state.employees.find((item) => item.employeeId === code);
+    if (!canManageEmployee(employee)) return window.showToast("Chỉ quản trị gốc mới được thay đổi tài khoản quản trị.", "error");
     const confirmed = await ui.confirm({
       title: `Đặt lại mật khẩu cho ${code}?`,
       message: "Mật khẩu trở về mật khẩu mặc định; mọi phiên đăng nhập hiện tại bị đăng xuất. Nhân viên phải đổi mật khẩu mới ngay khi đăng nhập lại.",
@@ -474,7 +484,6 @@ export default function initialize() {
     const month = today.getMonth();
     const range = $("[data-admin-range]").value;
     const custom = range === "custom";
-    document.querySelectorAll("[data-admin-custom-range]").forEach(field => { field.hidden = !custom; });
     const fromInput = $("[data-admin-from]");
     const toInput = $("[data-admin-to]");
     const first = {
@@ -742,7 +751,7 @@ export default function initialize() {
   }
 
   function bind() {
-    $("[data-open-add-employee]").addEventListener("click", () => { checks($("[data-add-emp-roles]"), roles, [], "add-role"); open("[data-add-employee-drawer]"); });
+    $("[data-open-add-employee]").addEventListener("click", () => { checks($("[data-add-emp-roles]"), assignableRoles(), [], "add-role"); open("[data-add-employee-drawer]"); });
     $("[data-add-employee-submit]").addEventListener("click", (event) => createEmployee(event.currentTarget));
     $("[data-edit-roles-save]").addEventListener("click", (event) => saveRoles(event.currentTarget));
     bindClose("add-employee", "[data-add-employee-drawer]"); bindClose("edit-roles", "[data-edit-roles-modal]");
@@ -764,7 +773,10 @@ export default function initialize() {
     bindCustomers();
     $("[data-admin-station]").addEventListener("change", refreshReports);
     $("[data-admin-range]").addEventListener("change", refreshReports);
-    ["from", "to"].forEach(field => $(`[data-admin-${field}]`).addEventListener("input", refreshReports));
+    ["from", "to"].forEach(field => $(`[data-admin-${field}]`).addEventListener("input", () => {
+      $("[data-admin-range]").value = "custom";
+      refreshReports();
+    }));
     ["period", "rating", "size"].forEach(field => $(`[data-review-${field}]`).addEventListener("change", refreshReviews));
     let reviewSearchTimer;
     $("[data-review-search]").addEventListener("input", () => {

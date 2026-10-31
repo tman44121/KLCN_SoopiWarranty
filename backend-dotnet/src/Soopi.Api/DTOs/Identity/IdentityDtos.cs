@@ -17,7 +17,8 @@ public sealed record UserView(
     IReadOnlyList<RoleView> Roles,
     IReadOnlyList<string> Permissions,
     string Landing,
-    bool MustChangePassword);
+    bool MustChangePassword,
+    bool IsRootAdmin = false);
 
 public sealed record AuthResult(string AccessToken, long ExpiresIn, string RefreshToken, bool Remember, long RefreshMaxAge, UserView User);
 

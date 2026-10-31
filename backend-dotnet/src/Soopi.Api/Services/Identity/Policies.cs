@@ -36,17 +36,43 @@ public sealed class PasswordPolicy
     }
 }
 
-/// <summary>Không tự khóa / tự bỏ quyền Quản trị viên của mình; không khóa / bỏ quyền Quản trị viên cuối cùng.</summary>
+/// <summary>Chỉ tài khoản admin quản lý quản trị viên; giữ bảo vệ tự khóa và quản trị viên cuối cùng.</summary>
 public sealed class AccountPolicy(AccountStore accounts)
 {
+    // Chủ dự án chỉ định tài khoản admin hiện tại làm quản trị gốc; API nhân viên không cho đổi tên đăng nhập.
+    public static bool IsRootAdmin(string username, IEnumerable<Role> roles) =>
+        string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase) && roles.Contains(Role.ADMIN);
+
+    public void RequireCanManage(AuthenticatedActor actor, Account target)
+    {
+        if (!actor.Roles.Contains(Role.ADMIN) || target.PrincipalType != PrincipalType.EMPLOYEE
+            || target.Roles.Contains(Role.ADMIN) && !IsRootAdmin(actor.Username, actor.Roles))
+            throw new DomainException(ErrorCode.ACCESS_DENIED);
+    }
+
+    public void RequireCanAssignRoles(AuthenticatedActor actor, IReadOnlySet<Role> roles)
+    {
+        if (!actor.Roles.Contains(Role.ADMIN) || roles.Contains(Role.ADMIN) && !IsRootAdmin(actor.Username, actor.Roles))
+            throw new DomainException(ErrorCode.ACCESS_DENIED);
+    }
+
+    public static void RequireCustomerAccount(Account account)
+    {
+        if (account.PrincipalType != PrincipalType.CUSTOMER || account.Roles.Count != 1 || !account.Roles.Contains(Role.CUSTOMER))
+            throw new DomainException(ErrorCode.ACCESS_DENIED);
+    }
+
     public Task RequireCanLockAsync(AuthenticatedActor actor, Account target)
     {
+        RequireCanManage(actor, target);
         if (actor.AccountId == target.Id) throw new DomainException(ErrorCode.ACCOUNT_SELF_PROTECTION);
         return RequireAnotherAdminAsync(target, new HashSet<Role>());
     }
 
     public Task RequireCanChangeRolesAsync(AuthenticatedActor actor, Account target, IReadOnlySet<Role> newRoles)
     {
+        RequireCanManage(actor, target);
+        RequireCanAssignRoles(actor, newRoles);
         if (actor.AccountId == target.Id && !newRoles.Contains(Role.ADMIN)) throw new DomainException(ErrorCode.ACCOUNT_SELF_PROTECTION);
         return RequireAnotherAdminAsync(target, newRoles);
     }

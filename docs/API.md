@@ -45,7 +45,7 @@ Ví dụ login body (placeholder, không phải tài khoản mẫu):
 ```
 
 UserView gồm `accountId`, `username`, `displayName`, `employeeId`, `customerId`, `roles`, `permissions`,
-`landing`, `mustChangePassword`. RoleView gồm `code,label,landing`; không hardcode quyền client theo landing.
+`landing`, `mustChangePassword`, `isRootAdmin`. RoleView gồm `code,label,landing`; không hardcode quyền client theo landing.
 
 Access token RS256 mặc định 15 phút; refresh 12 giờ hoặc 30 ngày khi remember; portal token 30 phút.
 Web cookie `LML_RT`: HttpOnly, Secure, SameSite=Strict, Path `/api/v1/auth`.
@@ -54,6 +54,13 @@ trong danh sách cho phép hoặc là chính origin API. Frontend api.js xử l�
 
 Tài khoản `mustChangePassword` chỉ được dùng nhóm me/đổi mật khẩu/logout cho tới khi đổi xong.
 Login, refresh, logout và đổi mật khẩu ghi tài khoản/token/audit; không dùng để “thử GET” khi chưa được duyệt ghi DB.
+
+## Quản trị tài khoản nhân viên
+
+- Quản trị gốc là tài khoản có tên đăng nhập `admin` và vai trò `ADMIN`, theo quyết định của chủ dự án. `isRootAdmin` trong UserView chỉ phục vụ hiển thị; API luôn tự kiểm tra người thao tác và tài khoản đích.
+- Chỉ quản trị gốc được tạo/cấp vai trò `ADMIN`, đổi vai trò, sửa hồ sơ, khóa/mở khóa hoặc đặt lại mật khẩu của quản trị viên. Quản trị thường vẫn quản lý nhân viên không có vai trò `ADMIN`; thao tác vượt cấp trả `403 ACCESS_DENIED`, kể cả gọi API trực tiếp.
+- Không được tự khóa, tự chuyển hồ sơ sang ngừng hoạt động hoặc tự bỏ vai trò `ADMIN`. Kiểm tra vai trò và thay đổi tài khoản dùng chung khóa ghi trong transaction để chặn yêu cầu cũ khi tài khoản vừa được nâng quyền.
+- Chưa có API xóa tài khoản nhân viên; dùng khóa tài khoản/ngừng hoạt động để giữ lịch sử. API tài khoản khách chỉ được thay đổi tài khoản `CUSTOMER`, không chấp nhận liên kết hồ sơ sai trỏ tới tài khoản nhân viên.
 
 ## Mobile và portal
 
@@ -149,7 +156,7 @@ không ghép prefix suy đoán để gọi endpoint.
 
 - Phiên nhân viên phải có cả `REPORT_SYSTEM` và `REPORT_OPERATIONS` (quản trị viên).
 - `from`, `to` bắt buộc, dạng `yyyy-MM-dd`, gồm cả hai đầu theo giờ Việt Nam. `station` tùy chọn; bỏ trống là tất cả trạm.
-- Ở Quản trị → Báo cáo & thống kê, chọn “Tùy chọn” trong Khoảng thời gian để nhập Từ ngày/Đến ngày. Báo cáo trên màn hình và file Excel dùng cùng khoảng ngày và trạm; thiếu ngày hoặc ngày kết thúc trước ngày bắt đầu sẽ báo lỗi và khóa nút xuất.
+- Ở Quản trị → Báo cáo & thống kê, hai ô Từ ngày/Đến ngày luôn hiển thị để nhập trực tiếp; nhập ngày sẽ tự chuyển Khoảng thời gian sang “Tùy chọn”. Chọn nhanh tháng/quý/năm vẫn điền lại hai ô ngày. Báo cáo trên màn hình và file Excel dùng đúng khoảng ngày (gồm cả hai đầu) và trạm đã chọn; thiếu ngày hoặc ngày kết thúc trước ngày bắt đầu sẽ báo lỗi và khóa nút xuất.
 - Trả file `.xlsx`, MIME `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `Content-Disposition: attachment`, `Cache-Control: no-store`.
 - Sáu sheet: Tổng quan, Doanh thu, Trạng thái phiếu, Thời gian xử lý, Hiệu suất kỹ thuật viên, Tỷ lệ bảo hành. Metadata gồm kỳ, trạm và thời gian xuất giờ Việt Nam; tiêu đề cột viết đầy đủ bằng tiếng Việt.
 - Sheet Tổng quan trình bày dashboard theo bộ màu Soopi (xanh rừng `#244C43`, vàng mật ong `#EFB952`, nền kem `#F8F7F2`): bốn KPI doanh thu, phiếu tiếp nhận, thời gian xử lý trung bình và tỷ lệ trong bảo hành; năm biểu đồ Excel liên kết với dữ liệu ở sheet chi tiết. Doanh thu hiển thị tối đa 12 tháng cuối, hiệu suất hiển thị 5 kỹ thuật viên đầu theo xếp hạng báo cáo hiện có; bảng chi tiết giữ toàn bộ dữ liệu. Trang tổng quan đặt vùng in A3 ngang; metadata và định nghĩa kỳ nằm bên dưới dashboard.

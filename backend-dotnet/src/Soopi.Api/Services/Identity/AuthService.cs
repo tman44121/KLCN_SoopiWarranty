@@ -125,6 +125,7 @@ public sealed class AuthService(
         {
             var account = await accounts.FindByIdAsync(accountId) ?? throw new DomainException(ErrorCode.NOT_FOUND);
             var now = clock.GetUtcNow();
+            AccountPolicy.RequireCustomerAccount(account);
             account.RecoverPassword(PasswordHasher.Encode(newPassword), now);
             await accounts.SaveAsync();
             securityVersions.Evict(account.Id);
@@ -151,7 +152,8 @@ public sealed class AuthService(
             roles,
             permissions,
             roles[0].Landing,
-            account.MustChangePassword);
+            account.MustChangePassword,
+            AccountPolicy.IsRootAdmin(account.Username, account.Roles));
     }
 
     private async Task<(Account Account, string DisplayName)> AuthenticateAsync(string username, string password, string? ip, bool customerOnly)

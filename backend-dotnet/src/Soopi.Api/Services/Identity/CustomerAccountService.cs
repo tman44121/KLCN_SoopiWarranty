@@ -92,6 +92,7 @@ public sealed class CustomerAccountService(
         var profile = await profiles.FindActiveWithAccountByEmailAsync(email);
         var account = profile?.AccountId is { } id ? await accounts.FindByIdAsync(id) : null;
         if (account is null) throw new DomainException(ErrorCode.CUSTOMER_EMAIL_NOT_FOUND);
+        AccountPolicy.RequireCustomerAccount(account);
         passwordPolicy.Validate(account.Username, newPassword);
         await otp.ConsumeAsync(email, OtpPurpose.RESET_PASSWORD, code);
         await auth.RecoverPasswordAsync(account.Id, newPassword);
