@@ -51,6 +51,9 @@ export default function AdminPage() {
               {"\n          Danh mục hệ thống\n        "}
             </a>
             <a className="sidebar-nav__item" data-roles="ADMIN" data-page-tab="notifications-broadcast" href="#notifications-broadcast">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 8h3l8-4v12l-8-4H4zM7 12l1 5h3l-2-4M18 7v6" />
+              </svg>
               Gửi thông báo khách hàng
             </a>
             <a className="sidebar-nav__item" data-roles="ADMIN" data-page-tab="reports" href="#reports">
