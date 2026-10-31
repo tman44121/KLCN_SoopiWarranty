@@ -496,7 +496,18 @@ export default function AdminPage() {
                   <option value="month">
                     {"Tháng này"}
                   </option>
+                  <option value="custom">{"Tùy chọn"}</option>
                 </select>
+              </div>
+              <div className="toolbar__field" data-admin-custom-range="" hidden={true}>
+                <label htmlFor="admin-report-from">{"Từ ngày"}</label>
+                <input id="admin-report-from" type="date" className="text-field" data-admin-from=""
+                  min="0001-01-01" max="9999-12-30" required aria-describedby="admin-report-range-error" />
+              </div>
+              <div className="toolbar__field" data-admin-custom-range="" hidden={true}>
+                <label htmlFor="admin-report-to">{"Đến ngày"}</label>
+                <input id="admin-report-to" type="date" className="text-field" data-admin-to=""
+                  min="0001-01-01" max="9999-12-30" required aria-describedby="admin-report-range-error" />
               </div>
               <div className="toolbar__field">
                 <label htmlFor="admin-station">
@@ -512,6 +523,7 @@ export default function AdminPage() {
               </div>
               <span className="toolbar__count" data-report-period="">
               </span>
+              <p id="admin-report-range-error" className="form-field__error report-range-error" data-report-range-error="" role="alert" hidden={true}></p>
             </div>
             <div className="report-body" data-report-body="" aria-live="polite" aria-busy="true">
               <div className="stat-row" data-report-stats="">

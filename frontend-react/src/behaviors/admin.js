@@ -467,22 +467,45 @@ export default function initialize() {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   }
 
-  /** Khoảng thời gian đã chọn → [from, to] theo ngày (to = hôm nay) và danh sách tháng để vẽ trục. */
+  /** Ngày bắt đầu/kết thúc (gồm cả hai đầu) và danh sách tháng để vẽ trục. */
   function reportPeriod() {
     const today = new Date();
     const year = today.getFullYear();
     const month = today.getMonth();
+    const range = $("[data-admin-range]").value;
+    const custom = range === "custom";
+    document.querySelectorAll("[data-admin-custom-range]").forEach(field => { field.hidden = !custom; });
+    const fromInput = $("[data-admin-from]");
+    const toInput = $("[data-admin-to]");
     const first = {
       month: new Date(year, month, 1),
       quarter: new Date(year, month - (month % 3), 1),
       year: new Date(year, 0, 1),
       last12: new Date(year, month - 11, 1),
-    }[$("[data-admin-range]").value] || new Date(year, month - 11, 1);
-    const months = [];
-    for (let cursor = new Date(first); cursor <= today; cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)) {
-      months.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`);
+    }[range] || new Date(year, month - 11, 1);
+    if (!custom) {
+      fromInput.value = isoDate(first);
+      toInput.value = isoDate(today);
     }
-    return { from: isoDate(first), to: isoDate(today), months };
+    const from = fromInput.value;
+    const to = toInput.value;
+    const error = !from || !to ? "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc."
+      : !fromInput.validity.valid || !toInput.validity.valid ? "Vui lòng chọn ngày trong khoảng 01/01/0001–30/12/9999."
+      : from > to ? "Ngày kết thúc phải bằng hoặc sau ngày bắt đầu." : "";
+    const message = $("[data-report-range-error]");
+    message.textContent = error;
+    message.hidden = !error;
+    fromInput.setAttribute("aria-invalid", String(!!error));
+    toInput.setAttribute("aria-invalid", String(!!error));
+    if (error) return null;
+    const months = [];
+    const cursor = new Date(`${from}T00:00:00`);
+    cursor.setDate(1);
+    const end = new Date(`${to}T00:00:00`);
+    for (; cursor <= end; cursor.setMonth(cursor.getMonth() + 1)) {
+      months.push(`${String(cursor.getFullYear()).padStart(4, "0")}-${String(cursor.getMonth() + 1).padStart(2, "0")}`);
+    }
+    return { from, to, months };
   }
 
   function hours(value) {
@@ -521,7 +544,7 @@ export default function initialize() {
     const byMonth = new Map(revenue.map((row) => [row.month, row]));
     if (!revenue.some((row) => Number(row.total) > 0)) return empty(target, "Chưa có khoản thu nào trong khoảng thời gian này.");
     if (months.length < 2) {
-      return empty(target, "Khoảng thời gian chỉ gồm một tháng, tổng doanh thu ở ô phía trên. Chọn Quý này, Năm nay hoặc 12 tháng gần nhất để xem xu hướng.");
+      return empty(target, "Khoảng thời gian chỉ gồm một tháng, tổng doanh thu ở ô phía trên. Chọn khoảng thời gian gồm ít nhất hai tháng để xem xu hướng.");
     }
     charts.columns(target, {
       title: "Doanh thu theo tháng",
@@ -608,6 +631,15 @@ export default function initialize() {
     const load = ++reviews.load;
     const tbody = $("[data-review-tbody]");
     const period = $("[data-review-period]").value === "report" ? reportPeriod() : {};
+    if (!period) {
+      $("[data-review-prev]").disabled = true;
+      $("[data-review-next]").disabled = true;
+      $("[data-review-summary]").textContent = "";
+      $("[data-review-count]").textContent = "";
+      $("[data-review-page]").textContent = "";
+      ui.tableState(tbody, 6, "empty", { title: "Chọn khoảng thời gian hợp lệ", desc: "Điều chỉnh ngày bắt đầu và ngày kết thúc ở bộ lọc báo cáo phía trên." });
+      return;
+    }
     const query = { from: period.from, to: period.to, station: $("[data-admin-station]").value || null,
       rating: $("[data-review-rating]").value || null, q: $("[data-review-search]").value.trim() || null,
       page: reviews.page, size: Number($("[data-review-size]").value) };
@@ -653,6 +685,11 @@ export default function initialize() {
     const first = body.getAttribute("aria-busy") === "true" && !body.hasAttribute("data-loaded");
     const load = ++reportLoad;
     const period = reportPeriod();
+    if (!period) {
+      body.classList.remove("is-refreshing");
+      body.setAttribute("aria-busy", "false");
+      return;
+    }
     const query = { from: period.from, to: period.to, station: $("[data-admin-station]").value || null };
     $("[data-report-period]").textContent = `${period.from.split("-").reverse().join("/")} – ${period.to.split("-").reverse().join("/")}`;
     if (first) {
@@ -727,6 +764,7 @@ export default function initialize() {
     bindCustomers();
     $("[data-admin-station]").addEventListener("change", refreshReports);
     $("[data-admin-range]").addEventListener("change", refreshReports);
+    ["from", "to"].forEach(field => $(`[data-admin-${field}]`).addEventListener("input", refreshReports));
     ["period", "rating", "size"].forEach(field => $(`[data-review-${field}]`).addEventListener("change", refreshReviews));
     let reviewSearchTimer;
     $("[data-review-search]").addEventListener("input", () => {
