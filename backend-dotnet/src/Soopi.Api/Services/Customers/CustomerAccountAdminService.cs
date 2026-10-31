@@ -8,6 +8,7 @@ using Soopi.Api.DTOs.Shared;
 using Soopi.Api.Infrastructure.Security;
 using Soopi.Api.Infrastructure.Validation;
 using Soopi.Api.Services.Notifications;
+using Soopi.Api.Services.Identity;
 using Soopi.Api.Services.Shared;
 
 namespace Soopi.Api.Services.Customers;
@@ -151,7 +152,9 @@ public sealed class CustomerAccountAdminService(
     internal async Task<long?> LockForInactiveProfileAsync(string customerCode, long? accountId, string reason)
     {
         var account = await accounts.FindByIdAsync(accountId);
-        if (account is null || account.Status == AccountStatus.LOCKED) return null;
+        if (account is null) return null;
+        AccountPolicy.RequireCustomerAccount(account);
+        if (account.Status == AccountStatus.LOCKED) return null;
         await LockAsync(account);
         await AuditAsync("CUSTOMER_ACCOUNT_LOCKED", "Khóa tài khoản khách", customerCode, "Đang hoạt động", "Đã khóa — Lý do: " + reason);
         return account.Id;
@@ -165,7 +168,9 @@ public sealed class CustomerAccountAdminService(
     {
         if (oldPhone == newPhone) return null;
         var account = await accounts.FindByIdAsync(accountId);
-        if (account is null || account.Username != Account.Normalize(oldPhone)) return null;
+        if (account is null) return null;
+        AccountPolicy.RequireCustomerAccount(account);
+        if (account.Username != Account.Normalize(oldPhone)) return null;
         if (await accounts.FindByLoginAsync(newPhone) is { } other && other.Id != account.Id)
             throw new DomainException(ErrorCode.ACCOUNT_USERNAME_DUPLICATE);
         account.ChangeUsername(newPhone);
@@ -193,6 +198,7 @@ public sealed class CustomerAccountAdminService(
     {
         var customer = await db.Customers.FirstOrDefaultAsync(c => c.Id == code) ?? throw new DomainException(ErrorCode.CUSTOMER_NOT_FOUND);
         var account = await accounts.FindByIdAsync(customer.AccountId) ?? throw new DomainException(ErrorCode.CUSTOMER_ACCOUNT_NOT_FOUND);
+        AccountPolicy.RequireCustomerAccount(account);
         return (customer, account);
     }
 

@@ -52,6 +52,7 @@ public sealed partial class EmployeeAdminService(
         {
             var actor = actors.Current;
             var roles = RequireStaffRoles(command.Roles);
+            policy.RequireCanAssignRoles(actor, roles);
             if (command.Username is null || !UsernamePattern().IsMatch(command.Username.Trim()))
                 throw new DomainException(ErrorCode.VALIDATION_FAILED);
             if (await accounts.FindByLoginAsync(command.Username) is not null) throw new DomainException(ErrorCode.ACCOUNT_USERNAME_DUPLICATE);
@@ -83,6 +84,12 @@ public sealed partial class EmployeeAdminService(
         {
             var actor = actors.Current;
             var current = await RequireEmployeeAsync(code);
+            var account = await accounts.FindByEmployeeIdForUpdateAsync(code);
+            if (account is not null)
+            {
+                policy.RequireCanManage(actor, account);
+                if (command.WorkStatus == "INACTIVE") await policy.RequireCanLockAsync(actor, account);
+            }
             if (command.WorkStatus is not null && command.WorkStatus is not ("ACTIVE" or "INACTIVE"))
                 throw new DomainException(ErrorCode.VALIDATION_FAILED);
             var updated = current with
@@ -97,7 +104,6 @@ public sealed partial class EmployeeAdminService(
                 WorkStatus = command.WorkStatus ?? current.WorkStatus,
             };
             await employees.SaveAsync(updated);
-            var account = await accounts.FindByEmployeeIdAsync(code);
             await RecordAsync(actor, "EMPLOYEE_UPDATED", "Sửa hồ sơ nhân viên", code, Summary(current, account), Summary(updated, account));
             return View(updated, account);
         });
@@ -143,10 +149,10 @@ public sealed partial class EmployeeAdminService(
     {
         actors.Require(Permission.ACCOUNT_MANAGE);
         var defaultPassword = options.Value.DefaultResetPassword;
-        if (string.IsNullOrWhiteSpace(defaultPassword))
-            throw new InvalidOperationException("Chưa cấu hình Security:DefaultResetPassword (User Secrets/biến môi trường)");
         await MutateAccountAsync(code, "ACCOUNT_PASSWORD_RESET", "Đặt lại mật khẩu về mặc định", async (_, account) =>
         {
+            if (string.IsNullOrWhiteSpace(defaultPassword))
+                throw new InvalidOperationException("Chưa cấu hình Security:DefaultResetPassword (User Secrets/biến môi trường)");
             account.ResetPassword(PasswordHasher.Encode(defaultPassword), clock.GetUtcNow());
             await RevokeTokensAsync(account.Id);
         });
@@ -160,7 +166,8 @@ public sealed partial class EmployeeAdminService(
         {
             var actor = actors.Current;
             var record = await RequireEmployeeAsync(code);
-            var account = await accounts.FindByEmployeeIdAsync(code) ?? throw new DomainException(ErrorCode.NOT_FOUND);
+            var account = await accounts.FindByEmployeeIdForUpdateAsync(code) ?? throw new DomainException(ErrorCode.NOT_FOUND);
+            policy.RequireCanManage(actor, account);
             var before = Summary(record, account);
             await change(actor, account);
             await accounts.SaveAsync();

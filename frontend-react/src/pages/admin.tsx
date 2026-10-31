@@ -502,12 +502,12 @@ export default function AdminPage() {
                   <option value="custom">{"Tùy chọn"}</option>
                 </select>
               </div>
-              <div className="toolbar__field" data-admin-custom-range="" hidden={true}>
+              <div className="toolbar__field">
                 <label htmlFor="admin-report-from">{"Từ ngày"}</label>
                 <input id="admin-report-from" type="date" className="text-field" data-admin-from=""
                   min="0001-01-01" max="9999-12-30" required aria-describedby="admin-report-range-error" />
               </div>
-              <div className="toolbar__field" data-admin-custom-range="" hidden={true}>
+              <div className="toolbar__field">
                 <label htmlFor="admin-report-to">{"Đến ngày"}</label>
                 <input id="admin-report-to" type="date" className="text-field" data-admin-to=""
                   min="0001-01-01" max="9999-12-30" required aria-describedby="admin-report-range-error" />

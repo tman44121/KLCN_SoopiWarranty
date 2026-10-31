@@ -272,6 +272,7 @@ export default function initialize() {
       roleCodes(user),
       user.permissions || [],
       Boolean(user.mustChangePassword),
+      Boolean(user.isRootAdmin),
     ]);
   }
 

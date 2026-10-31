@@ -25,6 +25,16 @@ public sealed class AccountStore(AppDbContext db)
     public Task<Account?> FindByEmployeeIdAsync(string employeeId) =>
         FirstAsync(db.Accounts.Where(a => db.EmployeeLinks.Any(e => e.AccountId == a.Id && e.Code == employeeId)));
 
+    public Task<Account?> FindByEmployeeIdForUpdateAsync(string employeeId)
+    {
+        if (db.Database.CurrentTransaction is null) throw new InvalidOperationException("Account mutation requires a transaction.");
+        // Serialize role checks and account/profile writes, including when snapshot reads are enabled.
+        return FirstAsync(db.Accounts.FromSqlInterpolated($"""
+            SELECT a.* FROM TaiKhoan AS a WITH (UPDLOCK, HOLDLOCK)
+            WHERE EXISTS (SELECT 1 FROM NhanVien AS n WHERE n.MaTaiKhoan = a.MaTaiKhoan AND n.MaNV = {employeeId})
+            """));
+    }
+
     public async Task<List<Account>> FindEmployeeAccountsAsync() =>
         await LoadAsync(db.Accounts.Where(a => a.PrincipalType == PrincipalType.EMPLOYEE));
 

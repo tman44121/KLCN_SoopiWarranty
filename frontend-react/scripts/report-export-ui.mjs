@@ -58,12 +58,12 @@ try {
     assert(exportedQuery.get('from').endsWith('-01')); checks++;
     assert.deepEqual(await readFile(await download.path()), payload); checks++;
     await s.page.locator('[data-export-report]:not([disabled])').waitFor();
-    await s.page.selectOption('[data-admin-range]', 'custom');
     const from = s.page.getByLabel('Từ ngày', { exact: true });
     const to = s.page.getByLabel('Đến ngày', { exact: true });
     assert.equal(await from.isVisible(), true); checks++;
     assert.equal(await to.isVisible(), true); checks++;
     await from.fill('2026-09-05');
+    assert.equal(await s.page.locator('[data-admin-range]').inputValue(), 'custom'); checks++;
     await to.fill('2026-10-17');
     await s.page.locator('[data-export-report]:not([disabled])').waitFor();
     const customDownload = s.page.waitForEvent('download');
@@ -114,7 +114,8 @@ try {
       assert.equal(await button.isDisabled(), true); checks++;
       await s.page.selectOption('[data-admin-range]', 'month');
       await s.page.locator('[data-export-report]:not([disabled])').waitFor();
-      assert.equal(await from.isVisible(), false); checks++;
+      assert.equal(await from.isVisible(), true); checks++;
+      assert((await from.inputValue()).endsWith('-01')); checks++;
       failExport = true;
       await button.click();
       await s.page.getByText('Không thể kết nối máy chủ. Vui lòng kiểm tra mạng và thử lại.', { exact: true }).waitFor(); checks++;
