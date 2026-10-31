@@ -22,7 +22,8 @@ if (existsSync(original)) {
   // id của chức năng thêm sau khi chuyển từ bản Java (không có trong trang gốc); mọi id gốc vẫn phải giữ nguyên.
   const added = {
     admin: ['customers-title', 'cust-filter-account', 'cust-filter-status', 'cust-drawer-title', 'cust-contact-title',
-      'cust-contact-phone', 'cust-contact-email', 'cust-contact-address', 'cust-merge-title', 'cust-merge-target', 'emp-modal-title'],
+      'cust-contact-phone', 'cust-contact-email', 'cust-contact-address', 'cust-merge-title', 'cust-merge-target', 'emp-modal-title',
+      'admin-report-from', 'admin-report-to', 'admin-report-range-error'],
   };
   for (const [page, file] of Object.entries(pages)) {
     const before = readFileSync(new URL(file, original), 'utf8').split(/<body[^>]*>/i)[1].split('</body>')[0];

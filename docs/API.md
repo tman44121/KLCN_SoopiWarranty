@@ -149,6 +149,7 @@ không ghép prefix suy đoán để gọi endpoint.
 
 - Phiên nhân viên phải có cả `REPORT_SYSTEM` và `REPORT_OPERATIONS` (quản trị viên).
 - `from`, `to` bắt buộc, dạng `yyyy-MM-dd`, gồm cả hai đầu theo giờ Việt Nam. `station` tùy chọn; bỏ trống là tất cả trạm.
+- Ở Quản trị → Báo cáo & thống kê, chọn “Tùy chọn” trong Khoảng thời gian để nhập Từ ngày/Đến ngày. Báo cáo trên màn hình và file Excel dùng cùng khoảng ngày và trạm; thiếu ngày hoặc ngày kết thúc trước ngày bắt đầu sẽ báo lỗi và khóa nút xuất.
 - Trả file `.xlsx`, MIME `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `Content-Disposition: attachment`, `Cache-Control: no-store`.
 - Sáu sheet: Tổng quan, Doanh thu, Trạng thái phiếu, Thời gian xử lý, Hiệu suất kỹ thuật viên, Tỷ lệ bảo hành. Metadata gồm kỳ, trạm và thời gian xuất giờ Việt Nam; tiêu đề cột viết đầy đủ bằng tiếng Việt.
 - Sheet Tổng quan trình bày dashboard theo bộ màu Soopi (xanh rừng `#244C43`, vàng mật ong `#EFB952`, nền kem `#F8F7F2`): bốn KPI doanh thu, phiếu tiếp nhận, thời gian xử lý trung bình và tỷ lệ trong bảo hành; năm biểu đồ Excel liên kết với dữ liệu ở sheet chi tiết. Doanh thu hiển thị tối đa 12 tháng cuối, hiệu suất hiển thị 5 kỹ thuật viên đầu theo xếp hạng báo cáo hiện có; bảng chi tiết giữ toàn bộ dữ liệu. Trang tổng quan đặt vùng in A3 ngang; metadata và định nghĩa kỳ nằm bên dưới dashboard.
