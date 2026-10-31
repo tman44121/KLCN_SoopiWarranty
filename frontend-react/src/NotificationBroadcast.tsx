@@ -48,7 +48,7 @@ export function NotificationBroadcast() {
     void run(async () => {
       try {
         await api().notifications.broadcast(message.trim(), route, target === 'all' ? null : selected.map(c => c.code).join(','));
-        setSuccess(target === 'all' ? 'Đã gửi đến tất cả khách hàng đang hoạt động có tài khoản đang hoạt động.' : `Đã gửi đến ${selected.length} khách hàng.`);
+        setSuccess(target === 'all' ? 'Đã gửi đến tất cả khách có tài khoản hoạt động.' : `Đã gửi đến ${selected.length} khách hàng.`);
         setMessage('');
         setLink('');
       } catch (e) {
@@ -61,16 +61,15 @@ export function NotificationBroadcast() {
     <section className="card notification-broadcast" aria-label="Gửi thông báo khách hàng">
       <div className="card__header"><div>
         <h2 className="card__title">Gửi thông báo khách hàng</h2>
-        <p className="card__title-meta">Khách hàng nhận thông báo qua biểu tượng chuông khi đăng nhập.</p>
       </div></div>
       <form className="card__body stack" onSubmit={send}>
         <fieldset className="broadcast-fields stack" disabled={busy}>
-          <legend>Đối tượng nhận</legend>
+          <legend>Người nhận</legend>
           <label><input type="radio" name={targetGroup} checked={target === 'all'} onChange={() => setTarget('all')} /> Tất cả khách hàng đang hoạt động</label>
           <label><input type="radio" name={targetGroup} checked={target === 'specific'} onChange={() => setTarget('specific')} /> Chọn khách cụ thể</label>
           {target === 'specific' && <div className="stack">
-            <label className="form-field">Tìm theo tên, số điện thoại hoặc mã khách
-              <input className="text-field" value={query} onChange={e => setQuery(e.target.value)} autoComplete="off" />
+            <label className="form-field">Tìm khách hàng
+              <input className="text-field" aria-label="Tìm theo tên, số điện thoại hoặc mã khách" placeholder="Tên, SĐT hoặc mã khách" value={query} onChange={e => setQuery(e.target.value)} autoComplete="off" />
             </label>
             {searching && <p role="status">Đang tìm khách hàng…</p>}
             {searchError && <p className="form-field__error" role="alert">{searchError}</p>}

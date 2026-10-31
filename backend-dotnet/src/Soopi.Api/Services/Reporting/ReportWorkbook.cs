@@ -53,6 +53,28 @@ public static class ReportWorkbook
                 ["Ngoài bảo hành (tính phí)", data.Warranty.Charged, data.Warranty.FreeRatePercent is {} rate ? 100m - rate : null],
             ]),
         ];
+        return CreateSheets(sheets);
+    }
+
+    public static byte[] CreateAccess(AccessSummary data, IReadOnlyList<AccessLog> logs, AccessFilters? filter = null, string? action = null) => CreateSheets([
+        new("Tổng quan truy cập", ["Chỉ tiêu", "Giá trị"], [
+            ["Bắt đầu lưu từ", data.TrackingStart.ToString("dd/MM/yyyy")],
+            ["Từ ngày", data.From.ToString("dd/MM/yyyy")], ["Đến ngày (bao gồm)", data.To.ToString("dd/MM/yyyy")],
+            ["Loại tài khoản", string.IsNullOrEmpty(filter?.Kind) ? "Tất cả" : filter.Kind],
+            ["Vai trò", string.IsNullOrEmpty(filter?.Role) ? "Tất cả" : filter.Role],
+            ["Tìm kiếm", filter?.Q ?? ""], ["Sự kiện nhật ký", string.IsNullOrEmpty(action) ? "Tất cả" : action],
+            ["Tổng lượt tích lũy", data.TotalVisits], ["Lượt trong kỳ", data.Visits], ["Tài khoản trong kỳ", data.Accounts],
+            ["Đăng nhập thành công trong kỳ", data.Logins], ["Đăng nhập thất bại trong kỳ", data.Failed],
+            ["Online tại thời điểm xuất", data.Online], ["Xuất lúc (giờ Việt Nam)", data.GeneratedAt.ToOffset(DbTime.Offset).ToString("dd/MM/yyyy HH:mm:ss")]
+        ]),
+        new("Truy cập theo ngày", ["Ngày", "Lượt bắt đầu", "Tài khoản hoạt động", "Đăng nhập thành công", "Đăng nhập thất bại"],
+            data.Days.Select(d => new object?[] { d.Day.ToString("dd/MM/yyyy"), d.Visits, d.Accounts, d.Logins, d.Failed })),
+        new("Nhật ký đăng nhập", ["Thời gian (giờ Việt Nam)", "Tài khoản", "Họ tên", "Loại", "Vai trò", "Sự kiện"],
+            logs.Select(l => new object?[] { l.At?.ToOffset(DbTime.Offset).ToString("dd/MM/yyyy HH:mm:ss"), l.Username, l.FullName, l.Kind, l.Roles, l.Label }))
+    ]);
+
+    private static byte[] CreateSheets(Sheet[] sheets)
+    {
         using var output = new MemoryStream();
         using (var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
         {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { api, errorText, Icon } from './customer';
 
 type Contact = { ticketCode: string; staffAccountId: string; conversationId: string | null; name: string; role: string;
@@ -8,12 +9,16 @@ type History = { items: Message[]; hasMore: boolean; canSend: boolean };
 const merge = (old: Message[], incoming: Message[]) => [...new Map([...old, ...incoming].map(m => [m.id, m])).values()]
   .sort((a, b) => BigInt(a.id) < BigInt(b.id) ? -1 : 1);
 
-export default function ChatBubble({ customer }: { customer: boolean }) {
+export default function ChatBubble({ customer, launcherTarget, ticketRequest }: {
+  customer: boolean; launcherTarget: HTMLElement; ticketRequest: { ticketCode: string } | null;
+}) {
   const [open, setOpen] = useState(false);
+  const [minimized, setMinimized] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [page, setPage] = useState(0);
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');
+  const [ticketContext, setTicketContext] = useState<string | null>(null);
   const [moreContacts, setMoreContacts] = useState(false);
   const [unread, setUnread] = useState(0);
   const [directoryError, setDirectoryError] = useState('');
@@ -35,8 +40,9 @@ export default function ChatBubble({ customer }: { customer: boolean }) {
   const list = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
   const launcher = useRef<HTMLButtonElement>(null);
+  const miniLauncher = useRef<HTMLButtonElement>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
   const panel = useRef<HTMLElement>(null);
-  const wasOpen = useRef(false);
   const conversation = selected?.conversationId;
   const draft = conversation ? drafts[conversation] || '' : '';
 
@@ -44,12 +50,13 @@ export default function ChatBubble({ customer }: { customer: boolean }) {
   const loadContacts = useCallback(async () => {
     const version = ++directoryVersion.current;
     try {
-      const data = await api().chat.contacts(query, page);
+      const data = await api().chat.contacts(ticketContext || query, page);
       if (version !== directoryVersion.current) return;
-      setContacts(data.items); setMoreContacts(data.hasMore); setUnread(data.unreadCount); setDirectoryError('');
+      setContacts(ticketContext ? data.items.filter((contact: Contact) => contact.ticketCode === ticketContext) : data.items);
+      setMoreContacts(data.hasMore); setUnread(data.unreadCount); setDirectoryError('');
     } catch (e) { if (version === directoryVersion.current) setDirectoryError(errorText(e)); }
     finally { if (version === directoryVersion.current) setDirectoryLoading(false); }
-  }, [query, page]);
+  }, [query, page, ticketContext]);
   useEffect(() => {
     setDirectoryLoading(true);
     void loadContacts();
@@ -58,6 +65,13 @@ export default function ChatBubble({ customer }: { customer: boolean }) {
     return () => { clearInterval(timer); directoryVersion.current++; };
   }, [loadContacts, open]);
   useEffect(() => () => { selectionVersion.current++; }, []);
+  useEffect(() => {
+    if (!customer || !ticketRequest) return;
+    returnFocus.current = document.activeElement as HTMLElement;
+    selectionVersion.current++;
+    setSelected(null); setMessages([]); setContacts([]); setDirectoryError(''); setError(''); setHistoryError(''); setLoading(false);
+    setPage(0); setQ(''); setQuery(''); setTicketContext(ticketRequest.ticketCode); setMinimized(false); setOpen(true);
+  }, [ticketRequest, customer]);
 
   useEffect(() => {
     if (!open || !conversation) return;
@@ -93,15 +107,28 @@ export default function ChatBubble({ customer }: { customer: boolean }) {
   const lastId = messages.at(-1)?.id;
   useEffect(() => { if (open && stick.current) end.current?.scrollIntoView({ block: 'nearest' }); }, [lastId, open]);
   useEffect(() => {
+    if (!open) return;
+    return () => {
+      if (document.activeElement === document.body || panel.current?.contains(document.activeElement))
+        (miniLauncher.current || (returnFocus.current?.isConnected ? returnFocus.current : launcher.current))?.focus();
+    };
+  }, [open]);
+  useEffect(() => {
     if (open) (panel.current?.querySelector<HTMLElement>('input:not(:disabled), textarea:not(:disabled)') || panel.current?.querySelector<HTMLElement>('button:not(:disabled)'))?.focus();
-    else if (wasOpen.current) launcher.current?.focus();
-    wasOpen.current = open;
   }, [open, conversation]);
   useEffect(() => {
-    const close = (e: KeyboardEvent) => { if (e.key === 'Escape' && open) { setOpen(false); launcher.current?.focus(); } };
+    if (!open) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && (panel.current?.contains(document.activeElement) || document.activeElement === document.body)) {
+        setMinimized(true); setOpen(false);
+      }
+    };
     document.addEventListener('keydown', close);
     return () => document.removeEventListener('keydown', close);
   }, [open]);
+  useEffect(() => {
+    if (open && (document.activeElement === document.body || document.activeElement?.matches(':disabled'))) panel.current?.querySelector<HTMLButtonElement>('[aria-label="Đóng chat"]')?.focus();
+  }, [open, canSend, loading]);
 
   const choose = async (contact: Contact) => {
     const version = ++selectionVersion.current;
@@ -140,22 +167,38 @@ export default function ChatBubble({ customer }: { customer: boolean }) {
     finally { sendingRef.current = false; setSending(false); }
   };
   const back = () => { selectionVersion.current++; setSelected(null); setMessages([]); setError(''); setHistoryError(''); setLoading(false); void loadContacts(); };
+  const expand = () => {
+    returnFocus.current = document.activeElement as HTMLElement;
+    setMinimized(false); setOpen(true);
+    panel.current?.querySelector<HTMLElement>('textarea:not(:disabled), input:not(:disabled)')?.focus();
+  };
 
-  return <div className="live-chat-root" aria-label="Chat hỗ trợ">
-    <button ref={launcher} id="live-chat-bubble-btn" type="button" className="chat-bubble-fab" hidden={open}
-      aria-label="Mở chat hỗ trợ" aria-expanded={open} aria-controls="support-chat" onClick={() => setOpen(true)}>
+  return <>
+    {createPortal(<button ref={launcher} type="button" className="icon-button chat-header-launcher" data-chat-open="" title="Tin nhắn"
+      aria-label="Mở chat hỗ trợ" aria-expanded={open} aria-controls="support-chat" aria-haspopup="dialog" onClick={expand}>
       <Icon glyph="chatDots" />{unread > 0 && <span className="chat-fab-badge" aria-label={`${unread} tin nhắn chưa đọc`}>{unread > 99 ? '99+' : unread}</span>}
-    </button>
-    {open && <section ref={panel} id="support-chat" className="chat-window" role="dialog" aria-modal="false" aria-label="Chat hỗ trợ">
+    </button>, launcherTarget)}
+    {minimized && !open && createPortal(<div className="chat-mini">
+      <button ref={miniLauncher} type="button" className="chat-mini-restore" onClick={expand} title={selected?.name || 'Chat hỗ trợ'}
+        aria-label={selected ? `Mở lại chat với ${selected.name}` : 'Mở lại chat hỗ trợ'} aria-haspopup="dialog" aria-controls="support-chat">
+        {selected ? <span aria-hidden="true">{selected.name.trim().split(/\s+/).slice(-2).map(word => word[0]).join('').toLocaleUpperCase('vi-VN')}</span> : <Icon glyph="chatDots" />}
+        {unread > 0 && <span className="chat-fab-badge" aria-label={`${unread} tin nhắn chưa đọc`}>{unread > 99 ? '99+' : unread}</span>}
+      </button>
+      <button type="button" className="chat-mini-dismiss" aria-label="Đóng chat thu gọn" onClick={() => { setMinimized(false); launcher.current?.focus(); }}><Icon glyph="x" /></button>
+    </div>, document.body)}
+    {open && createPortal(<section ref={panel} id="support-chat" className="chat-window chat-popover" role="dialog" aria-modal="false" aria-label="Chat hỗ trợ">
       <div className="chat-window-header">
         {selected && <button type="button" className="chat-icon-btn" disabled={sending} onClick={back} aria-label="Danh sách người liên hệ">←</button>}
         <div className="chat-header-text"><div className="chat-header-title">{selected?.name || 'Chat hỗ trợ'}</div>
           <div className="chat-header-sub">{selected ? `${selected.role} · ${selected.ticketCode}` : customer ? 'Người tiếp nhận và KTV phụ trách phiếu' : 'Khách hàng trong phiếu bạn phụ trách'}</div></div>
-        <button type="button" className="chat-icon-btn" onClick={() => { setOpen(false); launcher.current?.focus(); }} aria-label="Đóng chat"><Icon glyph="x" /></button>
+        <button type="button" className="chat-icon-btn" onClick={() => { setMinimized(true); setOpen(false); }} aria-label="Thu gọn chat" title="Thu gọn thành nút tròn">−</button>
+        <button type="button" className="chat-icon-btn" onClick={() => { setMinimized(false); setOpen(false); }} aria-label="Đóng chat" title="Đóng chat"><Icon glyph="x" /></button>
       </div>
       {!selected ? <>
-        <label className="chat-search">{customer ? 'Tìm người phụ trách / phiếu / thiết bị' : 'Tìm tên khách / mã khách / phiếu / thiết bị'}
+        {ticketContext && <div className="chat-ticket-filter"><span>Phiếu <strong>{ticketContext}</strong></span><button type="button" onClick={() => { setTicketContext(null); setPage(0); }}>Tất cả liên hệ</button></div>}
+        {!ticketContext && <label className="chat-search">{customer ? 'Tìm người phụ trách / phiếu / thiết bị' : 'Tìm tên khách / mã khách / phiếu / thiết bị'}
           <input type="search" value={q} maxLength={100} onChange={e => setQ(e.target.value)} /></label>
+        }
         {directoryError && <p className="chat-error" role="alert">{directoryError} <button onClick={() => void loadContacts()}>Thử lại</button></p>}
         {error && <p className="chat-error" role="alert">{error}</p>}
         <div className="chat-contact-list" aria-busy={directoryLoading || loading}>
@@ -186,11 +229,11 @@ export default function ChatBubble({ customer }: { customer: boolean }) {
         {!canSend && !loading && <p className="chat-system-msg">Cuộc trò chuyện chỉ xem lịch sử. Chọn người đang phụ trách phiếu để gửi tin.</p>}
         <form className="chat-input-area" onSubmit={e => { e.preventDefault(); void send(); }}>
           <textarea className="chat-input-field" aria-label="Nhập tin nhắn" placeholder="Nhập tin nhắn…" rows={2} value={draft} maxLength={2000}
-            disabled={!canSend || sending || loading} onChange={e => { if (conversation) setDrafts(old => ({ ...old, [conversation]: e.target.value })); }}
+            disabled={!canSend || loading} readOnly={sending} onChange={e => { if (conversation) setDrafts(old => ({ ...old, [conversation]: e.target.value })); }}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void send(); } }} />
           <button type="submit" className="chat-send-btn chat-send-btn--active" aria-label="Gửi tin nhắn" disabled={!canSend || !draft.trim() || sending || loading}><Icon glyph="send" /></button>
         </form><div className="chat-input-hint">{sending ? 'Đang gửi…' : `${draft.length}/2000 · Enter gửi · Shift+Enter xuống dòng`}</div>
       </>}
-    </section>}
-  </div>;
+    </section>, document.body)}
+  </>;
 }

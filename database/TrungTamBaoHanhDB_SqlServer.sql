@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Soopi — TrungTamBaoHanhDB cho SQL Server (bản đầy đủ, mới nhất)
--- Gồm: schema (49 bảng, không procedure/trigger/view) + dữ liệu tham chiếu + dữ liệu mẫu (4 ca nghiệp vụ, tài khoản demo).
+-- Gồm: schema (53 bảng, không procedure/trigger/view) + dữ liệu tham chiếu + dữ liệu mẫu (4 ca nghiệp vụ, tài khoản demo).
 --
 -- FILE GHÉP — không sửa tay. Nguồn: database/01_schema.sql, 02_reference_data.sql, 03_demo_data.sql (lấy từ
 -- warranty-system-mysql/db/sqlserver). Sửa các file nguồn rồi ghép lại theo thứ tự sau phần đầu này.
@@ -27,7 +27,7 @@ GO
 
 -- ============================================================================
 -- LongManLoc Service Center — schema SQL Server / Azure SQL Database (D-077).
--- Chuyển từ TrungTamBaoHanhDB_MySQL_v2.sql: 47 bảng nghiệp vụ và 2 bảng chat, CHỈ lưu dữ liệu:
+-- Chuyển từ TrungTamBaoHanhDB_MySQL_v2.sql: 47 bảng nghiệp vụ, 2 bảng chat, 3 bảng thống kê truy cập và 1 bảng duyệt đánh giá, CHỈ lưu dữ liệu:
 -- không stored procedure, không trigger, không view, không event. Nghiệp vụ (máy trạng thái, lịch sử trạng thái,
 -- tổng tiền báo giá, hạn bảo hành linh kiện, đối soát thu tiền, sinh mã) do Spring Boot thực hiện.
 --
@@ -988,6 +988,58 @@ BEGIN
 END;
 GO
 
+-- Thống kê truy cập được lưu lâu dài
+IF OBJECT_ID(N'dbo.MocThongKeTruyCap', N'U') IS NULL
+BEGIN
+    CREATE TABLE MocThongKeTruyCap (
+        Id INT PRIMARY KEY CHECK (Id=1),
+        NgayBatDau DATE NOT NULL
+    );
+END;
+IF NOT EXISTS (SELECT 1 FROM MocThongKeTruyCap WHERE Id=1)
+    INSERT MocThongKeTruyCap (Id,NgayBatDau) VALUES (1,CONVERT(DATE,'20261031',112));
+GO
+IF OBJECT_ID(N'dbo.LuotTruyCap', N'U') IS NULL
+BEGIN
+    CREATE TABLE LuotTruyCap (
+        MaLuot BIGINT IDENTITY(1,1) PRIMARY KEY,
+        MaTaiKhoan BIGINT NOT NULL REFERENCES TaiKhoan(MaTaiKhoan),
+        MaPhien NCHAR(36) NOT NULL,
+        BatDau DATETIME2(0) NOT NULL,
+        HoatDongCuoi DATETIME2(0) NOT NULL,
+        KetThuc DATETIME2(0) NULL,
+        CONSTRAINT CK_LuotTruyCap_Time CHECK (HoatDongCuoi>=BatDau AND (KetThuc IS NULL OR KetThuc>=HoatDongCuoi)),
+        INDEX IX_LuotTruyCap_Ngay (BatDau) INCLUDE (MaTaiKhoan),
+        INDEX IX_LuotTruyCap_TaiKhoan (MaTaiKhoan,MaPhien),
+        INDEX IX_LuotTruyCap_Online (HoatDongCuoi) INCLUDE (MaTaiKhoan,MaPhien,KetThuc)
+    );
+    CREATE UNIQUE INDEX UX_LuotTruyCap_PhienMo ON LuotTruyCap(MaPhien) WHERE KetThuc IS NULL;
+END;
+GO
+IF OBJECT_ID(N'dbo.TruyCapTheoNgay', N'U') IS NULL
+BEGIN
+    CREATE TABLE TruyCapTheoNgay (
+        Ngay DATE NOT NULL,
+        MaTaiKhoan BIGINT NOT NULL REFERENCES TaiKhoan(MaTaiKhoan),
+        PRIMARY KEY (Ngay,MaTaiKhoan)
+    );
+END;
+GO
+
+-- Duyệt đánh giá công khai trên trang chủ
+IF OBJECT_ID(N'dbo.DanhGiaCongKhai', N'U') IS NULL
+BEGIN
+    CREATE TABLE DanhGiaCongKhai (
+        MaPhieuTN NVARCHAR(30) PRIMARY KEY REFERENCES PhieuBanGiao(MaPhieuTN),
+        MaCongKhai UNIQUEIDENTIFIER NOT NULL UNIQUE,
+        SoSao INT NOT NULL CHECK (SoSao BETWEEN 1 AND 5),
+        NoiDung NVARCHAR(1000) NULL,
+        NgayDanhGia DATETIME2(0) NOT NULL,
+        MaNguoiDuyet BIGINT NOT NULL REFERENCES TaiKhoan(MaTaiKhoan),
+        NgayDuyet DATETIME2(0) NOT NULL
+    );
+END;
+GO
 
 -- Sinh bởi tools/MySqlToSqlServer.java — không sửa tay.
 SET ANSI_NULLS ON;

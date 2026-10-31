@@ -418,7 +418,12 @@ function TicketDetail({ code, onChanged }: { code: string; onChanged: () => void
             {ticket.serialOrImei && <span>Serial/IMEI: <strong className="mono">{ticket.serialOrImei}</strong></span>}
           </div>
         </div>
-        <StatusBadge table="TICKET_STATUS_CUSTOMER" code={ticket.status} />
+        <div className="ticket-hero-actions">
+          <StatusBadge table="TICKET_STATUS_CUSTOMER" code={ticket.status} />
+          <button type="button" className="btn-secondary-white btn-sm" onClick={() => window.dispatchEvent(new CustomEvent('soopi:open-ticket-chat', { detail: { ticketCode: ticket.code } }))}>
+            <Icon glyph="chatDots" />Nhắn người phụ trách
+          </button>
+        </div>
       </div>
 
       <div className="detail-grid-2">
