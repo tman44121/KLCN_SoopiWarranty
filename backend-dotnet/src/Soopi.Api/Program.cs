@@ -146,9 +146,12 @@ builder.Services.AddScoped<BillingQueryService>();
 builder.Services.AddScoped<PaymentService>();
 builder.Services.AddScoped<HandoverService>();
 builder.Services.AddScoped<PortalTicketService>();
+builder.Services.AddScoped<PublicReviewService>();
 
 // Báo cáo, nhật ký, thông báo, job SLA.
 builder.Services.AddScoped<ReportService>();
+builder.Services.AddScoped<AccessTrackingService>();
+builder.Services.AddScoped<AccessStatisticsService>();
 builder.Services.AddScoped<AuditQueryService>();
 builder.Services.AddScoped<NotificationQueryService>();
 builder.Services.AddScoped<Soopi.Api.Services.Chat.ChatService>();

@@ -358,12 +358,26 @@ export default function initialize(global = window) {
         post("/admin/notifications/broadcast", { message, link: link || null, customerIds: customerIds ?? null }),
     },
 
+    reviews: {
+      public: () => request('GET', '/public/reviews', { auth: 'none', redirect: false }),
+      publish: (code, published, review) => put(`/admin/reviews/${enc(code)}/publication`, {
+        published, rating: review.rating, ratedAt: review.ratedAt, comment: review.comment,
+      }),
+    },
+
+    access: {
+      summary: (query) => get('/admin/access/summary', query),
+      online: (query) => get('/admin/access/online', query),
+      logs: (query) => get('/admin/access/logs', query),
+      export: (query) => get('/admin/access/export', query),
+    },
+
     chat: {
-      contacts: (q, page = 0) => get("/chat/contacts", { q, page }),
-      start: (ticketCode, staffAccountId) => post("/chat/conversations", { ticketCode, staffAccountId }),
-      messages: (id, before, after) => get(`/chat/conversations/${enc(id)}/messages`, { before, after }),
-      send: (id, text, requestId) => post(`/chat/conversations/${enc(id)}/messages`, { text, requestId }),
-      read: (id, lastMessageId) => post(`/chat/conversations/${enc(id)}/read`, { lastMessageId }),
+      contacts: (q, page = 0) => get("/chat/contacts", { q, page }, { redirect: false }),
+      start: (ticketCode, staffAccountId) => post("/chat/conversations", { ticketCode, staffAccountId }, { redirect: false }),
+      messages: (id, before, after) => get(`/chat/conversations/${enc(id)}/messages`, { before, after }, { redirect: false }),
+      send: (id, text, requestId) => post(`/chat/conversations/${enc(id)}/messages`, { text, requestId }, { redirect: false }),
+      read: (id, lastMessageId) => post(`/chat/conversations/${enc(id)}/read`, { lastMessageId }, { redirect: false }),
     },
 
     search: (q) => get("/search", { q }),

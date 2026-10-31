@@ -48,8 +48,12 @@ try {
       });
       await login(s.page);
       await s.page.waitForURL(base + (who === 'customer' ? '/account' : '/technician'));
+      await s.page.locator('header [data-chat-open]').waitFor();
+      assert.equal(await s.page.locator('.chat-bubble-fab, .live-chat-root').count(), 0, 'no floating chat obscures tables');
     }
     await customer.page.getByRole('button', { name: 'Mở chat hỗ trợ', exact: true }).click();
+    assert.equal(await customer.page.locator('.chat-window').getAttribute('aria-modal'), 'false');
+    assert.equal(await customer.page.evaluate(() => document.body.style.overflow), '');
     await customer.page.locator('.chat-contact').filter({ hasText: 'Nguyễn Văn KTV' }).click();
     await customer.page.getByLabel('Nhập tin nhắn').fill('Khách nhắn 🌟\n<img src=x onerror=alert(1)>');
     await customer.page.getByRole('button', { name: 'Gửi tin nhắn', exact: true }).click();
@@ -61,6 +65,13 @@ try {
     await staff.page.getByLabel('Nhập tin nhắn').fill('KTV trả lời');
     await staff.page.getByRole('button', { name: 'Gửi tin nhắn', exact: true }).click();
     await customer.page.locator('.chat-msg-row--them').filter({ hasText: 'KTV trả lời' }).waitFor();
+    await customer.page.getByLabel('Nhập tin nhắn').fill('Bản nháp chưa gửi');
+    await customer.page.getByRole('button', { name: 'Đóng chat', exact: true }).click();
+    await customer.page.locator('.chat-window').waitFor({ state: 'detached' });
+    assert.equal(await customer.page.evaluate(() => document.body.style.overflow), '');
+    assert(await customer.page.locator('[data-chat-open]').evaluate(el => el === document.activeElement));
+    await customer.page.getByRole('button', { name: 'Mở chat hỗ trợ', exact: true }).click();
+    assert.equal(await customer.page.getByLabel('Nhập tin nhắn').inputValue(), 'Bản nháp chưa gửi');
     await customer.page.reload();
     await customer.page.getByRole('button', { name: 'Mở chat hỗ trợ', exact: true }).click();
     await customer.page.locator('.chat-contact').click();
@@ -96,9 +107,14 @@ try {
     await customer.page.screenshot({ path: fileURLToPath(new URL(`../test-results/chat-${width}.png`, import.meta.url)) });
     const box = await customer.page.locator('.chat-window').boundingBox();
     assert(box.x >= 0 && box.x + box.width <= width + 1, 'chat fits viewport');
+    assert(box.width <= 340 && box.height <= 440, 'chat stays compact');
+    assert(box.y + box.height <= 900 && box.y > 0, 'chat sits near the bottom of viewport');
     await customer.page.keyboard.press('Escape');
+    await customer.page.locator('.chat-window').waitFor({ state: 'detached' });
+    await customer.page.locator('.chat-mini').waitFor();
     assert.equal(await customer.page.locator('.chat-window').count(), 0);
     await customer.page.getByRole('button', { name: 'Mở chat hỗ trợ', exact: true }).click();
+    assert.equal(await customer.page.locator('.chat-mini').count(), 0);
     await customer.page.getByRole('button', { name: 'Danh sách người liên hệ' }).click();
     await customer.page.locator('.chat-search input').fill('không tìm thấy');
     await customer.page.getByText('Không tìm thấy người liên hệ phù hợp.', { exact: true }).waitFor();

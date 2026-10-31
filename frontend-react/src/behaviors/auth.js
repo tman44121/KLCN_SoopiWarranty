@@ -1,4 +1,5 @@
 import { internalRoute } from "../navigation.ts";
+import startAccess from "./access.js";
 /* ==========================================================================
    Phiên đăng nhập + điều hướng theo vai trò — CODEX mục 15.3, 9.7; UI mục 32
    - Tải trang: dùng ngay thông tin phiên đã lưu (LML_API.session) rồi hỏi lại GET /auth/me ở nền; quyền đổi thì
@@ -17,6 +18,7 @@ export default function initialize() {
   const IDLE_WARN_BEFORE_MS = 60 * 1000;
 
   let currentUser = null;
+  let stopAccess = null;
   const readyCallbacks = [];
 
 
@@ -94,6 +96,7 @@ export default function initialize() {
   }
 
   async function doLogout() {
+    stopAccess?.();
     try {
       await window.LML_API.auth.logout(false);
     } catch (e) {
@@ -288,6 +291,8 @@ export default function initialize() {
     initChangePassword();
     initLogout();
     initIdleTimeout();
+    stopAccess?.();
+    stopAccess = startAccess();
     readyCallbacks.splice(0).forEach((fn) => fn(user));
     return true;
   }

@@ -372,6 +372,7 @@ export function CustomerHeader({ name: pageName, active }: { name?: string | nul
             <>
               <a href="/account#yeu-cau-moi" className="btn-primary-teal">Gửi yêu cầu</a>
               <NotificationBell />
+              <span data-chat-launcher="" />
               <UserMenu name={name} active={active} />
             </>
           ) : (

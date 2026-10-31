@@ -175,7 +175,9 @@ public class IdentityTests
         var options = Options.Create(new SecurityOptions());
         var keys = new JwtKeys(options, new Environment("Development"));
         var account = Account.Employee("letan", "{bcrypt}x", [Role.RECEPTIONIST, Role.CASHIER], "NV-004", false);
-        var token = new JwtService(keys, options, TimeProvider.System).IssueAccessToken(account, "Lễ tân");
+        var sessionId = Guid.NewGuid().ToString();
+        var jwtService = new JwtService(keys, options, TimeProvider.System);
+        var token = jwtService.IssueAccessToken(account, "Lễ tân", sessionId);
         var result = await new JsonWebTokenHandler().ValidateTokenAsync(token, new TokenValidationParameters
         {
             ValidIssuer = "longmanloc-service-center",
@@ -184,6 +186,10 @@ public class IdentityTests
         });
         Assert.True(result.IsValid, result.Exception?.Message);
         var jwt = (JsonWebToken)result.SecurityToken;
+        Assert.Equal(sessionId, jwt.GetClaim("sid").Value);
+        var refreshed = new JsonWebToken(jwtService.IssueAccessToken(account, "Lễ tân", sessionId));
+        Assert.Equal(sessionId, refreshed.GetClaim("sid").Value);
+        Assert.NotEqual(jwt.GetClaim("jti").Value, refreshed.GetClaim("jti").Value);
         Assert.Equal("access", jwt.GetClaim("typ").Value);
         Assert.Equal("NV-004", jwt.GetClaim("employeeId").Value);
         Assert.Equal("1", jwt.GetClaim("ver").Value);

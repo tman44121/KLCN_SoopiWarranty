@@ -1,4 +1,41 @@
 /* ==========================================================================
+   Đánh giá công khai — chỉ dữ liệu khách đã nhận thiết bị
+   ========================================================================== */
+.home-reviews-card .card-top-bar { gap: 12px; }
+.home-reviews-card .card-top-bar > .kh-icon { color: #166534; flex-shrink: 0; }
+.home-review-summary { display: flex; align-items: center; gap: 20px; padding: 16px 0; border-bottom: 1px solid #e2e8f0; }
+.home-review-summary > div { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.home-review-summary strong { font-size: 36px; color: #174c41; line-height: 1.1; }
+.home-review-summary strong span { font-size: 16px; color: #475569; margin-left: 3px; }
+.home-review-summary p { margin: 0; font-size: 14px; }
+.home-review-summary p > span { display: block; font-size: 12px; color: #475569; margin-top: 4px; }
+.home-review-list { display: grid; max-height: 480px; overflow-y: auto; scrollbar-gutter: stable; }
+.home-review { padding: 16px 0; border-bottom: 1px solid #e2e8f0; min-width: 0; }
+.home-review-heading { display: flex; align-items: center; gap: 10px; }
+.home-review-avatar { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; background: #e3f2eb; color: #166534; font-size: 12px; font-weight: 700; }
+.home-review-heading strong { font-size: 13px; }
+.home-review-heading time { margin-left: auto; color: #475569; font-size: 12px; white-space: nowrap; }
+.home-review-verified { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #166534; }
+.home-review-verified .kh-icon { width: 13px; height: 13px; }
+.home-review-stars { color: #9b6700; font-size: 18px; letter-spacing: 2px; margin: 6px 0; }
+.home-review-stars > span { color: #cbd5e1; }
+.home-review-stars > .is-filled { color: #9b6700; }
+.home-review blockquote { margin: 0; font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.home-review-expand { border: 0; background: none; padding: 6px 0; color: #174c41; cursor: pointer; text-decoration: underline; font: inherit; font-size: 13px; }
+.home-reviews-note { margin: 10px 0; font-size: 12px; color: #475569; }
+.home-review-preview { padding: 12px; border: 1px solid #e5c47b; border-radius: 8px; background: #fff7e6; color: #664400; font-size: 13px; }
+.home-review-preview a { color: inherit; font-weight: 700; }
+.home-reviews-loading { padding: 24px 0; color: #475569; }
+.home-trust-points, .home-service-promise ul { display: grid; gap: 20px; padding: 12px 0; margin: 0; list-style: none; }
+.home-trust-points li, .home-service-promise li { display: flex; gap: 12px; align-items: start; }
+.home-trust-points li > .kh-icon, .home-service-promise li > .kh-icon { flex-shrink: 0; width: 22px; height: 22px; }
+.home-trust-points li > span { display: grid; gap: 4px; color: #475569; font-size: 13px; }
+.home-trust-points strong { color: #174c41; font-size: 14px; }
+.home-service-promise p { margin: 5px 0 0; line-height: 1.6; }
+.home-service-promise .btn-secondary-white { margin-top: 24px; }
+@media (max-width: 480px) { .home-review-summary { gap: 12px; } .home-review-summary strong { font-size: 30px; } .home-review-heading { gap: 8px; } }
+
+/* ==========================================================================
    Giao diện khách hàng — port từ web khách KLCN (auth.css, home.css và style
    trong warranty/register.html). Tên class giữ như bản cũ, không trùng
    components.css; rule cho thẻ HTML chỉ áp trong .kh-app nên không ảnh hưởng
@@ -5573,3 +5610,37 @@ a.method-card:hover {
 
 
 
+
+/* Compact chat appears on demand; minimize keeps a small chat head. */
+[data-chat-launcher]:empty { display: none; }
+[data-chat-launcher] { display: inline-flex; flex-shrink: 0; }
+.chat-header-launcher { flex-shrink: 0; cursor: pointer; }
+.nav-right-actions .chat-header-launcher { width: 40px; height: 40px; }
+.chat-header-launcher .kh-icon { width: 21px; height: 21px; }
+.chat-header-launcher .chat-fab-badge { min-width: 18px; height: 18px; line-height: 16px; font-size: 10px; top: -3px; right: -4px; }
+.chat-window.chat-popover { position: fixed; right: 20px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: var(--z-dropdown); width: min(340px, calc(100vw - 32px)); height: 440px; max-height: calc(100dvh - 32px); border-radius: 12px; animation: chat-window-in .2s ease-out; }
+.chat-popover .chat-contact-list, .chat-popover .chat-messages { min-height: 0; overscroll-behavior: contain; }
+.chat-popover .chat-messages { max-height: none; }
+.chat-popover .chat-system-msg { margin: 0; padding: 8px 12px; white-space: normal; overflow-wrap: anywhere; flex-shrink: 0; }
+.chat-popover .chat-window-header { padding: 10px 12px; }
+.chat-popover .chat-header-title, .chat-popover .chat-header-sub { overflow-wrap: anywhere; }
+.chat-mini { position: fixed; right: 20px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: var(--z-dropdown); }
+.chat-mini-restore { position: relative; display: grid; place-items: center; width: 48px; height: 48px; border: 2px solid white; border-radius: 50%; background: #174c41; color: white; box-shadow: 0 3px 14px rgb(15 23 42 / 22%); cursor: pointer; font-size: 14px; font-weight: 700; }
+.chat-mini-restore .kh-icon { width: 23px; height: 23px; }
+.chat-mini-dismiss { position: absolute; top: -9px; left: -12px; display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid #cbd5e1; border-radius: 50%; background: white; color: #334155; cursor: pointer; }
+.chat-mini-dismiss .kh-icon { width: 14px; height: 14px; }
+.chat-mini button:focus-visible { outline: 3px solid #0284c7; outline-offset: 3px; }
+.chat-ticket-filter { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+.chat-ticket-filter button { border: 0; background: none; color: #174c41; cursor: pointer; text-decoration: underline; }
+.ticket-hero-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; }
+@media (max-width: 600px) {
+  .chat-window.chat-popover { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); width: min(340px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); }
+  .chat-mini { right: 16px; }
+  .chat-popover input, .chat-popover textarea { font-size: 16px; }
+  .ticket-hero-actions { justify-content: flex-start; }
+}
+@media (pointer: coarse) {
+  .chat-popover .chat-icon-btn { min-width: 44px; min-height: 44px; }
+  .chat-ticket-filter button { min-height: 44px; }
+}
+@media print { .chat-popover, .chat-mini, [data-chat-launcher], .ticket-hero-actions button { display: none !important; } }

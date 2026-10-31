@@ -553,7 +553,7 @@ export default function initialize() {
     const byMonth = new Map(revenue.map((row) => [row.month, row]));
     if (!revenue.some((row) => Number(row.total) > 0)) return empty(target, "Chưa có khoản thu nào trong khoảng thời gian này.");
     if (months.length < 2) {
-      return empty(target, "Khoảng thời gian chỉ gồm một tháng, tổng doanh thu ở ô phía trên. Chọn khoảng thời gian gồm ít nhất hai tháng để xem xu hướng.");
+      return empty(target, "Chọn nhiều tháng để xem xu hướng.");
     }
     charts.columns(target, {
       title: "Doanh thu theo tháng",
@@ -646,7 +646,7 @@ export default function initialize() {
       $("[data-review-summary]").textContent = "";
       $("[data-review-count]").textContent = "";
       $("[data-review-page]").textContent = "";
-      ui.tableState(tbody, 6, "empty", { title: "Chọn khoảng thời gian hợp lệ", desc: "Điều chỉnh ngày bắt đầu và ngày kết thúc ở bộ lọc báo cáo phía trên." });
+      ui.tableState(tbody, 7, "empty", { title: "Chọn khoảng thời gian hợp lệ", desc: "Điều chỉnh ngày bắt đầu và ngày kết thúc ở bộ lọc báo cáo phía trên." });
       return;
     }
     const query = { from: period.from, to: period.to, station: $("[data-admin-station]").value || null,
@@ -657,7 +657,7 @@ export default function initialize() {
     $("[data-review-summary]").textContent = "Đang tải đánh giá…";
     $("[data-review-count]").textContent = "";
     $("[data-review-page]").textContent = "";
-    ui.skeletonRows(tbody, 6);
+    ui.skeletonRows(tbody, 7);
     try {
       const result = await api.reports.get("customer-reviews", query);
       if (load !== reviews.load) return;
@@ -669,18 +669,30 @@ export default function initialize() {
       $("[data-review-page]").textContent = `Trang ${reviews.page + 1} / ${reviews.totalPages}`;
       $("[data-review-prev]").disabled = reviews.page <= 0;
       $("[data-review-next]").disabled = reviews.page + 1 >= reviews.totalPages;
-      if (!page.items.length) return ui.tableState(tbody, 6, "empty", { title: "Không có đánh giá phù hợp", desc: "Điều chỉnh bộ lọc. Chọn Tất cả thời gian để xem cả điểm cũ chưa rõ ngày." });
+      if (!page.items.length) return ui.tableState(tbody, 7, "empty", { title: "Không có đánh giá phù hợp", desc: "Thử đổi bộ lọc hoặc chọn Tất cả thời gian." });
       tbody.innerHTML = html`${page.items.map(row => html`<tr>
         <td>${row.ratedAt ? fmt.dateTime(row.ratedAt) : html`<span class="cell-muted">Chưa xác định nguồn/ngày</span>`}</td>
         <td><div>${row.fullName}<br><span class="mono cell-muted">${row.phone}</span></div></td>
         <td><div><span class="mono">${row.ticketCode}</span><br>${row.productName || "—"}</div></td>
         <td>${row.stationName}</td><td>${row.rating} / 5 sao</td>
         <td class="customer-review-comment">${row.comment || "Không có nhận xét"}</td>
+        <td><button type="button" class="btn btn--secondary btn--sm" data-review-publish="${row.ticketCode}"
+          ${row.ratedAt ? "" : "disabled"} title="${row.ratedAt ? "Nhận xét hiển thị ẩn danh trên trang chủ" : "Chưa xác định đánh giá từ khách"}">${row.published ? "Ẩn" : "Hiển thị"}</button></td>
       </tr>`)}`;
+      tbody.querySelectorAll('[data-review-publish]').forEach(button => button.addEventListener('click', async () => {
+        const row = page.items.find(item => item.ticketCode === button.dataset.reviewPublish);
+        const published = !row.published;
+        if (published && !await ui.confirm({ title: 'Hiển thị đánh giá trên trang chủ?', message: 'Nhận xét sẽ công khai ẩn danh. Kiểm tra nội dung không chứa thông tin riêng của khách.', confirmLabel: 'Hiển thị', destructive: false })) return;
+        try {
+          await ui.busy(button, () => api.reviews.publish(row.ticketCode, published, row));
+          window.showToast(published ? 'Đã hiển thị đánh giá trên trang chủ.' : 'Đã ẩn đánh giá.', 'success');
+          await loadReviews();
+        } catch (error) { ui.showError(error); }
+      }));
     } catch (error) {
       if (load !== reviews.load) return;
       $("[data-review-summary]").textContent = "";
-      ui.tableState(tbody, 6, "error", { desc: error.detail }, loadReviews);
+      ui.tableState(tbody, 7, "error", { desc: error.detail }, loadReviews);
     }
   }
 
