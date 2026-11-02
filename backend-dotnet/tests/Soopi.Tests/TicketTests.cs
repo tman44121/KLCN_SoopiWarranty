@@ -180,4 +180,26 @@ public class TicketTests
     [Fact]
     public void Rating_RequiresHandoverAndFinalState() =>
         Assert.Equal(ErrorCode.TICKET_INVALID_STATE, Assert.Throws<DomainException>(() => NewTicket().UpdateRating(5, null, Now)).Code);
+
+    [Fact]
+    public void ProgressMessages_TellCustomerEachStepAndPickupDetails()
+    {
+        var pickup = new Soopi.Api.Services.Tickets.PickupInfo("Trạm HCM", "12 Nguyễn Huệ", 1_250_000m);
+        string Say(Ticket ticket, TicketStatus status) => Soopi.Api.Services.Tickets.TicketProgressMessages.For(ticket, status, pickup)!.Value.Message;
+
+        Assert.Contains("đang kiểm tra lỗi", Say(NewTicket(), TicketStatus.INSPECTING));
+        Assert.Contains("sửa miễn phí", Say(Diagnosed(WarrantyClassification.FREE_WARRANTY), TicketStatus.DIAGNOSED));
+        Assert.Contains("ngoài phạm vi bảo hành (Rơi vỡ)", Say(Diagnosed(WarrantyClassification.OUT_OF_WARRANTY, "Rơi vỡ.", "Máy rơi vỡ, mất bảo hành"), TicketStatus.DIAGNOSED));
+        var completed = Say(NewTicket(), TicketStatus.COMPLETED);
+        Assert.Contains("tại Trạm HCM (12 Nguyễn Huệ)", completed);
+        Assert.Contains("thứ Hai – thứ Bảy, 08:00 – 17:00", completed);
+        Assert.Contains("1.250.000 đ", completed);
+        Assert.Contains("Không phát sinh chi phí", Soopi.Api.Services.Tickets.TicketProgressMessages.For(NewTicket(), TicketStatus.COMPLETED, pickup with { AmountDue = 0 })!.Value.Message);
+        Assert.Null(Soopi.Api.Services.Tickets.TicketProgressMessages.For(NewTicket(), TicketStatus.AWAITING_CUSTOMER_CONFIRMATION, pickup));
+        var longAddress = pickup with { StationAddress = new string('x', 200) };
+        var fitted = Soopi.Api.Services.Tickets.TicketProgressMessages.For(NewTicket(), TicketStatus.COMPLETED, longAddress)!.Value.Message;
+        Assert.True(fitted.Length <= 255);
+        Assert.Contains("1.250.000 đ", fitted);
+        Assert.DoesNotContain("xxxx", fitted);
+    }
 }

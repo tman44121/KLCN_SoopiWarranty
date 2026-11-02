@@ -145,6 +145,9 @@ export default function ReportsPage() {
             <a className="sidebar-nav__item" data-page-tab="performance" data-roles="DISPATCHER" href="#performance">
               {"Hiệu suất"}
             </a>
+            <a className="sidebar-nav__item" data-page-tab="parts" data-roles="DISPATCHER" href="#parts">
+              {"Linh kiện sử dụng"}
+            </a>
             <a className="sidebar-nav__item" data-page-tab="audit" data-roles="DISPATCHER" href="#audit">
               {"Lịch sử thao tác"}
             </a>
@@ -284,6 +287,67 @@ export default function ReportsPage() {
                   </tr>
                 </thead>
                 <tbody data-performance-tbody="">
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+        <div data-page-panel="parts" hidden={true}>
+          <section className="card" aria-labelledby="parts-usage-title">
+            <div className="card__header">
+              <div>
+                <h2 className="card__title" id="parts-usage-title">
+                  {"Linh kiện sử dụng"}
+                </h2>
+                <div className="card__title-meta">
+                  {"Linh kiện đã xuất kho cho phiếu sửa chữa trong kỳ, tách phần bảo hành và phần tính phí"}
+                </div>
+              </div>
+            </div>
+            <div className="parts-usage-filters">
+              <div className="form-field">
+                <label htmlFor="parts-usage-from">
+                  {"Từ ngày"}
+                </label>
+                <input type="date" id="parts-usage-from" data-parts-from="" />
+              </div>
+              <div className="form-field">
+                <label htmlFor="parts-usage-to">
+                  {"Đến ngày"}
+                </label>
+                <input type="date" id="parts-usage-to" data-parts-to="" />
+              </div>
+              <div className="parts-usage-summary" role="status" data-parts-summary="">
+              </div>
+            </div>
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>
+                      {"Linh kiện"}
+                    </th>
+                    <th>
+                      {"Nhóm thiết bị"}
+                    </th>
+                    <th className="num">
+                      {"Đã dùng"}
+                    </th>
+                    <th className="num">
+                      {"Trong bảo hành"}
+                    </th>
+                    <th className="num">
+                      {"Tính phí"}
+                    </th>
+                    <th className="num">
+                      {"Số phiếu sửa"}
+                    </th>
+                    <th className="num">
+                      {"Giá trị xuất"}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody data-parts-tbody="">
                 </tbody>
               </table>
             </div>

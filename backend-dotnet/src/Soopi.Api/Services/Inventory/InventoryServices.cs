@@ -656,3 +656,36 @@ public sealed class StocktakeService(
     private Task AuditAsync(AuthenticatedActor actor, string action, string label, string entityId, string? before, string? after) =>
         audit.RecordAsync(actor.AuditId, actor.DisplayName, actor.RoleNames, action, label, "STOCKTAKE", entityId, before, after);
 }
+
+public sealed record MovementView(
+    DateTimeOffset At, string Kind, string DocumentCode, string BinCode, int Quantity, int BalanceAfter, string? Reference, string? Note, string? ActorId);
+
+/// <summary>
+/// <c>OpeningBalance</c>: tồn trước chứng từ cũ nhất đang hiện (gồm tồn khai báo lúc tạo linh kiện / dữ liệu ban đầu).
+/// <c>Truncated</c>: chỉ hiện <c>Limit</c> biến động gần nhất.
+/// </summary>
+public sealed record StockLedgerView(
+    string Sku, string Name, string? Unit, int OnHand, int Reserved, int OpeningBalance, bool Truncated, IReadOnlyList<MovementView> Movements);
+
+/// <summary>Thẻ kho từng linh kiện: tồn sau mỗi biến động tính lùi từ tồn hiện tại.</summary>
+public sealed class StockLedgerService(InventoryStore inventory, CurrentActor actors)
+{
+    public const int Limit = 500;
+
+    public async Task<StockLedgerView> LedgerAsync(string sku)
+    {
+        actors.Require(Permission.INVENTORY_READ);
+        var part = await inventory.FindPartAsync(sku) ?? throw new DomainException(ErrorCode.NOT_FOUND);
+        var movements = await inventory.MovementsAsync(part.Sku, Limit + 1);
+        var truncated = movements.Count > Limit;
+        var balance = part.OnHand;
+        var views = new List<MovementView>();
+        foreach (var movement in movements.Take(Limit))
+        {
+            views.Add(new MovementView(movement.At, movement.Kind, movement.DocumentCode, movement.BinCode, movement.Quantity, balance,
+                movement.Reference, movement.Note, movement.ActorId));
+            balance -= movement.Quantity;
+        }
+        return new StockLedgerView(part.Sku, part.Name, part.Unit, part.OnHand, part.Reserved, balance, truncated, views);
+    }
+}

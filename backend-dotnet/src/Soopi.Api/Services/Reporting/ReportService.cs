@@ -27,6 +27,10 @@ public sealed record QuotationMismatch(string QuotationCode, decimal PartsTotal,
 
 public sealed record StatusCount(string Status, long Count);
 
+/// <summary>Linh kiện đã xuất cho phiếu sửa trong kỳ: tách phần bảo hành (miễn phí) và phần tính phí theo báo giá.</summary>
+public sealed record PartUsage(string Sku, string Name, string? CategoryCode, string? Unit, long Quantity, long WarrantyQuantity, long ChargedQuantity,
+    long Tickets, decimal CostValue);
+
 public sealed record SlaBucket(string Level, long Breached, long AtRisk, long OnTrack);
 
 public sealed record CustomerReviewRow(string TicketCode, string CustomerCode, string FullName, string Phone,
@@ -86,7 +90,8 @@ public sealed class ReportService(Sql sql, CurrentActor actors, TimeProvider clo
         var turnaround = await TurnaroundAsync(from, to, station);
         var technicians = await TechnicianPerformanceAsync(from, to, station);
         var warranty = await WarrantyRatioAsync(from, to, station);
-        return ReportWorkbook.Create(from, to, station, clock.GetUtcNow(), new(revenue, statuses, turnaround, technicians, warranty));
+        var parts = await PartsUsageAsync(from, to, station);
+        return ReportWorkbook.Create(from, to, station, clock.GetUtcNow(), new(revenue, statuses, turnaround, technicians, warranty, parts));
     }
 
     /// <summary>R4 — chỉ phiếu thu tính phí (miễn phí 0 đ không tính).</summary>
@@ -153,6 +158,24 @@ public sealed class ReportService(Sql sql, CurrentActor actors, TimeProvider clo
             + $"FROM PhieuKiemTra pkt JOIN PhieuTiepNhan ptn ON ptn.MaPhieuTN = pkt.MaPhieuTN WHERE 1 = 1{where}",
             row => (Free: row.Long("free"), Charged: row.Long("charged")), [.. args]);
         return new WarrantyRatio(counts.Free, counts.Charged, Percent(counts.Free, counts.Free + counts.Charged));
+    }
+
+    /// <summary>Linh kiện sử dụng — theo ngày thực xuất kho (NgayXuLy) của phiếu xuất đã xuất; giá trị tính theo đơn giá xuất.</summary>
+    public Task<List<PartUsage>> PartsUsageAsync(DateOnly? from, DateOnly? to, string? station)
+    {
+        actors.Require(Permission.REPORT_OPERATIONS);
+        var (where, args) = Filter("px.NgayXuLy", RangeOf(from, to, station));
+        return sql.QueryAsync(
+            "SELECT c.MaLK, lk.TenLK, lk.MaNhom, lk.DonViTinh, SUM(c.SoLuongXuat) AS SoLuong, "
+            + "SUM(CASE WHEN px.NguonXuat = 'FREE_WARRANTY' THEN c.SoLuongXuat ELSE 0 END) AS SoLuongBaoHanh, "
+            + "SUM(CASE WHEN px.NguonXuat = 'QUOTATION' THEN c.SoLuongXuat ELSE 0 END) AS SoLuongTinhPhi, "
+            + "COUNT(DISTINCT px.MaPhieuTN) AS SoPhieu, SUM(c.SoLuongXuat * c.DonGiaXuat) AS GiaTri "
+            + "FROM ChiTietXuatKho c JOIN PhieuXuatKho px ON px.MaPhieuXuat = c.MaPhieuXuat JOIN LinhKien lk ON lk.MaLK = c.MaLK "
+            + $"JOIN PhieuTiepNhan ptn ON ptn.MaPhieuTN = px.MaPhieuTN WHERE px.TrangThai = 'ISSUED'{where} "
+            + "GROUP BY c.MaLK, lk.TenLK, lk.MaNhom, lk.DonViTinh ORDER BY SoLuong DESC, c.MaLK",
+            row => new PartUsage(row.Str("MaLK")!, row.Str("TenLK")!, row.Str("MaNhom"), row.Str("DonViTinh"), row.Long("SoLuong"),
+                row.Long("SoLuongBaoHanh"), row.Long("SoLuongTinhPhi"), row.Long("SoPhieu"), SqlMoney.Read(row.DecOrNull("GiaTri") ?? 0)),
+            [.. args]);
     }
 
     /// <summary>R9 — phiếu có ít nhất một lần QC "Chưa đạt".</summary>

@@ -13,7 +13,7 @@ export default function initialize() {
   const L = window.LML_LABELS;
   const { html } = window;
   const $ = (selector) => document.querySelector(selector);
-  const INVENTORY_COLUMNS = 10;
+  const INVENTORY_COLUMNS = 11;
   const BIN_PATTERN = /^KHO-[A-Z]-\d{2}-\d{2}$/;
 
   const state = {
@@ -93,6 +93,9 @@ export default function initialize() {
     transferApprove: $("[data-transfer-approve]"),
     transferReject: $("[data-transfer-reject]"),
     stocktakeList: $("[data-stocktake-list]"),
+    ledgerDrawer: $("[data-ledger-drawer]"),
+    ledgerSubtitle: $("[data-ledger-subtitle]"),
+    ledgerBody: $("[data-ledger-body]"),
     stocktakeCreateDrawer: $("[data-create-stocktake-drawer]"),
     stocktakeCategory: $("[data-stocktake-category]"),
     stocktakeBin: $("[data-stocktake-bin]"),
@@ -204,7 +207,9 @@ export default function initialize() {
         <td>${p.minLevel}</td>
         <td>${stockBadge(p)}${p.lowStockReason ? html`<div class="cell-muted" style="font-size:12px; margin-top:2px;">${p.lowStockReason}</div>` : ""}</td>
         <td class="mono">${(p.bins || []).filter((b) => b.qty > 0).map((b) => `${b.binCode} (${b.qty})`).join(", ") || p.primaryBin}</td>
+        <td><button type="button" class="btn btn--secondary btn--sm" data-ledger="${p.sku}" aria-label="Lịch sử biến động ${p.sku}">Lịch sử</button></td>
       </tr>`)}`;
+    el.invTbody.querySelectorAll("[data-ledger]").forEach((btn) => btn.addEventListener("click", () => openLedger(btn.getAttribute("data-ledger"))));
   }
 
   async function loadParts() {
@@ -616,6 +621,65 @@ export default function initialize() {
   }
 
   /* ---------------------------------------------------------------------- */
+  /* Thẻ kho: biến động đã duyệt của một linh kiện, tồn sau mỗi lần          */
+  /* ---------------------------------------------------------------------- */
+
+  const MOVEMENT = {
+    RECEIPT: { label: "Nhập kho", tone: "success" },
+    ISSUE: { label: "Xuất cho phiếu sửa", tone: "processing" },
+    TRANSFER_OUT: { label: "Điều chuyển đi", tone: "neutral" },
+    TRANSFER_IN: { label: "Điều chuyển đến", tone: "neutral" },
+    STOCKTAKE: { label: "Điều chỉnh kiểm kê", tone: "warning" },
+  };
+
+  function movementReference(m) {
+    if (m.kind === "RECEIPT") return html`NCC ${m.reference || "—"}${m.note ? html` · lô ${m.note}` : ""}`;
+    if (m.kind === "ISSUE") return html`Phiếu sửa <span class="mono">${m.reference || "—"}</span>`;
+    if (m.kind === "TRANSFER_OUT") return html`Sang <span class="mono">${m.reference}</span>${m.note ? html` · ${m.note}` : ""}`;
+    if (m.kind === "TRANSFER_IN") return html`Từ <span class="mono">${m.reference}</span>${m.note ? html` · ${m.note}` : ""}`;
+    return html`${m.reference || ""}${m.note ? html` · ${m.note}` : ""}`;
+  }
+
+  async function openLedger(sku) {
+    const part = state.parts.find((p) => p.sku === sku);
+    el.ledgerSubtitle.innerHTML = html`<span class="mono">${sku}</span> — ${part ? part.name : ""}`;
+    ui.blockState(el.ledgerBody, "loading");
+    window.openDialog(el.ledgerDrawer);
+    try {
+      const ledger = await api.inventory.movements(sku);
+      const totals = ledger.movements.reduce((sum, m) => {
+        if (m.kind === "RECEIPT") sum.in += m.quantity;
+        else if (m.kind === "ISSUE") sum.out -= m.quantity;
+        else if (m.kind === "STOCKTAKE") sum.adjust += m.quantity;
+        return sum;
+      }, { in: 0, out: 0, adjust: 0 });
+      el.ledgerBody.innerHTML = html`
+        <dl class="ledger-stats">
+          <div><dt>Tồn thực tế hiện tại</dt><dd>${ledger.onHand} ${ledger.unit || ""}</dd></div>
+          <div><dt>Đang giữ cho phiếu sửa</dt><dd>${ledger.reserved}</dd></div>
+          <div><dt>Tổng nhập / xuất</dt><dd>+${totals.in} / −${totals.out}</dd></div>
+          <div><dt>Điều chỉnh kiểm kê</dt><dd>${totals.adjust > 0 ? "+" : ""}${totals.adjust}</dd></div>
+        </dl>
+        ${ledger.movements.length ? html`<div class="table-scroll stocktake-table-wrap" style="margin-top:16px;"><table class="drawer-table stocktake-table ledger-table">
+          <thead><tr><th>Thời gian</th><th>Loại</th><th>Chứng từ</th><th>Kệ/Ngăn</th><th class="num">Số lượng</th><th class="num">Tồn sau</th><th>Diễn giải</th></tr></thead>
+          <tbody>${ledger.movements.map((m) => html`<tr>
+            <td style="white-space:nowrap;">${fmt.dateTime(m.at)}</td>
+            <td>${fmt.badge((MOVEMENT[m.kind] || {}).tone || "neutral", (MOVEMENT[m.kind] || {}).label || m.kind)}</td>
+            <td class="mono">${m.documentCode}</td>
+            <td class="mono">${m.binCode}</td>
+            <td class="num"><span class="stocktake-diff ${m.quantity < 0 ? "is-off" : ""}">${m.quantity > 0 ? "+" : ""}${m.quantity}</span></td>
+            <td class="num"><strong>${m.balanceAfter}</strong></td>
+            <td>${movementReference(m)}${m.actorId ? html`<div class="cell-muted">Duyệt: ${m.actorId}</div>` : ""}</td>
+          </tr>`)}
+          <tr class="ledger-opening"><td colspan="5">${ledger.truncated ? "Tồn trước các biến động trên (chỉ hiện 500 lần gần nhất)" : "Tồn ban đầu (khi tạo linh kiện / dữ liệu trước khi có chứng từ)"}</td><td class="num"><strong>${ledger.openingBalance}</strong></td><td></td></tr>
+          </tbody></table></div>`
+          : html`<div class="empty-selection-hint" style="margin-top:16px;">Chưa có biến động nào được duyệt. Tồn hiện tại là tồn ban đầu: ${ledger.openingBalance}.</div>`}`;
+    } catch (error) {
+      ui.blockState(el.ledgerBody, "error", { desc: error.detail }, () => openLedger(sku));
+    }
+  }
+
+  /* ---------------------------------------------------------------------- */
   /* Kiểm kê: đếm thực tế theo kệ, duyệt thì điều chỉnh tồn theo chênh lệch  */
   /* ---------------------------------------------------------------------- */
 
@@ -905,6 +969,7 @@ export default function initialize() {
     el.transferApprove.addEventListener("click", approveTransfer);
     el.transferReject.addEventListener("click", rejectTransfer);
 
+    bindDrawer(el.ledgerDrawer, ["[data-ledger-close]"]);
     bindDrawer(el.stocktakeCreateDrawer, ["[data-create-stocktake-close]", "[data-create-stocktake-cancel]"]);
     bindDrawer(el.stocktakeDrawer, ["[data-stocktake-drawer-close]"]);
     $("[data-open-create-stocktake]").addEventListener("click", openCreateStocktake);

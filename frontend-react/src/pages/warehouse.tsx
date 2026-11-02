@@ -325,6 +325,9 @@ export default function WarehousePage() {
                     <th>
                       {"Kệ/Ngăn"}
                     </th>
+                    <th>
+                      <span className="visually-hidden">{"Thao tác"}</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody data-inventory-tbody="">
@@ -490,6 +493,28 @@ export default function WarehousePage() {
           <button type="button" className="btn btn--primary" data-create-stockin-submit="">
             {"Tạo phiếu nhập kho"}
           </button>
+        </div>
+      </div>
+    </div>
+    <div className="drawer-overlay" data-ledger-drawer="" hidden={true}>
+      <div className="drawer drawer--wide" role="dialog" aria-modal="true" aria-labelledby="ledger-drawer-title">
+        <div className="drawer__header">
+          <div>
+            <div className="drawer__title" id="ledger-drawer-title">
+              {"Lịch sử biến động kho"}
+            </div>
+            <div className="drawer__subtitle" data-ledger-subtitle="">
+              {"—"}
+            </div>
+          </div>
+          <button type="button" className="modal__close" data-ledger-close="" aria-label="Đóng">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M5 5l10 10M15 5L5 15">
+              </path>
+            </svg>
+          </button>
+        </div>
+        <div className="drawer__body" data-ledger-body="">
         </div>
       </div>
     </div>

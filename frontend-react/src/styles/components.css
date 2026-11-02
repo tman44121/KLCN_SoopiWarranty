@@ -3013,3 +3013,81 @@ video.request-media-frame {
     grid-template-columns: 1fr;
   }
 }
+
+.stocktake-table tr.ledger-opening td {
+  background: var(--surface-utility);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Báo cáo linh kiện sử dụng */
+.parts-usage-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+  padding: 12px var(--card-padding);
+  border-bottom: 1px solid var(--border-divider);
+}
+
+.parts-usage-filters .form-field {
+  margin: 0;
+  min-width: 160px;
+}
+
+.parts-usage-summary {
+  margin-left: auto;
+  padding-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.data-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Bảng dạng thẻ trên màn hẹp (responsive.css): nhãn bên trái, số không căn phải. */
+.data-table tbody td.num[data-label] {
+  text-align: left;
+}
+
+/* Thẻ kho */
+.ledger-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.ledger-stats > div {
+  padding: 10px 12px;
+  border: 1px solid var(--border-universal);
+  border-radius: var(--radius-table);
+  background: var(--surface-utility);
+}
+
+.ledger-stats dt {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ledger-stats dd {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger-table {
+  min-width: 820px;
+}
+
+.ledger-table td:last-child {
+  min-width: 220px;
+}

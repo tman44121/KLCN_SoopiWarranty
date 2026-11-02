@@ -21,18 +21,18 @@ public class ReportWorkbookTests
         [new("2026-10", 2, 2916000.50m)], [new("DELIVERED", 3)],
         new(3, 12.5m, 2, 20, [new("PHONE", 3, 12.5m)]),
         [new("NV-001", "=HYPERLINK(\"https://example.invalid\") & <Tên>", null, 4, 3, 1, null, 66.7m, 8.25m)],
-        new(1, 2, 33.3m));
+        new(1, 2, 33.3m), [new("LK001", "Màn hình", "PHONE", "Cái", 3, 1, 2, 3, 900000m)]);
 
     [Fact]
     public void Workbook_HasSixLinkedSheetsAndFilterMetadata()
     {
         using var zip = Open(Sample);
         var workbook = Read(zip, "xl/workbook.xml");
-        Assert.Equal(["Tổng quan", "Doanh thu", "Trạng thái phiếu", "Thời gian xử lý", "Hiệu suất kỹ thuật viên", "Tỷ lệ bảo hành"],
+        Assert.Equal(["Tổng quan", "Doanh thu", "Trạng thái phiếu", "Thời gian xử lý", "Hiệu suất kỹ thuật viên", "Tỷ lệ bảo hành", "Linh kiện sử dụng"],
             workbook.Descendants(S + "sheet").Select(x => (string?)x.Attribute("name")));
         Assert.NotNull(zip.GetEntry("[Content_Types].xml"));
         Assert.NotNull(zip.GetEntry("_rels/.rels"));
-        Assert.Equal(7, Read(zip, "xl/_rels/workbook.xml.rels").Root!.Elements().Count());
+        Assert.Equal(8, Read(zip, "xl/_rels/workbook.xml.rels").Root!.Elements().Count());
         var summary = Read(zip, "xl/worksheets/sheet1.xml");
         Assert.Contains("01/10/2026", summary.ToString());
         Assert.Contains("20/10/2026", summary.ToString());

@@ -48,7 +48,7 @@ public sealed class QuotationsController(QuotationService quotations, QuotationR
 [ApiController]
 [Authorize]
 [Route("api/v1")]
-public sealed class InventoryController(StocktakeService stocktakes, PartQueryService parts, StockIssueService issues, StockReceiptService receipts, StockTransferService transfers) : ControllerBase
+public sealed class InventoryController(StockLedgerService ledger, StocktakeService stocktakes, PartQueryService parts, StockIssueService issues, StockReceiptService receipts, StockTransferService transfers) : ControllerBase
 {
     [HttpGet("parts")]
     public Task<List<PartView>> Parts([FromQuery] string? q, [FromQuery] string? category, [FromQuery] bool lowStock = false) =>
@@ -59,6 +59,9 @@ public sealed class InventoryController(StocktakeService stocktakes, PartQuerySe
 
     [HttpGet("parts/{sku}")]
     public Task<PartView> Part(string sku) => parts.GetAsync(sku);
+
+    [HttpGet("parts/{sku}/movements")]
+    public Task<StockLedgerView> Movements(string sku) => ledger.LedgerAsync(sku);
 
     [HttpPost("stock-issues")]
     public async Task<IActionResult> RequestIssue([FromBody] IssueRequest body) => StatusCode(StatusCodes.Status201Created, await issues.RequestAsync(body));

@@ -6,6 +6,9 @@ namespace Soopi.Api.Data.Stores;
 
 public sealed record Bin(string BinCode, int Qty);
 
+/// <summary>Một lần tồn của linh kiện thay đổi theo chứng từ đã duyệt (điều chuyển ra 2 dòng: rời kệ cũ, vào kệ mới).</summary>
+public sealed record StockMovement(DateTimeOffset At, string Kind, string DocumentCode, string BinCode, int Quantity, string? Reference, string? Note, string? ActorId);
+
 public sealed record StocktakeSheetRow(string Sku, string Name, string? Unit, string? CategoryCode, string BinCode, int SystemQty);
 
 public sealed record PartStock(
@@ -108,6 +111,38 @@ public sealed class InventoryStore(Sql sql)
             row => new StocktakeSheetRow(row.Str("MaLK")!, row.Str("TenLK")!, row.Str("DonViTinh"), row.Str("MaNhom"), row.Str("MaKe")!, row.Int("SoLuong")),
             [.. args]);
     }
+
+    /// <summary>
+    /// Thẻ kho: mọi biến động đã duyệt của một linh kiện — nhập (NgayDuyet), xuất cho phiếu sửa chữa (NgayXuLy), điều chuyển
+    /// và điều chỉnh kiểm kê — mới nhất trước. Phiếu chờ duyệt / từ chối chưa làm đổi tồn nên không có ở đây.
+    /// </summary>
+    public Task<List<StockMovement>> MovementsAsync(string sku, int limit) =>
+        sql.QueryAsync($"""
+            SELECT TOP ({limit}) * FROM (
+                SELECT p.NgayDuyet AS ThoiGian, 'RECEIPT' AS Loai, p.MaPhieuNhap AS MaChungTu, ISNULL(c.MaKe, lk.KeChinh) AS MaKe, c.SoLuongNhap AS SoLuong,
+                       ncc.TenNCC AS ThamChieu, p.SoLo AS GhiChu, p.MaNguoiDuyet AS NguoiThucHien
+                FROM ChiTietNhapKho c JOIN PhieuNhapKho p ON p.MaPhieuNhap = c.MaPhieuNhap JOIN LinhKien lk ON lk.MaLK = c.MaLK
+                LEFT JOIN NhaCungCap ncc ON ncc.MaNCC = p.MaNCC
+                WHERE c.MaLK = ? AND p.TrangThai = 'APPROVED'
+                UNION ALL
+                SELECT p.NgayXuLy, 'ISSUE', p.MaPhieuXuat, ISNULL(c.MaKe, lk.KeChinh), -c.SoLuongXuat, p.MaPhieuTN, p.LyDoXuat, p.MaThuKhoXuLy
+                FROM ChiTietXuatKho c JOIN PhieuXuatKho p ON p.MaPhieuXuat = c.MaPhieuXuat JOIN LinhKien lk ON lk.MaLK = c.MaLK
+                WHERE c.MaLK = ? AND p.TrangThai = 'ISSUED'
+                UNION ALL
+                SELECT NgayDuyet, 'TRANSFER_OUT', MaPhieuDC, TuKe, -SoLuong, DenKe, LyDo, MaNguoiDuyet
+                FROM PhieuDieuChuyen WHERE MaLK = ? AND TrangThai = 'COMPLETED'
+                UNION ALL
+                SELECT NgayDuyet, 'TRANSFER_IN', MaPhieuDC, DenKe, SoLuong, TuKe, LyDo, MaNguoiDuyet
+                FROM PhieuDieuChuyen WHERE MaLK = ? AND TrangThai = 'COMPLETED'
+                UNION ALL
+                SELECT p.NgayDuyet, 'STOCKTAKE', p.MaPhieuKK, c.MaKe, c.SoLuongThucTe - c.SoLuongHeThong, p.PhamVi, c.GhiChu, p.MaNguoiDuyet
+                FROM ChiTietKiemKe c JOIN PhieuKiemKe p ON p.MaPhieuKK = c.MaPhieuKK
+                WHERE c.MaLK = ? AND p.TrangThai = 'COMPLETED' AND c.SoLuongThucTe <> c.SoLuongHeThong
+            ) m ORDER BY ThoiGian DESC, MaChungTu DESC, Loai DESC
+            """,
+            row => new StockMovement(row.Time("ThoiGian")!.Value, row.Str("Loai")!, row.Str("MaChungTu")!, row.Str("MaKe")!, row.Int("SoLuong"),
+                row.Str("ThamChieu"), row.Str("GhiChu"), row.Str("NguoiThucHien")),
+            sku, sku, sku, sku, sku);
 
     /// <summary>Tồn hiện tại của một linh kiện tại một kệ (chưa có dòng kệ = 0).</summary>
     public async Task<int> BinQuantityAsync(string sku, string binCode) =>

@@ -118,6 +118,7 @@ builder.Services.AddScoped<PortalProfileService>();
 
 // Phiếu tiếp nhận.
 builder.Services.AddScoped<TicketStore>();
+builder.Services.AddScoped<TicketProgressNotifier>();
 builder.Services.AddScoped<StaffDirectory>();
 builder.Services.AddScoped<TicketQueryService>();
 builder.Services.AddScoped<ReceptionService>();
@@ -141,6 +142,7 @@ builder.Services.AddScoped<StockIssueService>();
 builder.Services.AddScoped<StockReceiptService>();
 builder.Services.AddScoped<StockTransferService>();
 builder.Services.AddScoped<StocktakeService>();
+builder.Services.AddScoped<StockLedgerService>();
 builder.Services.AddScoped<IssuedParts>();
 builder.Services.AddScoped<BillingCalculator>();
 builder.Services.AddScoped<BillingQueryService>();

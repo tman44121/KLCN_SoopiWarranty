@@ -1,4 +1,4 @@
-/* Reports page backed only by R5, R12 and R13. */
+/* Reports page: R5, R12, R13 and parts usage. */
 export default function initialize() {
 
   const api = window.LML_API;
@@ -8,7 +8,12 @@ export default function initialize() {
     sla: document.querySelector("[data-sla-summary]"),
     performance: document.querySelector("[data-performance-tbody]"),
     audit: document.querySelector("[data-audit-tbody]"),
+    parts: document.querySelector("[data-parts-tbody]"),
+    partsFrom: document.querySelector("[data-parts-from]"),
+    partsTo: document.querySelector("[data-parts-to]"),
+    partsSummary: document.querySelector("[data-parts-summary]"),
   };
+  let partsLoad = 0;
 
   function percent(value) {
     return Number(value || 0).toLocaleString("vi-VN", { maximumFractionDigits: 1 });
@@ -80,6 +85,50 @@ export default function initialize() {
     }
   }
 
+  /** Mặc định từ đầu tháng tới hôm nay (giờ Việt Nam). */
+  function defaultPartsRange() {
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
+    el.partsTo.value = today;
+    el.partsFrom.value = today.slice(0, 8) + "01";
+  }
+
+  async function loadPartsUsage() {
+    const from = el.partsFrom.value;
+    const to = el.partsTo.value;
+    const load = ++partsLoad;
+    if (from && to && from > to) {
+      el.partsSummary.textContent = "“Từ ngày” phải trước hoặc bằng “Đến ngày”.";
+      ui.tableState(el.parts, 7, "empty", { title: "Khoảng ngày chưa hợp lệ" });
+      return;
+    }
+    ui.skeletonRows(el.parts, 7);
+    el.partsSummary.textContent = "Đang tải…";
+    try {
+      const rows = await api.reports.get("parts-usage", { from: from || null, to: to || null });
+      if (load !== partsLoad) return;
+      const total = rows.reduce((sum, row) => ({ qty: sum.qty + row.quantity, value: sum.value + Number(row.costValue || 0) }), { qty: 0, value: 0 });
+      el.partsSummary.innerHTML = html`<strong>${rows.length}</strong> mã linh kiện · <strong>${total.qty}</strong> cái đã dùng · giá trị <strong>${fmt.money(total.value)}</strong>`;
+      if (!rows.length) {
+        ui.tableState(el.parts, 7, "empty", { title: "Chưa xuất linh kiện nào trong kỳ", desc: "Linh kiện chỉ được tính khi phiếu xuất kho đã được thủ kho duyệt xuất." });
+        return;
+      }
+      el.parts.innerHTML = html`${rows.map((row) => html`
+        <tr>
+          <td><span class="mono cell-primary">${row.sku}</span><div class="cell-muted">${row.name}</div></td>
+          <td class="cell-muted">${window.LML_LABELS.CATEGORY[row.categoryCode] || row.categoryCode || "—"}</td>
+          <td class="num"><strong>${row.quantity}</strong> <span class="cell-muted">${row.unit || ""}</span></td>
+          <td class="num">${row.warrantyQuantity}</td>
+          <td class="num">${row.chargedQuantity}</td>
+          <td class="num">${row.tickets}</td>
+          <td class="num">${fmt.money(row.costValue)}</td>
+        </tr>`)}`;
+    } catch (error) {
+      if (load !== partsLoad) return;
+      el.partsSummary.textContent = "";
+      ui.tableState(el.parts, 7, "error", { desc: error.detail }, loadPartsUsage);
+    }
+  }
+
   async function loadAudit() {
     ui.skeletonRows(el.audit, 6);
     try {
@@ -106,5 +155,9 @@ export default function initialize() {
     loadSla();
     loadPerformance();
     loadAudit();
+    defaultPartsRange();
+    loadPartsUsage();
+    el.partsFrom.addEventListener("change", loadPartsUsage);
+    el.partsTo.addEventListener("change", loadPartsUsage);
   });
 }

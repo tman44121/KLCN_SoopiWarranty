@@ -68,7 +68,6 @@ public sealed class ReceptionService(
             await audit.RecordAsync(actor.AuditId, actor.DisplayName, actor.RoleNames, "TICKET_CREATED", "Tạo phiếu tiếp nhận", "TICKET", ticket.Id,
                 command.WarrantyRequestCode, ticket.Id + " — Chưa phân công");
             await notifications.ForRoleAsync("DISPATCHER", "TICKET_RECEIVED", $"Phiếu {ticket.Id} mới tiếp nhận, chờ phân công.", "/dispatch", ticket.Id);
-            await notifications.ForCustomerAsync(customerCode, "TICKET_RECEIVED", $"Đã tiếp nhận thiết bị. Mã phiếu {ticket.Id}.", ticket.Id);
             return await views.ViewAsync(ticket, actor);
         });
     }
@@ -277,8 +276,6 @@ public sealed class RepairService(
                 var message = $"Phiếu {ticketCode} đã hoàn tất sửa chữa, sẵn sàng bàn giao.";
                 foreach (var role in new[] { Role.CASHIER, Role.RECEPTIONIST })
                     await notifications.ForRoleAsync(role.ToString(), "TICKET_COMPLETED", message, "/cashier#" + ticketCode, ticketCode);
-                await notifications.ForCustomerAsync(ticket.CustomerId, "TICKET_COMPLETED",
-                    $"Thiết bị của phiếu {ticketCode} đã sửa xong, sẵn sàng nhận máy tại trung tâm.", ticketCode);
             }
             return await views.ViewAsync(ticket, actor);
         });
@@ -295,7 +292,8 @@ public sealed class RepairService(
 public sealed record RepairResultRequest([NotBlank] string WorkDone, [NotNull, Size(6, 6)] List<QcStep?>? QcSteps, [NotBlank] string QcResult, string? QcDetails);
 
 public sealed class TicketNoteService(
-    TicketStore tickets, TicketQueryService views, StaffDirectory staff, CurrentActor actors, TransactionRunner transactions, AuditService audit, TimeProvider clock)
+    TicketStore tickets, TicketQueryService views, StaffDirectory staff, CurrentActor actors, TransactionRunner transactions, AuditService audit,
+    NotificationService notifications, TimeProvider clock)
 {
     public Task<TicketView> AddCustomerNoteAsync(string ticketCode, string text)
     {
@@ -318,6 +316,12 @@ public sealed class TicketNoteService(
             if (internalNote) ticket.AddInternalNote(text, clock.GetUtcNow(), actor);
             else ticket.AddCustomerNote(text, clock.GetUtcNow(), actor);
             await tickets.SaveAsync(ticket);
+            if (!internalNote)
+            {
+                var note = JavaText.Trim(text);
+                await notifications.ForCustomerAsync(ticket.CustomerId, "TICKET_CUSTOMER_NOTE",
+                    $"Trung tâm cập nhật phiếu {ticketCode}: {(note.Length > 160 ? note[..160] + "…" : note)}", ticketCode);
+            }
             await audit.RecordAsync(actor.AuditId, actor.DisplayName, actor.RoleNames,
                 internalNote ? "TICKET_INTERNAL_NOTE_ADDED" : "TICKET_CUSTOMER_NOTE_ADDED",
                 internalNote ? "Thêm ghi chú nội bộ" : "Thêm ghi chú cho khách", "TICKET", ticketCode, null, text);

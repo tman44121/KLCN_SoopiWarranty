@@ -23,7 +23,7 @@ public sealed record TicketFilter(
 /// <item>bảng con chỉ được thêm/cập nhật phần thay đổi, không xóa lịch sử.</item>
 /// </list>
 /// </summary>
-public sealed class TicketStore(Sql sql)
+public sealed class TicketStore(Sql sql, Services.Tickets.TicketProgressNotifier progress)
 {
     private const string DefaultTransitionText = "Trạng thái đổi từ";
 
@@ -57,6 +57,8 @@ public sealed class TicketStore(Sql sql)
         await SaveNotesAsync(ticket, "INTERNAL", ticket.InternalNotes);
         await SaveHandoverAsync(ticket);
         ticket.Version = version;
+        // Mọi đường chuyển trạng thái đều đi qua đây nên khách được báo đủ từng bước, kể cả khi do kho/báo giá chuyển.
+        await progress.StatusChangedAsync(ticket, storedHistory);
     }
 
     private Task InsertAsync(Ticket ticket)

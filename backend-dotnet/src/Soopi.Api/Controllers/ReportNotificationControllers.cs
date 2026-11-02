@@ -47,6 +47,10 @@ public sealed class ReportsController(ReportService reports) : ControllerBase
     public Task<WarrantyRatio> WarrantyRatio([FromQuery] DateOnly? from, [FromQuery] DateOnly? to, [FromQuery] string? station) =>
         reports.WarrantyRatioAsync(from, to, station);
 
+    [HttpGet("parts-usage")]
+    public Task<List<PartUsage>> PartsUsage([FromQuery] DateOnly? from, [FromQuery] DateOnly? to, [FromQuery] string? station) =>
+        reports.PartsUsageAsync(from, to, station);
+
     [HttpGet("repeat-repairs")]
     public Task<List<RepeatRepair>> RepeatRepairs([FromQuery] DateOnly? from, [FromQuery] DateOnly? to, [FromQuery] string? station) =>
         reports.RepeatRepairsAsync(from, to, station);

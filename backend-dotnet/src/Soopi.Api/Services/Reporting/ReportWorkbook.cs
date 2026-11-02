@@ -8,7 +8,7 @@ using Soopi.Api.Domain.Tickets;
 namespace Soopi.Api.Services.Reporting;
 
 public sealed record ReportSnapshot(IReadOnlyList<MonthlyRevenue> Revenue, IReadOnlyList<StatusCount> Statuses,
-    Turnaround Turnaround, IReadOnlyList<TechnicianPerformance> Technicians, WarrantyRatio Warranty);
+    Turnaround Turnaround, IReadOnlyList<TechnicianPerformance> Technicians, WarrantyRatio Warranty, IReadOnlyList<PartUsage>? PartsUsage = null);
 
 /// <summary>SpreadsheetML snapshot: inline text cannot execute as an Excel formula; numbers remain numeric.</summary>
 public static partial class ReportWorkbook
@@ -37,8 +37,10 @@ public static partial class ReportWorkbook
                 ["Thời gian xử lý nhỏ nhất (giờ)", data.Turnaround.MinHours],
                 ["Thời gian xử lý lớn nhất (giờ)", data.Turnaround.MaxHours],
                 ["Tỷ lệ trong bảo hành (%)", data.Warranty.FreeRatePercent],
+                ["Linh kiện đã xuất cho phiếu sửa", (data.PartsUsage ?? []).Sum(x => x.Quantity)],
+                ["Giá trị linh kiện đã xuất (VND)", (data.PartsUsage ?? []).Sum(x => x.CostValue)],
                 ["Nguồn", "Dữ liệu báo cáo Soopi tại thời điểm xuất; ô trống là chưa có dữ liệu."],
-                ["Cách tính kỳ", "Doanh thu: ngày thu; trạng thái và hiệu suất: ngày tiếp nhận; thời gian xử lý: ngày bàn giao; bảo hành: ngày phân loại/cập nhật."],
+                ["Cách tính kỳ", "Doanh thu: ngày thu; trạng thái và hiệu suất: ngày tiếp nhận; thời gian xử lý: ngày bàn giao; bảo hành: ngày phân loại/cập nhật; linh kiện: ngày thực xuất kho."],
             ]),
             new("Doanh thu", ["Tháng", "Số phiếu thu", "Doanh thu (VND)"],
                 data.Revenue.OrderBy(x => x.Month).Select(x => new object?[] { x.Month, x.Payments, x.Total }), 2,
@@ -56,6 +58,9 @@ public static partial class ReportWorkbook
                 ["Trong bảo hành", data.Warranty.FreeWarranty, data.Warranty.FreeRatePercent],
                 ["Ngoài bảo hành (tính phí)", data.Warranty.Charged, data.Warranty.FreeRatePercent is {} rate ? 100m - rate : null],
             ], Chart: new("Cơ cấu bảo hành", 0, [1], "doughnut")),
+            new("Linh kiện sử dụng", ["Mã linh kiện", "Tên linh kiện", "Mã nhóm thiết bị", "Đơn vị", "Số lượng đã dùng", "Trong bảo hành", "Tính phí", "Số phiếu sửa", "Giá trị xuất (VND)"],
+                (data.PartsUsage ?? []).Select(x => new object?[] { x.Sku, x.Name, x.CategoryCode, x.Unit, x.Quantity, x.WarrantyQuantity, x.ChargedQuantity, x.Tickets, x.CostValue }), 8,
+                new("Linh kiện sử dụng nhiều nhất", 1, [4], "bar")),
         ];
         var rows = sheets.Select(sheet => sheet.Rows.ToArray()).ToArray();
         var chartSheets = Enumerable.Range(0, sheets.Length).Where(i => HasChartData(sheets[i], rows[i])).ToArray();
