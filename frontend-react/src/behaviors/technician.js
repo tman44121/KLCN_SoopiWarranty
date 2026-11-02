@@ -182,7 +182,10 @@ export default function initialize() {
           ${kv("Ngày hết hạn", fmt.date(w.expiresOn))}
           ${kv("Điều kiện bảo hành", w.conditions || "—", true)}
           ${kv("Ngoại quan", `Trầy ${L.SCRATCHES[t.cosmetic.scratches]} · Ẩm nước ${L.MOISTURE[t.cosmetic.moisture]} · Phụ kiện ${L.ACCESSORIES[t.cosmetic.accessories]}${t.cosmetic.notes ? ` · ${t.cosmetic.notes}` : ""}`, true)}
-        </div>`
+        </div>
+        ${t.warrantyRequestCode ? html`<hr class="section-divider" />
+          <h3 class="card__title" style="margin-bottom:10px;">Ảnh / video khách gửi kèm</h3>
+          <div data-ticket-media></div>` : ""}`
     );
   }
 
@@ -215,6 +218,7 @@ export default function initialize() {
     }
     sections.push(notesCard(t));
     el.detail.innerHTML = html`${sections}`;
+    renderTicketMedia(el.detail.querySelector("[data-ticket-media]"), t);
     bindDetail(t);
     tickTimers();
   }
@@ -939,3 +943,4 @@ export default function initialize() {
   });
 }
 import { createListFilters } from './list-filters.js';
+import { renderTicketMedia } from './media.js';

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { usePage } from "../usePage";
 import { BrandLogo, Icon, PasswordInput, api, errorText, useAuthScale, useBusy } from "../customer";
+import { emailError, emailSuggestion, passwordError, passwordRules } from "../validation";
 
 type Field = "email" | "otp" | "password" | "confirm";
 const EMPTY: Record<Field, string> = { email: "", otp: "", password: "", confirm: "" };
@@ -34,16 +35,38 @@ export default function ForgotPasswordPage() {
     if (step === "password") document.getElementById("password")?.focus();
   }, [step]);
 
+  /** Lỗi định dạng hiện ngay khi gõ; ô trống chỉ báo khi bấm xác nhận. Tên đăng nhập (SĐT) chưa biết nên máy chủ kiểm nốt. */
+  function live(field: Field, value: string): string | undefined {
+    if (!value) return undefined;
+    if (field === "email") return emailError(value);
+    if (field === "otp") return /[^0-9]/.test(value.trim()) ? "Mã OTP chỉ gồm chữ số."
+      : value.trim().length !== 6 ? `Mã OTP gồm 6 chữ số — bạn mới nhập ${value.trim().length}.` : undefined;
+    if (field === "password") return passwordError(value, "");
+    return value !== form.password ? "Chưa khớp với mật khẩu mới." : undefined;
+  }
+
   const set = (field: Field) => (value: string) => {
-    if (field === "email" && otpSentTo && value.trim() !== otpSentTo) setOtpSentTo("");
+    // Đổi email sau khi đã gửi mã: gửi được mã tới địa chỉ mới ngay (máy chủ giới hạn theo từng email).
+    if (field === "email" && otpSentTo && value.trim() !== otpSentTo) {
+      setOtpSentTo("");
+      setResendIn(0);
+      setForm((current) => ({ ...current, otp: "" }));
+    }
     setForm((current) => ({ ...current, [field]: value }));
-    setErrors((current) => ({ ...current, [field]: undefined }));
+    setErrors((current) => ({
+      ...current, [field]: live(field, value),
+      ...(field === "password" && form.confirm ? { confirm: form.confirm !== value ? "Chưa khớp với mật khẩu mới." : undefined } : {}),
+    }));
   };
 
   async function sendOtp() {
     setSummary("");
     const email = form.email.trim();
-    if (!email) return setErrors({ ...errors, email: "Vui lòng nhập email đã đăng ký." });
+    const invalidEmail = email ? emailError(email) : "Vui lòng nhập email đã đăng ký.";
+    if (invalidEmail) {
+      setErrors({ ...errors, email: invalidEmail });
+      return document.getElementById("email")?.focus();
+    }
     await runSend(async () => {
       try {
         const issued = await api().request("POST", "/auth/mobile/otp", { body: { email, purpose: "RESET_PASSWORD" }, auth: "none" });
@@ -61,10 +84,12 @@ export default function ForgotPasswordPage() {
     setSummary("");
     const next: Partial<Record<Field, string>> = {};
     if (!form.email.trim()) next.email = "Vui lòng nhập email đã đăng ký.";
+    else if (emailError(form.email)) next.email = emailError(form.email);
     if (!otpSentTo) next.otp = "Bấm “Gửi mã OTP” để nhận mã xác thực.";
-    else if (!form.otp.trim()) next.otp = "Vui lòng nhập mã OTP.";
+    else next.otp = form.otp.trim() ? live("otp", form.otp) : "Vui lòng nhập mã OTP.";
     setErrors(next);
-    if (Object.keys(next).length) return;
+    const failed = (Object.keys(next) as Field[]).find((field) => next[field]);
+    if (failed) return document.getElementById(failed)?.focus();
     await runVerify(async () => {
       try {
         await api().request("POST", "/auth/mobile/password-reset/verify", { body: { email: otpSentTo, otp: form.otp.trim() }, auth: "none" });
@@ -79,10 +104,12 @@ export default function ForgotPasswordPage() {
     event.preventDefault();
     setSummary("");
     const next: Partial<Record<Field, string>> = {};
-    if (!form.password) next.password = "Vui lòng nhập mật khẩu mới.";
-    if (form.password && form.confirm !== form.password) next.confirm = "Mật khẩu xác nhận không khớp.";
+    next.password = form.password ? passwordError(form.password, "") : "Vui lòng nhập mật khẩu mới.";
+    if (!form.confirm) next.confirm = "Vui lòng nhập lại mật khẩu mới.";
+    else if (form.confirm !== form.password) next.confirm = "Chưa khớp với mật khẩu mới.";
     setErrors(next);
-    if (Object.keys(next).length) return;
+    const failed = (Object.keys(next) as Field[]).find((field) => next[field]);
+    if (failed) return document.getElementById(failed)?.focus();
     await runSubmit(async () => {
       try {
         await api().request("POST", "/auth/mobile/password-reset", {
@@ -110,7 +137,8 @@ export default function ForgotPasswordPage() {
   }
 
   const invalid = (field: Field) => (errors[field] ? true : undefined);
-  const fieldError = (field: Field) => errors[field] && <div className="field-error" id={`${field}-error`}>{errors[field]}</div>;
+  const fieldError = (field: Field) => errors[field] && <div className="field-error" id={`${field}-error`} role="alert">{errors[field]}</div>;
+  const suggestion = emailSuggestion(form.email);
 
   return (
     <div className="kh-app kh-auth kh-auth--wide" ref={scaled}>
@@ -173,8 +201,13 @@ export default function ForgotPasswordPage() {
                 <div className="form-group">
                   <label htmlFor="password">Mật khẩu mới</label>
                   <PasswordInput id="password" name="password" autoComplete="new-password" placeholder="Tối thiểu 10 ký tự, gồm chữ và số"
-                    value={form.password} onChange={set("password")} invalid={invalid("password")} describedBy="password-error" />
-                  {fieldError("password")}
+                    value={form.password} onChange={set("password")} invalid={invalid("password")} describedBy="password-rules password-error" />
+                  {form.password && <ul className="password-rules" id="password-rules" aria-label="Điều kiện mật khẩu">
+                    {passwordRules(form.password, "").slice(0, 3).map((rule) => <li key={rule.label} className={rule.ok ? "is-ok" : ""}>
+                      <span aria-hidden="true">{rule.ok ? "✓" : "•"}</span>{rule.label}
+                    </li>)}
+                  </ul>}
+                  {!form.password && fieldError("password")}
                 </div>
 
                 <div className="form-group">
@@ -211,16 +244,22 @@ export default function ForgotPasswordPage() {
                     </button>
                   </div>
                   <div className="input-subnote" id="email-note">
-                    {otpSentTo ? `Mã OTP đã gửi tới ${otpSentTo}. Không thấy thư? Xem cả mục Spam.` : "Email đã xác minh khi đăng ký tài khoản."}
+                    {otpSentTo
+                      ? <>Mã OTP đã gửi tới <strong>{otpSentTo}</strong>. Không thấy thư? Xem cả mục Spam. Gõ nhầm email? Sửa lại là gửi được mã mới ngay.</>
+                      : "Email đã xác minh khi đăng ký tài khoản."}
                   </div>
                   {fieldError("email")}
+                  {suggestion && !errors.email && <div className="field-warning" role="status">
+                    Có phải bạn muốn nhập <strong>{suggestion}</strong>?{" "}
+                    <button type="button" className="field-warning-fix" onClick={() => set("email")(suggestion)}>Sửa thành {suggestion.slice(suggestion.indexOf("@"))}</button>
+                  </div>}
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="otp">Mã OTP</label>
                   <div className="input-wrapper">
                     <span className="input-icon"><Icon glyph="shield" /></span>
-                    <input type="text" id="otp" className="form-input" inputMode="numeric" autoComplete="one-time-code" placeholder="Nhập mã gồm 6 chữ số"
+                    <input type="text" id="otp" className="form-input" inputMode="numeric" autoComplete="one-time-code" placeholder="Nhập mã gồm 6 chữ số" maxLength={6}
                       value={form.otp} onChange={(e) => set("otp")(e.target.value)} aria-invalid={invalid("otp")} aria-describedby="otp-error" />
                   </div>
                   {fieldError("otp")}

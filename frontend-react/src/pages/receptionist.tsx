@@ -277,6 +277,8 @@ export default function ReceptionistPage() {
               {"Bỏ liên kết"}
             </button>
           </div>
+          <section className="card request-media-card" data-yc-attachments="" hidden={true} aria-label="Ảnh và video khách gửi kèm yêu cầu">
+          </section>
           <section className="card">
             <div className="card__header">
               <div>

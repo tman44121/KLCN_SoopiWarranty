@@ -1,5 +1,6 @@
 import { businessTimeError, businessInstant } from "../business-hours.js";
 import { createListFilters } from './list-filters.js';
+import { attachmentLabel, renderMedia } from './media.js';
 /* ==========================================================================
    View: Tiếp nhận & Lễ tân — UI mục 18, 20, 34, 35; CODEX mục 11.3–11.7, 15.4
    API: GET /customers?q=, GET /catalog/device-categories|products|brands,
@@ -188,6 +189,7 @@ export default function initialize() {
     ycCode: $("[data-yc-code]"),
     ycBanner: $("[data-yc-banner]"),
     ycBannerCode: $("[data-yc-banner-code]"),
+    ycAttachments: $("[data-yc-attachments]"),
     counterTicket: $("[data-counter-ticket]"),
     counterBody: $("[data-counter-body]"),
   };
@@ -549,6 +551,16 @@ export default function initialize() {
     return "";
   }
 
+  function showRequestMedia(r) {
+    const box = el.ycAttachments;
+    const files = r.attachments || [];
+    box.hidden = false;
+    box.innerHTML = html`<div class="card__header"><div><h2 class="card__title">Ảnh / video khách gửi kèm</h2>
+      <div class="card__title-meta">${files.length ? `${attachmentLabel(files)} từ yêu cầu ${r._id} — đối chiếu với tình trạng máy khi nhận.` : `Yêu cầu ${r._id} không có ảnh hoặc video đính kèm.`}</div></div></div>
+      ${files.length ? html`<div class="card__body" data-yc-media-body></div>` : ""}`;
+    if (files.length) renderMedia(box.querySelector("[data-yc-media-body]"), files);
+  }
+
   let requestsLoad = 0;
   const requestFilters = createListFilters(el.ycList, () => loadWarrantyRequests(), { dateKey: 'createdAt' });
 
@@ -573,13 +585,26 @@ export default function initialize() {
             <span class="request-row__meta">${r.customer.fullName} · ${r.customer.phone} · ${r.brandModel} · <span class="mono">${r.serialOrImei}</span> · Gửi lúc ${fmt.dateTime(r.createdAt)}${requestOutcome(r)}</span>
           </div>
           <div class="request-row__right">
+            ${(r.attachments || []).length
+              ? html`<button type="button" class="btn btn--secondary btn--sm" data-yc-media="${r._id}" aria-expanded="false">Xem ${attachmentLabel(r.attachments)}</button>`
+              : html`<span class="request-row__no-media">Không kèm ảnh/video</span>`}
             ${fmt.badgeOf(L.WARRANTY_REQUEST_STATUS, r.status)}
             ${r.status === "PENDING_INTAKE"
               ? html`<button type="button" class="btn btn--primary btn--sm" data-yc-use="${r._id}">Tiếp nhận</button>
                 <button type="button" class="btn btn--secondary btn--sm" data-yc-cancel="${r._id}">Hủy yêu cầu</button>`
               : ""}
           </div>
+          <div class="request-row__media" data-yc-media-box="${r._id}" hidden></div>
         </div>`)}`;
+      el.ycList.querySelectorAll("[data-yc-media]").forEach((btn) => btn.addEventListener("click", () => {
+        const code = btn.getAttribute("data-yc-media");
+        const box = el.ycList.querySelector(`[data-yc-media-box="${code}"]`);
+        const open = box.hidden;
+        box.hidden = !open;
+        btn.setAttribute("aria-expanded", String(open));
+        btn.textContent = open ? "Ẩn ảnh/video" : `Xem ${attachmentLabel(requests.find((r) => r._id === code).attachments)}`;
+        if (open && !box.childElementCount) renderMedia(box, requests.find((r) => r._id === code).attachments);
+      }));
       el.ycList.querySelectorAll("[data-yc-use]").forEach((btn) =>
         btn.addEventListener("click", () => applyWarrantyRequest(btn.getAttribute("data-yc-use")))
       );
@@ -613,6 +638,8 @@ export default function initialize() {
     state.warrantyRequestCode = null;
     el.ycBanner.hidden = true;
     el.ycBrandModel.hidden = true;
+    el.ycAttachments.hidden = true;
+    el.ycAttachments.innerHTML = "";
     applyLocks();
   }
 
@@ -628,6 +655,7 @@ export default function initialize() {
       state.warrantyRequestCode = r._id;
       el.ycBanner.hidden = false;
       el.ycBannerCode.textContent = r._id;
+      showRequestMedia(r);
       el.phone.value = r.customer.phone || "";
       el.name.value = r.customer.fullName || "";
       el.email.value = r.customer.email || "";

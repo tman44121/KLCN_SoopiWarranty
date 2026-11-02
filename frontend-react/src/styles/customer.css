@@ -1,37 +1,105 @@
 /* ==========================================================================
-   Đánh giá công khai — chỉ dữ liệu khách đã nhận thiết bị
+   Trang chủ — quy trình bảo hành và đánh giá công khai (chỉ dữ liệu khách đã nhận thiết bị)
    ========================================================================== */
-.home-reviews-card .card-top-bar { gap: 12px; }
-.home-reviews-card .card-top-bar > .kh-icon { color: #166534; flex-shrink: 0; }
-.home-public-reviews { padding: 48px 24px; }
-.home-public-reviews .home-reviews-card { max-width: 820px; margin: 0 auto; }
-.home-process-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; padding: 0; margin: 24px 0; list-style: none; }
-.home-process-steps li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--kh-navy); }
-.home-process-number { display: grid; place-items: center; width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; color: var(--kh-forest); background: var(--kh-mint-soft); font-weight: 700; }
-@media (max-width: 480px) { .home-public-reviews { padding: 32px 16px; } }
-.home-review-summary { display: flex; align-items: center; gap: 20px; padding: 16px 0; border-bottom: 1px solid #e2e8f0; }
-.home-review-summary > div { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.home-review-summary strong { font-size: 36px; color: #174c41; line-height: 1.1; }
-.home-review-summary strong span { font-size: 16px; color: #475569; margin-left: 3px; }
-.home-review-summary p { margin: 0; font-size: 14px; }
-.home-review-summary p > span { display: block; font-size: 12px; color: #475569; margin-top: 4px; }
-.home-review-list { display: grid; max-height: 480px; overflow-y: auto; scrollbar-gutter: stable; }
-.home-review { padding: 16px 0; border-bottom: 1px solid #e2e8f0; min-width: 0; }
-.home-review-heading { display: flex; align-items: center; gap: 10px; }
-.home-review-avatar { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; background: #e3f2eb; color: #166534; font-size: 12px; font-weight: 700; }
-.home-review-heading strong { font-size: 13px; }
-.home-review-heading time { margin-left: auto; color: #475569; font-size: 12px; white-space: nowrap; }
-.home-review-verified { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #166534; }
-.home-review-verified .kh-icon { width: 13px; height: 13px; }
-.home-review-stars { color: #9b6700; font-size: 18px; letter-spacing: 2px; margin: 6px 0; }
+/* ---- Quy trình bảo hành (khách chưa đăng nhập, cột phải hero) ---- */
+.kh-home .home-process-card { padding: 28px; }
+.home-process-eyebrow { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--kh-mint-soft); color: var(--kh-forest); font-size: 12px; font-weight: 700; letter-spacing: 0.02em; }
+.home-process-eyebrow .kh-icon { width: 14px; height: 14px; }
+.home-process-title { margin: 12px 0 6px; font-family: var(--kh-display); font-size: 22px; font-weight: 800; line-height: 1.25; letter-spacing: -0.01em; color: var(--kh-navy); text-wrap: balance; }
+.home-process-lead { margin: 0; font-size: 14px; line-height: 1.6; color: var(--kh-muted); }
+.home-process-steps { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 20px; padding: 0; margin: 22px 0; list-style: none; counter-reset: none; }
+.home-process-steps li { position: relative; display: flex; align-items: flex-start; gap: 12px; padding: 10px 10px 10px 0; border-radius: 10px; }
+.home-process-marker { position: relative; z-index: 1; display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; color: var(--kh-forest); background: var(--kh-mint-soft); border: 1px solid var(--status-success-border); transition: background 0.2s var(--kh-ease), color 0.2s var(--kh-ease); }
+.home-process-marker .kh-icon { width: 19px; height: 19px; }
+.home-process-steps li:hover .home-process-marker { background: var(--kh-forest); color: var(--surface-card); }
+.home-process-steps li:last-child .home-process-marker { background: var(--kh-forest); color: var(--surface-card); border-color: var(--kh-forest); }
+.home-process-step { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--kh-muted); font-variant-numeric: tabular-nums; }
+.home-process-steps strong { display: block; margin-top: 1px; font-size: 15px; color: var(--kh-navy); }
+.home-process-steps p { margin: 3px 0 0; font-size: 13px; line-height: 1.5; color: var(--kh-muted); }
+.home-process-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding-top: 20px; border-top: 1px solid var(--kh-divider); }
+.home-process-action { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 14px; border: 1px solid var(--kh-border); border-radius: 12px; color: var(--kh-navy); background: var(--surface-card); text-decoration: none; transition: border-color 0.15s ease, transform 0.15s var(--kh-ease); }
+.home-process-action > .kh-icon { width: 20px; height: 20px; flex-shrink: 0; color: var(--kh-forest); }
+.home-process-action > span:nth-of-type(1) { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.home-process-action strong { font-size: 14px; }
+.home-process-action span span { font-size: 12px; color: var(--kh-muted); }
+.home-process-action.is-primary { background: var(--kh-forest); border-color: var(--kh-forest); color: var(--surface-card); }
+.home-process-action.is-primary > .kh-icon, .home-process-action.is-primary span span { color: var(--kh-on-dark); }
+.home-process-action:hover { border-color: var(--kh-forest); transform: translateY(-1px); }
+.home-process-action.is-primary:hover { background: var(--kh-forest-hover); }
+.home-process-action:focus-visible { outline: 2px solid var(--kh-forest); outline-offset: 2px; }
+.home-process-arrow { flex-shrink: 0; transition: transform 0.15s var(--kh-ease); }
+.home-process-action:hover .home-process-arrow { transform: translateX(3px); }
+@media (max-width: 560px) {
+  .kh-home .home-process-card { padding: 20px; }
+  .home-process-steps { grid-template-columns: 1fr; margin: 16px 0; }
+  .home-process-steps li { padding: 8px 0; }
+  .home-process-steps li:not(:last-child)::after { content: ""; position: absolute; left: 19px; top: 50px; bottom: -6px; width: 2px; background: var(--status-success-border); }
+  .home-process-actions { grid-template-columns: 1fr; }
+}
+
+/* ---- Đánh giá công khai — chỉ dữ liệu khách đã nhận thiết bị ---- */
+.home-public-reviews { padding: 72px 24px; background: var(--surface-card); border-top: 1px solid var(--kh-divider); border-bottom: 1px solid var(--kh-divider); }
+.home-reviews-head { max-width: 720px; margin-bottom: 28px; }
+.home-reviews-head .section-title { margin-top: 12px; }
+.kh-home .home-reviews-head .section-subtitle { margin-bottom: 0; }
+.home-reviews-card { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); gap: 24px; align-items: start; }
+.home-review-summary { position: sticky; top: 88px; display: flex; flex-direction: column; gap: 6px; padding: 28px 24px 24px; border-radius: 16px; background: var(--surface-inverse); color: #ffffff; }
+.home-review-summary-label { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kh-on-dark); }
+.home-review-score strong { font-family: var(--kh-display); font-size: 56px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.home-review-score strong span { margin-left: 4px; font-size: 20px; font-weight: 600; color: var(--kh-on-dark); }
+.home-review-summary p { margin: 6px 0 0; font-size: 14px; color: var(--kh-on-dark); }
+.home-review-summary p b { color: #ffffff; font-size: 16px; }
+.home-review-summary-note { font-size: 12px; line-height: 1.5; color: var(--kh-on-dark); }
+.home-review-summary .home-review-summary-empty { margin: 4px 0 2px; font-family: var(--kh-display); font-size: 22px; font-weight: 700; color: #ffffff; }
+.home-star-meter { position: relative; display: inline-block; width: max-content; font-size: 22px; letter-spacing: 3px; line-height: 1; color: var(--kh-on-dark-line); }
+.home-star-meter > span:first-child { color: rgba(255, 255, 255, 0.24); }
+.home-star-meter-fill { position: absolute; inset: 0 auto 0 0; overflow: hidden; white-space: nowrap; color: #f5c451; }
+.home-review-lookup { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 12px 14px; border-radius: 12px; background: var(--surface-card); color: var(--kh-navy); text-decoration: none; transition: transform 0.15s var(--kh-ease); }
+.home-review-lookup > .kh-icon { width: 20px; height: 20px; flex-shrink: 0; color: var(--kh-forest); }
+.home-review-lookup > span:nth-of-type(1) { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.home-review-lookup strong { font-size: 14px; }
+.home-review-lookup span span { font-size: 12px; color: var(--kh-muted); }
+.home-review-lookup:hover { transform: translateY(-1px); }
+.home-review-lookup:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
+.home-reviews-main { min-width: 0; }
+.home-review-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.home-review-list.is-expanded { max-height: 640px; overflow-y: auto; scrollbar-gutter: stable; padding-right: 4px; }
+.home-review { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 22px; border: 1px solid var(--kh-border); border-radius: 16px; background: var(--kh-cream); }
+.home-review-stars { color: #9b6700; font-size: 17px; letter-spacing: 2px; line-height: 1; }
 .home-review-stars > span { color: #cbd5e1; }
 .home-review-stars > .is-filled { color: #9b6700; }
-.home-review blockquote { margin: 0; font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
-.home-review-expand { border: 0; background: none; padding: 6px 0; color: #174c41; cursor: pointer; text-decoration: underline; font: inherit; font-size: 13px; }
-.home-reviews-note { margin: 10px 0; font-size: 12px; color: #475569; }
-.home-review-preview { padding: 12px; border: 1px solid #e5c47b; border-radius: 8px; background: #fff7e6; color: #664400; font-size: 13px; }
+.home-review blockquote { position: relative; flex: 1; margin: 0; font-size: 15px; line-height: 1.65; color: var(--kh-navy); white-space: pre-wrap; overflow-wrap: anywhere; }
+.home-review-heading { display: flex; align-items: center; gap: 10px; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--kh-divider); }
+.home-review-avatar { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; background: var(--kh-mint-soft); color: var(--kh-forest); font-size: 12px; font-weight: 700; }
+.home-review-heading strong { display: block; font-size: 13px; color: var(--kh-navy); }
+.home-review-heading time { margin-left: auto; color: var(--kh-muted); font-size: 12px; white-space: nowrap; }
+.home-review-verified { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--kh-forest); }
+.home-review-verified .kh-icon { width: 13px; height: 13px; }
+.home-review-expand { align-self: flex-start; border: 0; background: none; padding: 0; color: var(--kh-forest); cursor: pointer; text-decoration: underline; font: inherit; font-size: 13px; font-weight: 600; }
+.home-review-more { display: block; margin: 20px auto 0; padding: 10px 22px; border: 1px solid var(--kh-border); border-radius: 999px; background: var(--surface-card); color: var(--kh-navy); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: border-color 0.15s ease; }
+.home-review-more:hover { border-color: var(--kh-forest); }
+.home-review-more:focus-visible, .home-review-expand:focus-visible { outline: 2px solid var(--kh-forest); outline-offset: 2px; }
+.home-reviews-note { margin: 0; font-size: 12px; color: var(--kh-muted); }
+.home-review-preview { margin: 0 0 20px; padding: 12px; border: 1px solid #e5c47b; border-radius: 8px; background: #fff7e6; color: #664400; font-size: 13px; }
 .home-review-preview a { color: inherit; font-weight: 700; }
-.home-reviews-loading { padding: 24px 0; color: #475569; }
+.home-reviews-error { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 260px; padding: 32px 24px; border: 1px dashed var(--kh-border); border-radius: 16px; background: var(--kh-cream); text-align: center; }
+.home-reviews-error-icon { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 4px; border-radius: 50%; background: var(--kh-info-bg); color: var(--kh-info-text); }
+.home-reviews-error-icon .kh-icon { width: 24px; height: 24px; }
+.home-reviews-error strong { font-size: 16px; color: var(--kh-navy); }
+.home-reviews-error p { max-width: 380px; margin: 0 0 8px; font-size: 14px; line-height: 1.6; color: var(--kh-muted); }
+@media (max-width: 900px) {
+  .home-reviews-card { grid-template-columns: 1fr; }
+  .home-review-summary { position: static; }
+}
+@media (max-width: 640px) {
+  .home-public-reviews { padding: 48px 16px; }
+  .home-review-list { grid-template-columns: 1fr; }
+  .home-review { padding: 18px; }
+  .home-review-score strong { font-size: 46px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-process-action, .home-process-arrow, .home-review-lookup, .home-process-marker { transition: none; }
+}
 .home-trust-points, .home-service-promise ul { display: grid; gap: 20px; padding: 12px 0; margin: 0; list-style: none; }
 .home-trust-points li, .home-service-promise li { display: flex; gap: 12px; align-items: start; }
 .home-trust-points li > .kh-icon, .home-service-promise li > .kh-icon { flex-shrink: 0; width: 22px; height: 22px; }
@@ -39,7 +107,6 @@
 .home-trust-points strong { color: #174c41; font-size: 14px; }
 .home-service-promise p { margin: 5px 0 0; line-height: 1.6; }
 .home-service-promise .btn-secondary-white { margin-top: 24px; }
-@media (max-width: 480px) { .home-review-summary { gap: 12px; } .home-review-summary strong { font-size: 30px; } .home-review-heading { gap: 8px; } }
 
 /* ==========================================================================
    Giao diện khách hàng — port từ web khách KLCN (auth.css, home.css và style
@@ -508,6 +575,59 @@
   font-weight: 500;
   color: var(--kh-bad-text);
   margin-top: 5px;
+}
+
+/* Kiểm tra khi gõ: ô đúng viền xanh, gợi ý sửa (không chặn gửi) và danh sách điều kiện mật khẩu. */
+.form-input[data-valid="true"]:not(:focus),
+.regular-input[data-valid="true"]:not(:focus) {
+  border-color: var(--kh-forest);
+}
+
+.field-warning {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--kh-warn-text);
+  border-radius: 8px;
+  background: var(--kh-warn-bg);
+  color: var(--kh-warn-text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.field-warning-fix {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.password-rules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 3px 12px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--kh-bad-text);
+}
+
+.password-rules li {
+  display: flex;
+  gap: 6px;
+}
+
+.password-rules li.is-ok {
+  color: var(--kh-forest);
+}
+
+.password-rules li > span {
+  width: 10px;
+  font-weight: 700;
 }
 
 .btn-otp {
@@ -2794,6 +2914,12 @@ a.method-card:hover {
   .history-stats-grid > .history-stat:first-child {
     grid-column: 1 / -1;
   }
+}
+
+/* Laptop nhỏ (≈1024px có thanh cuộn): logo + 4 mục + 2 nút vừa đúng một hàng, không tràn ngang. */
+@media (max-width: 1120px) {
+  .nav-container { gap: 16px; }
+  .nav-menu { gap: 18px; }
 }
 
 @media (max-width: 860px) {

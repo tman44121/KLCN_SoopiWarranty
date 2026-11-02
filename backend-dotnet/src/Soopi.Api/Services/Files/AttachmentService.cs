@@ -90,7 +90,7 @@ public sealed class FileStorage(Sql sql, TimeProvider clock, IConfiguration conf
     private static string? Limit(string? value, int max) => value is null || value.Length <= max ? value : value[..max];
 }
 
-public sealed class AttachmentService(FileStorage storage, CurrentActor actors)
+public sealed class AttachmentService(FileStorage storage, Sql sql, CurrentActor actors)
 {
     public const string WarrantyRequest = "WARRANTY_REQUEST";
     public const string HandoverSignature = "HANDOVER_SIGNATURE";
@@ -128,7 +128,24 @@ public sealed class AttachmentService(FileStorage storage, CurrentActor actors)
     public async Task<StoredFile> DownloadAsync(string fileId)
     {
         var file = await storage.FindAsync(fileId);
-        return file is not null && CanRead(file.Owner) ? file : throw new DomainException(ErrorCode.NOT_FOUND);
+        return file is not null && (CanRead(file.Owner) || await CanReadThroughTicketAsync(file.Owner))
+            ? file : throw new DomainException(ErrorCode.NOT_FOUND);
+    }
+
+    /// <summary>
+    /// Ảnh/video của yêu cầu đã thành phiếu: ai xem được phiếu (đọc mọi phiếu, hoặc KTV đang được phân công) thì xem được ảnh
+    /// khách gửi để đối chiếu khi chẩn đoán.
+    /// </summary>
+    private async Task<bool> CanReadThroughTicketAsync(FileOwner owner)
+    {
+        var actor = actors.Actor;
+        if (owner.Type != WarrantyRequest || actor is null) return false;
+        if (actor.Permissions.Contains(Permission.TICKET_READ_ALL))
+            return await sql.ScalarAsync("SELECT 1 FROM PhieuTiepNhan WHERE MaYeuCau = ?", owner.Id) is not null;
+        return actor.Permissions.Contains(Permission.TICKET_READ_ASSIGNED) && actor.EmployeeId is not null
+            && await sql.ScalarAsync(
+                "SELECT 1 FROM PhieuTiepNhan ptn JOIN PhanCong pc ON pc.MaPhieuTN = ptn.MaPhieuTN WHERE ptn.MaYeuCau = ? AND pc.MaKTV = ?",
+                owner.Id, actor.EmployeeId) is not null;
     }
 
     private bool CanRead(FileOwner owner)

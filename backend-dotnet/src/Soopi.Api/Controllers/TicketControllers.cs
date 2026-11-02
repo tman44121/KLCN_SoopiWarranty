@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Soopi.Api.Domain.Tickets;
 using Soopi.Api.DTOs.Shared;
 using Soopi.Api.Infrastructure.Validation;
+using Soopi.Api.Services.Files;
 using Soopi.Api.Services.Tickets;
 
 namespace Soopi.Api.Controllers;
@@ -76,6 +77,9 @@ public sealed class TicketsController(
 
     [HttpGet("{code}")]
     public Task<TicketView> Get(string code) => tickets.GetAsync(code);
+
+    [HttpGet("{code}/attachments")]
+    public Task<List<Attachment>> Attachments(string code) => tickets.AttachmentsAsync(code);
 
     [HttpGet("{code}/history")]
     public Task<HistoryView> History(string code) => tickets.HistoryAsync(code);

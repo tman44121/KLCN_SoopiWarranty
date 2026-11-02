@@ -163,7 +163,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await h.page.goto(base + '/');
     await h.page.getByRole('heading', { name: 'Tra cứu & quản lý bảo hành sản phẩm' }).waitFor(); assertions++;
     await h.page.getByRole('heading', { name: 'Trạm thử' }).waitFor(); assertions++;
-    await h.page.getByRole('heading', { name: 'Quy trình bảo hành tại Soopi', exact: true }).waitFor(); assertions++;
+    await h.page.getByRole('heading', { name: 'Máy của bạn được xử lý thế nào?', exact: true }).waitFor(); assertions++;
     assert.equal(await h.page.getByText('Ví dụ minh họa', { exact: true }).count(), 0); assertions++;
     assert.equal(await h.page.locator('.nav-link.active').getAttribute('href'), '/'); assertions++;
     assert.equal(await h.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `home ${width}: horizontal scroll`); assertions++;

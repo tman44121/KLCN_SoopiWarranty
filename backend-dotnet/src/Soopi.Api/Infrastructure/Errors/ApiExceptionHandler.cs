@@ -14,6 +14,7 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
         switch (SqlErrors.Translate(exception))
         {
             case DomainException domain:
+                if (domain.Code == ErrorCode.DATABASE_OUTDATED) logger.LogError(exception, "Database thiếu đối tượng {Name} — chưa chạy script nâng cấp", domain.Arguments);
                 await ProblemWriter.WriteAsync(context, domain.Code, domain.Arguments);
                 return true;
             case Validation.RequestValidationException invalid:

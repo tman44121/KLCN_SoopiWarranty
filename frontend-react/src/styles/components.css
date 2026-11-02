@@ -2126,6 +2126,97 @@ button.queue-item {
   gap: 12px;
 }
 
+/* Ảnh/video khách gửi kèm yêu cầu bảo hành (màn tiếp nhận) */
+.request-row__media {
+  flex-basis: 100%;
+}
+
+.request-row__no-media {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.request-media-card {
+  margin-bottom: 16px;
+}
+
+.request-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.request-media-item {
+  margin: 0;
+  min-width: 0;
+}
+
+.request-media-frame {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 1px solid var(--border-universal);
+  border-radius: var(--radius-table);
+  background: var(--surface-page);
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+a.request-media-frame:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.request-media-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+a.request-media-frame:hover img {
+  transform: scale(1.03);
+}
+
+video.request-media-frame {
+  object-fit: contain;
+  background: #000;
+}
+
+.request-media-frame.is-loading {
+  background: linear-gradient(90deg, var(--surface-page), var(--border-divider), var(--surface-page));
+  background-size: 200% 100%;
+  animation: request-media-shimmer 1.2s linear infinite;
+}
+
+.request-media-frame.is-error {
+  padding: 8px;
+  color: var(--status-danger-text);
+  background: var(--status-danger-bg);
+}
+
+.request-media-item figcaption {
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes request-media-shimmer {
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .request-media-frame.is-loading { animation: none; }
+  a.request-media-frame:hover img { transform: none; }
+}
+
 .drawer-table {
   width: 100%;
   border-collapse: collapse;

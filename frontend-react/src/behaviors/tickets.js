@@ -214,6 +214,7 @@ export default function initialize() {
           ${kv("Triệu chứng khách hàng", t.reportedIssue, true)}
         </div>
         ${work ? workSection(t, work) : ""}
+        ${t.warrantyRequestCode ? section("Ảnh / video khách gửi kèm", html`<div data-ticket-media></div>`) : ""}
         ${section("Thông tin bảo hành", html`
           <div class="detail-grid">
             ${kv("Tình trạng bảo hành", fmt.badgeOf(L.WARRANTY_STATUS, w.status))}
@@ -233,6 +234,7 @@ export default function initialize() {
           </div>`)}
         ${billing ? billingSection(billing) : ""}
         ${historySection(history)}`;
+      renderTicketMedia(el.drawerBody.querySelector("[data-ticket-media]"), t);
     } catch (error) {
       ui.blockState(el.drawerBody, "error", { desc: error.detail }, () => openDetail(code));
     }
@@ -310,3 +312,4 @@ export default function initialize() {
   });
 }
 import { createListFilters } from './list-filters.js';
+import { renderTicketMedia } from './media.js';

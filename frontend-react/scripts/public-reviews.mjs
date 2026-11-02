@@ -15,7 +15,7 @@ try {
     await s.page.goto(base + '/');
     const panel = s.page.getByLabel('Đánh giá khách hàng', { exact: true });
     await panel.getByText('61', { exact: true }).waitFor();
-    await s.page.getByRole('heading', { name: 'Quy trình bảo hành tại Soopi', exact: true }).waitFor({ timeout: 10000 });
+    await s.page.getByRole('heading', { name: 'Máy của bạn được xử lý thế nào?', exact: true }).waitFor({ timeout: 10000 });
     assert.equal(await s.page.locator('.home-process-steps li').count(), 6);
     assert.equal(await s.page.locator('.hero-section .home-reviews-card').count(), 0);
     assert.match(await panel.locator('.home-review-summary').textContent(), /3,7\/5/);
@@ -57,7 +57,7 @@ try {
     await sample.page.goto(base + '/');
     const panel = sample.page.getByLabel('Đánh giá khách hàng', { exact: true });
     await sample.page.waitForLoadState('networkidle');
-    await sample.page.getByRole('heading', { name: 'Quy trình bảo hành tại Soopi', exact: true }).waitFor();
+    await sample.page.getByRole('heading', { name: 'Máy của bạn được xử lý thế nào?', exact: true }).waitFor();
     assert.equal(await panel.count(), 0, 'Unpublished scores must not show a review section or aggregate');
     assert.equal(await sample.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     hasRealReview = true;

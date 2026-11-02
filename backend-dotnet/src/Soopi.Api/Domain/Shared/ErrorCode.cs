@@ -96,6 +96,7 @@ public enum ErrorCode
     CONCURRENT_MODIFICATION,
     RATE_LIMITED,
     VALIDATION_FAILED,
+    DATABASE_OUTDATED,
     SYSTEM_ERROR,
 }
 
@@ -196,6 +197,7 @@ public static class ErrorCodes
         [ErrorCode.RATE_LIMITED] = 429,
         [ErrorCode.APPOINTMENT_OUTSIDE_BUSINESS_HOURS] = 422,
         [ErrorCode.VALIDATION_FAILED] = 400,
+        [ErrorCode.DATABASE_OUTDATED] = 503,
         [ErrorCode.SYSTEM_ERROR] = 500,
     };
 

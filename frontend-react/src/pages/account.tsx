@@ -5,6 +5,7 @@ import { businessTimeError, businessInstant, appointmentEnd } from "../business-
 import { itemDay } from "../behaviors/list-filters.js";
 import { usePage } from "../usePage";
 import { MAX_REVIEW_LENGTH, QUICK_TAGS, joinReviewComment, splitReviewComment } from "../reviews";
+import { passwordError, passwordRules } from "../validation";
 import {
   CustomerFooter, CustomerHeader, Icon, PasswordInput, STEP_LABELS, StatusBadge, TICKET_FILTERS, api, errorText, fmt, inGroup,
   initial, newest, useBusy,
@@ -2015,9 +2016,11 @@ function PasswordForm() {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     setMessage(null);
-    if (!values.current || !values.next) return setMessage({ ok: false, text: "Vui lòng nhập mật khẩu hiện tại và mật khẩu mới." });
-    if (values.next !== values.confirm) return setMessage({ ok: false, text: "Mật khẩu xác nhận không khớp." });
+    if (!values.current) return setMessage({ ok: false, text: "Vui lòng nhập mật khẩu hiện tại." });
+    const weak = passwordError(values.next, "");
+    if (weak) return setMessage({ ok: false, text: weak });
     if (values.next === values.current) return setMessage({ ok: false, text: "Mật khẩu mới phải khác mật khẩu hiện tại." });
+    if (values.next !== values.confirm) return setMessage({ ok: false, text: values.confirm ? "Mật khẩu xác nhận chưa khớp với mật khẩu mới." : "Vui lòng nhập lại mật khẩu mới để xác nhận." });
     void run(async () => {
       try {
         // Đổi mật khẩu thu hồi các phiên khác; phiên này nhận access token mới.
@@ -2044,12 +2047,18 @@ function PasswordForm() {
         </div>
         <div className="form-group">
           <label htmlFor="pw-new">Mật khẩu mới *</label>
-          <PasswordInput id="pw-new" name="newPassword" autoComplete="new-password" value={values.next} onChange={set("next")} describedBy="pw-new-note" />
-          <div className="input-subnote" id="pw-new-note">Tối thiểu 10 ký tự, gồm chữ và số, không chứa số điện thoại.</div>
+          <PasswordInput id="pw-new" name="newPassword" autoComplete="new-password" value={values.next} onChange={set("next")} describedBy="pw-new-note"
+            invalid={values.next && (passwordError(values.next, "") || values.next === values.current) ? true : undefined} />
+          {values.next ? <ul className="password-rules" id="pw-new-note" aria-label="Điều kiện mật khẩu">
+            {[...passwordRules(values.next, "").slice(0, 3), { label: "Khác mật khẩu hiện tại", ok: !values.current || values.next !== values.current }]
+              .map((rule) => <li key={rule.label} className={rule.ok ? "is-ok" : ""}><span aria-hidden="true">{rule.ok ? "✓" : "•"}</span>{rule.label}</li>)}
+          </ul> : <div className="input-subnote" id="pw-new-note">Tối thiểu 10 ký tự, gồm chữ và số, không chứa tên đăng nhập/số điện thoại.</div>}
         </div>
         <div className="form-group">
           <label htmlFor="pw-confirm">Xác nhận mật khẩu mới *</label>
-          <PasswordInput id="pw-confirm" name="confirmPassword" autoComplete="new-password" value={values.confirm} onChange={set("confirm")} />
+          <PasswordInput id="pw-confirm" name="confirmPassword" autoComplete="new-password" value={values.confirm} onChange={set("confirm")}
+            invalid={values.confirm && values.confirm !== values.next ? true : undefined} describedBy="pw-confirm-error" />
+          {values.confirm && values.confirm !== values.next && <div className="field-error" id="pw-confirm-error" role="alert">Chưa khớp với mật khẩu mới.</div>}
         </div>
         <div className="tip-box">
           <strong>Lưu ý an toàn tài khoản</strong>

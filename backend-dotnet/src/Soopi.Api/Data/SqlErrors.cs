@@ -7,7 +7,7 @@ namespace Soopi.Api.Data;
 /// Đổi lỗi ràng buộc của SQL Server sang lỗi nghiệp vụ. Luật đã được kiểm tra trước khi ghi; đây là lưới an toàn khi hai
 /// thao tác đua nhau cùng vượt qua kiểm tra — vd "mỗi thiết bị một phiếu mở" là filtered unique index (2601/2627).
 /// </summary>
-public static class SqlErrors
+public static partial class SqlErrors
 {
     /// <summary>2601 trùng unique index, 2627 trùng ràng buộc UNIQUE/PRIMARY KEY.</summary>
     private static readonly HashSet<int> DuplicateKey = [2601, 2627];
@@ -34,9 +34,15 @@ public static class SqlErrors
     {
         if (exception is DomainException) return exception;
         var sql = Find(exception);
+        // 207 cột không tồn tại, 208 bảng không tồn tại: DB chưa chạy script nâng cấp tương ứng trong database/.
+        if (sql is not null && sql.Number is 207 or 208)
+            return new DomainException(ErrorCode.DATABASE_OUTDATED, MissingName().Match(sql.Message) is { Success: true } match ? match.Groups[1].Value : "?");
         var code = sql is null ? null : CodeOf(sql);
         return code is null ? exception : new DomainException(code.Value);
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex("'([^']+)'")]
+    private static partial System.Text.RegularExpressions.Regex MissingName();
 
     public static bool IsRetryable(Exception exception) =>
         Find(exception) is { } sql && sql.Errors.Cast<SqlError>().Any(error => Retryable.Contains(error.Number));

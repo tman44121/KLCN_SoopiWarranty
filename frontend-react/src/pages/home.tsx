@@ -50,6 +50,16 @@ const STEPS = [
   { icon: "checkCircle", title: "Nhận lại máy & nghiệm thu", text: "Khi phiếu ở bước Sẵn sàng nhận máy, tới trạm kiểm tra thiết bị và nhận lại máy.", tag: "Kiểm tra máy khi bàn giao" },
 ];
 
+/* Sáu bước khớp STEP_LABELS (thanh tiến độ của phiếu); mô tả theo đúng việc trạm làm ở mỗi bước. */
+const PROCESS = [
+  { icon: "inbox", title: "Tiếp nhận", text: "Lễ tân kiểm tra ngoại quan, lập phiếu TN- và hẹn ngày trả máy." },
+  { icon: "search", title: "Chẩn đoán", text: "Kỹ thuật viên tìm lỗi và xác định còn hay hết bảo hành." },
+  { icon: "clock", title: "Chờ linh kiện", text: "Ca ngoài bảo hành có báo giá để bạn duyệt trước khi thay." },
+  { icon: "wrench", title: "Đang sửa", text: "Sửa chữa, thay linh kiện theo đúng phương án đã duyệt." },
+  { icon: "shield", title: "Kiểm tra chất lượng", text: "Máy qua 6 hạng mục kiểm tra trước khi bàn giao." },
+  { icon: "checkCircle", title: "Sẵn sàng nhận máy", text: "Bạn kiểm tra lại máy, thanh toán nếu có và ký nhận." },
+];
+
 const FAQ = [
   {
     q: "Tôi có bắt buộc phải giữ lại hóa đơn giấy để bảo hành không?",
@@ -137,18 +147,33 @@ export default function HomePage() {
             </div>
 
             {!name ? <div className="hero-dashboard-card home-process-card">
-              <div className="card-top-bar"><h2 className="dispatch-title">Quy trình bảo hành tại Soopi</h2><Icon glyph="wrench" /></div>
-              <p className="ticket-meta">Các bước xử lý từ lúc tiếp nhận đến khi sẵn sàng trả máy.</p>
+              <div className="home-process-head">
+                <span className="home-process-eyebrow"><Icon glyph="wrench" />Quy trình {STEP_LABELS.length} bước</span>
+                <h2 className="home-process-title">Máy của bạn được xử lý thế nào?</h2>
+                <p className="home-process-lead">Mỗi bước đều hiện trên phiếu tra cứu, từ lúc nhận máy tới khi bạn ký nhận lại.</p>
+              </div>
               <ol className="home-process-steps">
-                {STEP_LABELS.map((label, index) => <li key={label}>
-                  <span className="home-process-number" aria-hidden="true">{index + 1}</span>
-                  <span>{label === 'QC' ? 'Kiểm tra chất lượng' : label}</span>
+                {PROCESS.map((step, index) => <li key={step.title}>
+                  <span className="home-process-marker" aria-hidden="true"><Icon glyph={step.icon} /></span>
+                  <div>
+                    <span className="home-process-step" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                    <strong>{step.title}</strong>
+                    <p>{step.text}</p>
+                  </div>
                 </li>)}
               </ol>
-              <p className="ticket-meta">Đăng nhập để xem các phiếu và tiến độ thiết bị của bạn.</p>
-              <a href={historyHref} className="qr-scan-spark-card"><span className="card-icon-circle"><Icon glyph="file" /></span>
-                <span><span className="qr-spark-title">Phiếu bảo hành của tôi</span><span className="qr-spark-val">Xem tiến độ xử lý</span></span><span aria-hidden="true">→</span>
-              </a>
+              <div className="home-process-actions">
+                <a href="/portal" className="home-process-action is-primary">
+                  <Icon glyph="search" />
+                  <span><strong>Tra cứu tiến độ</strong><span>Mã phiếu hoặc Serial + SĐT</span></span>
+                  <span className="home-process-arrow" aria-hidden="true">→</span>
+                </a>
+                <a href={historyHref} className="home-process-action">
+                  <Icon glyph="file" />
+                  <span><strong>Phiếu của tôi</strong><span>Đăng nhập để xem tất cả</span></span>
+                  <span className="home-process-arrow" aria-hidden="true">→</span>
+                </a>
+              </div>
             </div> : <div className="hero-dashboard-card" id="tracking">
               <div className="card-top-bar">
                 <h2 className="dispatch-title">Tiến độ sửa chữa thiết bị của bạn</h2>

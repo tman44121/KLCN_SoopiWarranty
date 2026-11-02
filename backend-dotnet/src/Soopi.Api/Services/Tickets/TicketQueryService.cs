@@ -6,6 +6,7 @@ using Soopi.Api.Domain.Tickets;
 using Soopi.Api.DTOs.Shared;
 using Soopi.Api.Infrastructure.Security;
 using Soopi.Api.Services.Customers;
+using Soopi.Api.Services.Files;
 
 namespace Soopi.Api.Services.Tickets;
 
@@ -71,7 +72,8 @@ public sealed record HistoryView(IReadOnlyList<StatusHistory> StatusHistory, IRe
 
 public sealed record ReceiptView(TicketView Ticket, string Title);
 
-public sealed class TicketQueryService(TicketStore tickets, Sql sql, CurrentActor actors, StaffDirectory staff, TimeProvider clock, IConfiguration configuration)
+public sealed class TicketQueryService(
+    TicketStore tickets, WarrantyRequestStore requests, Sql sql, CurrentActor actors, StaffDirectory staff, TimeProvider clock, IConfiguration configuration)
 {
     private static readonly HashSet<string> SlaFilters = ["BREACHED", "AT_RISK", "ON_TRACK"];
 
@@ -94,6 +96,17 @@ public sealed class TicketQueryService(TicketStore tickets, Sql sql, CurrentActo
     {
         var actor = actors.Require(Permission.TICKET_READ_ALL, Permission.TICKET_READ_ASSIGNED);
         return await ViewAsync(await RequireReadableAsync(code, actor), actor);
+    }
+
+    /// <summary>Ảnh/video khách gửi kèm yêu cầu trực tuyến đã thành phiếu này; phiếu lập tại quầy không có.</summary>
+    public async Task<List<Attachment>> AttachmentsAsync(string code)
+    {
+        var actor = actors.Require(Permission.TICKET_READ_ALL, Permission.TICKET_READ_ASSIGNED);
+        var ticket = await RequireReadableAsync(code, actor);
+        if (ticket.WarrantyRequestId is null || await requests.FindAsync(ticket.WarrantyRequestId) is not { } request) return [];
+        return ((List<Dictionary<string, object?>>)request["attachments"]!)
+            .Select(file => new Attachment((string)file["fileId"]!, (string)file["fileName"]!, (string)file["contentType"]!, (long)file["size"]!))
+            .ToList();
     }
 
     public async Task<List<TicketView>> OpenAsync()

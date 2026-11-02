@@ -134,6 +134,9 @@ Chữ ký bàn giao PNG ≤200 KiB có contract riêng tại
 
 `GET /api/v1/files/{id}` kiểm quyền chủ sở hữu, trả binary với Content-Type thực, inline disposition,
 `Cache-Control: private, no-store`; ngoài phạm vi trả 404. Tệp cần cả metadata DB và nội dung storage.
+Ảnh/video của yêu cầu bảo hành xem được bởi người xử lý yêu cầu (`WARRANTY_REQUEST_HANDLE`) và, khi yêu cầu đã thành
+phiếu, bởi ai đọc được phiếu đó (`TICKET_READ_ALL`, hoặc KTV đang được phân công). `GET /api/v1/tickets/{code}/attachments`
+trả danh sách `{fileId, fileName, contentType, size}` của yêu cầu gốc (rỗng với phiếu lập tại quầy).
 Upload/tạo yêu cầu/bàn giao là luồng ghi, cần DB kiểm được duyệt trước khi chạy tích hợp.
 
 ## Tra cứu theo nhóm

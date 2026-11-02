@@ -1,4 +1,5 @@
 import { businessTimeError, businessInstant, appointmentEnd } from "../business-hours.js";
+import { phoneError } from "../validation.ts";
 /* Public customer portal. Only the deliberately projected /portal API is used. */
 export default function initialize() {
 
@@ -38,6 +39,37 @@ export default function initialize() {
     document.querySelectorAll(".form-field__error").forEach((node) => node.setAttribute("hidden", ""));
     el.error.hidden = true;
     el.error.textContent = "";
+  }
+
+  function clearField(name) {
+    const wrapper = field(name);
+    if (!wrapper) return;
+    wrapper.classList.remove("has-error");
+    const note = wrapper.querySelector(".form-field__error");
+    if (note) note.hidden = true;
+  }
+
+  /** Mã phiếu (TN-/YC-) hoặc số Serial/IMEI. */
+  function lookupIdError(raw) {
+    const code = raw.trim().toUpperCase();
+    if (!code) return "Vui lòng nhập mã phiếu (TN-…, YC-…) hoặc số Serial/IMEI.";
+    if (/^(TN|YC)-/.test(code)) return /^(TN|YC)-[0-9]{4}-[0-9]{4}-[0-9]{5}$/.test(code) ? null : "Mã phiếu chưa đủ — dạng TN-2026-0917-00421.";
+    if (/[^A-Z0-9\s-]/.test(code)) return "Số Serial/IMEI chỉ gồm chữ, số và dấu gạch ngang.";
+    return code.replace(/\s/g, "").length < 4 ? "Số Serial/IMEI quá ngắn — kiểm tra lại số in trên tem thiết bị." : null;
+  }
+
+  /** Báo lỗi ngay khi gõ (ô trống chỉ báo khi rời ô hoặc bấm gửi). */
+  function liveCheck(name, input, check) {
+    const run = (requireValue) => {
+      const message = !input.value.trim() && !requireValue ? null : check(input.value);
+      if (message) invalid(name, message);
+      else clearField(name);
+      input.setAttribute("aria-invalid", message ? "true" : "false");
+      if (message) input.removeAttribute("data-valid"); else if (input.value.trim()) input.setAttribute("data-valid", "true");
+    };
+    input.addEventListener("input", () => run(false));
+    input.addEventListener("blur", () => { if (input.dataset.touched) run(true); });
+    input.addEventListener("input", () => { input.dataset.touched = "1"; }, { once: true });
   }
 
   function invalid(name, message) {
@@ -177,12 +209,10 @@ export default function initialize() {
     clearErrors();
     const code = el.lookupId.value.trim().toUpperCase();
     const phone = el.lookupPhone.value.trim();
-    const phoneDigits = phone.replace(/[^0-9+]/g, "").replace(/^\+84/, "0").replace(/\+/g, "");
-    if (!code) invalid("lookupId", "Vui lòng nhập mã phiếu (TN-…, YC-…) hoặc số Serial/IMEI.");
-    else if (/^(TN|YC)-/.test(code) ? !/^(TN|YC)-[0-9A-Z-]+$/.test(code) : code.replace(/\s/g, "").length < 4)
-      invalid("lookupId", /^(TN|YC)-/.test(code) ? "Mã phiếu không đúng dạng — ví dụ TN-2026-0917-00421." : "Số Serial/IMEI quá ngắn — kiểm tra lại số in trên tem thiết bị.");
+    const idError = lookupIdError(code);
+    if (idError) invalid("lookupId", idError);
     if (!phone) invalid("lookupPhone", "Vui lòng nhập số điện thoại đã đăng ký khi gửi máy.");
-    else if (!/^0[0-9]{9,10}$/.test(phoneDigits)) invalid("lookupPhone", "Số điện thoại không hợp lệ — cần 10 hoặc 11 chữ số và bắt đầu bằng 0.");
+    else if (phoneError(phone)) invalid("lookupPhone", phoneError(phone));
     if (document.querySelector("[data-field].has-error")) return;
     try {
       const grant = await window.LML_UI.busy(el.submit, () => api.portal.lookup(code, phone));
@@ -226,6 +256,7 @@ export default function initialize() {
     ];
     let valid = true;
     required.forEach(([name, selector, message]) => { if (!value(selector)) { invalid(name, message); valid = false; } });
+    if (value("#reg-phone") && phoneError(value("#reg-phone"))) { invalid("regPhone", phoneError(value("#reg-phone"))); valid = false; }
     if (!valid || !type) return;
     const chosen = value("#reg-time");
     if (businessTimeError(chosen) || businessInstant(chosen).getTime() < Date.now()) {
@@ -274,5 +305,17 @@ export default function initialize() {
     });
     el.category.addEventListener("change", updateSerialLabel);
     el.registerSubmit.addEventListener("click", register);
+    liveCheck("lookupId", el.lookupId, lookupIdError);
+    liveCheck("lookupPhone", el.lookupPhone, (raw) => phoneError(raw) || null);
+    liveCheck("regName", document.querySelector("#reg-name"), (raw) => !raw.trim() ? "Vui lòng nhập họ và tên." : /[0-9]/.test(raw) ? "Họ và tên không được chứa chữ số." : null);
+    liveCheck("regPhone", document.querySelector("#reg-phone"), (raw) => phoneError(raw) || null);
+    liveCheck("regSerial", document.querySelector("#reg-serial"), (raw) => {
+      const serial = raw.replace(/\s/g, "");
+      if (!serial) return "Vui lòng nhập Serial/IMEI.";
+      const imei = el.serialLabel.textContent.startsWith("IMEI");
+      if (imei) return /[^0-9]/.test(serial) ? "IMEI chỉ gồm chữ số." : serial.length !== 15 ? `IMEI gồm 15 chữ số — bạn mới nhập ${serial.length}.` : null;
+      if (/[^A-Za-z0-9-]/.test(serial)) return "Serial chỉ gồm chữ, số và dấu gạch ngang.";
+      return serial.length < 4 ? "Serial quá ngắn — tối thiểu 4 ký tự." : serial.length > 50 ? "Serial quá dài — tối đa 50 ký tự." : null;
+    });
   };
 }
