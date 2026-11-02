@@ -2807,3 +2807,21 @@ button.queue-item {
 @media (max-width: 1100px) { .access-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .access-stats { grid-template-columns: minmax(0, 1fr); } }
 
+.business-date-time__fields { display: flex; flex-wrap: wrap; gap: 8px; }
+.business-date-time__fields > * { min-width: 130px; flex: 1; }
+.business-date-time .input-subnote { margin: 6px 0 0; }
+.list-filters { flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.list-filters .toolbar__field { min-width: 140px; flex-direction: column; align-items: stretch; font-size: 12px; font-weight: 500; color: var(--text-muted); }
+.toolbar__field--search { min-width: 220px; }
+.list-filters .list-filters__search { flex: 1; min-width: 220px; }
+.list-filters input, .list-filters select { min-height: 36px; }
+@media (pointer: coarse), (max-width: 767px) {
+  .list-filters input, .list-filters select, .list-filters button,
+  .business-date-time input, .business-date-time select { min-height: 44px; }
+  .list-filters .toolbar__field { flex: 1 1 140px; min-width: 0; }
+  .list-filters .list-filters__search { flex-basis: 100%; }
+  .list-filters input, .list-filters select { width: 100%; min-width: 0; }
+}
+@media (pointer: coarse), (max-width: 767px) {
+  .inventory-document-pagination select { min-height: 44px; }
+}

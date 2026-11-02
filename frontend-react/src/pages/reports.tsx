@@ -270,7 +270,7 @@ export default function ReportsPage() {
                       {"Chuyên môn"}
                     </th>
                     <th>
-                      {"Tải hiện tại"}
+                      {"Số phiếu đang xử lý"}
                     </th>
                     <th>
                       {"Hoàn tất tháng này"}

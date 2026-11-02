@@ -26,7 +26,9 @@ public static class ProblemWriter
             Type = ErrorBase + code,
             Title = httpStatus is >= 400 and < 500 ? "Yêu cầu không hợp lệ" : "Lỗi hệ thống",
             Status = httpStatus,
-            Detail = ErrorMessages.Format(code, arguments ?? []),
+            Detail = code == ErrorCode.VALIDATION_FAILED && fieldErrors is { Count: > 0 }
+                ? FieldLabels.Summary(fieldErrors)
+                : ErrorMessages.Format(code, arguments ?? []),
             Instance = context.Request.PathBase + context.Request.Path,
         };
         problem.Extensions["code"] = code.ToString();

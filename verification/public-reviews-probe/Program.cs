@@ -1,4 +1,4 @@
-// Development DB only. Every fixture, approval and audit entry rolls back; --apply-schema installs only the empty table.
+// Every fixture, approval and audit entry rolls back; --apply-schema installs only the empty table.
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -46,13 +46,30 @@ async Task Fails(Func<Task> call, ErrorCode code)
     catch (DomainException error) { Check(error.Code == code, code.ToString()); }
 }
 var initial = await service.ListAsync();
-var summary = (await sql.QueryAsync("SELECT COUNT_BIG(*) N,AVG(CAST(bg.DanhGiaHaiLong AS DECIMAL(10,2))) A FROM PhieuBanGiao bg JOIN PhieuTiepNhan p ON p.MaPhieuTN=bg.MaPhieuTN WHERE bg.NgayDanhGia IS NOT NULL AND bg.DanhGiaHaiLong BETWEEN 1 AND 5 AND p.TrangThaiXuLy IN ('DELIVERED','RETURNED_UNREPAIRED')", r => (N: r.Long("N"), A: r.DecOrNull("A")))).Single();
+var summary = (await sql.QueryAsync("SELECT COUNT_BIG(*) N,AVG(CAST(bg.DanhGiaHaiLong AS DECIMAL(10,2))) A FROM PhieuBanGiao bg JOIN PhieuTiepNhan p ON p.MaPhieuTN=bg.MaPhieuTN WHERE bg.DanhGiaHaiLong BETWEEN 1 AND 5 AND p.TrangThaiXuLy IN ('DELIVERED','RETURNED_UNREPAIRED')", r => (N: r.Long("N"), A: r.DecOrNull("A")))).Single();
 Check(initial.Items.Count == 0, "existing ratings are never published automatically");
-Check(initial.ReviewCount == summary.N && initial.AverageRating == decimal.Round(summary.A!.Value, 1, MidpointRounding.AwayFromZero), "aggregate includes unpublished low scores and excludes legacy ratings");
-await Fails(() => service.SetPublicationAsync(codes[2], true, 5, date, null), ErrorCode.VALIDATION_FAILED);
+Check(initial.ReviewCount == summary.N && initial.AverageRating == decimal.Round(summary.A!.Value, 1, MidpointRounding.AwayFromZero), "aggregate includes stored handover scores and unpublished low scores");
+var sampleScript = File.ReadAllText("database/09_sample_public_reviews.sql");
+sampleScript = sampleScript[sampleScript.IndexOf("IF OBJECT_ID")..sampleScript.LastIndexOf("COMMIT;")];
+await Migrate(sampleScript); await Migrate(sampleScript);
+var withSamples = await service.ListAsync();
+Check(Convert.ToInt32(await sql.ScalarAsync("SELECT COUNT(*) FROM dbo.DanhGiaMinhHoa")) == 6, "six stored sample reviews; rerunning seed does not duplicate them");
+Check(withSamples.SampleItems.Count == 0 && withSamples.Items.Count == 0, "stored sample reviews are never exposed on the public endpoint");
+Check(withSamples.ReviewCount == initial.ReviewCount && withSamples.AverageRating == initial.AverageRating, "samples do not affect real customer aggregates");
+await Fails(() => service.SetPublicationAsync(codes[2], true, 5, date, null), ErrorCode.CONCURRENT_MODIFICATION);
+await service.SetPublicationAsync(codes[2], true, 5, null, null);
+var legacy = (await service.ListAsync()).Items.Single();
+Check(legacy.Rating == 5 && legacy.ReviewedOn is null && legacy.Comment is null, "admin can publish a star-only legacy score without inventing its date or comment");
+Check((await reports.CustomerReviewsAsync(null, null, null, null, codes[2], 0, 25)).Reviews.Items.Single().Published, "admin report matches a null-date approval");
+await sql.ExecuteAsync("UPDATE PhieuBanGiao SET NgayDanhGia=? WHERE MaPhieuTN=?", date, codes[2]);
+Check((await service.ListAsync()).Items.Count == 0, "adding a date invalidates the previous undated approval");
+await Fails(() => service.SetPublicationAsync(codes[2], true, 5, null, null), ErrorCode.CONCURRENT_MODIFICATION);
+await sql.ExecuteAsync("UPDATE PhieuBanGiao SET NgayDanhGia=NULL WHERE MaPhieuTN=?", codes[2]);
+await service.SetPublicationAsync(codes[2], false, null, null, null);
 await Fails(() => service.SetPublicationAsync(codes[0], true, 4, date, comment), ErrorCode.CONCURRENT_MODIFICATION);
 await service.SetPublicationAsync(codes[0], true, 5, date, comment);
 var published = (await service.ListAsync()).Items.Single();
+Check((await service.ListAsync()).SampleItems.Count == 0, "a published customer review takes precedence over all samples");
 Check(Guid.TryParse(published.Id, out _) && !codes.Contains(published.Id) && published.Comment == comment && published.ReviewedOn == new DateOnly(2026, 10, 31), "public review uses opaque identity, exact Unicode comment and Vietnam date");
 Check((await reports.CustomerReviewsAsync(null, null, null, null, codes[0], 0, 25)).Reviews.Items.Single().Published, "admin report reflects approval");
 var audits = Convert.ToInt64(await sql.ScalarAsync("SELECT COUNT_BIG(*) FROM NhatKyThaoTac WHERE HanhDong='REVIEW_PUBLISHED'"));

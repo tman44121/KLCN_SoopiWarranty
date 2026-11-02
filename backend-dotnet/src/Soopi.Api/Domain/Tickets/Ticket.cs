@@ -162,10 +162,13 @@ public sealed class Ticket
         string receivedBy, WarrantyAtIntake warrantyAtIntake, string? sealCondition, Cosmetic? cosmetic, string? reportedIssue,
         DateTimeOffset? promisedReturnAt, decimal? estimatedCost, SlaLevel slaLevel, AuthenticatedActor actor)
     {
-        if (JavaText.IsBlank(reportedIssue) || cosmetic is null || !cosmetic.CustomerAcknowledged
-            || (promisedReturnAt is { } promised && promised < receivedAt) || estimatedCost is null || estimatedCost < 0)
-            throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (JavaText.IsBlank(reportedIssue)) throw DomainException.Invalid("Vui lòng nhập lỗi khách báo.");
+        if (cosmetic is null) throw DomainException.Invalid("Vui lòng ghi nhận tình trạng ngoại quan của thiết bị.");
+        if (!cosmetic.CustomerAcknowledged) throw DomainException.Invalid("Khách hàng chưa xác nhận tình trạng ngoại quan khi nhận máy.");
+        if (promisedReturnAt is { } promised && promised < receivedAt) throw DomainException.Invalid("Ngày hẹn trả không được trước thời điểm tiếp nhận.");
+        if (estimatedCost is null or < 0) throw DomainException.Invalid("Chi phí dự kiến phải là số tiền từ 0 đ trở lên.");
         Id = id;
+        BusinessHours.Require(promisedReturnAt);
         StationCode = stationCode;
         ReceivedAt = receivedAt;
         Channel = channel ?? Tickets.Channel.COUNTER;
@@ -262,7 +265,7 @@ public sealed class Ticket
                 or TicketStatus.AWAITING_RETURN or TicketStatus.RETURNED_UNREPAIRED)
             throw new DomainException(ErrorCode.REASSIGN_NOT_ALLOWED);
         var previous = Assignment.TechnicianId;
-        if (previous == technicianId) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (previous == technicianId) throw DomainException.Invalid("Phiếu đang được giao cho chính kỹ thuật viên này — hãy chọn kỹ thuật viên khác.");
         Assignment.History.Add(new AssignmentHistory(previous, technicianId, managerId, now, BlankToNull(note)));
         Assignment = Assignment with { ManagerId = managerId, TechnicianId = technicianId, Note = note is null ? Assignment.Note : BlankToNull(note) };
         RepairOrder = RepairOrder! with { TechnicianId = technicianId };
@@ -325,12 +328,12 @@ public sealed class Ticket
         RequireAssigned(actor);
         if (actor.EmployeeId != RepairOrder.TechnicianId) throw new DomainException(ErrorCode.NOT_ASSIGNED_TECHNICIAN);
         if (qcResult is not ("PASS" or "FAIL")) throw new DomainException(ErrorCode.REPAIR_QC_RESULT_INVALID);
-        if (JavaText.IsBlank(workDone) || qcSteps is null || qcSteps.Any(step => step is null))
-            throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (JavaText.IsBlank(workDone)) throw DomainException.Invalid("Vui lòng nhập công việc đã làm.");
+        if (qcSteps is null || qcSteps.Any(step => step is null)) throw DomainException.Invalid("Vui lòng nhập kết quả cho từng bước KCS.");
         var steps = qcSteps.Select(step => step!).ToList();
         if (steps.Count != QcSteps.Count || !steps.Select(step => step.Step).ToHashSet().SetEquals(QcSteps)
             || steps.Any(step => !QcStepResults.Contains(step.Result ?? "null")))
-            throw new DomainException(ErrorCode.VALIDATION_FAILED);
+            throw DomainException.Invalid("Kết quả KCS chưa đủ hoặc không hợp lệ — mỗi bước kiểm tra phải chọn đúng một kết quả.");
         var hasFailure = steps.Any(step => step.Result == "FAIL");
         if ((hasFailure && qcResult == "PASS") || (!hasFailure && qcResult == "FAIL")) throw new DomainException(ErrorCode.REPAIR_QC_INCONSISTENT);
         var results = new List<RepairResult>(RepairOrder.Results)
@@ -348,13 +351,15 @@ public sealed class Ticket
     public async Task HandOverAsync(string handoverCode, HandoverInput input, Func<Task<Signature>>? signature, DateTimeOffset now, AuthenticatedActor actor)
     {
         if (Status is not (TicketStatus.COMPLETED or TicketStatus.AWAITING_RETURN)) throw new DomainException(ErrorCode.HANDOVER_INVALID_STATE);
-        if (JavaText.IsBlank(input.ReceiverName) || JavaText.IsBlank(input.ConditionOnReturn)
-            || input.Rating is < 1 or > 5)
-            throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (JavaText.IsBlank(input.ReceiverName)) throw DomainException.Invalid("Vui lòng nhập tên người nhận máy.");
+        if (JavaText.IsBlank(input.ConditionOnReturn)) throw DomainException.Invalid("Vui lòng nhập tình trạng thiết bị khi trả.");
+        if (input.Rating is < 1 or > 5) throw DomainException.Invalid("Đánh giá phải từ 1 đến 5 sao.");
         if (Status == TicketStatus.AWAITING_RETURN && BlankToNull(input.NewWarrantyNote) is not null)
             throw new DomainException(ErrorCode.HANDOVER_CANCELLED_NO_WARRANTY);
-        if (Status == TicketStatus.COMPLETED && (input.Recheck is null || !input.Recheck.AllPassed() || signature is null || !input.CustomerConfirmed))
-            throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (Status == TicketStatus.COMPLETED && (input.Recheck is null || !input.Recheck.AllPassed()))
+            throw DomainException.Invalid("Chưa đánh dấu đủ các mục kiểm tra lại thiết bị trước khi bàn giao.");
+        if (Status == TicketStatus.COMPLETED && signature is null) throw DomainException.Invalid("Thiếu chữ ký điện tử của khách hàng.");
+        if (Status == TicketStatus.COMPLETED && !input.CustomerConfirmed) throw DomainException.Invalid("Khách hàng chưa xác nhận đã nhận lại thiết bị và phụ kiện.");
         Handover = new Handover(
             handoverCode, now, actor.EmployeeId, JavaText.Trim(input.ReceiverName), JavaText.Trim(input.ConditionOnReturn), input.ReturnedOldParts,
             BlankToNull(input.NewWarrantyNote), input.Rating, input.Recheck, signature is null ? null : await signature(), input.CustomerConfirmed);
@@ -363,7 +368,8 @@ public sealed class Ticket
 
     public void UpdateRating(int rating, string? comment, DateTimeOffset now)
     {
-        if (rating is < 1 or > 5 || comment?.Length > 1000) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (rating is < 1 or > 5) throw DomainException.Invalid("Đánh giá phải từ 1 đến 5 sao.");
+        if (comment?.Length > 1000) throw DomainException.Invalid("Nhận xét tối đa 1.000 ký tự.");
         if (Status is not (TicketStatus.DELIVERED or TicketStatus.RETURNED_UNREPAIRED))
             throw new DomainException(ErrorCode.TICKET_INVALID_STATE, "Đã bàn giao hoặc Đã trả máy (không sửa)");
         if (Handover is null) throw new DomainException(ErrorCode.HANDOVER_INVALID_STATE);
@@ -436,11 +442,11 @@ public sealed class Ticket
 
     private Inspection ValidatedInspection(string code, InspectionInput input, DateOnly receivedDate, DateTimeOffset now, AuthenticatedActor actor)
     {
-        if (JavaText.IsBlank(input.Findings) || input.Classification is not { } classification)
-            throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (JavaText.IsBlank(input.Findings)) throw DomainException.Invalid("Vui lòng nhập kết quả kiểm tra.");
+        if (input.Classification is not { } classification) throw DomainException.Invalid("Vui lòng chọn phân loại bảo hành.");
         var checklist = input.Checklist?.ToList() ?? [];
         if (checklist.Any(item => item is null || JavaText.IsBlank(item.Item) || !ChecklistResults.Contains(item.Result ?? "")))
-            throw new DomainException(ErrorCode.VALIDATION_FAILED);
+            throw DomainException.Invalid("Danh sách kiểm tra có mục chưa đặt tên hoặc chưa chọn kết quả.");
         if (classification == WarrantyClassification.FREE_WARRANTY)
         {
             if (WarrantyAtIntake.ExpiresOn is not { } expires || expires < receivedDate) throw new DomainException(ErrorCode.WARRANTY_EXPIRED_CANNOT_BE_FREE);
@@ -481,7 +487,7 @@ public sealed class Ticket
 
     private static Note NewNote(string? text, DateTimeOffset now, AuthenticatedActor actor)
     {
-        if (JavaText.IsBlank(text)) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (JavaText.IsBlank(text)) throw DomainException.Invalid("Nội dung ghi chú không được để trống.");
         var role = actor.Roles.Contains(Role.DISPATCHER) ? "DISPATCHER"
             : actor.Roles.Contains(Role.RECEPTIONIST) ? "RECEPTIONIST"
             : actor.Roles.Contains(Role.TECHNICIAN) ? "TECHNICIAN"

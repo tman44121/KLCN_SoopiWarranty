@@ -131,16 +131,77 @@ public sealed class InventoryStore(Sql sql)
 /// </summary>
 public sealed class InventoryDocumentStore(Sql sql, TimeProvider clock)
 {
+    public async Task<long> CountDocumentsAsync(InventoryDocumentKind kind, InventoryDocumentFilter filter)
+    {
+        var (query, args) = DocumentQuery(kind, filter, true);
+        return Convert.ToInt64(await sql.ScalarAsync(query, args));
+    }
+
+    public Task<List<StockReceipt>> SearchReceiptsAsync(InventoryDocumentFilter filter)
+    {
+        var (query, args) = DocumentQuery(InventoryDocumentKind.Receipt, filter, false);
+        return ReceiptsAsync(query, args);
+    }
+
+    public Task<List<StockIssue>> SearchIssuesAsync(InventoryDocumentFilter filter)
+    {
+        var (query, args) = DocumentQuery(InventoryDocumentKind.Issue, filter, false);
+        return IssuesAsync(query, args);
+    }
+
+    public Task<List<StockTransfer>> SearchTransfersAsync(InventoryDocumentFilter filter)
+    {
+        var (query, args) = DocumentQuery(InventoryDocumentKind.Transfer, filter, false);
+        return TransfersAsync(query, args);
+    }
+
+    private static (string Query, object?[] Args) DocumentQuery(InventoryDocumentKind kind, InventoryDocumentFilter filter, bool count)
+    {
+        filter.Validate(kind);
+        var (table, key, date, search) = kind switch
+        {
+            InventoryDocumentKind.Receipt => ("PhieuNhapKho", "MaPhieuNhap", "NgayLap",
+                "d.MaPhieuNhap LIKE ? OR d.SoLo LIKE ? OR EXISTS(SELECT 1 FROM NhaCungCap n WHERE n.MaNCC=d.MaNCC AND n.TenNCC LIKE ?) "
+                + "OR EXISTS(SELECT 1 FROM ChiTietNhapKho c JOIN LinhKien l ON l.MaLK=c.MaLK WHERE c.MaPhieuNhap=d.MaPhieuNhap AND (c.MaLK LIKE ? OR l.TenLK LIKE ?))"),
+            InventoryDocumentKind.Issue => ("PhieuXuatKho", "MaPhieuXuat", "NgayYeuCau",
+                "d.MaPhieuXuat LIKE ? OR d.MaPhieuTN LIKE ? OR d.MaBaoGia LIKE ? OR d.MaKTVNhan LIKE ? "
+                + "OR EXISTS(SELECT 1 FROM NhanVien n WHERE n.MaNV=d.MaKTVNhan AND n.HoTen LIKE ?) "
+                + "OR EXISTS(SELECT 1 FROM ChiTietXuatKho c JOIN LinhKien l ON l.MaLK=c.MaLK WHERE c.MaPhieuXuat=d.MaPhieuXuat AND (c.MaLK LIKE ? OR l.TenLK LIKE ?))"),
+            InventoryDocumentKind.Transfer => ("PhieuDieuChuyen", "MaPhieuDC", "NgayLap",
+                "d.MaPhieuDC LIKE ? OR d.MaLK LIKE ? OR d.TuKe LIKE ? OR d.DenKe LIKE ? OR d.LyDo LIKE ? "
+                + "OR EXISTS(SELECT 1 FROM LinhKien l WHERE l.MaLK=d.MaLK AND l.TenLK LIKE ?)"),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+        };
+        var query = $"SELECT {(count ? "COUNT(*)" : "d.*")} FROM {table} d WHERE 1=1";
+        var args = new List<object?>();
+        if (!string.IsNullOrEmpty(filter.Status)) { query += " AND d.TrangThai=?"; args.Add(filter.Status); }
+        if (filter.From is not null) { query += $" AND d.{date}>=?"; args.Add(filter.From); }
+        if (filter.To is not null) { query += $" AND d.{date}<=?"; args.Add(filter.To); }
+        if (!string.IsNullOrWhiteSpace(filter.Query))
+        {
+            query += $" AND ({search})";
+            args.AddRange(Enumerable.Repeat<object?>(SqlLike.Contains(filter.Query.Trim()), search.Count(c => c == '?')));
+        }
+        if (!count)
+        {
+            var direction = filter.Sort == "oldest" ? "ASC" : "DESC";
+            query += $" ORDER BY d.{date} {direction},d.{key} {direction} OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+            args.Add((long)filter.Page * filter.Size); args.Add(filter.Size);
+        }
+        return (query, [.. args]);
+    }
+
     // ------------------------------------------------------------------ phiếu nhập
 
     public async Task SaveAsync(StockReceipt receipt)
     {
         if (!receipt.Persisted)
         {
+            receipt.CreatedAt = clock.GetUtcNow();
             await sql.ExecuteAsync(
                 "INSERT INTO PhieuNhapKho (MaPhieuNhap, NgayLap, MaNguoiLap, MaNCC, SoLo, NgayNhap, TrangThai, MaNguoiDuyet, NgayDuyet, LyDoTuChoi, "
                 + "TongTienNhap, GhiChu) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [receipt.Id, clock.GetUtcNow(), receipt.RequestedBy, .. ReceiptHeader(receipt)]);
+                [receipt.Id, receipt.CreatedAt, receipt.RequestedBy, .. ReceiptHeader(receipt)]);
             receipt.Persisted = true;
         }
         else
@@ -179,6 +240,7 @@ public sealed class InventoryDocumentStore(Sql sql, TimeProvider clock)
             SupplierId = row.Str("MaNCC")!,
             BatchNo = row.Str("SoLo"),
             ReceivedOn = row.Date("NgayNhap")!.Value,
+            CreatedAt = row.Time("NgayLap"),
             Status = row.Str("TrangThai")!,
             RequestedBy = row.Str("MaNguoiLap")!,
             Note = row.Str("GhiChu"),
@@ -291,10 +353,11 @@ public sealed class InventoryDocumentStore(Sql sql, TimeProvider clock)
         ];
         if (!transfer.Persisted)
         {
+            transfer.CreatedAt = clock.GetUtcNow();
             await sql.ExecuteAsync(
                 "INSERT INTO PhieuDieuChuyen (MaLK, SoLuong, TuKe, DenKe, LyDo, TrangThai, MaNguoiLap, MaNguoiDuyet, NgayDuyet, LyDoTuChoi, MaPhieuDC, NgayLap) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [.. values, transfer.Id, clock.GetUtcNow()]);
+                [.. values, transfer.Id, transfer.CreatedAt]);
             transfer.Persisted = true;
             return;
         }
@@ -316,6 +379,7 @@ public sealed class InventoryDocumentStore(Sql sql, TimeProvider clock)
         sql.QueryAsync(query, row => new StockTransfer
         {
             Id = row.Str("MaPhieuDC")!,
+            CreatedAt = row.Time("NgayLap"),
             Sku = row.Str("MaLK")!,
             Quantity = row.Int("SoLuong"),
             FromBin = row.Str("TuKe")!,

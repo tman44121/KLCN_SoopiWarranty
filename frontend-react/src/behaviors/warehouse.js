@@ -1,3 +1,4 @@
+import { createListFilters } from './list-filters.js';
 /* ==========================================================================
    View: Quản lý kho vật tư — UI mục 17, 36; CODEX mục 11.6 (T8–T9b, BR-26, BR-36)
    API: GET /parts, GET /catalog/suppliers, /stock-receipts*, /stock-issues*,
@@ -91,7 +92,45 @@ export default function initialize() {
   };
 
   const partName = (sku) => (state.parts.find((p) => p.sku === sku) || {}).name || "—";
-  const pendingFirst = (a, b) => (a.status === "PENDING" ? 0 : 1) - (b.status === "PENDING" ? 0 : 1);
+  const listPages = new Map([
+    [el.stockinList, createPage(el.stockinList, loadReceipts, 'phiếu nhập kho')],
+    [el.stockoutList, createPage(el.stockoutList, loadIssues, 'phiếu xuất kho')],
+    [el.transferList, createPage(el.transferList, loadTransfers, 'phiếu điều chuyển')],
+  ]);
+  const listFilters = new Map([
+    [el.stockinList, createListFilters(el.stockinList, () => queueListLoad(el.stockinList, loadReceipts), { statuses: L.STOCK_RECEIPT_STATUS })],
+    [el.stockoutList, createListFilters(el.stockoutList, () => queueListLoad(el.stockoutList, loadIssues), { statuses: L.STOCK_ISSUE_STATUS })],
+    [el.transferList, createListFilters(el.transferList, () => queueListLoad(el.transferList, loadTransfers), { statuses: L.STOCK_TRANSFER_STATUS })],
+  ]);
+  listFilters.get(el.stockinList).toolbar.querySelector('[data-list-q]').placeholder = 'Mã phiếu, nhà cung cấp, lô, linh kiện…';
+  listFilters.get(el.stockoutList).toolbar.querySelector('[data-list-q]').placeholder = 'Mã phiếu, báo giá, kỹ thuật viên, linh kiện…';
+  listFilters.get(el.transferList).toolbar.querySelector('[data-list-q]').placeholder = 'Mã phiếu, linh kiện, kệ, lý do…';
+
+  function createPage(container, reload, label) {
+    const pager = document.createElement('nav');
+    pager.className = 'pagination inventory-document-pagination';
+    pager.setAttribute('aria-label', `Phân trang ${label}`);
+    pager.innerHTML = html`<label class="pagination__rows">Hiển thị <select class="select-field" data-document-size aria-label="Số phiếu mỗi trang"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select> phiếu / trang</label>
+      <span data-document-count role="status">Chưa tải</span><div class="pagination__nav"><button type="button" class="btn btn--secondary" data-document-prev disabled>← Trước</button><button type="button" class="btn btn--secondary" data-document-next disabled>Sau →</button></div>`;
+    container.after(pager);
+    const state = { page: 0, size: 25, sequence: 0, loaded: false, timer: null, pager, reload };
+    pager.querySelector('[data-document-prev]').addEventListener('click', () => { state.page--; reload(); });
+    pager.querySelector('[data-document-next]').addEventListener('click', () => { state.page++; reload(); });
+    pager.querySelector('[data-document-size]').addEventListener('change', e => { state.page=0; state.size=Number(e.target.value); reload(); });
+    return state;
+  }
+
+  function queueListLoad(container, reload) {
+    const page = listPages.get(container);
+    page.page=0; page.sequence++; page.loaded=false;
+    page.pager.querySelectorAll('button').forEach(button => button.disabled=true);
+    clearTimeout(page.timer); page.timer=setTimeout(reload,250);
+  }
+
+  function loadCurrentList() {
+    const current = { stockin: [el.stockinList,loadReceipts], stockout: [el.stockoutList,loadIssues], transfer: [el.transferList,loadTransfers] }[(location.hash || '').slice(1)];
+    if (current && !listPages.get(current[0]).loaded) current[1]();
+  }
 
   /* ---------------------------------------------------------------------- */
   /* Tồn kho (UI 17A–C): Tồn thực tế / Đã giữ / Tồn khả dụng                 */
@@ -175,25 +214,41 @@ export default function initialize() {
   }
 
   async function loadList(container, loader, render, emptyText) {
-    ui.blockState(container, "loading");
+    const state = listPages.get(container), filters = listFilters.get(container).values(), sequence = ++state.sequence;
+    state.loaded=false;
+    const count = state.pager.querySelector('[data-document-count]');
+    state.pager.querySelectorAll('button').forEach(button => button.disabled=true);
+    if (filters.from && filters.to && filters.from > filters.to) {
+      count.textContent='Khoảng ngày chưa hợp lệ';
+      ui.blockState(container,'empty',{desc:'Vui lòng chọn lại khoảng ngày.'}); return [];
+    }
+    ui.blockState(container, "loading"); count.textContent='Đang tải…';
     try {
-      const items = (await loader()).sort(pendingFirst);
-      if (items.length === 0) {
-        ui.blockState(container, "empty", { desc: emptyText });
-        return items;
-      }
-      container.innerHTML = html`${items.map(render)}`;
-      return items;
-    } catch (error) {
-      ui.blockState(container, "error", { desc: error.detail }, () => loadList(container, loader, render, emptyText));
+      const page = await loader({status:filters.status || null,q:filters.q.trim() || null,
+        from:filters.from ? `${filters.from}T00:00:00+07:00` : null,to:filters.to ? `${filters.to}T23:59:59+07:00` : null,
+        sort:filters.sort || 'newest',page:state.page,size:state.size});
+      if(sequence!==state.sequence) return null;
+      const totalPages=Math.max(1,page.totalPages);
+      if(state.page>=totalPages) {state.page=totalPages-1; return loadList(container,loader,render,emptyText);}
+      state.loaded=true;
+      count.textContent=`${page.totalItems} phiếu · Trang ${state.page+1}/${totalPages}`;
+      state.pager.querySelector('[data-document-prev]').disabled=state.page<=0;
+      state.pager.querySelector('[data-document-next]').disabled=state.page+1>=totalPages;
+      if(!page.items.length) ui.blockState(container,'empty',{desc:filters.q || filters.status || filters.from || filters.to ? 'Không có phiếu khớp bộ lọc. Thử đổi từ khóa, trạng thái hoặc khoảng ngày.' : emptyText});
+      else container.innerHTML=html`${page.items.map(render)}`;
+      return page.items;
+    } catch(error) {
+      if(sequence!==state.sequence) return null;
+      count.textContent='Không thể tải dữ liệu';
+      ui.blockState(container,'error',{desc:error.detail},state.reload);
       return [];
     }
   }
 
   async function loadReceipts() {
-    state.receipts = await loadList(
+    const items = await loadList(
       el.stockinList,
-      () => api.inventory.receipts(),
+      api.inventory.searchReceipts,
       (r) => requestRow(
         r.code,
         `${state.suppliers[r.supplierId] || r.supplierId} · Lô ${r.batchNo || "—"} · Ngày nhập ${fmt.date(r.receivedOn)} · ${r.lines.length} dòng`,
@@ -202,15 +257,17 @@ export default function initialize() {
       ),
       "Chưa có phiếu nhập kho nào."
     );
+    if (!items) return;
+    state.receipts = items;
     el.stockinList.querySelectorAll("[data-view-receipt]").forEach((btn) =>
       btn.addEventListener("click", () => openReceipt(btn.getAttribute("data-view-receipt")))
     );
   }
 
   async function loadIssues() {
-    state.issues = await loadList(
+    const items = await loadList(
       el.stockoutList,
-      () => api.inventory.issues(),
+      api.inventory.searchIssues,
       (i) => requestRow(
         i.code,
         html`<span class="mono">${i.ticketCode}</span> · ${i.technicianName || i.technicianId} · ${i.lines.map((l) => `${partName(l.sku)} × ${l.quantity}`).join(", ")} · ${fmt.dateTime(i.requestedAt)}`,
@@ -219,15 +276,17 @@ export default function initialize() {
       ),
       "Chưa có phiếu xuất kho nào."
     );
+    if (!items) return;
+    state.issues = items;
     el.stockoutList.querySelectorAll("[data-view-issue]").forEach((btn) =>
       btn.addEventListener("click", () => openIssue(btn.getAttribute("data-view-issue")))
     );
   }
 
   async function loadTransfers() {
-    state.transfers = await loadList(
+    const items = await loadList(
       el.transferList,
-      () => api.inventory.transfers(),
+      api.inventory.searchTransfers,
       (t) => requestRow(
         t.code,
         html`<span class="mono">${t.sku}</span> · ${partName(t.sku)} × ${t.quantity} · <span class="mono">${t.fromBin}</span> → <span class="mono">${t.toBin}</span>`,
@@ -236,6 +295,8 @@ export default function initialize() {
       ),
       "Chưa có phiếu điều chuyển nào."
     );
+    if (!items) return;
+    state.transfers = items;
     el.transferList.querySelectorAll("[data-view-transfer]").forEach((btn) =>
       btn.addEventListener("click", () => openTransfer(btn.getAttribute("data-view-transfer")))
     );
@@ -243,9 +304,8 @@ export default function initialize() {
 
   function refreshAll() {
     loadParts();
-    loadReceipts();
-    loadIssues();
-    loadTransfers();
+    listPages.forEach(page => { page.loaded=false; });
+    loadCurrentList();
   }
 
   /* ---------------------------------------------------------------------- */
@@ -604,9 +664,8 @@ export default function initialize() {
       ui.showError(error);
     }
     await loadParts();
-    loadReceipts();
-    loadIssues();
-    loadTransfers();
+    document.addEventListener("lml:panel-shown", loadCurrentList);
+    loadCurrentList();
     setInterval(refreshAll, 60 * 1000);
   });
 }

@@ -20,7 +20,10 @@ export default function initialize(global = window) {
       this.status = status;
       this.code = (problem && problem.code) || (status === 0 ? "NETWORK_ERROR" : "SYSTEM_ERROR");
       this.fieldErrors = (problem && problem.fieldErrors) || [];
-      this.detail = [this.message, ...this.fieldErrors.map((item) => `${item.field}: ${item.message}`)].join(" ");
+      // Máy chủ đã ghép tên trường tiếng Việt vào detail ("Vui lòng kiểm tra lại: Số điện thoại không được để trống");
+      // chỉ nối thêm lỗi trường nào detail chưa nhắc tới.
+      this.detail = [this.message, ...this.fieldErrors.filter((item) => !this.message.includes(item.message))
+        .map((item) => `${item.field}: ${item.message}`)].join(" ");
     }
   }
 
@@ -312,14 +315,17 @@ export default function initialize(global = window) {
       lowStock: () => get("/parts/low-stock"),
       requestIssue: (body) => post("/stock-issues", body),
       issues: (status) => get("/stock-issues", { status }),
+      searchIssues: (query) => get("/stock-issues/search", query),
       myIssues: (status) => get("/stock-issues/mine", { status }),
       approveIssue: (code, lineBins) => post(`/stock-issues/${enc(code)}/approve`, { lineBins: lineBins || [] }),
       rejectIssue: (code, reason) => post(`/stock-issues/${enc(code)}/reject`, { reason }),
       receipts: (status) => get("/stock-receipts", { status }),
+      searchReceipts: (query) => get("/stock-receipts/search", query),
       createReceipt: (body) => post("/stock-receipts", body),
       approveReceipt: (code) => post(`/stock-receipts/${enc(code)}/approve`),
       rejectReceipt: (code, reason) => post(`/stock-receipts/${enc(code)}/reject`, { reason }),
       transfers: (status) => get("/stock-transfers", { status }),
+      searchTransfers: (query) => get("/stock-transfers/search", query),
       createTransfer: (body) => post("/stock-transfers", body),
       approveTransfer: (code) => post(`/stock-transfers/${enc(code)}/approve`),
       rejectTransfer: (code, reason) => post(`/stock-transfers/${enc(code)}/reject`, { reason }),

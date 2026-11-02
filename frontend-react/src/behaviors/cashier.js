@@ -8,15 +8,16 @@ export default function initialize() {
   const queue = document.querySelector("[data-handover-queue]");
   const detail = document.querySelector("[data-handover-detail]");
   const state = { tickets: [], selected: null, billing: null, signed: false };
+  const queueFilters = createListFilters(queue, () => renderQueue(), { statuses: { COMPLETED: 'Chờ bàn giao', AWAITING_RETURN: 'Chờ trả máy' } });
 
   async function loadQueue() {
     ui.blockState(queue, "loading");
     try {
       const [completed, cancelled] = await Promise.all([
-        api.tickets.list({ status: "COMPLETED", page: 0, size: 100 }),
-        api.tickets.list({ status: "AWAITING_RETURN", page: 0, size: 100 }),
+        allPages(page => api.tickets.list({ status: "COMPLETED", page, size: 100 })),
+        allPages(page => api.tickets.list({ status: "AWAITING_RETURN", page, size: 100 })),
       ]);
-      state.tickets = completed.items.concat(cancelled.items);
+      state.tickets = completed.concat(cancelled);
       renderQueue();
       if (state.selected) await selectTicket(state.selected.code);
     } catch (error) {
@@ -25,11 +26,12 @@ export default function initialize() {
   }
 
   function renderQueue() {
-    if (!state.tickets.length) {
-      ui.blockState(queue, "empty", { desc: "Không có phiếu nào đang chờ thu ngân hoặc bàn giao." });
+    const shown = queueFilters.apply(state.tickets);
+    if (!shown.length) {
+      ui.blockState(queue, "empty", { desc: state.tickets.length ? "Không có phiếu khớp bộ lọc. Thử đổi từ khóa, trạng thái hoặc khoảng ngày." : "Không có phiếu nào đang chờ thu ngân hoặc bàn giao." });
       return;
     }
-    queue.innerHTML = html`${state.tickets.map((ticket) => html`
+    queue.innerHTML = html`${shown.map((ticket) => html`
       <button type="button" class="queue-item ${state.selected && state.selected.code === ticket.code ? "is-selected" : ""}" data-ticket="${ticket.code}">
         <div class="queue-item__top"><span class="mono cell-primary">${ticket.code}</span>${fmt.badgeOf(L.TICKET_STATUS, ticket.status)}</div>
         <div class="queue-item__device">${ticket.device.productName} · ${ticket.device.brandName}</div>
@@ -162,8 +164,17 @@ export default function initialize() {
     const conditionOnReturn = detail.querySelector("[data-return-condition]").value.trim();
     const customerConfirmed = detail.querySelector("[data-customer-confirmed]").checked;
     const checks = Object.fromEntries(Array.from(detail.querySelectorAll("[data-recheck]")).map((node) => [node.getAttribute("data-recheck"), node.checked]));
-    if (!receiverName || !conditionOnReturn || !customerConfirmed || (!cancelled && (!state.signed || Object.values(checks).some((value) => !value)))) {
-      window.showToast("Vui lòng hoàn tất thông tin, kiểm tra lại và chữ ký trước khi bàn giao.", "error");
+    const unchecked = Array.from(detail.querySelectorAll("[data-recheck]")).filter((node) => !node.checked)
+      .map((node) => detail.querySelector(`label[for="${node.id}"]`).textContent);
+    const missing = [
+      !receiverName && "nhập tên người nhận",
+      !conditionOnReturn && "nhập tình trạng khi trả",
+      !cancelled && unchecked.length && `đánh dấu kiểm tra lại (${unchecked.join(", ")})`,
+      !cancelled && !state.signed && "lấy chữ ký điện tử của khách",
+      !customerConfirmed && "tích ô khách xác nhận đã nhận lại thiết bị",
+    ].filter(Boolean);
+    if (missing.length) {
+      window.showToast(`Chưa thể bàn giao — cần ${missing.join("; ")}.`, "error");
       return;
     }
     const data = { receiverName, conditionOnReturn, returnedOldParts: false, newWarrantyNote: null, rating: null, recheck: cancelled ? null : checks, customerConfirmed };
@@ -181,3 +192,4 @@ export default function initialize() {
 
   window.LML_AUTH.ready(() => loadQueue());
 }
+import { createListFilters, allPages } from './list-filters.js';

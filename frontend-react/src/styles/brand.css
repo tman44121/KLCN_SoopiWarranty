@@ -5,6 +5,13 @@
    ========================================================================== */
 
 :root {
+  /* Payment provider identity: QR ink, readable text and outline are separate roles. */
+  --payment-momo-ink: #a21caf;
+  --payment-momo-text: #9d174d;
+  --payment-momo-border: #f472b6;
+  --payment-zalopay-ink: #0284c7;
+  --payment-zalopay-text: #0369a1;
+  --payment-zalopay-border: #38bdf8;
   /* ---- Surfaces ---- */
   --surface-page: #f8f7f2; /* Kem sữa */
   --surface-utility: #f8f7f2;

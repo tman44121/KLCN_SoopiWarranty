@@ -23,11 +23,13 @@ public static partial class PhoneNumber
         return digits.Replace("+", "");
     }
 
-    /// <summary>Số đã chuẩn hóa dạng 0 + 9–10 chữ số; sai → VALIDATION_FAILED.</summary>
+    /// <summary>Số đã chuẩn hóa dạng 0 + 9–10 chữ số; sai → VALIDATION_FAILED kèm lý do.</summary>
     public static string Require(string? raw)
     {
         var value = Normalize(raw);
-        if (!Valid().IsMatch(value)) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (value.Length == 0) throw DomainException.Invalid("Vui lòng nhập số điện thoại.");
+        if (!Valid().IsMatch(value))
+            throw DomainException.Invalid("Số điện thoại \"" + JavaText.Trim(raw ?? "") + "\" không hợp lệ — cần 10 hoặc 11 chữ số và bắt đầu bằng 0 (ví dụ 0912345678).");
         return value;
     }
 
@@ -43,11 +45,13 @@ public static partial class EmailAddress
     /// <summary>Bỏ khoảng trắng hai đầu, chữ thường.</summary>
     public static string Normalize(string? raw) => raw is null ? "" : JavaText.Trim(raw).ToLowerInvariant();
 
-    /// <summary>Email đã chuẩn hóa, tối đa 100 ký tự (cột Email); sai → VALIDATION_FAILED.</summary>
+    /// <summary>Email đã chuẩn hóa, tối đa 100 ký tự (cột Email); sai → VALIDATION_FAILED kèm lý do.</summary>
     public static string Require(string? raw)
     {
         var value = Normalize(raw);
-        if (value.Length > 100 || !Valid().IsMatch(value)) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (value.Length == 0) throw DomainException.Invalid("Vui lòng nhập email.");
+        if (value.Length > 100) throw DomainException.Invalid("Email quá dài — tối đa 100 ký tự.");
+        if (!Valid().IsMatch(value)) throw DomainException.Invalid("Email \"" + value + "\" không đúng định dạng (ví dụ ten@gmail.com).");
         return value;
     }
 

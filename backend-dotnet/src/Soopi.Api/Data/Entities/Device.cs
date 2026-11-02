@@ -23,7 +23,8 @@ public class Device
         string id, string productId, IdentifierType identifierType,
         string serialOrImei, string customerId, DateOnly? activatedOn, DateOnly? expiresOn, string? distributor, DateTimeOffset now)
     {
-        if (activatedOn is not null && expiresOn is not null && expiresOn < activatedOn) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (activatedOn is not null && expiresOn is not null && expiresOn < activatedOn)
+            throw DomainException.Invalid("Ngày hết hạn bảo hành không được trước ngày kích hoạt bảo hành.");
         Id = id;
         ProductId = productId;
         IdentifierType = identifierType;

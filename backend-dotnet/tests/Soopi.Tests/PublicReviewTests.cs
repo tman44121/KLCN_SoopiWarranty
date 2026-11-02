@@ -31,7 +31,7 @@ public class PublicReviewTests
     {
         var service = Service(Role.ADMIN);
         foreach (var request in new[] { new ReviewPublicationRequest(null), new(true), new(true, 0, DateTimeOffset.UtcNow), new(true, 6, DateTimeOffset.UtcNow),
-            new(true, 5, null), new(true, 5, DateTimeOffset.UtcNow, new string('x', 1001)) })
+            new(true, 5, DateTimeOffset.UtcNow, new string('x', 1001)) })
             Assert.Equal(ErrorCode.VALIDATION_FAILED, (await Assert.ThrowsAsync<DomainException>(() => service.SetPublicationAsync("TN1", request.Published, request.Rating, request.RatedAt, request.Comment))).Code);
     }
 

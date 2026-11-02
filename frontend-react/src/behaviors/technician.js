@@ -70,6 +70,7 @@ export default function initialize() {
   /* Hàng đợi của tôi (UI 16A)                                               */
   /* ---------------------------------------------------------------------- */
 
+  const queueFilters = createListFilters(el.queueList, () => renderQueue(), { statuses: L.TICKET_STATUS, sla: true });
   async function loadQueue() {
     if (!state.queue.length) ui.blockState(el.queueList, "loading");
     try {
@@ -81,11 +82,12 @@ export default function initialize() {
   }
 
   function renderQueue() {
-    if (state.queue.length === 0) {
-      ui.blockState(el.queueList, "empty", { desc: "Hàng đợi trống — không còn phiếu cần xử lý. Phiếu đã xong nằm ở mục Lịch sử phiếu." });
+    const shown = queueFilters.apply(state.queue);
+    if (shown.length === 0) {
+      ui.blockState(el.queueList, "empty", { desc: state.queue.length ? "Không có phiếu khớp bộ lọc. Thử đổi từ khóa, trạng thái hoặc khoảng ngày." : "Hàng đợi trống — không còn phiếu cần xử lý. Phiếu đã xong nằm ở mục Lịch sử phiếu." });
       return;
     }
-    el.queueList.innerHTML = html`${state.queue.map((t) => html`
+    el.queueList.innerHTML = html`${shown.map((t) => html`
       <div class="queue-item ${state.selected === t.code ? "is-selected" : ""}" data-ticket-id="${t.code}" tabindex="0" role="button" aria-label="Mở phiếu ${t.code}">
         <div class="queue-item__top">
           <span class="mono cell-primary">${t.code}</span>
@@ -936,3 +938,4 @@ export default function initialize() {
     setInterval(loadQueue, 60 * 1000);
   });
 }
+import { createListFilters } from './list-filters.js';

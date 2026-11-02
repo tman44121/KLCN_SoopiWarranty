@@ -69,7 +69,7 @@ public sealed class StockIssue
     public void Reject(string employeeId, string? reason, DateTimeOffset now)
     {
         RequirePending();
-        if (JavaText.IsBlank(reason)) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (JavaText.IsBlank(reason)) throw DomainException.Invalid("Vui lòng ghi lý do từ chối.");
         Status = "REJECTED";
         ProcessedBy = employeeId;
         ProcessedAt = now;
@@ -117,6 +117,8 @@ public sealed class StockReceipt
         ReplaceLines(lines);
     }
 
+    public DateTimeOffset? CreatedAt { get; internal set; }
+
     public string Id { get; internal set; } = "";
 
     public string SupplierId { get; internal set; } = "";
@@ -160,7 +162,7 @@ public sealed class StockReceipt
     public void Reject(string employeeId, string? reason, DateTimeOffset now)
     {
         RequirePending();
-        if (JavaText.IsBlank(reason)) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (JavaText.IsBlank(reason)) throw DomainException.Invalid("Vui lòng ghi lý do từ chối.");
         Status = "REJECTED";
         ProcessedBy = employeeId;
         ProcessedAt = now;
@@ -169,7 +171,7 @@ public sealed class StockReceipt
 
     private void ReplaceLines(IReadOnlyList<ReceiptLine?>? value)
     {
-        if (value is null || value.Count == 0) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (value is null || value.Count == 0) throw DomainException.Invalid("Phiếu nhập phải có ít nhất 1 dòng linh kiện.");
         if (value.Any(line => line is null || line.Quantity <= 0)) throw new DomainException(ErrorCode.STOCK_RECEIPT_QTY_INVALID);
         if (value.Any(line => line!.UnitCost is null or < 0)) throw new DomainException(ErrorCode.STOCK_RECEIPT_COST_INVALID);
         Lines = value.Select(line => line!).ToList();
@@ -191,8 +193,11 @@ public sealed class StockTransfer
 
     public StockTransfer(string id, string? sku, int quantity, string? fromBin, string? toBin, string? reason, string requestedBy)
     {
-        if (JavaText.IsBlank(sku) || quantity <= 0 || fromBin is null || toBin is null || fromBin == toBin || JavaText.IsBlank(reason))
-            throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (JavaText.IsBlank(sku)) throw DomainException.Invalid("Vui lòng chọn linh kiện cần điều chuyển.");
+        if (quantity <= 0) throw DomainException.Invalid("Số lượng điều chuyển phải lớn hơn 0.");
+        if (fromBin is null || toBin is null) throw DomainException.Invalid("Vui lòng chọn đủ kệ/ngăn nguồn và kệ/ngăn đích.");
+        if (fromBin == toBin) throw DomainException.Invalid("Kệ/ngăn đích phải khác kệ/ngăn nguồn.");
+        if (JavaText.IsBlank(reason)) throw DomainException.Invalid("Vui lòng ghi lý do điều chuyển.");
         Id = id;
         Sku = JavaText.Trim(sku);
         Quantity = quantity;
@@ -202,6 +207,8 @@ public sealed class StockTransfer
         Status = "PENDING";
         RequestedBy = requestedBy;
     }
+
+    public DateTimeOffset? CreatedAt { get; internal set; }
 
     public string Id { get; internal set; } = "";
 
@@ -238,7 +245,7 @@ public sealed class StockTransfer
     public void Reject(string employeeId, string? reason, DateTimeOffset now)
     {
         RequirePending();
-        if (JavaText.IsBlank(reason)) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (JavaText.IsBlank(reason)) throw DomainException.Invalid("Vui lòng ghi lý do từ chối.");
         Status = "REJECTED";
         ProcessedBy = employeeId;
         ProcessedAt = now;

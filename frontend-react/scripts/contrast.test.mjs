@@ -36,6 +36,8 @@ const TEXT_PAIRS = [
   ...['--color-primary', '--color-primary-hover', '--color-destructive', '--surface-inverse'].map((bg) => ['#ffffff', bg]),
   ...['success', 'warning', 'danger', 'processing', 'neutral'].map((tone) => [`--status-${tone}-text`, `--status-${tone}-bg`]),
   ['--color-destructive', '--surface-card'],
+  ['--payment-momo-text', '--surface-card'],
+  ['--payment-zalopay-text', '--surface-card'],
   // Mật ong / Hồng đào làm chữ: chỉ trên nền tối (banner, footer, bảng tối, băng CTA).
   ...['--chart-series-2', '--color-destructive-border'].flatMap((fg) => [[fg, '--surface-inverse'], [fg, '--color-primary']]),
 ];
@@ -43,6 +45,12 @@ const TEXT_PAIRS = [
 test('text/background token pairs meet WCAG AA (4.5:1)', () => {
   const failing = TEXT_PAIRS.map(([fg, bg]) => ({ fg, bg, ratio: contrast(fg, bg) })).filter((pair) => pair.ratio < 4.5);
   assert.deepEqual(failing.map((p) => `${p.fg} on ${p.bg}: ${p.ratio.toFixed(2)}:1`), []);
+});
+
+test('account uses shared colors, with readable payment provider QR ink', () => {
+  const account = readFileSync(new URL('../src/pages/account.tsx', import.meta.url), 'utf8');
+  assert.deepEqual(account.match(/#[0-9a-fA-F]{3,8}\b/g) || [], []);
+  for (const provider of ['momo', 'zalopay']) assert(contrast(`--payment-${provider}-ink`, '--surface-card') >= 3);
 });
 
 test('the calculator flags the pairs the colour rules forbid', () => {

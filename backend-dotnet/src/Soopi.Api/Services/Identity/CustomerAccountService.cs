@@ -35,7 +35,7 @@ public sealed class CustomerAccountService(
     /// </summary>
     public async Task<OtpIssued> RequestOtpAsync(string rawEmail, string? rawPhone, OtpPurpose? purpose, string? clientIp)
     {
-        if (purpose is null) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (purpose is null) throw DomainException.Invalid("Thiếu mục đích gửi mã OTP (đăng ký hoặc đặt lại mật khẩu).");
         limiter.Acquire("otp-ip:" + clientIp, 20, TimeSpan.FromHours(1));
         var email = EmailAddress.Require(rawEmail);
         if (purpose == OtpPurpose.REGISTER)
@@ -62,7 +62,7 @@ public sealed class CustomerAccountService(
         if (await RegisteredAsync(phone)) throw new DomainException(ErrorCode.CUSTOMER_ACCOUNT_EXISTS);
         profile?.RequireMatchingEmail(email);
         if (await profiles.FindActiveWithAccountByEmailAsync(email) is not null) throw new DomainException(ErrorCode.CUSTOMER_EMAIL_DUPLICATE);
-        if (profile is null && string.IsNullOrWhiteSpace(command.FullName)) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (profile is null && string.IsNullOrWhiteSpace(command.FullName)) throw DomainException.Invalid("Vui lòng nhập họ và tên.");
         await otp.ConsumeAsync(email, OtpPurpose.REGISTER, command.Otp);
         long accountId;
         try

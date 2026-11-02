@@ -93,6 +93,8 @@ public sealed class WarrantyRequestSubmissionService(
     /// <summary>Luật của NewWarrantyRequest (Java): đủ trường, khung giờ hợp lệ, SĐT/IMEI/Serial chuẩn hóa.</summary>
     public static NewWarrantyRequest Validated(string code, SubmissionCommand c, DateTimeOffset now)
     {
+        BusinessHours.RequireRange(c.PreferredFrom, c.PreferredTo);
+        if (c.PreferredFrom is { } appointment && appointment < now) throw new DomainException(ErrorCode.VALIDATION_FAILED);
         if (Blank(c.FullName) || Blank(c.CategoryCode) || Blank(c.DeviceTypeCode) || Blank(c.BrandModel) || Blank(c.Symptom)
             || Blank(c.PreferredStation) || (c.PreferredFrom is { } from && c.PreferredTo is { } to && to < from))
             throw new DomainException(ErrorCode.VALIDATION_FAILED);

@@ -1,3 +1,4 @@
+import { BusinessDateTime } from "../BusinessDateTime";
 import { usePage } from "../usePage";
 import controller from "../behaviors/customer-portal.js";
 import { CustomerFooter, CustomerHeader, Icon } from "../customer";
@@ -11,11 +12,11 @@ export default function PortalPage() {
       <main className="kh-main">
         <section className="warranty-hero-banner lookup-hero" data-lookup-section="">
           <h1 className="warranty-title">Tra cứu tiến độ sửa chữa</h1>
-          <p className="warranty-subtitle">Nhập mã phiếu (TN- hoặc YC-) và số điện thoại đã đăng ký để xem tiến độ, ghi chú và báo giá.</p>
+          <p className="warranty-subtitle">Nhập mã phiếu (TN- hoặc YC-) hoặc số Serial/IMEI của thiết bị, cùng số điện thoại đã đăng ký để xem tiến độ, ghi chú và báo giá.</p>
           <div className="lookup-form">
             <div className="form-row-group" data-field="lookupId">
-              <label htmlFor="lookupId">Mã phiếu</label>
-              <input type="text" id="lookupId" className="regular-input mono" autoCapitalize="characters" autoComplete="off" spellCheck="false" placeholder="VD: TN-2026-0917-00421" />
+              <label htmlFor="lookupId">Mã phiếu hoặc Serial/IMEI</label>
+              <input type="text" id="lookupId" className="regular-input mono" autoCapitalize="characters" autoComplete="off" spellCheck="false" placeholder="VD: TN-2026-0917-00421 hoặc số Serial" />
               <span className="form-field__error" hidden={true}>
               </span>
             </div>
@@ -119,8 +120,8 @@ export default function PortalPage() {
                 </span>
               </div>
               <div className="form-row-group" data-field="regTime">
-                <label htmlFor="reg-time">Thời gian mong muốn mang máy tới *</label>
-                <input type="text" id="reg-time" className="regular-input" placeholder="VD: 19/09/2026 14:00 - 16:00" />
+                <label htmlFor="reg-time-date">Thời gian mong muốn mang máy tới *</label>
+                <BusinessDateTime id="reg-time" className="regular-input" required />
                 <span className="form-field__error" hidden={true}>
                 </span>
               </div>

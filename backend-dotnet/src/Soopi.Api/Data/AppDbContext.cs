@@ -123,6 +123,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.HasKey(e => e.Code);
             entity.Property(e => e.Code).HasColumnName("MaNV");
             entity.Property(e => e.AccountId).HasColumnName("MaTaiKhoan");
+            entity.Property(e => e.Phone).HasColumnName("SDT");
+            entity.Property(e => e.Email).HasColumnName("Email");
         });
     }
 }

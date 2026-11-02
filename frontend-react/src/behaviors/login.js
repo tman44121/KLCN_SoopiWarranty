@@ -66,7 +66,7 @@ export default function initialize() {
       choiceList.hidden = true;
       changeForm.hidden = true;
       show(errorBox, `Bạn đang đăng nhập bằng tài khoản nhân viên ${user.displayName || user.username}. ` +
-        "Trang này chỉ dành cho tài khoản khách hàng — vui lòng đăng nhập bằng số điện thoại khách hàng.");
+        "Trang này chỉ dành cho tài khoản khách hàng — vui lòng đăng nhập bằng số điện thoại hoặc email khách hàng.");
       document.getElementById("login-username").focus();
       return;
     }
@@ -88,7 +88,9 @@ export default function initialize() {
     const password = document.getElementById("login-password").value;
     const remember = document.getElementById("login-remember").checked;
     if (!username || !password) {
-      show(errorBox, "Vui lòng nhập tên đăng nhập và mật khẩu.");
+      show(errorBox, !username && !password ? "Vui lòng nhập tên đăng nhập (hoặc số điện thoại/email) và mật khẩu."
+        : !username ? "Vui lòng nhập tên đăng nhập, số điện thoại hoặc email." : "Vui lòng nhập mật khẩu.");
+      document.getElementById(username ? "login-password" : "login-username").focus();
       return;
     }
     const button = form.querySelector('button[type="submit"]');
@@ -108,11 +110,11 @@ export default function initialize() {
     const next = document.getElementById("new-password").value;
     const confirm = document.getElementById("confirm-password").value;
     if (!current || !next) {
-      show(changeError, "Vui lòng nhập đủ mật khẩu hiện tại và mật khẩu mới.");
+      show(changeError, !current ? "Vui lòng nhập mật khẩu hiện tại." : "Vui lòng nhập mật khẩu mới.");
       return;
     }
     if (next !== confirm) {
-      show(changeError, "Mật khẩu nhập lại không khớp.");
+      show(changeError, "Mật khẩu nhập lại không khớp với mật khẩu mới.");
       return;
     }
     const button = changeForm.querySelector('button[type="submit"]');

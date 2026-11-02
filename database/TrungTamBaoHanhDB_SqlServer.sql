@@ -1032,7 +1032,7 @@ BEGIN
         MaCongKhai UNIQUEIDENTIFIER NOT NULL UNIQUE,
         SoSao INT NOT NULL CHECK (SoSao BETWEEN 1 AND 5),
         NoiDung NVARCHAR(1000) NULL,
-        NgayDanhGia DATETIME2(0) NOT NULL,
+        NgayDanhGia DATETIME2(0) NULL,
         MaNguoiDuyet BIGINT NOT NULL REFERENCES TaiKhoan(MaTaiKhoan),
         NgayDuyet DATETIME2(0) NOT NULL
     );

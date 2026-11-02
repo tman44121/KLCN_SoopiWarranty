@@ -107,7 +107,7 @@ public sealed class PortalPolicy(AppDbContext db, CurrentActor actors)
     private string? CustomerAccount => actors.Actor is { } actor && actor.Roles.Contains(Role.CUSTOMER) ? actor.CustomerId : null;
 }
 
-/// <summary>Tra cứu công khai bằng Mã + SĐT (mục 9.8, D-014) và danh mục cho form đăng ký yêu cầu.</summary>
+/// <summary>Tra cứu công khai bằng Mã phiếu hoặc số Serial/IMEI + SĐT (mục 9.8, D-014) và danh mục cho form đăng ký yêu cầu.</summary>
 public sealed class PortalAccessService(Sql sql, WarrantyRequestStore requests, CatalogStore catalog, JwtService tokens, RateLimiter limiter)
 {
     /// <summary>Sai mã hay sai SĐT đều trả cùng một lỗi để không lộ phiếu nào tồn tại.</summary>
@@ -120,7 +120,7 @@ public sealed class PortalAccessService(Sql sql, WarrantyRequestStore requests, 
         var grant = normalizedPhone.Length == 0 ? null : await GrantAsync(normalizedCode, normalizedPhone);
         if (grant is null) throw new DomainException(ErrorCode.PORTAL_NOT_FOUND);
         var (token, expiresIn) = tokens.IssuePortalToken(grant);
-        return new LookupResult(token, (long)expiresIn.TotalSeconds, grant.Scope.ToString(), normalizedCode);
+        return new LookupResult(token, (long)expiresIn.TotalSeconds, grant.Scope.ToString(), grant.Code);
     }
 
     public async Task<PortalCatalog> CatalogAsync()
@@ -157,7 +157,26 @@ public sealed class PortalAccessService(Sql sql, WarrantyRequestStore requests, 
                 ? new PortalGrant(PortalScope.REQUEST, code)
                 : null;
         }
-        return null;
+        return await GrantBySerialAsync(SerialNumber.Normalize(code), phone);
+    }
+
+    /// <summary>
+    /// Số Serial/IMEI: phiếu TN mới nhất của thiết bị đó mà khách trên phiếu có đúng SĐT (máy đổi chủ thì chủ cũ không xem được
+    /// phiếu của chủ mới); chưa có phiếu nào thì yêu cầu YC mới nhất gửi bằng SĐT đó.
+    /// </summary>
+    private async Task<PortalGrant?> GrantBySerialAsync(string serial, string phone)
+    {
+        if (serial.Length == 0) return null;
+        var tickets = await sql.QueryAsync(
+            "SELECT ptn.MaPhieuTN, kh.SDT FROM PhieuTiepNhan ptn JOIN ThietBi tb ON tb.MaThietBi = ptn.MaThietBi "
+            + "JOIN KhachHang kh ON kh.MaKH = ptn.MaKH WHERE tb.SoSerial_IMEI = ? ORDER BY ptn.NgayTiepNhan DESC, ptn.MaPhieuTN DESC",
+            row => (Code: row.Str("MaPhieuTN"), Phone: row.Str("SDT")), serial);
+        if (tickets.FirstOrDefault(ticket => PhoneNumber.Normalize(ticket.Phone) == phone).Code is { } ticketCode)
+            return new PortalGrant(PortalScope.TICKET, ticketCode);
+        var requestCodes = await sql.QueryAsync(
+            "SELECT MaYeuCau FROM YeuCauBaoHanh WHERE SoSerial_IMEI = ? AND SDTKhach = ? ORDER BY NgayTao DESC, MaYeuCau DESC",
+            row => row.Str("MaYeuCau"), serial, phone);
+        return requestCodes.FirstOrDefault() is { } requestCode ? new PortalGrant(PortalScope.REQUEST, requestCode) : null;
     }
 }
 

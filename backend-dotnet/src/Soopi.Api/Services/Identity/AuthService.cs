@@ -114,10 +114,10 @@ public sealed class AuthService(
         var account = await accounts.FindByIdAsync(actor.AccountId) ?? throw new DomainException(ErrorCode.AUTH_TOKEN_REVOKED);
         // Chặn dò "mật khẩu hiện tại" bằng token/phiên đánh cắp: giới hạn tần suất giống màn đăng nhập.
         rateLimiter.CheckLogin(ip, actor.Username);
-        if (!PasswordHasher.Matches(currentPassword, account.PasswordHash)) throw new DomainException(ErrorCode.AUTH_INVALID_CREDENTIALS);
+        if (!PasswordHasher.Matches(currentPassword, account.PasswordHash)) throw new DomainException(ErrorCode.AUTH_CURRENT_PASSWORD_WRONG);
         passwordPolicy.Validate(account.Username, newPassword);
         // Giữ nguyên mật khẩu (vd. mật khẩu mặc định sau khi đặt lại, D-076) không được tính là đã đổi.
-        if (newPassword == currentPassword) throw new DomainException(ErrorCode.AUTH_PASSWORD_POLICY);
+        if (newPassword == currentPassword) throw new DomainException(ErrorCode.AUTH_PASSWORD_POLICY, "mật khẩu mới phải khác mật khẩu hiện tại");
         var now = clock.GetUtcNow();
         account.ChangePassword(PasswordHasher.Encode(newPassword), now);
         await accounts.SaveAsync();
@@ -171,9 +171,9 @@ public sealed class AuthService(
     {
         var normalized = Account.Normalize(username);
         rateLimiter.CheckLogin(ip, normalized);
-        var account = await accounts.FindByLoginAsync(username);
+        var account = await accounts.FindForSignInAsync(username);
         var matches = PasswordHasher.Matches(password, account?.PasswordHash ?? PasswordHasher.DummyHash);
-        if (account is null || !matches) await FailedLoginAsync(account, normalized);
+        if (account is null || !matches) await FailedLoginAsync(account, normalized, JavaText.Trim(username));
         var now = clock.GetUtcNow();
         if (account!.TemporarilyLocked(now)) throw new DomainException(ErrorCode.AUTH_TEMPORARILY_LOCKED);
         var displayName = account.Status == AccountStatus.LOCKED ? null : await principals.ActiveNameAsync(account);
@@ -184,22 +184,21 @@ public sealed class AuthService(
         return (account, displayName);
     }
 
-    private async Task FailedLoginAsync(Account? account, string normalized)
+    /// <summary>Báo rõ "không có tài khoản" hay "sai mật khẩu (còn n lần)" — cùng đánh đổi quyền riêng tư như D-070, đã có rate limit.</summary>
+    private async Task FailedLoginAsync(Account? account, string normalized, string login)
     {
         var now = clock.GetUtcNow();
         if (account is not null && account.TemporarilyLocked(now)) throw new DomainException(ErrorCode.AUTH_TEMPORARILY_LOCKED);
-        if (account is not null)
-        {
-            var locked = account.RegisterFailedLogin(now, Settings.Login.MaxFailedAttempts, Settings.Login.TemporaryLock);
-            await accounts.SaveAsync();
-            await AuditAsync(account, "AUTH_LOGIN_FAILED", "Đăng nhập thất bại");
-            if (locked) throw new DomainException(ErrorCode.AUTH_TEMPORARILY_LOCKED);
-        }
-        else
+        if (account is null)
         {
             await audit.RecordAsync(normalized, normalized, ["ANONYMOUS"], "AUTH_LOGIN_FAILED", "Đăng nhập thất bại", "ACCOUNT", normalized);
+            throw new DomainException(ErrorCode.AUTH_ACCOUNT_NOT_FOUND, login);
         }
-        throw new DomainException(ErrorCode.AUTH_INVALID_CREDENTIALS);
+        var locked = account.RegisterFailedLogin(now, Settings.Login.MaxFailedAttempts, Settings.Login.TemporaryLock);
+        await accounts.SaveAsync();
+        await AuditAsync(account, "AUTH_LOGIN_FAILED", "Đăng nhập thất bại");
+        if (locked) throw new DomainException(ErrorCode.AUTH_TEMPORARILY_LOCKED);
+        throw new DomainException(ErrorCode.AUTH_INVALID_CREDENTIALS, Settings.Login.MaxFailedAttempts - account.FailedLoginAttempts);
     }
 
     private Task<AuthResult> IssueAsync(Account account, string displayName, bool remember, string familyId, string? ip, string? userAgent, bool login = false) => transactions.InTransactionAsync(async () =>

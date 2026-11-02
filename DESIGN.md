@@ -344,3 +344,22 @@ Dưới 768px mỗi hàng thành một thẻ, mỗi ô là một dòng "nhãn �
 - **Don't** dùng Vàng mật ong hoặc Hồng đào làm màu chữ trên nền sáng (The Dark Accent Rule).
 - **Don't** phân biệt tốt / cảnh báo / lỗi chỉ bằng màu (The Shape Not Hue Rule).
 - **Don't** đưa số liệu, lời chứng thực, hotline hay huy hiệu không có thật vào giao diện.
+
+## Payment and account color roles
+
+The customer account page consumes the existing Soopi semantic palette instead of inline hex colors:
+
+- Secondary text: `--kh-muted`; secondary text on tinted surfaces: `--kh-quiet`.
+- Success/amount emphasis: `--kh-forest`; errors: `--kh-bad-text`, `--kh-bad-bg`, `--kh-bad-border`.
+- Informational notices: `--kh-info-text`, `--kh-info-bg`, `--kh-info-border`, aliases of the shared processing tokens.
+- Plain secondary surfaces: `--kh-cream`.
+
+Payment provider identity is defined once in `frontend-react/src/styles/brand.css`. Keep these accents confined to the matching provider controls, rather than using them for general statuses.
+
+| Role | MoMo | ZaloPay |
+|---|---|---|
+| QR ink | `--payment-momo-ink` (`#a21caf`) | `--payment-zalopay-ink` (`#0284c7`) |
+| Text on white | `--payment-momo-text` (`#9d174d`) | `--payment-zalopay-text` (`#0369a1`) |
+| Outline | `--payment-momo-border` (`#f472b6`) | `--payment-zalopay-border` (`#38bdf8`) |
+
+The `.payment-qr-wrap--momo` and `.payment-qr-wrap--zalopay` contexts set `--payment-qr-ink`, `--payment-wallet-text` and `--payment-wallet-border`. The neutral bank QR uses `--text-strong`; all QR paper uses `--surface-card`. Canvas rendering reads the computed CSS values, so it follows the same palette as the DOM. Text/background pairs are tested at 4.5:1; provider QR ink is checked at 3:1 for graphical contrast. Payment screens remain simulations and do not initiate real transactions.

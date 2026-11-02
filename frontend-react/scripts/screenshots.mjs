@@ -273,7 +273,10 @@ stage('request', async () => {
   await page.fill('#req-serial', 'R54W' + String(Date.now()).slice(-8));
   await page.fill('#req-symptom', 'Máy sạc không vào pin, cắm sạc báo lỗi nhiệt độ.');
   await page.selectOption('#req-station', { index: 1 });
-  await page.fill('#req-time', new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 11) + '09:30');
+  const appointmentDay = new Date(Date.now() + 2 * 86400000);
+  if (appointmentDay.getUTCDay() === 0) appointmentDay.setUTCDate(appointmentDay.getUTCDate() + 1);
+  await page.fill('#req-time-date', appointmentDay.toISOString().slice(0, 10));
+  await page.selectOption('#req-time-time', '09:30');
   await shot(page, '57-khach-gui-yeu-cau');
   await page.click('form.form-card-panel button[type="submit"]');
   await until(page, '.kh-alert--success');

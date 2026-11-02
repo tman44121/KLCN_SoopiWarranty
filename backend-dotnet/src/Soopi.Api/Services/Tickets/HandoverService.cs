@@ -98,15 +98,15 @@ public sealed class HandoverService(
     {
         if (content.Length < 8 || content.Length > 200 * 1024
             || !content.AsSpan(0, 8).SequenceEqual(new byte[] { 0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A }))
-            throw new DomainException(ErrorCode.VALIDATION_FAILED);
+            throw DomainException.Invalid("Chữ ký không hợp lệ — cần ảnh PNG tối đa 200 KB. Vui lòng ký lại.");
         return files.StoreAsync(ticketCode + "-signature.png", "image/png", content,
             new FileOwner(AttachmentService.HandoverSignature, ticketCode, customerId, uploadedBy));
     }
 
-    /// <summary>BR-33 + D-008: ca tính phí phải đã thu tiền; ca không có báo giá phải đã xác nhận miễn phí.</summary>
+    /// <summary>BR-33 + D-008: ca tính phí phải đã thu tiền; ca không có báo giá (hoặc báo giá 0 đ) phải đã xác nhận miễn phí.</summary>
     private async Task RequireSettledAsync(string ticketCode)
     {
-        var expected = await quotations.FindAcceptedForTicketAsync(ticketCode) is not null ? "CHARGED" : "FREE_WARRANTY";
+        var expected = await quotations.FindAcceptedForTicketAsync(ticketCode) is { GrandTotal: not 0 } ? "CHARGED" : "FREE_WARRANTY";
         var payment = await db.Payments.AsNoTracking().FirstOrDefaultAsync(p => p.TicketId == ticketCode);
         var actual = payment is null ? "NONE" : payment.Type == "FREE_WARRANTY" ? "FREE_WARRANTY" : "CHARGED";
         if (actual != expected) throw new DomainException(ErrorCode.HANDOVER_UNPAID);

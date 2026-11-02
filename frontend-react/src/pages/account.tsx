@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import QRCode from "qrcode";
+import { BusinessDateTime } from "../BusinessDateTime";
+import { businessTimeError, businessInstant, appointmentEnd } from "../business-hours.js";
+import { itemDay } from "../behaviors/list-filters.js";
 import { usePage } from "../usePage";
 import { MAX_REVIEW_LENGTH, QUICK_TAGS, joinReviewComment, splitReviewComment } from "../reviews";
 import {
@@ -297,9 +300,12 @@ function RequestList({ requests, tickets = [] }: { requests: Json[]; tickets?: J
 function History({ data, filter }: { data: Data; filter: string }) {
   const [group, setGroup] = useState(filter);
   const [query, setQuery] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const count = (g: string) => data.tickets.filter((t) => inGroup(g, t.status)).length;
   const needle = query.trim().toLowerCase();
   const shown = data.tickets.filter((t) => inGroup(group, t.status)
+    && (!from || itemDay(t.receivedAt) >= from) && (!to || itemDay(t.receivedAt) <= to)
     && (!needle || [t.code, t.productName, t.serialOrImei].some((v) => String(v || "").toLowerCase().includes(needle))));
   const tone: Record<string, string> = {
     PROCESSING: "var(--kh-navy)", WAITING: "var(--kh-warn-text)", READY: "var(--kh-forest)", COMPLETED: "var(--kh-quiet)",
@@ -338,6 +344,13 @@ function History({ data, filter }: { data: Data; filter: string }) {
         </div>
       </div>
 
+      <div className="toolbar list-filters">
+        <label className="toolbar__field">Từ ngày<input type="date" className="regular-input" value={from} onInput={e => setFrom(e.currentTarget.value)} onChange={e => setFrom(e.target.value)} /></label>
+        <label className="toolbar__field">Đến ngày<input type="date" className="regular-input" value={to} onInput={e => setTo(e.currentTarget.value)} onChange={e => setTo(e.target.value)} /></label>
+        <button type="button" className="btn-secondary-white" onClick={() => { setFrom(""); setTo(""); setQuery(""); setGroup("ALL"); }}>Xóa bộ lọc</button>
+        {from && to && from > to && <p role="status">Ngày kết thúc phải từ ngày bắt đầu trở đi.</p>}
+        <span>{shown.length} phiếu · Mới nhất trước</span>
+      </div>
       <div className="ticket-cards-grid">
         {shown.map((ticket) => (
           <article key={ticket.code} className="ticket-card-box">
@@ -830,10 +843,11 @@ function BankTransferConfirm({ ticket, costs, onConfirm }: { ticket: Json; costs
 
   useEffect(() => {
     if (canvasRef.current) {
+      const theme = getComputedStyle(canvasRef.current);
       QRCode.toCanvas(canvasRef.current, qrString, {
         width: 170,
         margin: 1,
-        color: { dark: "#0f172a", light: "#ffffff" },
+        color: { dark: theme.getPropertyValue("--payment-qr-ink").trim(), light: theme.getPropertyValue("--payment-qr-paper").trim() },
       }).catch(() => {});
     }
   }, [qrString]);
@@ -852,7 +866,7 @@ function BankTransferConfirm({ ticket, costs, onConfirm }: { ticket: Json; costs
         <div className="payment-qr-canvas-box">
           <canvas ref={canvasRef} />
         </div>
-        <div style={{ fontSize: 12.5, color: "#64748b" }}>Mã QR minh họa, không dùng để chuyển tiền.</div>
+        <div style={{ fontSize: 12.5, color: "var(--kh-muted)" }}>Mã QR minh họa, không dùng để chuyển tiền.</div>
 
         <div className="payment-bank-details">
           <div className="payment-bank-row">
@@ -873,7 +887,7 @@ function BankTransferConfirm({ ticket, costs, onConfirm }: { ticket: Json; costs
           <div className="payment-bank-row">
             <span>Số tiền:</span>
             <span>
-              <strong style={{ color: "#2563eb" }}>{fmt().money(costs.total)}</strong>
+              <strong style={{ color: "var(--kh-forest)" }}>{fmt().money(costs.total)}</strong>
               <button type="button" className="payment-copy-btn" onClick={() => copyToClipboard(String(costs.total), "Số tiền")}>Sao chép</button>
             </span>
           </div>
@@ -980,7 +994,7 @@ function CardPaymentConfirm({
 
       {error && <div className="field-error" style={{ margin: "2px 0 0" }}>{error}</div>}
 
-      <div style={{ fontSize: 11.5, color: "#64748b", background: "#f8fafc", padding: "8px 10px", borderRadius: 8 }}>
+      <div style={{ fontSize: 11.5, color: "var(--kh-muted)", background: "var(--kh-cream)", padding: "8px 10px", borderRadius: 8 }}>
         <strong>Thẻ mẫu:</strong> Dùng <code className="mono">4111 1111 1111 1111</code> để mô phỏng thành công, hoặc <code className="mono">4000 0000 0000 0002</code> để mô phỏng từ chối. Không nhập thẻ thật.
       </div>
 
@@ -1007,10 +1021,11 @@ function WalletConfirm({ method, ticket, costs, onConfirm }: { method: "momo" | 
 
   useEffect(() => {
     if (canvasRef.current) {
+      const theme = getComputedStyle(canvasRef.current);
       QRCode.toCanvas(canvasRef.current, qrString, {
         width: 170,
         margin: 1,
-        color: { dark: isMomo ? "#a21caf" : "#0284c7", light: "#ffffff" },
+        color: { dark: theme.getPropertyValue("--payment-qr-ink").trim(), light: theme.getPropertyValue("--payment-qr-paper").trim() },
       }).catch(() => {});
     }
   }, [qrString, isMomo]);
@@ -1020,7 +1035,7 @@ function WalletConfirm({ method, ticket, costs, onConfirm }: { method: "momo" | 
 
   return (
     <div className="payment-view-container">
-      <div className="payment-qr-wrap">
+      <div className={`payment-qr-wrap payment-qr-wrap--${method}`}>
         <div className="payment-countdown-badge">
           <span>⏱ Hết hạn sau:</span>
           <strong>{minStr}:{secStr}</strong>
@@ -1032,15 +1047,14 @@ function WalletConfirm({ method, ticket, costs, onConfirm }: { method: "momo" | 
 
         <button
           type="button"
-          className="btn-secondary-white btn-sm"
-          style={{ width: "100%", justifyContent: "center", borderColor: isMomo ? "#f472b6" : "#38bdf8", color: isMomo ? "#9d174d" : "#0369a1", fontWeight: 600 }}
+          className="btn-secondary-white btn-sm payment-wallet-open"
           onClick={onConfirm}
         >
           Mô phỏng mở {walletName}
         </button>
 
         <div style={{ width: "100%", textAlign: "left", marginTop: 6 }}>
-          <div style={{ fontSize: 12, color: "#64748b", display: "flex", justifyContent: "space-between" }}>
+          <div style={{ fontSize: 12, color: "var(--kh-muted)", display: "flex", justifyContent: "space-between" }}>
             <span>Mô phỏng xác nhận từ {walletName}</span>
             <span>{fmt().money(costs.total)}</span>
           </div>
@@ -1072,7 +1086,7 @@ function VNPayConfirm({ ticket, costs, onConfirm }: { ticket: Json; costs: Json;
         </div>
       </div>
 
-      <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 12, padding: "14px 16px", color: "#0369a1", fontSize: 13 }}>
+      <div style={{ background: "var(--kh-info-bg)", border: "1px solid var(--kh-info-border)", borderRadius: 12, padding: "14px 16px", color: "var(--kh-info-text)", fontSize: 13 }}>
         <p style={{ margin: "0 0 8px", fontWeight: 600 }}>Mô phỏng cổng thanh toán VNPAY</p>
         <p style={{ margin: 0 }}>Minh họa bước xác nhận thanh toán. Bạn sẽ không được chuyển tới VNPAY hoặc bị trừ tiền.</p>
       </div>
@@ -1117,8 +1131,8 @@ function ErrorScreen({ message, onRetry, onChangeMethod }: { message: string; on
   return (
     <div className="payment-error-wrap">
       <div className="payment-error-icon">✕</div>
-      <div style={{ fontSize: 17, fontWeight: 700, color: "#991b1b" }}>Kết quả mô phỏng: bị từ chối</div>
-      <div style={{ fontSize: 13, color: "#64748b", maxWidth: 360, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 17, fontWeight: 700, color: "var(--kh-bad-text)" }}>Kết quả mô phỏng: bị từ chối</div>
+      <div style={{ fontSize: 13, color: "var(--kh-muted)", maxWidth: 360, lineHeight: 1.5 }}>
         {message || "Đã xảy ra sự cố khi xử lý thanh toán. Vui lòng kiểm tra lại."}
       </div>
       <div style={{ display: "flex", gap: 10, width: "100%", marginTop: 8 }}>
@@ -1140,8 +1154,8 @@ function ReceiptScreen({ ticket, costs, method, txId, completedAt }: { ticket: J
     <div className="payment-receipt-wrap">
       <div className="payment-success-badge-icon">✓</div>
       <div style={{ textAlign: "center", marginBottom: 2 }}>
-        <div style={{ fontSize: 17, fontWeight: 700, color: "#166534" }} role="status">Đã hoàn tất mô phỏng</div>
-        <div style={{ fontSize: 12.5, color: "#64748b" }}>Không thu tiền. Trạng thái thanh toán thực tế không thay đổi.</div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: "var(--kh-forest)" }} role="status">Đã hoàn tất mô phỏng</div>
+        <div style={{ fontSize: 12.5, color: "var(--kh-muted)" }}>Không thu tiền. Trạng thái thanh toán thực tế không thay đổi.</div>
       </div>
 
       <div className="payment-receipt">
@@ -1259,7 +1273,7 @@ function Quotation({ ticket, onDecided }: { ticket: Json; onDecided: (ticket: Js
 
         {declining ? (
           <div className="form-row-group decline-box" style={{ marginTop: 14 }}>
-            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 10, color: "#991b1b", fontSize: 13 }}>
+            <div style={{ background: "var(--kh-bad-bg)", border: "1px solid var(--kh-bad-border)", borderRadius: 8, padding: "10px 14px", marginBottom: 10, color: "var(--kh-bad-text)", fontSize: 13 }}>
               ⚠️ <strong>Lưu ý quan trọng:</strong> Khi từ chối báo giá, trung tâm sẽ ngừng sửa chữa tính phí và chuẩn bị thủ tục trả lại thiết bị nguyên trạng cho bạn.
             </div>
             <label htmlFor="decline-reason">Lý do từ chối <span className="required-mark">*</span></label>
@@ -1338,7 +1352,7 @@ function QuoteConfirmModal({
           <div className="quote-breakdown-card">
             <div className="quote-breakdown-title">
               <span>Bóc tách hạng mục chi phí</span>
-              <span style={{ fontSize: 11, fontWeight: 500, color: "#94a3b8" }}>Hiệu lực đến {fmt().date(quote.validUntil)}</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "var(--kh-muted)" }}>Hiệu lực đến {fmt().date(quote.validUntil)}</span>
             </div>
             <table className="quote-breakdown-table">
               <thead>
@@ -1353,7 +1367,7 @@ function QuoteConfirmModal({
                   <tr key={line.lineNo}>
                     <td>
                       <div><strong>{line.description}</strong></div>
-                      {line.sku && <div className="mono" style={{ fontSize: 11, color: "#64748b" }}>SKU: {line.sku}</div>}
+                      {line.sku && <div className="mono" style={{ fontSize: 11, color: "var(--kh-muted)" }}>SKU: {line.sku}</div>}
                     </td>
                     <td className="num-col">×{line.quantity}</td>
                     <td className="num-col">{fmt().money(line.lineTotal)}</td>
@@ -1694,8 +1708,9 @@ function NewRequest({ data, serial, onSubmitted }: { data: Data; serial: string;
     if (!form.serial.trim()) next.serial = `Vui lòng nhập ${idLabel}.`;
     if (!form.symptom.trim()) next.symptom = "Vui lòng mô tả lỗi.";
     if (!form.station) next.station = "Vui lòng chọn trạm dịch vụ.";
-    const from = form.time ? new Date(form.time) : null;
+    const from = form.time ? businessInstant(form.time) : null;
     if (!from || Number.isNaN(from.getTime())) next.time = "Vui lòng chọn thời gian mong muốn mang máy tới.";
+    else if (businessTimeError(form.time)) next.time = businessTimeError(form.time);
     else if (from.getTime() < Date.now()) next.time = "Thời gian mong muốn phải ở tương lai.";
     if (files.length > MAX_FILES) next.files = `Chỉ đính kèm tối đa ${MAX_FILES} tệp.`;
     setErrors(next);
@@ -1706,8 +1721,7 @@ function NewRequest({ data, serial, onSubmitted }: { data: Data; serial: string;
           categoryCode: category.code, deviceTypeCode: type.code, brandModel: form.brandModel.trim(),
           identifierType: type.identifierType, serialOrImei: form.serial.trim(), symptom: form.symptom.trim(),
           preferredStation: form.station, preferredFrom: from.toISOString(),
-          // ponytail: khung 1 giờ cố định như cổng công khai; thêm ô "đến" khi trạm cần đặt lịch theo khung giờ thật.
-          preferredTo: new Date(from.getTime() + 3600000).toISOString(),
+          preferredTo: businessInstant(appointmentEnd(form.time)).toISOString(),
         };
         const result = await api().request("POST", "/portal/my/warranty-requests", { formData: api().multipart(body, { files }) });
         setCreated(result.code);
@@ -1801,9 +1815,8 @@ function NewRequest({ data, serial, onSubmitted }: { data: Data; serial: string;
               {err("station")}
             </div>
             <div>
-              <label htmlFor="req-time">Thời gian mang máy tới *</label>
-              <input id="req-time" type="datetime-local" className="regular-input" value={form.time} onChange={set("time")}
-                aria-invalid={Boolean(errors.time) || undefined} />
+              <label htmlFor="req-time-date">Thời gian mang máy tới *</label>
+              <BusinessDateTime id="req-time" required className="regular-input" value={form.time} onChange={time => { setForm({ ...form, time }); setErrors({ ...errors, time: "" }); }} />
               {err("time")}
             </div>
           </div>

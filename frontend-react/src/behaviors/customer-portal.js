@@ -1,3 +1,4 @@
+import { businessTimeError, businessInstant, appointmentEnd } from "../business-hours.js";
 /* Public customer portal. Only the deliberately projected /portal API is used. */
 export default function initialize() {
 
@@ -176,9 +177,13 @@ export default function initialize() {
     clearErrors();
     const code = el.lookupId.value.trim().toUpperCase();
     const phone = el.lookupPhone.value.trim();
-    if (!code) invalid("lookupId", "Vui lòng nhập mã phiếu hoặc mã yêu cầu.");
-    if (!phone) invalid("lookupPhone", "Vui lòng nhập số điện thoại.");
-    if (!code || !phone) return;
+    const phoneDigits = phone.replace(/[^0-9+]/g, "").replace(/^\+84/, "0").replace(/\+/g, "");
+    if (!code) invalid("lookupId", "Vui lòng nhập mã phiếu (TN-…, YC-…) hoặc số Serial/IMEI.");
+    else if (/^(TN|YC)-/.test(code) ? !/^(TN|YC)-[0-9A-Z-]+$/.test(code) : code.replace(/\s/g, "").length < 4)
+      invalid("lookupId", /^(TN|YC)-/.test(code) ? "Mã phiếu không đúng dạng — ví dụ TN-2026-0917-00421." : "Số Serial/IMEI quá ngắn — kiểm tra lại số in trên tem thiết bị.");
+    if (!phone) invalid("lookupPhone", "Vui lòng nhập số điện thoại đã đăng ký khi gửi máy.");
+    else if (!/^0[0-9]{9,10}$/.test(phoneDigits)) invalid("lookupPhone", "Số điện thoại không hợp lệ — cần 10 hoặc 11 chữ số và bắt đầu bằng 0.");
+    if (document.querySelector("[data-field].has-error")) return;
     try {
       const grant = await window.LML_UI.busy(el.submit, () => api.portal.lookup(code, phone));
       api.portalTokens.set(grant);
@@ -222,7 +227,11 @@ export default function initialize() {
     let valid = true;
     required.forEach(([name, selector, message]) => { if (!value(selector)) { invalid(name, message); valid = false; } });
     if (!valid || !type) return;
-    const from = new Date(value("#reg-time"));
+    const chosen = value("#reg-time");
+    if (businessTimeError(chosen) || businessInstant(chosen).getTime() < Date.now()) {
+      invalid("regTime", businessTimeError(chosen) || "Thời gian hẹn phải ở tương lai."); return;
+    }
+    const from = businessInstant(chosen);
     if (Number.isNaN(from.getTime())) {
       invalid("regTime", "Thời gian không hợp lệ. Vui lòng kiểm tra lại.");
       return;
@@ -238,7 +247,7 @@ export default function initialize() {
       symptom: value("#reg-symptom"),
       preferredStation: value("#reg-station"),
       preferredFrom: from.toISOString(),
-      preferredTo: new Date(from.getTime() + 3600000).toISOString(),
+      preferredTo: businessInstant(appointmentEnd(chosen)).toISOString(),
     };
     try {
       const created = await window.LML_UI.busy(el.registerSubmit, () => api.portal.submitRequest(data, files));
@@ -253,6 +262,7 @@ export default function initialize() {
     loadCatalog();
     el.submit.addEventListener("click", lookup);
     el.lookupPhone.addEventListener("keydown", (event) => { if (event.key === "Enter") lookup(); });
+    el.lookupId.addEventListener("keydown", (event) => { if (event.key === "Enter") lookup(); });
     el.openRegister.addEventListener("click", () => { el.register.hidden = false; el.register.scrollIntoView({ behavior: window.LML_UI.scrollBehavior() }); });
     // #dang-ky (link "Gửi yêu cầu bảo hành" của header khi chưa đăng nhập) mở sẵn form yêu cầu.
     const openFromHash = () => { if (location.hash === "#dang-ky") el.openRegister.click(); };

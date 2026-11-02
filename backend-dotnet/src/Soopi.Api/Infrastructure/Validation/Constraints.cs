@@ -6,12 +6,12 @@ using Soopi.Api.Domain.Shared;
 
 namespace Soopi.Api.Infrastructure.Validation;
 
-// Ràng buộc mang tên và thông điệp như Jakarta Bean Validation của bản Java (Hibernate Validator không có bản tiếng Việt
-// nên trả thông điệp mặc định tiếng Anh). null hợp lệ với mọi ràng buộc trừ NotNull/NotBlank/NotEmpty, như Java.
+// Ràng buộc mang tên như Jakarta Bean Validation của bản Java, thông điệp tiếng Việt (ProblemWriter ghép thêm tên trường).
+// null hợp lệ với mọi ràng buộc trừ NotNull/NotBlank/NotEmpty, như Java.
 
 public sealed class NotBlankAttribute : RequiredAttribute
 {
-    public NotBlankAttribute() => ErrorMessage = "must not be blank";
+    public NotBlankAttribute() => ErrorMessage = "không được để trống";
     public override bool IsValid(object? value) => value is string text && !JavaText.IsBlank(text);
 }
 
@@ -20,11 +20,11 @@ public sealed class NotNullAttribute : RequiredAttribute
     public NotNullAttribute()
     {
         AllowEmptyStrings = true;
-        ErrorMessage = "must not be null";
+        ErrorMessage = "không được để trống";
     }
 }
 
-public sealed class NotEmptyAttribute() : ValidationAttribute("must not be empty")
+public sealed class NotEmptyAttribute() : ValidationAttribute("phải có ít nhất một mục")
 {
     public override bool IsValid(object? value) => value switch
     {
@@ -36,39 +36,39 @@ public sealed class NotEmptyAttribute() : ValidationAttribute("must not be empty
     };
 }
 
-public sealed class PositiveAttribute() : ValidationAttribute("must be greater than 0")
+public sealed class PositiveAttribute() : ValidationAttribute("phải lớn hơn 0")
 {
     public override bool IsValid(object? value) => value is null || Convert.ToDecimal(value, CultureInfo.InvariantCulture) > 0;
 }
 
-public sealed class PositiveOrZeroAttribute() : ValidationAttribute("must be greater than or equal to 0")
+public sealed class PositiveOrZeroAttribute() : ValidationAttribute("không được âm")
 {
     public override bool IsValid(object? value) => value is null || Convert.ToDecimal(value, CultureInfo.InvariantCulture) >= 0;
 }
 
-public sealed class MinAttribute(long min) : ValidationAttribute($"must be greater than or equal to {min}")
+public sealed class MinAttribute(long min) : ValidationAttribute($"phải từ {min} trở lên")
 {
     public override bool IsValid(object? value) => value is null || Convert.ToDecimal(value, CultureInfo.InvariantCulture) >= min;
 }
 
-public sealed class MaxAttribute(long max) : ValidationAttribute($"must be less than or equal to {max}")
+public sealed class MaxAttribute(long max) : ValidationAttribute($"không được vượt quá {max}")
 {
     public override bool IsValid(object? value) => value is null || Convert.ToDecimal(value, CultureInfo.InvariantCulture) <= max;
 }
 
-public sealed class DecimalMinAttribute(string min) : ValidationAttribute($"must be greater than or equal to {min}")
+public sealed class DecimalMinAttribute(string min) : ValidationAttribute($"phải từ {min} trở lên")
 {
     public override bool IsValid(object? value) =>
         value is null || Convert.ToDecimal(value, CultureInfo.InvariantCulture) >= decimal.Parse(min, CultureInfo.InvariantCulture);
 }
 
-public sealed class DecimalMaxAttribute(string max) : ValidationAttribute($"must be less than or equal to {max}")
+public sealed class DecimalMaxAttribute(string max) : ValidationAttribute($"không được vượt quá {max}")
 {
     public override bool IsValid(object? value) =>
         value is null || Convert.ToDecimal(value, CultureInfo.InvariantCulture) <= decimal.Parse(max, CultureInfo.InvariantCulture);
 }
 
-public sealed class SizeAttribute(int min, int max) : ValidationAttribute($"size must be between {min} and {max}")
+public sealed class SizeAttribute(int min, int max) : ValidationAttribute(min == 0 ? $"tối đa {max} ký tự/mục" : $"phải có từ {min} đến {max} ký tự/mục")
 {
     public override bool IsValid(object? value)
     {
@@ -83,7 +83,7 @@ public sealed class SizeAttribute(int min, int max) : ValidationAttribute($"size
     }
 }
 
-public sealed class EmailAttribute() : ValidationAttribute("must be a well-formed email address")
+public sealed class EmailAttribute() : ValidationAttribute("không đúng định dạng (ví dụ ten@gmail.com)")
 {
     // Patterns adapted from Hibernate Validator 9.1.3 (Apache-2.0, Red Hat Inc. and Hibernate Authors).
     // https://github.com/hibernate/hibernate-validator/tree/9.1.3.Final/engine/src/main/java/org/hibernate/validator/internal
@@ -115,7 +115,7 @@ public sealed class EmailAttribute() : ValidationAttribute("must be a well-forme
     }
 }
 
-public sealed class PatternAttribute(string regexp) : ValidationAttribute($"must match \"{regexp}\"")
+public sealed class PatternAttribute(string regexp) : ValidationAttribute("có giá trị không hợp lệ")
 {
     private readonly Regex pattern = new("\\A(?:" + regexp + ")\\z", RegexOptions.ECMAScript | RegexOptions.CultureInvariant);
 

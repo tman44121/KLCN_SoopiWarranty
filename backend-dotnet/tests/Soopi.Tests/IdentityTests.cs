@@ -71,6 +71,17 @@ public class IdentityTests
         else Assert.Equal(ErrorCode.AUTH_PASSWORD_POLICY, Assert.Throws<DomainException>(() => policy.Validate("letan", password)).Code);
     }
 
+    [Theory]
+    [InlineData("ngan123", "mới có 7 ký tự, cần tối thiểu 10 ký tự")]
+    [InlineData("chikhongcoso", "cần có ít nhất một chữ số")]
+    [InlineData("1234567890", "cần có ít nhất một chữ cái")]
+    [InlineData("letan2026abc", "không được chứa tên đăng nhập/số điện thoại \"letan\"")]
+    public void PasswordPolicy_SaysWhichRuleFailed(string password, string reason)
+    {
+        var error = Assert.Throws<DomainException>(() => new PasswordPolicy().Validate("letan", password));
+        Assert.Equal(reason, error.Arguments[0]);
+    }
+
     [Fact]
     public void Account_LocksTemporarilyAfterFiveFailures()
     {

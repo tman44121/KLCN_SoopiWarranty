@@ -300,7 +300,7 @@ export default function DispatchPage() {
                   <th>
                     {"Mã phiếu"}
                   </th>
-                  <th className="is-sortable" data-sort-key="receivedAt">
+                  <th className="is-sortable is-sorted-desc" data-sort-key="receivedAt" aria-sort="descending">
                     <button type="button" className="sort-button">
                       {"Thời gian tiếp nhận"}
                       <span className="sort-caret" aria-hidden="true">
@@ -323,7 +323,7 @@ export default function DispatchPage() {
                   <th>
                     {"Mức SLA"}
                   </th>
-                  <th className="is-sortable is-sorted-asc" data-sort-key="deadline" aria-sort="ascending">
+                  <th className="is-sortable" data-sort-key="deadline">
                     <button type="button" className="sort-button">
                       {"Thời gian còn lại"}
                       <span className="sort-caret" aria-hidden="true">
@@ -384,10 +384,10 @@ export default function DispatchPage() {
           <div className="card__header">
             <div>
               <h2 className="card__title" id="quotation-approval-title">
-                {"Phê duyệt báo giá sửa chữa"}
+                {"Tra cứu và phê duyệt báo giá"}
               </h2>
               <div className="card__title-meta">
-                {"Phiếu báo giá ngoài bảo hành do kỹ thuật viên gửi lên, đang chờ phê duyệt"}
+                {"Tìm toàn bộ báo giá; chỉ báo giá đang chờ duyệt mới có thể phê duyệt hoặc yêu cầu sửa lại."}
               </div>
             </div>
           </div>
@@ -398,7 +398,7 @@ export default function DispatchPage() {
           <div className="card__header">
             <div>
               <h2 className="card__title" id="workload-title">
-                {"Tải công việc kỹ thuật viên"}
+                {"Số phiếu kỹ thuật viên đang xử lý"}
               </h2>
               <div className="card__title-meta">
                 {"Số phiếu đang xử lý / năng lực tối đa được cấu hình cho mỗi kỹ thuật viên"}

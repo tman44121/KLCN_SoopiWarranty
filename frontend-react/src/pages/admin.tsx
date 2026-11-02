@@ -598,7 +598,7 @@ export default function AdminPage() {
               </section>
               <section className="report-panel customer-review-report" aria-label="Đánh giá khách hàng">
                 <h3 className="report-panel__title">Đánh giá khách hàng</h3>
-                <p className="report-panel__meta">Ngày gửi/cập nhật gần nhất. Điểm cũ chưa rõ nguồn được ghi riêng và không tính vào điểm trung bình của khách.</p>
+                <p className="report-panel__meta">Bao gồm điểm trên phiếu bàn giao và đánh giá gửi qua cổng khách hàng. Điểm chưa lưu ngày vẫn được tính trung bình và có thể duyệt lên trang chủ; bộ lọc thời gian chỉ áp dụng cho điểm có ngày đánh giá.</p>
                 <div className="toolbar">
                   <label className="toolbar__field">Thời gian đánh giá
                     <select className="select-field" aria-label="Thời gian đánh giá" data-review-period="" defaultValue="all">

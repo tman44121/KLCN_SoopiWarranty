@@ -72,13 +72,16 @@ public sealed class QuotationService(
         });
     }
 
-    public async Task<PageResponse<QuotationView>> SearchAsync(string? approvalStatus, int page, int size)
+    public async Task<PageResponse<QuotationView>> SearchAsync(string? approvalStatus, int page, int size,
+        string? query = null, DateTimeOffset? from = null, DateTimeOffset? to = null)
     {
         actors.Require(Permission.QUOTE_REVIEW);
         new PageRequestParams(page, size, null).Validate();
         var status = approvalStatus ?? "PENDING";
-        var total = await quotations.CountByApprovalStatusAsync(status);
-        var items = (await quotations.FindByApprovalStatusAsync(status, page * size, size)).Select(QuotationView.From).ToList();
+        if (status is not ("PENDING" or "APPROVED" or "REJECTED" or "ALL") || (from is not null && to is not null && from > to))
+            throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        var total = await quotations.CountAsync(status, query, from, to);
+        var items = (await quotations.SearchAsync(status, query, from, to, page * size, size)).Select(QuotationView.From).ToList();
         return PageResponse<QuotationView>.Of(items, page, size, total);
     }
 

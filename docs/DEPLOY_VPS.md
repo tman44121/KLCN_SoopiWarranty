@@ -109,6 +109,10 @@ trên DB đích (sau các nâng cấp 05/06 nếu chưa có). Ba bảng thống 
 không drop/reset khi nâng cấp. Xem [ACCESS_STATISTICS.md](ACCESS_STATISTICS.md).
 Trước bản có đánh giá trên trang chủ, chạy thêm `database/08_public_reviews.sql`. Bảng duyệt ban đầu trống;
 admin tự chọn nhận xét sau khi kiểm tra thông tin riêng. Xem [PUBLIC_REVIEWS.md](PUBLIC_REVIEWS.md).
+Trước bản hỗ trợ duyệt điểm cũ thiếu ngày, chạy `database/10_legacy_review_publication.sql`.
+Script chỉ cho phép ngày trong bảng duyệt để trống, không điền ngày giả hay tự công khai điểm cũ.
+`database/09_sample_public_reviews.sql` là script dữ liệu mẫu tùy chọn, lưu riêng trong DB;
+API công khai không trả các hàng này và trang chủ không hiển thị chúng. Không chạy tự động trong CI/CD.
 Không chạy `docker compose down -v` vì sẽ xóa volume dữ liệu.
 
 ## 3. Domain và HTTPS trong Caddy

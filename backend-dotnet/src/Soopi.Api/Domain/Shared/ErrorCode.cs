@@ -3,6 +3,7 @@ namespace Soopi.Api.Domain.Shared;
 /// <summary>Mã lỗi nghiệp vụ; tên mã là trường <c>code</c> trong Problem Details, thông điệp ở messages_vi.properties.</summary>
 public enum ErrorCode
 {
+    APPOINTMENT_OUTSIDE_BUSINESS_HOURS,
     CUSTOMER_NOT_FOUND,
     DEVICE_NOT_FOUND,
     DEVICE_NOT_OWNED,
@@ -82,6 +83,8 @@ public enum ErrorCode
     NOT_FOUND,
     ACCOUNT_USERNAME_DUPLICATE,
     AUTH_INVALID_CREDENTIALS,
+    AUTH_ACCOUNT_NOT_FOUND,
+    AUTH_CURRENT_PASSWORD_WRONG,
     AUTH_ACCOUNT_LOCKED,
     AUTH_TEMPORARILY_LOCKED,
     AUTH_TOKEN_REVOKED,
@@ -179,6 +182,8 @@ public static class ErrorCodes
         [ErrorCode.NOT_FOUND] = 404,
         [ErrorCode.ACCOUNT_USERNAME_DUPLICATE] = 409,
         [ErrorCode.AUTH_INVALID_CREDENTIALS] = 401,
+        [ErrorCode.AUTH_ACCOUNT_NOT_FOUND] = 401,
+        [ErrorCode.AUTH_CURRENT_PASSWORD_WRONG] = 422,
         [ErrorCode.AUTH_ACCOUNT_LOCKED] = 403,
         [ErrorCode.AUTH_TEMPORARILY_LOCKED] = 423,
         [ErrorCode.AUTH_TOKEN_REVOKED] = 401,
@@ -189,6 +194,7 @@ public static class ErrorCodes
         [ErrorCode.ACCESS_DENIED] = 403,
         [ErrorCode.CONCURRENT_MODIFICATION] = 409,
         [ErrorCode.RATE_LIMITED] = 429,
+        [ErrorCode.APPOINTMENT_OUTSIDE_BUSINESS_HOURS] = 422,
         [ErrorCode.VALIDATION_FAILED] = 400,
         [ErrorCode.SYSTEM_ERROR] = 500,
     };

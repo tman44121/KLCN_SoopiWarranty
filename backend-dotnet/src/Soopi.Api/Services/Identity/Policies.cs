@@ -13,13 +13,18 @@ public sealed class PasswordPolicy
     public void Validate(string username, string? password)
     {
         var normalized = password?.ToLowerInvariant() ?? "";
-        var valid = password is not null
-            && password.Length >= 10
-            && password.Any(char.IsLetter)
-            && password.Any(char.IsDigit)
-            && !normalized.Contains(username.ToLowerInvariant(), StringComparison.Ordinal)
-            && !commonPasswords.Contains(normalized);
-        if (!valid) throw new DomainException(ErrorCode.AUTH_PASSWORD_POLICY);
+        var reason = password switch
+        {
+            null or "" => "chưa nhập mật khẩu",
+            { Length: < 10 } => $"mới có {password.Length} ký tự, cần tối thiểu 10 ký tự",
+            _ when !password.Any(char.IsLetter) => "cần có ít nhất một chữ cái",
+            _ when !password.Any(char.IsDigit) => "cần có ít nhất một chữ số",
+            _ when normalized.Contains(username.ToLowerInvariant(), StringComparison.Ordinal) =>
+                $"không được chứa tên đăng nhập/số điện thoại \"{username}\"",
+            _ when commonPasswords.Contains(normalized) => "mật khẩu quá phổ biến, dễ bị đoán — hãy chọn mật khẩu khác",
+            _ => null,
+        };
+        if (reason is not null) throw new DomainException(ErrorCode.AUTH_PASSWORD_POLICY, reason);
     }
 
     private static HashSet<string> Load()

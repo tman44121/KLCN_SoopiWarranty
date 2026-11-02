@@ -60,6 +60,25 @@ public class SharedTests
         Assert.Equal(ErrorCode.VALIDATION_FAILED, Assert.Throws<DomainException>(() => PhoneNumber.Require("12345")).Code);
     }
 
+    [Fact]
+    public void InvalidInput_ExplainsWhichFieldIsWrong()
+    {
+        var phone = Assert.Throws<DomainException>(() => PhoneNumber.Require("12345"));
+        Assert.StartsWith("Số điện thoại \"12345\" không hợp lệ", ErrorMessages.Format(phone.Code, phone.Arguments));
+        var email = Assert.Throws<DomainException>(() => EmailAddress.Require("khach@gmail"));
+        Assert.StartsWith("Email \"khach@gmail\" không đúng định dạng", ErrorMessages.Format(email.Code, email.Arguments));
+        Assert.Equal("Vui lòng kiểm tra lại các trường còn thiếu hoặc chưa hợp lệ.", ErrorMessages.Format(ErrorCode.VALIDATION_FAILED, []));
+    }
+
+    [Fact]
+    public void FieldErrors_UseVietnameseLabels()
+    {
+        Assert.Equal("Số điện thoại", FieldLabels.Of("customer.phone"));
+        Assert.Equal("Mã linh kiện (dòng 2)", FieldLabels.Of("lines[1].sku"));
+        Assert.Equal("Vui lòng kiểm tra lại: Email không được để trống; Mật khẩu không được để trống.",
+            FieldLabels.Summary([new FieldErrorView("email", "không được để trống"), new FieldErrorView("password", "không được để trống")]));
+    }
+
     [Theory]
     [InlineData("  Khach.Hang@Gmail.COM ", "khach.hang@gmail.com")]
     [InlineData(null, "")]

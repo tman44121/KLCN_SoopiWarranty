@@ -27,6 +27,49 @@
         "--Sla:Alerts:Enabled=false"
       ],
       "port": 8080
+    },
+    {
+      "name": "api-kiemthu",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "backend-dotnet/src/Soopi.Api",
+        "--launch-profile",
+        "http",
+        "--",
+        "--urls",
+        "http://localhost:8080",
+        "--Sla:Alerts:Enabled=false",
+        "--ConnectionStrings:Default=Server=localhost,1433;Database=TrungTamBaoHanhDB_KiemThu;Integrated Security=True;TrustServerCertificate=True"
+      ],
+      "port": 8080
+    },
+    {
+      "name": "api-kiemthu-8082",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "backend-dotnet/src/Soopi.Api",
+        "--launch-profile",
+        "http",
+        "--",
+        "--urls",
+        "http://localhost:8082",
+        "--Sla:Alerts:Enabled=false",
+        "--ConnectionStrings:Default=Server=localhost,1433;Database=TrungTamBaoHanhDB_KiemThu;Integrated Security=True;TrustServerCertificate=True"
+      ],
+      "port": 8082
+    },
+    {
+      "name": "mobile-web-kiemthu",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "cd /d C:\\Users\\LECOO\\AppData\\Local\\Temp\\claude\\D--huit-nosql-Source-warranty-system-warranty-system-soopi\\bc2eb932-94b2-44b0-8079-313d884fa53d\\scratchpad\\mobile_app && flutter run -d web-server --web-port 5176"
+      ],
+      "port": 5176
     }
   ]
 }

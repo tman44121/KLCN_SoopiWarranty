@@ -101,7 +101,10 @@ stage('request', async () => {
   await page.fill('#req-serial', state.serial);
   await page.fill('#req-symptom', 'Bàn phím liệt nhiều phím khu vực WASD, máy từng bị đổ nước ngọt tuần trước.');
   await page.selectOption('#req-station', { index: 1 });
-  await page.fill('#req-time', new Date(Date.now() + 86400000).toISOString().slice(0, 11) + '09:30');
+  const appointmentDay = new Date(Date.now() + 2 * 86400000);
+  if (appointmentDay.getUTCDay() === 0) appointmentDay.setUTCDate(appointmentDay.getUTCDate() + 1);
+  await page.fill('#req-time-date', appointmentDay.toISOString().slice(0, 10));
+  await page.selectOption('#req-time-time', '09:30');
   await shot(page, 'khach-dien-yeu-cau');
   await page.click('form.form-card-panel button[type="submit"]');
   await until(page, '.kh-alert--success');
@@ -291,7 +294,7 @@ stage('confirm', async () => {
   const { context, page, errors } = await open('phone');
   await login(page, 'customer', '/account');
   await page.goto(base + `/account#phieu/${state.ticket}`);
-  const accept = page.getByRole('button', { name: 'Đồng ý báo giá' });
+  const accept = page.getByRole('button', { name: /Kiểm tra & Xác nhận giá/ });
   const pending = await accept.waitFor({ timeout: 10000 }).then(() => true).catch(() => false);
   if (pending) {
     const body = await page.locator('body').innerText();
@@ -302,6 +305,9 @@ stage('confirm', async () => {
     check('UI: tổng tiền trên trang khớp DB', total && body.replace(/\D/g, '').includes(String(Math.round(total))), total);
     await shot(page, 'khach-xem-bao-gia');
     await accept.click();
+    await page.locator('.quote-agreement-box input[type=checkbox]').check();
+    await shot(page, 'khach-xac-nhan-chi-phi');
+    await page.getByRole('button', { name: /Xác nhận duyệt giá/ }).click();
     await page.locator('.quote-card').waitFor({ state: 'detached', timeout: 20000 })
       .catch(async (e) => { console.log('  lỗi:', await visibleErrors(page)); throw e; });
     await settled(page);

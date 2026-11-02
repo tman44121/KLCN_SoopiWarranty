@@ -51,10 +51,10 @@ export default function LoginPage() {
             <div className="validation-summary-errors" data-login-error="" role="alert" hidden={true}>
             </div>
             <div className="form-group">
-              <label htmlFor="login-username">Số điện thoại / Tên đăng nhập</label>
+              <label htmlFor="login-username">Tên đăng nhập / Số điện thoại / Email</label>
               <div className="input-wrapper">
                 <span className="input-icon"><Icon glyph="user" /></span>
-                <input type="text" id="login-username" name="username" className="form-input" autoComplete="username" placeholder="09xxxxxxxx" />
+                <input type="text" id="login-username" name="username" className="form-input" autoComplete="username" placeholder="VD: 0912345678 hoặc ten@gmail.com" />
               </div>
             </div>
             <div className="form-group">

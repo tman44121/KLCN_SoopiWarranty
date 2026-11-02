@@ -19,7 +19,7 @@ try {
     assert.equal(await s.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await panel.screenshot({ path: fileURLToPath(new URL(`../test-results/review-preview-${width}.png`, import.meta.url)) });
     await panel.getByRole('link', { name: 'Thoát xem thử', exact: true }).click();
-    await s.page.getByRole('heading', { name: 'An tâm bảo hành tại Soopi', exact: true }).waitFor();
+    await s.page.getByRole('heading', { name: 'Quy trình bảo hành tại Soopi', exact: true }).waitFor();
     assert.equal(await s.page.locator('.home-review').count(), 0);
     assert.deepEqual(s.errors, []);
     await s.context.close();

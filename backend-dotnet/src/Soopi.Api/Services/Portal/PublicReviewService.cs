@@ -6,29 +6,29 @@ using Soopi.Api.Services.Shared;
 
 namespace Soopi.Api.Services.Portal;
 
-public sealed record PublicReview(string Id, int Rating, string? Comment, DateOnly ReviewedOn);
-public sealed record PublicReviews(long ReviewCount, decimal? AverageRating, IReadOnlyList<PublicReview> Items);
+public sealed record PublicReview(string Id, int Rating, string? Comment, DateOnly? ReviewedOn);
+public sealed record PublicReviews(long ReviewCount, decimal? AverageRating, IReadOnlyList<PublicReview> Items, IReadOnlyList<PublicReview> SampleItems);
 
 public sealed class PublicReviewService(Sql sql, CurrentActor actors, TransactionRunner transactions, AuditService audit, TimeProvider clock)
 {
-    internal const string Verified = "bg.NgayDanhGia IS NOT NULL AND bg.DanhGiaHaiLong BETWEEN 1 AND 5 AND p.TrangThaiXuLy IN ('DELIVERED','RETURNED_UNREPAIRED')";
+    internal const string Eligible = "bg.DanhGiaHaiLong BETWEEN 1 AND 5 AND p.TrangThaiXuLy IN ('DELIVERED','RETURNED_UNREPAIRED')";
     // Approval is bound to the exact review; a customer edit immediately hides the previous publication.
     public const string Matches = """
-        pub.SoSao=bg.DanhGiaHaiLong AND pub.NgayDanhGia=bg.NgayDanhGia
+        pub.SoSao=bg.DanhGiaHaiLong AND (pub.NgayDanhGia=bg.NgayDanhGia OR (pub.NgayDanhGia IS NULL AND bg.NgayDanhGia IS NULL))
         AND ISNULL(pub.NoiDung,N'') COLLATE Latin1_General_100_BIN2=ISNULL(bg.NhanXetDanhGia,N'') COLLATE Latin1_General_100_BIN2
         AND DATALENGTH(ISNULL(pub.NoiDung,N''))=DATALENGTH(ISNULL(bg.NhanXetDanhGia,N''))
         """;
 
     public async Task<PublicReviews> ListAsync()
     {
-        const string source = " FROM PhieuBanGiao bg JOIN PhieuTiepNhan p ON p.MaPhieuTN=bg.MaPhieuTN WHERE " + Verified;
+        const string source = " FROM PhieuBanGiao bg JOIN PhieuTiepNhan p ON p.MaPhieuTN=bg.MaPhieuTN WHERE " + Eligible;
         var summary = (await sql.QueryAsync("SELECT COUNT_BIG(*) AS N,AVG(CAST(bg.DanhGiaHaiLong AS DECIMAL(10,2))) AS Average" + source,
             r => (Count: r.Long("N"), Average: r.DecOrNull("Average")))).Single();
         var rows = await sql.QueryAsync("SELECT TOP 6 pub.MaCongKhai,bg.DanhGiaHaiLong,bg.NhanXetDanhGia,bg.NgayDanhGia "
             + "FROM DanhGiaCongKhai pub JOIN PhieuBanGiao bg ON bg.MaPhieuTN=pub.MaPhieuTN JOIN PhieuTiepNhan p ON p.MaPhieuTN=bg.MaPhieuTN "
-            + "WHERE " + Verified + " AND " + Matches + " ORDER BY bg.NgayDanhGia DESC,pub.MaCongKhai",
-            r => new PublicReview(r.Str("MaCongKhai")!, r.Int("DanhGiaHaiLong"), r.Str("NhanXetDanhGia"), DbTime.Date(r.Time("NgayDanhGia")!.Value)));
-        return new(summary.Count, summary.Average is { } value ? decimal.Round(value, 1, MidpointRounding.AwayFromZero) : null, rows);
+            + "WHERE " + Eligible + " AND " + Matches + " ORDER BY COALESCE(bg.NgayDanhGia,bg.NgayBanGiao) DESC,pub.MaCongKhai",
+            r => new PublicReview(r.Str("MaCongKhai")!, r.Int("DanhGiaHaiLong"), r.Str("NhanXetDanhGia"), r.Time("NgayDanhGia") is { } at ? DbTime.Date(at) : null));
+        return new(summary.Count, summary.Average is { } value ? decimal.Round(value, 1, MidpointRounding.AwayFromZero) : null, rows, []);
     }
 
     public async Task SetPublicationAsync(string ticketCode, bool? published, int? rating, DateTimeOffset? ratedAt, string? comment)
@@ -36,7 +36,7 @@ public sealed class PublicReviewService(Sql sql, CurrentActor actors, Transactio
         var actor = actors.RequireSignedIn();
         if (!actor.Roles.Contains(Role.ADMIN) || actor.AccountId is null) throw new DomainException(ErrorCode.ACCESS_DENIED);
         if (string.IsNullOrWhiteSpace(ticketCode) || ticketCode.Length > 30 || published is null || comment?.Length > 1000
-            || (published.Value && (rating is null or < 1 or > 5 || ratedAt is null)))
+            || (published.Value && (rating is null or < 1 or > 5)))
             throw new DomainException(ErrorCode.VALIDATION_FAILED);
         await transactions.InTransactionAsync(async () =>
         {
@@ -49,7 +49,7 @@ public sealed class PublicReviewService(Sql sql, CurrentActor actors, Transactio
             else
             {
                 var current = await sql.FirstOrDefaultAsync("SELECT bg.DanhGiaHaiLong,bg.NhanXetDanhGia,bg.NgayDanhGia "
-                    + "FROM PhieuBanGiao bg WITH (UPDLOCK,HOLDLOCK) JOIN PhieuTiepNhan p ON p.MaPhieuTN=bg.MaPhieuTN WHERE p.MaPhieuTN=? AND " + Verified,
+                    + "FROM PhieuBanGiao bg WITH (UPDLOCK,HOLDLOCK) JOIN PhieuTiepNhan p ON p.MaPhieuTN=bg.MaPhieuTN WHERE p.MaPhieuTN=? AND " + Eligible,
                     r => new { Rating = r.Int("DanhGiaHaiLong"), Comment = r.Str("NhanXetDanhGia"), RatedAt = r.Time("NgayDanhGia") }, ticketCode)
                     ?? throw new DomainException(ErrorCode.VALIDATION_FAILED);
                 if (current.Rating != rating || current.RatedAt != ratedAt || !string.Equals(current.Comment ?? "", comment ?? "", StringComparison.Ordinal))

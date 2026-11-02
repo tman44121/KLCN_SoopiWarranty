@@ -61,7 +61,7 @@ public sealed class ReportService(Sql sql, CurrentActor actors, TimeProvider clo
             + "JOIN ThietBi tb ON tb.MaThietBi = ptn.MaThietBi JOIN SanPham sp ON sp.MaSP = tb.MaSP "
             + "WHERE bg.DanhGiaHaiLong IS NOT NULL AND ptn.TrangThaiXuLy IN ('DELIVERED', 'RETURNED_UNREPAIRED')";
         var summary = (await sql.QueryAsync("SELECT COUNT_BIG(*) AS Total, COUNT_BIG(bg.NgayDanhGia) AS CustomerCount, "
-            + "AVG(CASE WHEN bg.NgayDanhGia IS NOT NULL THEN CAST(bg.DanhGiaHaiLong AS DECIMAL(10,2)) END) AS AverageRating" + joins + where,
+            + "AVG(CAST(bg.DanhGiaHaiLong AS DECIMAL(10,2))) AS AverageRating" + joins + where,
             row => (Total: row.Long("Total"), Customers: row.Long("CustomerCount"), Average: row.DecOrNull("AverageRating")), [.. args]))[0];
         var rows = await sql.QueryAsync("SELECT ptn.MaPhieuTN, kh.MaKH, kh.HoTen, kh.SDT, sp.TenSP, tram.MaTram, tram.TenTram, "
             + "bg.DanhGiaHaiLong, bg.NhanXetDanhGia, bg.NgayDanhGia,CASE WHEN EXISTS (SELECT 1 FROM DanhGiaCongKhai pub WHERE pub.MaPhieuTN=bg.MaPhieuTN AND "

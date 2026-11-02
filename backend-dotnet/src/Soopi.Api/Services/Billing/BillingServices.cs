@@ -88,7 +88,8 @@ public sealed class PaymentService(
         {
             var actor = await CashierAsync();
             var method = command.Method ?? "CASH";
-            if (!ChargedMethods.Contains(method) || JavaText.IsBlank(command.PayerName)) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+            if (!ChargedMethods.Contains(method)) throw DomainException.Invalid("Phương thức thanh toán không hợp lệ — chọn Tiền mặt, Chuyển khoản, Ví điện tử hoặc Thẻ.");
+            if (JavaText.IsBlank(command.PayerName)) throw DomainException.Invalid("Vui lòng nhập tên người nộp tiền.");
             var ticket = await tickets.RequireAsync(ticketCode);
             var quotation = ticket.ActiveQuotationId is null ? null : await quotations.FindAsync(ticket.ActiveQuotationId);
             if (quotation is null || quotation.TicketId != ticket.Id) throw new DomainException(ErrorCode.PAYMENT_QUOTE_NOT_FOUND);
@@ -105,7 +106,7 @@ public sealed class PaymentService(
         });
     }
 
-    /// <summary>D-008: ca không có báo giá được khách đồng ý ghi phiếu thu 0 đ trước khi bàn giao.</summary>
+    /// <summary>D-008: ca không có báo giá được khách đồng ý (hoặc báo giá tổng 0 đ) ghi phiếu thu 0 đ trước khi bàn giao.</summary>
     public Task<PaymentView> ConfirmFreeWarrantyAsync(string ticketCode, string? note)
     {
         actors.Require(Permission.PAYMENT_COLLECT);
@@ -114,8 +115,11 @@ public sealed class PaymentService(
             var actor = await CashierAsync();
             var ticket = await tickets.RequireAsync(ticketCode);
             if (ticket.Status != TicketStatus.COMPLETED) throw new DomainException(ErrorCode.TICKET_INVALID_STATE, TicketStatus.COMPLETED.SqlLabel());
-            if (await quotations.FindAcceptedForTicketAsync(ticketCode) is not null) throw new DomainException(ErrorCode.PAYMENT_NOT_FREE);
+            // Báo giá khách đồng ý nhưng tổng 0 đ (mọi dòng được miễn) cũng là ca không thu tiền.
+            var accepted = await quotations.FindAcceptedForTicketAsync(ticketCode);
+            if (accepted is not null && accepted.GrandTotal != 0) throw new DomainException(ErrorCode.PAYMENT_NOT_FREE, accepted.Id, accepted.GrandTotal);
             await EnsureNotPaidAsync(ticketCode);
+            if (accepted is not null && JavaText.IsBlank(note)) note = "Báo giá " + accepted.Id + " tổng 0 đ";
             var payment = new Payment(await codes.NextAsync(BusinessCodeType.Payment), ticketCode, null, "FREE_WARRANTY", clock.GetUtcNow(),
                 ticket.CustomerSnapshot.GetValueOrDefault("fullName", "Khách hàng"), 0, "NONE", actor.EmployeeId!, note);
             db.Payments.Add(payment);

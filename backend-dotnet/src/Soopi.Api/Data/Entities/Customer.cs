@@ -62,7 +62,7 @@ public class Customer
     }
 
     private static string RequireText(string? value) =>
-        JavaText.IsBlank(value) ? throw new DomainException(ErrorCode.VALIDATION_FAILED) : JavaText.Trim(value);
+        JavaText.IsBlank(value) ? throw DomainException.Invalid("Vui lòng nhập họ và tên khách hàng.") : JavaText.Trim(value);
 
     private static string? BlankToNull(string? value) => JavaText.IsBlank(value) ? null : JavaText.Trim(value);
 }
@@ -73,4 +73,8 @@ public class EmployeeAccountLink
     public string Code { get; private set; } = "";
 
     public long? AccountId { get; private set; }
+
+    public string Phone { get; private set; } = "";
+
+    public string? Email { get; private set; }
 }

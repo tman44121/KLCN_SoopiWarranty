@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
+import { BusinessDateTime } from "../BusinessDateTime";
 import { usePage } from "../usePage";
 import controller from "../behaviors/receptionist.js";
 import { BrandLogo } from "../customer";
@@ -414,10 +415,10 @@ export default function ReceptionistPage() {
                   </div>
                 </div>
                 <div className="form-field" data-field="promisedReturnAt">
-                  <label htmlFor="promisedReturnAt">
+                  <label htmlFor="promisedReturnAt-date">
                     {"Ngày hẹn trả"}
                   </label>
-                  <input type="datetime-local" id="promisedReturnAt" name="promisedReturnAt" />
+                  <BusinessDateTime id="promisedReturnAt" name="promisedReturnAt" />
                 </div>
               </div>
               <div className="form-row">

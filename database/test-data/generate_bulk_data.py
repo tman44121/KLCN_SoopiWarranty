@@ -20,6 +20,7 @@ ap.add_argument("--db", default="TrungTamBaoHanhDB_Dev")
 ap.add_argument("--customers", type=int, default=400)
 ap.add_argument("--tickets", type=int, default=600)
 ap.add_argument("--seed", type=int, default=20261004)
+ap.add_argument("--workflow-cases", action="store_true", help="Guarantee free and chargeable cases stopped after diagnosis")
 ap.add_argument("--out", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "bulk_data.sql"))
 args = ap.parse_args()
 rnd = random.Random(args.seed)
@@ -262,11 +263,13 @@ def address():
 
 
 def work_time(t):
-    """Đưa thời điểm vào giờ làm 08:00–19:00."""
-    if t.hour >= 19:
+    """Đưa thời điểm vào giờ làm 08:00–17:00, thứ Hai–thứ Bảy."""
+    if t.hour >= 17:
         t = (t + timedelta(days=1)).replace(hour=8, minute=rnd.randint(0, 59), second=0)
     elif t.hour < 8:
         t = t.replace(hour=8, minute=rnd.randint(0, 59), second=0)
+    if t.weekday() == 6:
+        t = (t + timedelta(days=1)).replace(hour=8, minute=0, second=0)
     return t.replace(second=0)
 
 
@@ -418,6 +421,13 @@ for d in rnd.sample(candidates[:args.tickets], k=args.tickets // 12):
     if old > START - timedelta(days=60):
         plan.append((d, old.replace(hour=rnd.randint(8, 16))))
 plan.sort(key=lambda p: p[1])
+diagnosis_cases = {}
+if args.workflow_cases:
+    for d, t in plan:
+        if d["expires"] >= t.date() and t < NOW - timedelta(days=7) and id(d) not in diagnosis_cases and t == max(pt for pd, pt in plan if pd is d):
+            diagnosis_cases[id(d)] = len(diagnosis_cases) == 0
+            if len(diagnosis_cases) == 2:
+                break
 # Ngày kích hoạt bảo hành phải trước lần nhận máy đầu tiên
 first_intake = {}
 for d, t in plan:
@@ -454,6 +464,9 @@ for d, t0 in plan:
     sla = rnd.choices(["STANDARD_48H", "PRIORITY_24H", "EXPRESS_12H"], [60, 25, 15])[0]
     sla_h = {"STANDARD_48H": 48, "PRIORITY_24H": 24, "EXPRESS_12H": 12}[sla]
     free = in_warranty and rnd.random() < 0.85
+    forced_diagnosis = args.workflow_cases and is_last and id(d) in diagnosis_cases
+    if forced_diagnosis:
+        free = diagnosis_cases[id(d)]
     water = in_warranty and not free and rnd.random() < 0.6
     part_codes = parts_by_type[d["type"]]
     part = part_codes[fault[3]] if fault[3] is not None else None
@@ -493,6 +506,8 @@ for d, t0 in plan:
     t = t0
     slow = 5 if NOW - t0 < timedelta(days=14) else 1  # phiếu gần đây còn tồn đọng ở các bước giữa
     for status, lo, hi, who_role in path:
+        if forced_diagnosis and events[-1][0] == "DIAGNOSED":
+            break
         if stuck == "COMPLETED" and events[-1][0] == "COMPLETED":
             break
         if stuck == "AWAITING_RETURN_STOP" and events[-1][0] == "AWAITING_RETURN":
@@ -882,8 +897,8 @@ def req_row(r):
     return (r["code"], who.get("code") if who and who.get("account") else None, who.get("name") or g.get("name"),
             who.get("phone") or g.get("phone"), who.get("email") or g.get("email"), who.get("address") or g.get("address"),
             TYPE_GROUP[dv["type"]], dv["type"], f"{BRAND_NAME[dv['brand']]} {dv['pname']}", dv["kind"], dv["serial"],
-            r["fault"], "HCM", r["t"].replace(hour=9, minute=0) + timedelta(days=1),
-            r["t"].replace(hour=11, minute=0) + timedelta(days=1),
+            r["fault"], "HCM", work_time(r["t"].replace(hour=9, minute=0) + timedelta(days=1)),
+            work_time(r["t"].replace(hour=11, minute=0) + timedelta(days=1)),
             "CANCELLED" if r["status"] == "CANCELLED" else "PENDING_INTAKE", None, r["handler"], r["handled"], r["cancel"], r["t"])
 
 
@@ -912,7 +927,7 @@ def ticket_row(tk):
             "SUSPECTED" if not tk["free"] and rnd.random() < 0.3 else "NONE", rnd.choices(["COMPLETE", "MISSING"], [85, 15])[0],
             rnd.choice(["Không có", "Sạc, cáp", "Hộp, sạc", "Remote", "Túi đựng", "Hộp sạc"]),
             {"NONE": "Không trầy xước", "LIGHT": "Trầy nhẹ cạnh viền", "HEAVY": "Trầy nhiều, cấn góc"}[cosmetic_scratch],
-            1, tk["fault"][0], (tk["t0"] + timedelta(days=rnd.randint(2, 5))).replace(hour=17, minute=0), est, tk["sla"],
+            1, tk["fault"][0], work_time((tk["t0"] + timedelta(days=rnd.randint(2, 5))).replace(hour=16, minute=45)), est, tk["sla"],
             tk["sla_due"], status, upd[1], upd[2][0], upd[2][2],
             "(khách xác nhận trên Cổng khách hàng)" if upd[2][2] == "CUSTOMER" else None, tk["version"],
             0 if status in ("DELIVERED", "RETURNED_UNREPAIRED") else 1)

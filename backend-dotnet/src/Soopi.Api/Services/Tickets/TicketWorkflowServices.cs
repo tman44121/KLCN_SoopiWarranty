@@ -75,17 +75,17 @@ public sealed class ReceptionService(
 
     private async Task<string> CustomerCodeAsync(CustomerInput? input)
     {
-        if (input is null) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (input is null) throw DomainException.Invalid("Vui lòng chọn khách hàng hoặc nhập thông tin khách mới.");
         if (!string.IsNullOrWhiteSpace(input.Code)) return input.Code;
-        var value = input.NewCustomer ?? throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        var value = input.NewCustomer ?? throw DomainException.Invalid("Vui lòng chọn khách hàng hoặc nhập thông tin khách mới.");
         return (await customers.CreateAsync(value.FullName, value.Phone, value.Email, value.Address)).Code;
     }
 
     private async Task<string> DeviceCodeAsync(DeviceInput? input, string customerCode)
     {
-        if (input is null) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (input is null) throw DomainException.Invalid("Vui lòng chọn thiết bị hoặc nhập thông tin thiết bị mới.");
         if (!string.IsNullOrWhiteSpace(input.Code)) return input.Code;
-        var value = input.NewDevice ?? throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        var value = input.NewDevice ?? throw DomainException.Invalid("Vui lòng chọn thiết bị hoặc nhập thông tin thiết bị mới.");
         return (await devices.RegisterAsync(new RegisterDeviceRequest(customerCode, value.ProductId, value.IdentifierType, value.SerialOrImei,
             value.WarrantyActivatedOn, value.WarrantyExpiresOn, value.Distributor))).Code;
     }

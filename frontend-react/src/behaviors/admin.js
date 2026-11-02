@@ -664,25 +664,25 @@ export default function initialize() {
       const page = result.reviews;
       reviews.totalPages = Math.max(1, page.totalPages);
       if (reviews.page >= reviews.totalPages) { reviews.page = reviews.totalPages - 1; return loadReviews(); }
-      $("[data-review-summary]").textContent = `${result.customerReviewCount} đánh giá khách hàng · Điểm trung bình: ${result.averageRating == null ? "Chưa có" : `${charts.number(result.averageRating, 2)} / 5`}${result.legacyCount ? ` · ${result.legacyCount} điểm cũ chưa rõ nguồn/ngày` : ""}`;
+      $("[data-review-summary]").textContent = `${page.totalItems} lượt chấm điểm · Điểm trung bình: ${result.averageRating == null ? "Chưa có" : `${charts.number(result.averageRating, 2)} / 5`}${result.legacyCount ? ` · ${result.legacyCount} điểm chưa lưu ngày` : ""}`;
       $("[data-review-count]").textContent = `${page.totalItems} dòng`;
       $("[data-review-page]").textContent = `Trang ${reviews.page + 1} / ${reviews.totalPages}`;
       $("[data-review-prev]").disabled = reviews.page <= 0;
       $("[data-review-next]").disabled = reviews.page + 1 >= reviews.totalPages;
       if (!page.items.length) return ui.tableState(tbody, 7, "empty", { title: "Không có đánh giá phù hợp", desc: "Thử đổi bộ lọc hoặc chọn Tất cả thời gian." });
       tbody.innerHTML = html`${page.items.map(row => html`<tr>
-        <td>${row.ratedAt ? fmt.dateTime(row.ratedAt) : html`<span class="cell-muted">Chưa xác định nguồn/ngày</span>`}</td>
+        <td>${row.ratedAt ? fmt.dateTime(row.ratedAt) : html`<span class="cell-muted">Chưa lưu ngày đánh giá</span>`}</td>
         <td><div>${row.fullName}<br><span class="mono cell-muted">${row.phone}</span></div></td>
         <td><div><span class="mono">${row.ticketCode}</span><br>${row.productName || "—"}</div></td>
         <td>${row.stationName}</td><td>${row.rating} / 5 sao</td>
         <td class="customer-review-comment">${row.comment || "Không có nhận xét"}</td>
         <td><button type="button" class="btn btn--secondary btn--sm" data-review-publish="${row.ticketCode}"
-          ${row.ratedAt ? "" : "disabled"} title="${row.ratedAt ? "Nhận xét hiển thị ẩn danh trên trang chủ" : "Chưa xác định đánh giá từ khách"}">${row.published ? "Ẩn" : "Hiển thị"}</button></td>
+          title="Điểm và nhận xét hiển thị ẩn danh trên trang chủ">${row.published ? "Ẩn" : "Hiển thị"}</button></td>
       </tr>`)}`;
       tbody.querySelectorAll('[data-review-publish]').forEach(button => button.addEventListener('click', async () => {
         const row = page.items.find(item => item.ticketCode === button.dataset.reviewPublish);
         const published = !row.published;
-        if (published && !await ui.confirm({ title: 'Hiển thị đánh giá trên trang chủ?', message: 'Nhận xét sẽ công khai ẩn danh. Kiểm tra nội dung không chứa thông tin riêng của khách.', confirmLabel: 'Hiển thị', destructive: false })) return;
+        if (published && !await ui.confirm({ title: 'Hiển thị đánh giá trên trang chủ?', message: `Điểm và nhận xét sẽ công khai ẩn danh. Kiểm tra nội dung không chứa thông tin riêng của khách.${row.ratedAt ? '' : ' Điểm này chưa lưu ngày đánh giá; trang chủ sẽ giữ thông tin đó, không tự gán ngày.'}`, confirmLabel: 'Hiển thị', destructive: false })) return;
         try {
           await ui.busy(button, () => api.reviews.publish(row.ticketCode, published, row));
           window.showToast(published ? 'Đã hiển thị đánh giá trên trang chủ.' : 'Đã ẩn đánh giá.', 'success');

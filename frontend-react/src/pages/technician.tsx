@@ -239,7 +239,7 @@ export default function TechnicianPage() {
                   {"Phiếu được phân công"}
                 </h2>
                 <div className="card__title-meta">
-                  {"Sắp theo nguy cơ SLA → hạn xử lý"}
+                  {"Mới nhất trước · Có thể chọn sắp theo hạn SLA"}
                 </div>
               </div>
             </div>

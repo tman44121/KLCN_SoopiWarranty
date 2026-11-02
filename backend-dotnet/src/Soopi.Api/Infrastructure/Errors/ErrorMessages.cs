@@ -15,6 +15,8 @@ public static partial class ErrorMessages
 
     public static string Format(ErrorCode code, IReadOnlyList<object?> arguments)
     {
+        // DomainException.Invalid: lý do cụ thể thay cho câu chung "kiểm tra lại các trường".
+        if (code == ErrorCode.VALIDATION_FAILED && arguments is [string reason]) return reason;
         var template = Messages.GetValueOrDefault(code.MessageKey(), code.ToString());
         return Placeholder().Replace(template, match =>
         {

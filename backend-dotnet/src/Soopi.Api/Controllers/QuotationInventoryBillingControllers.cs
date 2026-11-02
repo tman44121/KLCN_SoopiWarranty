@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Soopi.Api.Data.Stores;
 using Soopi.Api.DTOs.Shared;
 using Soopi.Api.Infrastructure.Validation;
 using Soopi.Api.Services.Billing;
@@ -24,8 +25,9 @@ public sealed class QuotationsController(QuotationService quotations, QuotationR
         StatusCode(StatusCodes.Status201Created, await quotations.CreateAsync(ticketCode, body));
 
     [HttpGet("quotations")]
-    public Task<PageResponse<QuotationView>> Search([FromQuery] string approvalStatus = "PENDING", [FromQuery] int page = 0, [FromQuery] int size = 25) =>
-        quotations.SearchAsync(approvalStatus, page, size);
+    public Task<PageResponse<QuotationView>> Search([FromQuery] string approvalStatus = "PENDING", [FromQuery] int page = 0, [FromQuery] int size = 25,
+        [FromQuery] string? q = null, [FromQuery] DateTimeOffset? from = null, [FromQuery] DateTimeOffset? to = null) =>
+        quotations.SearchAsync(approvalStatus, page, size, q, from, to);
 
     [HttpGet("quotations/{code}")]
     public Task<QuotationView> Get(string code) => quotations.GetAsync(code);
@@ -64,6 +66,11 @@ public sealed class InventoryController(PartQueryService parts, StockIssueServic
     [HttpGet("stock-issues")]
     public Task<List<IssueView>> Issues([FromQuery] string? status) => issues.ListAsync(status);
 
+    [HttpGet("stock-issues/search")]
+    public Task<PageResponse<IssueView>> SearchIssues([FromQuery] string? status, [FromQuery] string? q, [FromQuery] DateTimeOffset? from,
+        [FromQuery] DateTimeOffset? to, [FromQuery] string sort = "newest", [FromQuery] int page = 0, [FromQuery] int size = 25) =>
+        issues.SearchAsync(new(status, q, from, to, sort, page, size));
+
     [HttpGet("stock-issues/mine")]
     public Task<List<IssueView>> MyIssues([FromQuery] string? status) => issues.MineAsync(status);
 
@@ -76,6 +83,11 @@ public sealed class InventoryController(PartQueryService parts, StockIssueServic
 
     [HttpGet("stock-receipts")]
     public Task<List<StockReceiptView>> Receipts([FromQuery] string? status) => receipts.ListAsync(status);
+
+    [HttpGet("stock-receipts/search")]
+    public Task<PageResponse<StockReceiptView>> SearchReceipts([FromQuery] string? status, [FromQuery] string? q, [FromQuery] DateTimeOffset? from,
+        [FromQuery] DateTimeOffset? to, [FromQuery] string sort = "newest", [FromQuery] int page = 0, [FromQuery] int size = 25) =>
+        receipts.SearchAsync(new(status, q, from, to, sort, page, size));
 
     [HttpPost("stock-receipts")]
     public async Task<IActionResult> CreateReceipt([FromBody] ReceiptRequest body) => StatusCode(StatusCodes.Status201Created, await receipts.CreateAsync(body));
@@ -94,6 +106,11 @@ public sealed class InventoryController(PartQueryService parts, StockIssueServic
 
     [HttpGet("stock-transfers")]
     public Task<List<TransferView>> Transfers([FromQuery] string? status) => transfers.ListAsync(status);
+
+    [HttpGet("stock-transfers/search")]
+    public Task<PageResponse<TransferView>> SearchTransfers([FromQuery] string? status, [FromQuery] string? q, [FromQuery] DateTimeOffset? from,
+        [FromQuery] DateTimeOffset? to, [FromQuery] string sort = "newest", [FromQuery] int page = 0, [FromQuery] int size = 25) =>
+        transfers.SearchAsync(new(status, q, from, to, sort, page, size));
 
     [HttpPost("stock-transfers")]
     public async Task<IActionResult> CreateTransfer([FromBody] TransferRequest body) => StatusCode(StatusCodes.Status201Created, await transfers.CreateAsync(body));

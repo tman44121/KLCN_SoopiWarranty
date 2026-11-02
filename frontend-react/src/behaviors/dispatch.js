@@ -1,3 +1,4 @@
+import { createListFilters } from "./list-filters.js";
 /* ==========================================================================
    View: Điều phối viên — UI mục 15; CODEX mục 15.4
    API: GET /tickets/open, GET /technicians/workload,
@@ -25,8 +26,8 @@ export default function initialize() {
     statusFilter: "all",
     categoryFilter: "all",
     slaFilter: "all",
-    sortKey: "deadline",
-    sortDir: "asc",
+    sortKey: "receivedAt",
+    sortDir: "desc",
     page: 1,
     rowsPerPage: 25,
     expandedRow: null,
@@ -80,13 +81,15 @@ export default function initialize() {
   /* Bảng phiếu đang xử lý                                                   */
   /* ---------------------------------------------------------------------- */
 
+  const ticketFilters = createListFilters(el.tbody.closest(".table-scroll"), () => { state.page = 1; render(); }, { search: false, sort: false, assignment: true });
+
   function deadline(t) {
     return new Date(t.sla.dueAt).getTime();
   }
 
   function filtered() {
     const q = state.searchTerm.trim().toLowerCase();
-    const list = state.tickets.filter((t) => {
+    const list = ticketFilters.apply(state.tickets).filter((t) => {
       if (state.statusFilter !== "all" && t.status !== state.statusFilter) return false;
       if (state.categoryFilter !== "all" && t.device.categoryCode !== state.categoryFilter) return false;
       if (state.slaFilter !== "all" && t.sla.level !== state.slaFilter) return false;
@@ -101,7 +104,7 @@ export default function initialize() {
       status: (t) => L.TICKET_STATUS[t.status].label,
       deadline: (t) => (SLA_COUNTED(t.status) ? deadline(t) : Number.MAX_SAFE_INTEGER),
     }[state.sortKey];
-    return list.sort((a, b) => (key(a) < key(b) ? -dir : key(a) > key(b) ? dir : 0));
+    return list.sort((a, b) => (key(a) < key(b) ? -dir : key(a) > key(b) ? dir : String(b.code).localeCompare(String(a.code))));
   }
 
   function statusCell(t) {
@@ -198,8 +201,9 @@ export default function initialize() {
     const list = filtered();
     el.count.textContent = `${list.length} phiếu`;
     if (list.length === 0) {
+      const extras = ticketFilters.values();
       const isFiltered =
-        state.statusFilter !== "all" || state.categoryFilter !== "all" || state.slaFilter !== "all" || state.searchTerm.trim() !== "";
+        extras.from || extras.to || extras.station || extras.technician || state.statusFilter !== "all" || state.categoryFilter !== "all" || state.slaFilter !== "all" || state.searchTerm.trim() !== "";
       ui.tableState(el.tbody, COLUMNS, isFiltered ? "filtered" : "empty", {
         title: isFiltered ? "Không tìm thấy phiếu phù hợp" : "Chưa có phiếu tiếp nhận nào",
         desc: isFiltered
@@ -209,8 +213,8 @@ export default function initialize() {
       renderPagination(0);
       return;
     }
-    renderRows(list);
     renderPagination(list.length);
+    renderRows(list);
   }
 
   function tickSlaTimers() {
@@ -314,7 +318,7 @@ export default function initialize() {
           </div>
           <div class="candidate__factors">
             <span class="candidate__factor">Chuyên môn: <strong>${c.skills.length ? c.skills.join(", ") : "—"}</strong></span>
-            <span class="candidate__factor">Tải hiện tại: <strong>${c.activeTickets}/${c.maxActiveTickets}</strong></span>
+            <span class="candidate__factor">Số phiếu đang xử lý: <strong>${c.activeTickets}/${c.maxActiveTickets}</strong></span>
             <span class="candidate__factor">SLA nguy cơ: <strong>${c.atRiskSla} phiếu</strong></span>
             <span class="candidate__factor">Có mặt tại trạm: <strong>${c.onSite ? "Có" : "Không"}</strong></span>
           </div>
@@ -362,30 +366,45 @@ export default function initialize() {
   /* Phê duyệt báo giá (T6a/T6b — mục 15D, 34)                               */
   /* ---------------------------------------------------------------------- */
 
+  let quotePage = 0, quoteLoad = 0, quoteTimer;
+  const quoteFilters = createListFilters(el.quotationApprovalList, () => {
+    quotePage = 0; quoteLoad++; clearTimeout(quoteTimer); quoteTimer = setTimeout(loadQuotations, 250);
+  }, { statuses: L.QUOTE_APPROVAL, sort: false });
+  quoteFilters.toolbar.querySelector('[data-list-q]').placeholder = 'Mã báo giá, mã phiếu, tên hoặc SĐT khách…';
+  const quotePagination = document.createElement('div');
+  quotePagination.className = 'pagination';
+  quotePagination.innerHTML = html`<span data-quote-count role="status"></span><div class="pagination__nav"><button type="button" class="btn btn--secondary" data-quote-prev>← Trước</button><button type="button" class="btn btn--secondary" data-quote-next>Sau →</button></div>`;
+  el.quotationApprovalList.after(quotePagination);
+  quotePagination.querySelector('[data-quote-prev]').addEventListener('click', () => { quotePage--; loadQuotations(); });
+  quotePagination.querySelector('[data-quote-next]').addEventListener('click', () => { quotePage++; loadQuotations(); });
   async function loadQuotations() {
-    if (!el.quotationApprovalList) return;
+    const load = ++quoteLoad, filters = quoteFilters.values();
+    quotePagination.querySelector('[data-quote-prev]').disabled = true;
+    quotePagination.querySelector('[data-quote-next]').disabled = true;
+    if (filters.from && filters.to && filters.from > filters.to) {
+      quotePagination.querySelector('[data-quote-count]').textContent = 'Khoảng ngày chưa hợp lệ';
+      ui.blockState(el.quotationApprovalList, 'empty', { desc: 'Vui lòng chọn lại khoảng ngày.' }); return;
+    }
     ui.blockState(el.quotationApprovalList, "loading");
     try {
-      const page = await api.quotations.list({ approvalStatus: "PENDING", page: 0, size: 100 });
-      if (page.items.length === 0) {
-        ui.blockState(el.quotationApprovalList, "empty", { desc: "Không có phiếu báo giá nào đang chờ phê duyệt." });
-        return;
-      }
-      el.quotationApprovalList.innerHTML = html`${page.items.map((q) => html`
-        <div class="request-row">
-          <div class="request-row__main">
-            <span class="request-row__title mono">${q.code}</span>
-            <span class="request-row__meta"><span class="mono">${q.ticketCode}</span> · Lập lúc ${fmt.dateTime(q.createdAt)} · Tổng thanh toán ${fmt.money(q.grandTotal)}</span>
-          </div>
-          <div class="request-row__right">
-            ${fmt.badgeOf(L.QUOTE_APPROVAL, q.approval.status)}
-            <button type="button" class="btn btn--secondary btn--sm" data-view-quotation="${q.code}">Xem chi tiết</button>
-          </div>
-        </div>`)}`;
-      el.quotationApprovalList.querySelectorAll("[data-view-quotation]").forEach((btn) => {
-        btn.addEventListener("click", () => openQuotationDrawer(btn.getAttribute("data-view-quotation")));
-      });
+      const page = await api.quotations.list({ approvalStatus: filters.status || 'ALL', q: filters.q || null,
+        from: filters.from ? `${filters.from}T00:00:00+07:00` : null, to: filters.to ? `${filters.to}T23:59:59+07:00` : null, page: quotePage, size: 25 });
+      if (load !== quoteLoad) return;
+      if (quotePage > 0 && quotePage >= (page.totalPages || 1)) { quotePage = Math.max(0, (page.totalPages || 1) - 1); return loadQuotations(); }
+      quotePagination.querySelector('[data-quote-count]').textContent = `${page.totalItems || 0} báo giá · Trang ${quotePage + 1}/${Math.max(1, page.totalPages || 1)} · Mới nhất trước`;
+      quotePagination.querySelector('[data-quote-prev]').disabled = quotePage <= 0;
+      quotePagination.querySelector('[data-quote-next]').disabled = quotePage + 1 >= (page.totalPages || 1);
+      if (!page.items.length) { ui.blockState(el.quotationApprovalList, "empty", { desc: "Không có báo giá phù hợp. Thử đổi từ khóa hoặc bộ lọc." }); return; }
+      el.quotationApprovalList.innerHTML = html`${page.items.map(q => html`
+        <div class="request-row"><div class="request-row__main">
+          <span class="request-row__title mono">${q.code}</span>
+          <span class="request-row__meta"><span class="mono">${q.ticketCode}</span> · Lập lúc ${fmt.dateTime(q.createdAt)} · Tổng thanh toán ${fmt.money(q.grandTotal)}</span>
+        </div><div class="request-row__right">${fmt.badgeOf(L.QUOTE_APPROVAL, q.approval.status)}
+          <button type="button" class="btn btn--secondary btn--sm" data-view-quotation="${q.code}">Xem chi tiết</button>
+        </div></div>`)}`;
+      el.quotationApprovalList.querySelectorAll('[data-view-quotation]').forEach(btn => btn.addEventListener('click', () => openQuotationDrawer(btn.getAttribute('data-view-quotation'))));
     } catch (error) {
+      if (load !== quoteLoad) return;
       ui.blockState(el.quotationApprovalList, "error", { desc: error.detail }, loadQuotations);
     }
   }
@@ -395,6 +414,8 @@ export default function initialize() {
       const quotation = await api.quotations.get(code);
       const ticket = await api.tickets.get(quotation.ticketCode);
       state.quotation = quotation;
+      el.approveBtn.hidden = el.rejectBtn.hidden = quotation.approval.status !== "PENDING";
+      el.quotationDispatchNote.closest(".form-field").hidden = quotation.approval.status !== "PENDING";
       const inspection = ticket.inspection || {};
       el.quotationDrawerSubtitle.textContent = `${quotation.code} — ${ticket.code} — ${ticket.device.deviceTypeName} (${ticket.device.productName})`;
       el.quotationDrawerReclass.textContent = L.CLASSIFICATION[inspection.classification] || "—";

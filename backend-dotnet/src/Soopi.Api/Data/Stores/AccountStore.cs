@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Soopi.Api.Data.Entities;
 using Soopi.Api.Domain.Identity;
+using Soopi.Api.Domain.Shared;
 
 namespace Soopi.Api.Data.Stores;
 
@@ -17,6 +18,28 @@ public sealed class AccountStore(AppDbContext db)
         var employeeId = login is null ? "" : login.Trim().ToUpperInvariant();
         return FirstAsync(db.Accounts.Where(a =>
             a.Username == username || db.EmployeeLinks.Any(e => e.AccountId == a.Id && e.Code == employeeId)));
+    }
+
+    /// <summary>
+    /// Màn đăng nhập: tên đăng nhập / mã NV trước, rồi SĐT hoặc email của nhân viên và của khách đã có tài khoản (hồ sơ đang
+    /// dùng). Xét lần lượt để tên đăng nhập luôn thắng khi trùng với SĐT/email của người khác.
+    /// </summary>
+    public async Task<Account?> FindForSignInAsync(string? login)
+    {
+        if (await FindByLoginAsync(login) is { } account) return account;
+        var text = login is null ? "" : JavaText.Trim(login);
+        if (text.Contains('@'))
+        {
+            var email = EmailAddress.Normalize(text);
+            return await FirstAsync(db.Accounts.Where(a => db.EmployeeLinks.Any(e => e.AccountId == a.Id && e.Email == email)))
+                ?? await FirstAsync(db.Accounts.Where(a => db.Customers.Any(c =>
+                    c.AccountId == a.Id && c.Status == CustomerStatus.ACTIVE && c.Email == email)));
+        }
+        var phone = PhoneNumber.Normalize(text);
+        if (phone.Length == 0) return null;
+        return await FirstAsync(db.Accounts.Where(a => db.EmployeeLinks.Any(e => e.AccountId == a.Id && e.Phone == phone)))
+            ?? await FirstAsync(db.Accounts.Where(a => db.Customers.Any(c =>
+                c.AccountId == a.Id && c.Status == CustomerStatus.ACTIVE && c.Phone == phone)));
     }
 
     public Task<Account?> FindByIdAsync(long? id) =>

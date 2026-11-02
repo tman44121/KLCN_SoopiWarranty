@@ -250,6 +250,12 @@ public sealed class TicketStore(Sql sql)
             .ToList();
     }
 
+    public async Task<List<Ticket>> FindAssignedOpenAsync(string? technicianId) =>
+        await LoadAsync(await IdsAsync(
+            "SELECT p.MaPhieuTN FROM PhieuTiepNhan p JOIN PhanCong pc ON pc.MaPhieuTN=p.MaPhieuTN "
+            + "WHERE pc.MaKTV=? AND p.ConMo=1 AND p.TrangThaiXuLy NOT IN ('COMPLETED','AWAITING_RETURN') "
+            + "ORDER BY p.NgayTiepNhan DESC,p.MaPhieuTN DESC", technicianId));
+
     /// <summary>Phiếu đang xử lý (trừ "Hoàn thành", "Đã hủy") có hạn SLA trong [from, until].</summary>
     public async Task<List<Ticket>> FindSlaDueBetweenAsync(DateTimeOffset from, DateTimeOffset until) =>
         await LoadAsync(await IdsAsync(

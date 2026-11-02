@@ -32,8 +32,15 @@ export default function initialize() {
     drawerBody: document.querySelector("[data-ticket-detail-body]"),
   };
 
+  let filterTimer;
+  const dateFilters = createListFilters(el.tbody.closest('.table-scroll'), () => {
+    state.page = 0; clearTimeout(filterTimer); filterTimer = setTimeout(load, 200);
+  }, { search: false, sort: false });
   function query() {
+    const dates = dateFilters.values();
     return {
+      from: dates.from ? `${dates.from}T00:00:00+07:00` : null,
+      to: dates.to ? `${dates.to}T23:59:59+07:00` : null,
       status: state.status === "all" ? null : state.status,
       category: state.category === "all" ? null : state.category,
       technician: state.technician === "all" ? null : state.technician,
@@ -44,18 +51,22 @@ export default function initialize() {
   }
 
   function isFiltered() {
-    return state.status !== "all" || state.category !== "all" || state.technician !== "all" || state.q.trim() !== "";
+    const dates = dateFilters.values();
+    return !!dates.from || !!dates.to || state.status !== "all" || state.category !== "all" || state.technician !== "all" || state.q.trim() !== "";
   }
 
   // Không có TICKET_READ_ALL (kỹ thuật viên): GET /tickets chỉ trả phiếu được giao cho chính người đó.
   const ownOnly = () => !window.LML_AUTH.hasPermission("TICKET_READ_ALL");
   const CLOSED = ["COMPLETED", "DELIVERED", "AWAITING_RETURN", "RETURNED_UNREPAIRED"];
 
+  let loadSequence = 0;
   async function load() {
+    const sequence = ++loadSequence;
     ui.skeletonRows(el.tbody, COLUMNS, 6);
     el.count.textContent = "Đang tải…";
     try {
       const page = await api.tickets.list(query());
+      if (sequence !== loadSequence) return;
       state.total = page.totalItems;
       state.totalPages = Math.max(1, page.totalPages);
       renderPagination();
@@ -82,6 +93,7 @@ export default function initialize() {
         btn.addEventListener("click", () => openDetail(btn.getAttribute("data-view-ticket")));
       });
     } catch (error) {
+      if (sequence !== loadSequence) return;
       el.count.textContent = "Lỗi tải dữ liệu";
       ui.tableState(el.tbody, COLUMNS, "error", { title: "Không thể tải danh sách phiếu", desc: error.detail }, load);
     }
@@ -297,3 +309,4 @@ export default function initialize() {
     if (params.get("ticket")) openDetail(params.get("ticket"));
   });
 }
+import { createListFilters } from './list-filters.js';

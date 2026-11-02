@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { usePage } from "../usePage";
-import { isReviewPreview, PublicReviewsPanel } from "../PublicReviews";
+import { PublicReviewsPanel } from "../PublicReviews";
 import {
   CustomerFooter, CustomerHeader, Icon, STEP_LABELS, StatusBadge, TICKET_FILTERS, TICKET_GROUPS, api, fmt, newest, portalCatalog,
   useCustomerName,
@@ -136,7 +136,20 @@ export default function HomePage() {
               </dl>
             </div>
 
-            {!name || isReviewPreview ? <PublicReviewsPanel /> : <div className="hero-dashboard-card" id="tracking">
+            {!name ? <div className="hero-dashboard-card home-process-card">
+              <div className="card-top-bar"><h2 className="dispatch-title">Quy trình bảo hành tại Soopi</h2><Icon glyph="wrench" /></div>
+              <p className="ticket-meta">Các bước xử lý từ lúc tiếp nhận đến khi sẵn sàng trả máy.</p>
+              <ol className="home-process-steps">
+                {STEP_LABELS.map((label, index) => <li key={label}>
+                  <span className="home-process-number" aria-hidden="true">{index + 1}</span>
+                  <span>{label === 'QC' ? 'Kiểm tra chất lượng' : label}</span>
+                </li>)}
+              </ol>
+              <p className="ticket-meta">Đăng nhập để xem các phiếu và tiến độ thiết bị của bạn.</p>
+              <a href={historyHref} className="qr-scan-spark-card"><span className="card-icon-circle"><Icon glyph="file" /></span>
+                <span><span className="qr-spark-title">Phiếu bảo hành của tôi</span><span className="qr-spark-val">Xem tiến độ xử lý</span></span><span aria-hidden="true">→</span>
+              </a>
+            </div> : <div className="hero-dashboard-card" id="tracking">
               <div className="card-top-bar">
                 <h2 className="dispatch-title">Tiến độ sửa chữa thiết bị của bạn</h2>
                 {!loading && <span className="sla-pill-badge">Phiếu của bạn</span>}
@@ -180,6 +193,8 @@ export default function HomePage() {
             </div>}
           </div>
         </section>
+
+        <PublicReviewsPanel />
 
         {/* NHÓM THIẾT BỊ (dải thương hiệu của bản cũ) */}
         {catalog.categories.length > 0 && (

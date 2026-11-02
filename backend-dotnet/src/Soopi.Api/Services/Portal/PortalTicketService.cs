@@ -124,7 +124,8 @@ public sealed class PortalTicketService(
     public async Task<PortalTicketView> RateTicketAsync(string code, int? rating, string? comment)
     {
         actors.RequireOrPortal(Permission.PORTAL_SELF);
-        if (rating is null or < 1 or > 5 || comment?.Length > 1000) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (rating is null or < 1 or > 5) throw DomainException.Invalid("Vui lòng chọn số sao đánh giá từ 1 đến 5.");
+        if (comment?.Length > 1000) throw DomainException.Invalid("Nhận xét tối đa 1.000 ký tự.");
 
         await transactions.InTransactionAsync(async () =>
         {

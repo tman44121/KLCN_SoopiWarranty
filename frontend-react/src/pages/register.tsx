@@ -5,6 +5,54 @@ import { BrandLogo, Icon, PasswordInput, api, errorText, useAuthScale, useBusy }
 type Field = "fullName" | "phone" | "email" | "otp" | "password" | "confirm";
 const EMPTY: Record<Field, string> = { fullName: "", phone: "", email: "", otp: "", password: "", confirm: "" };
 
+/** Cùng quy tắc với PhoneNumber/EmailAddress/PasswordPolicy ở backend để báo lỗi ngay tại ô nhập. */
+const normalizePhone = (raw: string) => {
+  const digits = raw.replace(/[^0-9+]/g, "");
+  return (digits.startsWith("+84") ? "0" + digits.slice(3) : digits).replace(/\+/g, "");
+};
+const phoneError = (raw: string) =>
+  !raw.trim() ? "Vui lòng nhập số điện thoại."
+    : /^0[0-9]{9,10}$/.test(normalizePhone(raw)) ? undefined
+      : "Số điện thoại không hợp lệ — cần 10 hoặc 11 chữ số và bắt đầu bằng 0 (ví dụ 0912345678).";
+const emailError = (raw: string) =>
+  !raw.trim() ? "Vui lòng nhập email để nhận mã OTP."
+    : raw.trim().length > 100 ? "Email quá dài — tối đa 100 ký tự."
+      : /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(raw.trim()) ? undefined
+        : "Email không đúng định dạng (ví dụ ten@gmail.com).";
+const passwordError = (password: string, phone: string) => {
+  if (!password) return "Vui lòng nhập mật khẩu.";
+  if (password.length < 10) return `Mật khẩu mới có ${password.length} ký tự — cần tối thiểu 10 ký tự.`;
+  if (!/\p{L}/u.test(password)) return "Mật khẩu cần có ít nhất một chữ cái.";
+  if (!/[0-9]/.test(password)) return "Mật khẩu cần có ít nhất một chữ số.";
+  const login = normalizePhone(phone);
+  if (login && password.toLowerCase().includes(login)) return "Mật khẩu không được chứa số điện thoại (tên đăng nhập).";
+  return undefined;
+};
+
+/** Lỗi máy chủ → đúng ô nhập; lỗi không gắn được ô nào thì hiện ở hộp tóm tắt phía trên. */
+const SERVER_FIELD: Record<string, Field> = {
+  CUSTOMER_ACCOUNT_EXISTS: "phone", CUSTOMER_PHONE_DUPLICATE: "phone",
+  CUSTOMER_EMAIL_DUPLICATE: "email", CUSTOMER_PROFILE_VERIFICATION_REQUIRED: "email", CUSTOMER_EMAIL_NOT_FOUND: "email",
+  OTP_INVALID: "otp", AUTH_PASSWORD_POLICY: "password",
+};
+function serverFieldErrors(error: { code?: string; detail?: string; message?: string; fieldErrors?: { field: string; message: string }[] }) {
+  const result: Partial<Record<Field, string>> = {};
+  const text = error?.message || errorText(error);
+  if (error?.code && SERVER_FIELD[error.code]) result[SERVER_FIELD[error.code]] = text;
+  else if (error?.code === "VALIDATION_FAILED") {
+    for (const item of error.fieldErrors || []) {
+      const field = item.field.split(".").pop() as Field;
+      if (field in EMPTY) result[field] = text;
+    }
+    if (!error.fieldErrors?.length) {
+      if (/số điện thoại/i.test(text)) result.phone = text;
+      else if (/email/i.test(text)) result.email = text;
+      else if (/họ và tên/i.test(text)) result.fullName = text;
+    }
+  }
+  return result;
+}
+
 /* Đăng ký tài khoản khách (giao diện web khách KLCN). SĐT là tên đăng nhập; backend xác thực email bằng OTP gửi qua email
    (/auth/mobile/otp). Đăng ký xong đăng nhập phiên web (cookie refresh) rồi thu hồi refresh token kiểu mobile mà /register
    trả về. */
@@ -34,7 +82,9 @@ export default function RegisterPage() {
   async function sendOtp() {
     setSummary("");
     const email = form.email.trim();
-    if (!email) return setErrors({ ...errors, email: "Vui lòng nhập email để nhận mã OTP." });
+    const next = { ...errors, email: emailError(email), phone: form.phone.trim() ? phoneError(form.phone) : errors.phone };
+    setErrors(next);
+    if (next.email || next.phone) return document.getElementById(next.phone ? "phone" : "email")?.focus();
     await runSend(async () => {
       try {
         const issued = await api().request("POST", "/auth/mobile/otp", {
@@ -45,9 +95,17 @@ export default function RegisterPage() {
         setResendIn(Number(issued.resendAfter) || 60);
         document.getElementById("otp")?.focus();
       } catch (error) {
-        setSummary(errorText(error));
+        showServerError(error);
       }
     });
+  }
+
+  function showServerError(error: any) {
+    const fields = serverFieldErrors(error);
+    if (Object.keys(fields).length) {
+      setErrors((current) => ({ ...current, ...fields }));
+      document.getElementById(Object.keys(fields)[0])?.focus();
+    } else setSummary(errorText(error));
   }
 
   async function submit(event: FormEvent) {
@@ -55,14 +113,17 @@ export default function RegisterPage() {
     setSummary("");
     const next: Partial<Record<Field, string>> = {};
     if (!form.fullName.trim()) next.fullName = "Vui lòng nhập họ và tên.";
-    if (!form.phone.trim()) next.phone = "Vui lòng nhập số điện thoại.";
-    if (!form.email.trim()) next.email = "Vui lòng nhập email để nhận mã OTP.";
-    if (!otpSentTo) next.otp = "Bấm “Gửi mã OTP” để nhận mã xác thực.";
-    else if (!form.otp.trim()) next.otp = "Vui lòng nhập mã OTP.";
-    if (!form.password) next.password = "Vui lòng nhập mật khẩu.";
-    if (form.password && form.confirm !== form.password) next.confirm = "Mật khẩu xác nhận không khớp.";
+    next.phone = phoneError(form.phone);
+    next.email = emailError(form.email);
+    if (!next.email && !otpSentTo) next.otp = "Bấm “Gửi mã OTP” để nhận mã xác thực qua email.";
+    else if (!next.email && !/^[0-9]{4,8}$/.test(form.otp.trim()))
+      next.otp = form.otp.trim() ? "Mã OTP chỉ gồm chữ số — kiểm tra lại mã trong email." : "Vui lòng nhập mã OTP đã gửi tới email.";
+    next.password = passwordError(form.password, form.phone);
+    if (!form.confirm) next.confirm = "Vui lòng nhập lại mật khẩu.";
+    else if (form.confirm !== form.password) next.confirm = "Mật khẩu xác nhận không khớp với mật khẩu đã nhập.";
+    const failed = (Object.keys(next) as Field[]).filter((field) => next[field]);
     setErrors(next);
-    if (Object.keys(next).length) return;
+    if (failed.length) return document.getElementById(failed[0])?.focus();
     await runSubmit(async () => {
       try {
         const created = await api().request("POST", "/auth/mobile/register", {
@@ -74,7 +135,7 @@ export default function RegisterPage() {
         api().tokens.set(session.accessToken);
         window.location.href = "/account";
       } catch (error) {
-        setSummary(errorText(error));
+        showServerError(error);
       }
     });
   }

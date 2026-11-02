@@ -56,12 +56,34 @@ public sealed class QuotationStore(Sql sql)
         (await LoadAsync($"SELECT {Columns} FROM PhieuBaoGia WHERE MaPhieuTN = ? AND TrangThaiDuyetNoiBo <> 'REJECTED' AND KhachXacNhan = 'ACCEPTED'",
             ticketCode)).FirstOrDefault();
 
-    public Task<List<Quotation>> FindByApprovalStatusAsync(string status, int offset, int limit) =>
-        LoadAsync($"SELECT {Columns} FROM PhieuBaoGia WHERE TrangThaiDuyetNoiBo = ? ORDER BY NgayLapBaoGia, MaBaoGia OFFSET ? ROWS FETCH NEXT ? ROWS ONLY",
-            status, offset, Math.Max(1, limit));
+    public Task<List<Quotation>> SearchAsync(string status, string? query, DateTimeOffset? from, DateTimeOffset? to, int offset, int limit)
+    {
+        var (where, args) = SearchWhere(status, query, from, to);
+        return LoadAsync($"SELECT {Columns} FROM PhieuBaoGia {where} ORDER BY NgayLapBaoGia DESC, MaBaoGia DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY",
+            [.. args, offset, limit]);
+    }
 
-    public async Task<long> CountByApprovalStatusAsync(string status) =>
-        Convert.ToInt64(await sql.ScalarAsync("SELECT COUNT(*) FROM PhieuBaoGia WHERE TrangThaiDuyetNoiBo = ?", status));
+    public async Task<long> CountAsync(string status, string? query, DateTimeOffset? from, DateTimeOffset? to)
+    {
+        var (where, args) = SearchWhere(status, query, from, to);
+        return Convert.ToInt64(await sql.ScalarAsync("SELECT COUNT(*) FROM PhieuBaoGia " + where, [.. args]));
+    }
+
+    private static (string Sql, List<object?> Args) SearchWhere(string status, string? query, DateTimeOffset? from, DateTimeOffset? to)
+    {
+        var where = "WHERE 1=1";
+        var args = new List<object?>();
+        if (status != "ALL") { where += " AND TrangThaiDuyetNoiBo = ?"; args.Add(status); }
+        if (from is not null) { where += " AND NgayLapBaoGia >= ?"; args.Add(from); }
+        if (to is not null) { where += " AND NgayLapBaoGia <= ?"; args.Add(to); }
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            where += " AND (MaBaoGia LIKE ? OR MaPhieuTN LIKE ? OR EXISTS (SELECT 1 FROM PhieuTiepNhan p JOIN KhachHang k ON k.MaKH=p.MaKH "
+                + "WHERE p.MaPhieuTN=PhieuBaoGia.MaPhieuTN AND (k.HoTen LIKE ? OR k.SDT LIKE ?)))";
+            args.AddRange(Enumerable.Repeat<object?>(SqlLike.Contains(query.Trim()), 4));
+        }
+        return (where, args);
+    }
 
     private static object?[] Header(Quotation q) =>
         [q.ValidUntil, q.VatRate, q.ServiceFeeCode, q.PartsTotal, q.LaborTotal, q.GrandTotal];

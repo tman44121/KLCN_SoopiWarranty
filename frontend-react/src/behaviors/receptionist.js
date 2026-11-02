@@ -1,3 +1,5 @@
+import { businessTimeError, businessInstant } from "../business-hours.js";
+import { createListFilters } from './list-filters.js';
 /* ==========================================================================
    View: Tiếp nhận & Lễ tân — UI mục 18, 20, 34, 35; CODEX mục 11.3–11.7, 15.4
    API: GET /customers?q=, GET /catalog/device-categories|products|brands,
@@ -398,11 +400,14 @@ export default function initialize() {
     }
     need(el.identifier.value.trim(), "device.newDevice.serialOrImei", "Vui lòng nhập Serial Number.");
     need(el.symptom.value.trim(), "reportedIssue", "Vui lòng nhập mô tả lỗi của khách hàng.");
+    const pickedDate = document.querySelector("#promisedReturnAt-date");
+    need(!pickedDate.value || (!!el.promised.value && !businessTimeError(el.promised.value)), "promisedReturnAt", "Vui lòng chọn giờ hẹn hợp lệ trong giờ làm việc.");
     el.ackError.hidden = el.ack.checked;
     return { errors, ok: errors.length === 0 && el.ack.checked };
   }
 
   function requestBody() {
+    if (el.promised.value && businessTimeError(el.promised.value)) throw new Error(businessTimeError(el.promised.value));
     const type = selectedDeviceType();
     return {
       customer: state.customerCode
@@ -442,7 +447,7 @@ export default function initialize() {
         customerAcknowledged: el.ack.checked,
       },
       reportedIssue: el.symptom.value.trim(),
-      promisedReturnAt: el.promised.value ? new Date(el.promised.value).toISOString() : null,
+      promisedReturnAt: el.promised.value ? businessInstant(el.promised.value).toISOString() : null,
       estimatedCost: el.estimatedCost.value ? Number(el.estimatedCost.value) : null,
       slaLevel: el.sla.value,
     };
@@ -506,6 +511,8 @@ export default function initialize() {
       input.value = "";
       input.readOnly = false;
     });
+    el.form.querySelectorAll(".business-date-time select").forEach(select => select.value = "");
+    el.form.querySelectorAll(".business-date-time input[type=date]").forEach(input => input.setCustomValidity(""));
     el.ack.checked = false;
     el.ackError.hidden = true;
     document.querySelectorAll("[data-cosmetic]").forEach((group) => {
@@ -543,6 +550,7 @@ export default function initialize() {
   }
 
   let requestsLoad = 0;
+  const requestFilters = createListFilters(el.ycList, () => loadWarrantyRequests(), { dateKey: 'createdAt' });
 
   async function loadWarrantyRequests() {
     if (!window.LML_AUTH.hasPermission("WARRANTY_REQUEST_HANDLE")) return;
@@ -551,10 +559,11 @@ export default function initialize() {
     const load = ++requestsLoad;
     ui.blockState(el.ycList, "loading");
     try {
-      const requests = await api.warrantyRequests.list(status);
+      const requests = requestFilters.apply(await api.warrantyRequests.list(status));
       if (load !== requestsLoad) return;
       if (requests.length === 0) {
-        ui.blockState(el.ycList, "empty", { desc: EMPTY_REQUESTS[status] });
+        const filters = requestFilters.values();
+        ui.blockState(el.ycList, "empty", { desc: filters.q || filters.from || filters.to ? "Không có yêu cầu khớp bộ lọc. Thử đổi từ khóa hoặc khoảng ngày." : EMPTY_REQUESTS[status] });
         return;
       }
       el.ycList.innerHTML = html`${requests.map((r) => html`

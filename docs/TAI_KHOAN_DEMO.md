@@ -11,7 +11,7 @@ Sai mật khẩu 5 lần liên tiếp thì tài khoản bị khóa tạm 15 phú
 
 ## Nhân viên
 
-Nhân viên đăng nhập bằng tên đăng nhập **hoặc** mã nhân viên (ví dụ `NV-006` thay cho `admin`).
+Nhân viên đăng nhập bằng tên đăng nhập, mã nhân viên (ví dụ `NV-006` thay cho `admin`), số điện thoại **hoặc** email trong hồ sơ nhân viên.
 
 | Tên đăng nhập | Mật khẩu | Vai trò | Vào trang | Mã NV | Họ tên |
 |---|---|---|---|---|---|
@@ -44,7 +44,8 @@ Nhân viên đăng nhập bằng tên đăng nhập **hoặc** mã nhân viên (
   ghi vào log của cửa sổ "Soopi API".
 - Khách KH-000003, KH-000004 chưa có tài khoản: đăng ký bằng số điện thoại `0912223003` / `0912223004` thì tài khoản
   tự gắn với hồ sơ và thấy phiếu cũ.
-- Tra cứu không cần đăng nhập ở `/portal` bằng mã phiếu + số điện thoại của khách.
+- Khách cũng đăng nhập được bằng số điện thoại hoặc email đã xác minh của hồ sơ (ví dụ `0912223001` thay cho `kh.tuan`).
+- Tra cứu không cần đăng nhập ở `/portal` bằng mã phiếu (TN-/YC-) **hoặc số Serial/IMEI** + số điện thoại của khách.
 
 ## Lưu ý
 

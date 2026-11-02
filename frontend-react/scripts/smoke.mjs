@@ -68,7 +68,7 @@ export async function session(role, landing, width = 1440, { hasTouch = false } 
     else if (path === '/notifications') data = { unreadCount: 0, items: [] };
     else if (path === '/chat/contacts') data = { items: [], hasMore: false, unreadCount: 0 };
     else if (path === '/access/heartbeat') data = { tracked: true };
-    else if (path === '/tickets' || path === '/quotations' || path === '/audit-logs') data = { items: [], total: 0, page: 0, size: 25 };
+    else if (/^\/stock-(issues|receipts|transfers)\/search$/.test(path) || path === '/tickets' || path === '/quotations' || path === '/audit-logs') data = { items: [], total: 0, totalItems: 0, totalPages: 0, page: 0, size: 25 };
     else if (path === '/catalog/stations') data = [{ _id: 'ST01', name: 'Trạm thử' }];
     else if (path === '/portal/warranty-requests' && request.method() === 'POST') data = { code: 'YC-MOCK' };
     else if (path.startsWith('/portal/my/') && request.method() === 'GET') data = customer[path.split('/')[3].replace('warranty-requests', 'requests')];
@@ -163,7 +163,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await h.page.goto(base + '/');
     await h.page.getByRole('heading', { name: 'Tra cứu & quản lý bảo hành sản phẩm' }).waitFor(); assertions++;
     await h.page.getByRole('heading', { name: 'Trạm thử' }).waitFor(); assertions++;
-    await h.page.getByRole('heading', { name: 'An tâm bảo hành tại Soopi', exact: true }).waitFor(); assertions++;
+    await h.page.getByRole('heading', { name: 'Quy trình bảo hành tại Soopi', exact: true }).waitFor(); assertions++;
     assert.equal(await h.page.getByText('Ví dụ minh họa', { exact: true }).count(), 0); assertions++;
     assert.equal(await h.page.locator('.nav-link.active').getAttribute('href'), '/'); assertions++;
     assert.equal(await h.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `home ${width}: horizontal scroll`); assertions++;
@@ -186,14 +186,16 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
   await s.page.click('[data-open-register]');
   await s.page.click('[data-register-submit]');
   assert(await s.page.locator('[data-field="regName"]').evaluate(node => node.classList.contains('has-error'))); assertions++;
-  for (const [selector, value] of Object.entries({ '#reg-name': 'Khách thử', '#reg-phone': '0900000000', '#reg-brand-model': 'Hãng thử', '#reg-serial': 'IMEI-TEST', '#reg-symptom': 'Lỗi thử', '#reg-time': '2026-10-02T10:00' })) await s.page.fill(selector, value);
+  for (const [selector, value] of Object.entries({ '#reg-name': 'Khách thử', '#reg-phone': '0900000000', '#reg-brand-model': 'Hãng thử', '#reg-serial': 'IMEI-TEST', '#reg-symptom': 'Lỗi thử' })) await s.page.fill(selector, value);
   await s.page.selectOption('#reg-category', 'PHONE');
   await s.page.selectOption('#reg-station', 'ST01');
-  await s.page.fill('#reg-time', 'invalid-time');
+  await s.page.fill('#reg-time-date', '2030-10-06');
+  await s.page.selectOption('#reg-time-time', '10:00');
   await s.page.click('[data-register-submit]');
-  await s.page.getByText('Thời gian không hợp lệ. Vui lòng kiểm tra lại.', { exact: true }).waitFor(); assertions++;
+  await s.page.getByText('Chủ nhật không nhận lịch. Vui lòng chọn thứ Hai–thứ Bảy.', { exact: true }).waitFor(); assertions++;
   assert(!s.calls.includes('/portal/warranty-requests')); assertions++;
-  await s.page.fill('#reg-time', '2026-10-02T10:00');
+  await s.page.fill('#reg-time-date', '2030-10-02');
+  await s.page.selectOption('#reg-time-time', '10:00');
   await s.page.click('[data-register-submit]');
   await s.page.getByText('YC-MOCK', { exact: true }).waitFor(); assertions++;
   assert.deepEqual(s.errors, [], 'portal: browser errors'); assertions++;
@@ -270,7 +272,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await c.page.selectOption('#req-category', 'PHONE');
     await c.page.selectOption('#req-station', 'ST01');
     await c.page.fill('#req-symptom', 'Màn hình sọc');
-    await c.page.fill('#req-time', '2030-10-02T10:00');
+    await c.page.fill('#req-time-date', '2030-10-02');
+    await c.page.selectOption('#req-time-time', '10:00');
     await c.page.click('form.form-card-panel button[type="submit"]');
     await c.page.getByText('YC-OWN-MOCK', { exact: true }).waitFor(); assertions++;
     await c.page.screenshot({ path: fileURLToPath(new URL(`request-${width}.png`, output)), fullPage: true });

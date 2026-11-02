@@ -101,7 +101,7 @@ Chưa bổ sung xuất Excel/PDF, trả lời đánh giá, xóa/ẩn đánh giá
 - Đọc phiếu lại trong mỗi lượt transaction; gửi lại cùng nội dung không thêm nhật ký trùng. Phiếu thiếu bàn giao không được đánh giá.
 - Hai trường đánh giá mới được ẩn khỏi JSON bàn giao chung; chủ phiếu nhận qua DTO portal và admin nhận qua DTO báo cáo.
 - Báo cáo mặc định hiển thị mọi thời gian để không giấu điểm cũ. Có thể chọn dùng khoảng thời gian báo cáo phía trên; trạm luôn dùng chung với báo cáo. Số sao, tìm kiếm, phân trang và số dòng có bộ điều khiển riêng.
-- Điểm cũ chưa xác định nguồn/ngày vẫn có trong danh sách nhưng không tính vào số lượng/điểm trung bình đánh giá khách đã xác nhận; hiển thị tổng điểm cũ riêng.
+- Cập nhật 31/10/2026: điểm trên phiếu bàn giao thiếu ngày vẫn được tính trong tổng điểm đã lưu và điểm trung bình; hiển thị rõ chưa lưu ngày và cho admin duyệt công khai từng bản ghi. Không tự bổ sung ngày hoặc nhận xét, không gọi đây là đánh giá khách đã xác thực. Xem `PUBLIC_REVIEWS.md`.
 - Đã qua 80 test backend, 17 test frontend, build/lint và kiểm tra trình duyệt desktop/mobile trong `frontend-react/scripts/reviews.mjs`.
 - Kiểm tra DB local đã xác minh lưu/tải lại đủ 1.000 ký tự Unicode, gửi lại, xóa nhận xét, quyền sở hữu, thiếu bàn giao, bộ lọc/tổng/trung bình, dữ liệu cũ và migration lặp lại; mọi dữ liệu thử đã rollback.
 - 25 kiểm tra HTTP thật đã đạt: phân quyền, payload hợp lệ đi tới bước kiểm tra phiếu, payload sai/nhận xét quá dài trả 400, năm báo cáo cũ vẫn tải được và endpoint thông báo nhận đúng vai trò sau khi sửa JWT.

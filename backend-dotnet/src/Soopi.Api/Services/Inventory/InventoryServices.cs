@@ -5,6 +5,7 @@ using Soopi.Api.Domain.Identity;
 using Soopi.Api.Domain.Inventory;
 using Soopi.Api.Domain.Shared;
 using Soopi.Api.Domain.Tickets;
+using Soopi.Api.DTOs.Shared;
 using Soopi.Api.Infrastructure.Security;
 using Soopi.Api.Infrastructure.Validation;
 using Soopi.Api.Services.Shared;
@@ -63,16 +64,18 @@ public sealed record StockReceiptView(
     string Code, string SupplierId, string? BatchNo, DateOnly ReceivedOn, string Status, string RequestedBy, string? Note,
     IReadOnlyList<ReceiptLine> Lines, decimal TotalCost, string? ProcessedBy, DateTimeOffset? ProcessedAt, string? RejectedReason)
 {
+    public DateTimeOffset? CreatedAt { get; init; }
     public static StockReceiptView From(StockReceipt r) =>
-        new(r.Id, r.SupplierId, r.BatchNo, r.ReceivedOn, r.Status, r.RequestedBy, r.Note, r.Lines, r.TotalCost, r.ProcessedBy, r.ProcessedAt, r.RejectedReason);
+        new(r.Id, r.SupplierId, r.BatchNo, r.ReceivedOn, r.Status, r.RequestedBy, r.Note, r.Lines, r.TotalCost, r.ProcessedBy, r.ProcessedAt, r.RejectedReason) { CreatedAt = r.CreatedAt };
 }
 
 public sealed record TransferView(
     string Code, string Sku, int Quantity, string FromBin, string ToBin, string Reason, string Status, string RequestedBy, string? ProcessedBy,
     DateTimeOffset? ProcessedAt, string? RejectedReason)
 {
+    public DateTimeOffset? CreatedAt { get; init; }
     public static TransferView From(StockTransfer t) =>
-        new(t.Id, t.Sku, t.Quantity, t.FromBin, t.ToBin, t.Reason, t.Status, t.RequestedBy, t.ProcessedBy, t.ProcessedAt, t.RejectedReason);
+        new(t.Id, t.Sku, t.Quantity, t.FromBin, t.ToBin, t.Reason, t.Status, t.RequestedBy, t.ProcessedBy, t.ProcessedAt, t.RejectedReason) { CreatedAt = t.CreatedAt };
 }
 
 public sealed record Deduction(string Sku, string Name, int Quantity, string BinCode);
@@ -225,6 +228,15 @@ public sealed class StockIssueService(
         return (await documents.FindIssuesAsync(status, null)).Select(issue => IssueView.From(issue, true, names.GetValueOrDefault(issue.TechnicianId))).ToList();
     }
 
+    public async Task<PageResponse<IssueView>> SearchAsync(InventoryDocumentFilter filter)
+    {
+        actors.Require(Permission.STOCK_ISSUE_PROCESS);
+        var total = await documents.CountDocumentsAsync(InventoryDocumentKind.Issue, filter);
+        var names = await staff.EmployeeNamesAsync();
+        var items = (await documents.SearchIssuesAsync(filter)).Select(issue => IssueView.From(issue, true, names.GetValueOrDefault(issue.TechnicianId))).ToList();
+        return PageResponse<IssueView>.Of(items, filter.Page, filter.Size, total);
+    }
+
     public async Task<List<IssueView>> MineAsync(string? status)
     {
         var actor = actors.Require(Permission.STOCK_ISSUE_REQUEST);
@@ -373,6 +385,14 @@ public sealed class StockReceiptService(
         return (await documents.FindReceiptsAsync(status)).Select(StockReceiptView.From).ToList();
     }
 
+    public async Task<PageResponse<StockReceiptView>> SearchAsync(InventoryDocumentFilter filter)
+    {
+        actors.Require(Permission.STOCK_RECEIPT_MANAGE);
+        var total = await documents.CountDocumentsAsync(InventoryDocumentKind.Receipt, filter);
+        var items = (await documents.SearchReceiptsAsync(filter)).Select(StockReceiptView.From).ToList();
+        return PageResponse<StockReceiptView>.Of(items, filter.Page, filter.Size, total);
+    }
+
     public async Task<StockReceiptView> GetAsync(string code)
     {
         actors.Require(Permission.STOCK_RECEIPT_MANAGE);
@@ -458,6 +478,14 @@ public sealed class StockTransferService(
     {
         actors.Require(Permission.STOCK_TRANSFER_MANAGE);
         return (await documents.FindTransfersAsync(status)).Select(TransferView.From).ToList();
+    }
+
+    public async Task<PageResponse<TransferView>> SearchAsync(InventoryDocumentFilter filter)
+    {
+        actors.Require(Permission.STOCK_TRANSFER_MANAGE);
+        var total = await documents.CountDocumentsAsync(InventoryDocumentKind.Transfer, filter);
+        var items = (await documents.SearchTransfersAsync(filter)).Select(TransferView.From).ToList();
+        return PageResponse<TransferView>.Of(items, filter.Page, filter.Size, total);
     }
 
     private async Task<StockTransfer> RequireAsync(string code) => await documents.FindTransferAsync(code) ?? throw new DomainException(ErrorCode.NOT_FOUND);

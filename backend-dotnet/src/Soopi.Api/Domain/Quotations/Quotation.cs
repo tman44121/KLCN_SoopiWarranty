@@ -98,7 +98,7 @@ public sealed class Quotation
     public void Reject(string reviewerId, string? note, DateTimeOffset now)
     {
         RequirePendingReview();
-        if (JavaText.IsBlank(note)) throw new DomainException(ErrorCode.VALIDATION_FAILED);
+        if (JavaText.IsBlank(note)) throw DomainException.Invalid("Vui lòng ghi lý do từ chối duyệt báo giá.");
         if (CreatedBy == reviewerId) throw new DomainException(ErrorCode.QUOTE_SELF_REVIEW);
         Approval = new Approval("REJECTED", reviewerId, now, JavaText.Trim(note));
     }

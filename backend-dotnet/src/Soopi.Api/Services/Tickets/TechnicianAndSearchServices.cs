@@ -42,10 +42,9 @@ public sealed class TechnicianQueryService(StaffDirectory staff, TicketStore tic
     public async Task<List<TicketView>> MyQueueAsync()
     {
         var actor = actors.Require(Permission.TICKET_READ_ASSIGNED);
-        var queue = (await tickets.SearchAsync(views.Filter(null, null, actor.EmployeeId, null, null, null, null), 0, 100))
-            .Where(ticket => ticket.Open && ticket.Status is not (TicketStatus.COMPLETED or TicketStatus.AWAITING_RETURN))
-            .OrderBy(ticket => ticket.Sla.DueAt)
-            .ThenBy(ticket => (int)ticket.Assignment!.Priority);
+        var queue = (await tickets.FindAssignedOpenAsync(actor.EmployeeId))
+            .Where(ticket => ticket.Assignment?.TechnicianId == actor.EmployeeId && ticket.Open
+                && ticket.Status is not (TicketStatus.COMPLETED or TicketStatus.AWAITING_RETURN));
         return await views.ViewsAsync(queue, actor);
     }
 

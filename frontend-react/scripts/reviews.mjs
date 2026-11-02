@@ -86,9 +86,9 @@ try {
     throw error;
   });
   assert.equal(await table.locator('[data-review-tbody] img').count(), 0);
-  assert.match(await table.locator('[data-review-summary]').textContent(), /25 đánh giá khách hàng.*4,25.*1 điểm cũ/);
+  assert.match(await table.locator('[data-review-summary]').textContent(), /26 lượt chấm điểm.*4,25.*1 điểm chưa lưu ngày/);
   await table.getByRole('button', { name: 'Trang sau', exact: true }).click();
-  await table.getByText('Chưa xác định nguồn/ngày', { exact: true }).waitFor();
+  await table.getByText('Chưa lưu ngày đánh giá', { exact: true }).waitFor();
   assert.equal(queries.at(-1).page, '1');
   await table.getByLabel('Số sao', { exact: true }).selectOption('2');
   await table.getByRole('cell', { name: /Nguyễn An/ }).waitFor();
