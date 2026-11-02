@@ -398,6 +398,7 @@ export default function initialize(global = window) {
     portal: {
       catalog: () => request("GET", "/portal/catalog", { auth: "none" }),
       lookup: (code, phone) => request("POST", "/portal/lookup", { body: { code, phone }, auth: "none" }),
+      warrantyCheck: (serial) => request("GET", "/portal/warranty-check", { query: { serial }, auth: "none" }),
       submitRequest: (data, files) =>
         request("POST", "/portal/warranty-requests", { formData: multipart(data, { files }), auth: "none" }),
       request: (code) => request("GET", `/portal/warranty-requests/${enc(code)}`, { auth: "portal" }),

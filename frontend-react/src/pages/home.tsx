@@ -18,9 +18,9 @@ const percent = (part: number, total: number) => (total ? Math.round((part * 100
 
 const FEATURES = [
   {
-    icon: "search", title: "Tra cứu tiến độ trực tuyến",
-    text: "Nhập mã phiếu và số điện thoại để xem thiết bị đang ở bước nào, ghi chú của kỹ thuật viên và ngày hẹn trả máy.",
-    checks: ["Tra cứu bằng mã phiếu TN- / YC-", "Không cần đăng nhập", "Xem ghi chú và chi phí sửa chữa"],
+    icon: "search", title: "Tra cứu bảo hành & tiến độ",
+    text: "Nhập số Serial/IMEI để biết máy còn bảo hành đến ngày nào; thêm số điện thoại hoặc mã phiếu để xem thiết bị đang ở bước nào và ngày hẹn trả máy.",
+    checks: ["Kiểm tra hạn bảo hành bằng Serial/IMEI", "Không cần đăng nhập", "Xem ghi chú và chi phí sửa chữa"],
     link: "Tra cứu ngay", target: "lookup",
   },
   {
@@ -165,7 +165,7 @@ export default function HomePage() {
               <div className="home-process-actions">
                 <a href="/portal" className="home-process-action is-primary">
                   <Icon glyph="search" />
-                  <span><strong>Tra cứu tiến độ</strong><span>Mã phiếu hoặc Serial + SĐT</span></span>
+                  <span><strong>Tra cứu bảo hành</strong><span>Serial/IMEI hoặc mã phiếu + SĐT</span></span>
                   <span className="home-process-arrow" aria-hidden="true">→</span>
                 </a>
                 <a href={historyHref} className="home-process-action">

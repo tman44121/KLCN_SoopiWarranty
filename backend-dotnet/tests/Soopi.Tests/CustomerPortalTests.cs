@@ -2,6 +2,7 @@ using Soopi.Api.Data.Entities;
 using Soopi.Api.Domain.Identity;
 using Soopi.Api.Domain.Shared;
 using Soopi.Api.Services.Customers;
+using Soopi.Api.Services.Devices;
 using Soopi.Api.Services.Files;
 using Soopi.Api.Services.WarrantyRequests;
 
@@ -54,5 +55,15 @@ public class CustomerPortalTests
         Assert.Throws<DomainException>(() => WarrantyRequestSubmissionService.Validated("YC-1", command with { IdentifierType = "X" }, Now));
         Assert.Throws<DomainException>(() => WarrantyRequestSubmissionService.Validated("YC-1",
             command with { PreferredFrom = Now, PreferredTo = Now.AddHours(-1) }, Now));
+    }
+
+    [Fact]
+    public void WarrantyStatus_StillCoveredOnExpiryDay()
+    {
+        var today = new DateOnly(2026, 11, 2);
+        Assert.Equal("NOT_ACTIVATED", DeviceService.WarrantyStatus(null, today));
+        Assert.Equal("IN_WARRANTY", DeviceService.WarrantyStatus(today, today));
+        Assert.Equal("IN_WARRANTY", DeviceService.WarrantyStatus(today.AddMonths(12), today));
+        Assert.Equal("OUT_OF_WARRANTY", DeviceService.WarrantyStatus(today.AddDays(-1), today));
     }
 }

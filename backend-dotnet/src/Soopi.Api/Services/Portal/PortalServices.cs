@@ -52,6 +52,15 @@ public sealed record OwnedDevice(
     string Code, string? ProductName, string? BrandName, string IdentifierType, string SerialOrImei,
     DateOnly? WarrantyActivatedOn, DateOnly? WarrantyExpiresOn, string WarrantyStatus);
 
+/// <summary>
+/// Kiểm tra bảo hành công khai chỉ bằng Serial/IMEI: thông tin in sẵn trên tem/hóa đơn, không lộ chủ máy, mã phiếu hay lỗi đã sửa
+/// (chi tiết từng lần sửa vẫn phải tra bằng Serial + SĐT).
+/// </summary>
+public sealed record WarrantyCheck(
+    string? ProductName, string? BrandName, string? DeviceTypeName, string IdentifierType, string SerialOrImei,
+    DateOnly? WarrantyActivatedOn, DateOnly? WarrantyExpiresOn, string WarrantyStatus, int? DaysRemaining, int WarrantyMonths,
+    int RepairCount, DateOnly? LastReceivedOn, bool AtServiceCenter);
+
 public sealed record CustomerData([property: NotBlank] string? FullName, [property: NotBlank] string? Phone, string? Email, string? Address);
 
 public sealed record WarrantyRequestData(
@@ -108,8 +117,32 @@ public sealed class PortalPolicy(AppDbContext db, CurrentActor actors)
 }
 
 /// <summary>Tra cứu công khai bằng Mã phiếu hoặc số Serial/IMEI + SĐT (mục 9.8, D-014) và danh mục cho form đăng ký yêu cầu.</summary>
-public sealed class PortalAccessService(Sql sql, WarrantyRequestStore requests, CatalogStore catalog, JwtService tokens, RateLimiter limiter)
+public sealed class PortalAccessService(
+    Sql sql, AppDbContext db, ProductCatalog products, WarrantyRequestStore requests, CatalogStore catalog, JwtService tokens, RateLimiter limiter,
+    TimeProvider clock)
 {
+    /// <summary>Tối đa 10 lần/phút/IP để không dò được danh sách Serial.</summary>
+    public async Task<WarrantyCheck> WarrantyCheckAsync(string? serial, string? clientIp)
+    {
+        limiter.Acquire("portal-warranty-check-ip:" + clientIp, 10, TimeSpan.FromMinutes(1));
+        var normalized = SerialNumber.Normalize(serial);
+        var device = normalized.Length == 0 ? null : await db.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.SerialNormalized == normalized);
+        if (device is null) throw new DomainException(ErrorCode.WARRANTY_SERIAL_NOT_FOUND);
+        var product = await products.RequireProductAsync(device.ProductId);
+        var today = DbTime.Date(clock.GetUtcNow());
+        var history = await sql.FirstOrDefaultAsync(
+            "SELECT COUNT(*) AS SoLan, MAX(NgayTiepNhan) AS GanNhat, MAX(CAST(ConMo AS INT)) AS ConMo FROM PhieuTiepNhan WHERE MaThietBi = ?",
+            row => (Count: row.Int("SoLan"), Last: row.Time("GanNhat"), InService: row.IntOrNull("ConMo") == 1),
+            device.Id);
+        return new WarrantyCheck(
+            product.Snapshot.GetValueOrDefault("name"), product.Snapshot.GetValueOrDefault("brandName"), product.Snapshot.GetValueOrDefault("deviceTypeName"),
+            device.IdentifierType.ToString(), device.SerialOrImei, device.WarrantyActivatedOn, device.WarrantyExpiresOn,
+            DeviceService.WarrantyStatus(device.WarrantyExpiresOn, today),
+            device.WarrantyExpiresOn is { } expires && expires >= today ? expires.DayNumber - today.DayNumber : null,
+            product.PolicyWarrantyMonths ?? product.DefaultWarrantyMonths,
+            history.Count, history.Last is { } last ? DbTime.Date(last) : null, history.InService);
+    }
+
     /// <summary>Sai mã hay sai SĐT đều trả cùng một lỗi để không lộ phiếu nào tồn tại.</summary>
     public async Task<LookupResult> LookupAsync(string code, string phone, string? clientIp)
     {

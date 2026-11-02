@@ -43,6 +43,10 @@ public sealed class PortalController(
     [AllowAnonymous]
     public Task<LookupResult> Lookup([FromBody] LookupRequest body) => access.LookupAsync(body.Code, body.Phone, actors.ClientIp);
 
+    [HttpGet("warranty-check")]
+    [AllowAnonymous]
+    public Task<WarrantyCheck> WarrantyCheck([FromQuery] string? serial) => access.WarrantyCheckAsync(serial, actors.ClientIp);
+
     [HttpPost("warranty-requests")]
     [AllowAnonymous]
     public async Task<IActionResult> Submit()

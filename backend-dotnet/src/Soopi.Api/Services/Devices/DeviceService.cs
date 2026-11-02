@@ -106,10 +106,13 @@ public sealed class DeviceService(
         return views;
     }
 
+    /// <summary>Hết hạn vào đúng ngày <paramref name="expiresOn"/> thì hôm đó vẫn còn bảo hành.</summary>
+    public static string WarrantyStatus(DateOnly? expiresOn, DateOnly today) =>
+        expiresOn is not { } expires ? "NOT_ACTIVATED" : expires < today ? "OUT_OF_WARRANTY" : "IN_WARRANTY";
+
     private async Task<DeviceView> ViewAsync(Device device, ProductInfo product)
     {
-        var today = DbTime.Date(clock.GetUtcNow());
-        var status = device.WarrantyExpiresOn is not { } expires ? "NOT_ACTIVATED" : expires < today ? "OUT_OF_WARRANTY" : "IN_WARRANTY";
+        var status = WarrantyStatus(device.WarrantyExpiresOn, DbTime.Date(clock.GetUtcNow()));
         var tickets = await sql.QueryAsync(
             "SELECT TOP 20 MaPhieuTN, TrangThaiXuLy, NgayTiepNhan, MoTaLoiKhachBao FROM PhieuTiepNhan WHERE MaThietBi = ? ORDER BY NgayTiepNhan DESC",
             row => new Dictionary<string, object?>

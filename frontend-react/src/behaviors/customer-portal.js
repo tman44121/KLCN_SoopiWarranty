@@ -22,6 +22,8 @@ export default function initialize() {
     serialLabel: document.querySelector("[data-reg-serial-label]"),
   };
   let catalog = null;
+  /** Kết quả kiểm tra bảo hành theo Serial của lần tra cứu hiện tại; hiện phía trên phiếu/yêu cầu. */
+  let warranty = null;
   const TONE = { processing: "badge-processing", warning: "badge-waiting", success: "badge-completed", neutral: "badge-received", danger: "badge-danger" };
 
   /** Badge theo giao diện khách (customer.css); cùng bảng nhãn/tone với LML_LABELS. */
@@ -88,9 +90,45 @@ export default function initialize() {
     el.error.hidden = false;
   }
 
+  const WARRANTY_NOTE = {
+    IN_WARRANTY: "Bảo hành áp dụng cho lỗi kỹ thuật của nhà sản xuất; trung tâm kiểm tra điều kiện bảo hành khi tiếp nhận máy.",
+    OUT_OF_WARRANTY: "Máy vẫn được sửa chữa dịch vụ; trung tâm báo giá để bạn duyệt trước khi sửa.",
+    NOT_ACTIVATED: "Mang kèm hóa đơn mua hàng tới trạm để trung tâm xác định ngày bắt đầu bảo hành.",
+  };
+
+  function warrantyCard() {
+    if (!warranty) return "";
+    const w = warranty.data;
+    const repairs = w.repairCount
+      ? html`Đã tiếp nhận ${w.repairCount} lần, gần nhất ${fmt.date(w.lastReceivedOn)}${w.atServiceCenter ? " · máy đang ở trung tâm" : ""}`
+      : "Chưa sửa chữa lần nào tại trung tâm";
+    const expiry = !w.warrantyExpiresOn ? "—"
+      : w.warrantyStatus === "IN_WARRANTY" ? html`${fmt.date(w.warrantyExpiresOn)} <span class="warranty-check-remaining">${w.daysRemaining === 0 ? "hết hạn hôm nay" : `còn ${w.daysRemaining} ngày`}</span>`
+      : html`${fmt.date(w.warrantyExpiresOn)} <span class="warranty-check-remaining is-expired">đã hết hạn</span>`;
+    return html`<section class="content-panel-card warranty-check-card" aria-labelledby="warranty-check-title">
+      <div class="panel-head"><div><h2 class="card-heading-title" id="warranty-check-title">Thông tin bảo hành</h2>
+        <p class="card-heading-desc">${[w.brandName, w.productName].filter(Boolean).join(" ")}${w.deviceTypeName ? ` · ${w.deviceTypeName}` : ""}</p></div>
+        ${badge(labels.WARRANTY_STATUS, w.warrantyStatus)}</div>
+      <div class="kv-list">
+        <div class="kv-row"><span>${w.identifierType === "IMEI" ? "IMEI" : "Serial"}</span><strong class="mono">${w.serialOrImei}</strong></div>
+        <div class="kv-row"><span>Ngày kích hoạt bảo hành</span><strong>${w.warrantyActivatedOn ? fmt.date(w.warrantyActivatedOn) : "Chưa kích hoạt"}</strong></div>
+        <div class="kv-row"><span>Hạn bảo hành</span><strong>${expiry}</strong></div>
+        <div class="kv-row"><span>Thời hạn theo chính sách</span><strong>${w.warrantyMonths} tháng</strong></div>
+        <div class="kv-row"><span>Lịch sử sửa chữa</span><strong>${repairs}</strong></div>
+      </div>
+      <p class="card-heading-desc warranty-check-note">${WARRANTY_NOTE[w.warrantyStatus] || ""}</p>
+      ${warranty.notice ? html`<div class="kh-alert kh-alert--warning" role="status">${warranty.notice}</div>` : ""}
+    </section>`;
+  }
+
+  function renderWarranty() {
+    el.result.innerHTML = html`${warrantyCard()}`;
+    el.result.hidden = false;
+  }
+
   function renderTicket(ticket) {
     const costs = ticket.costs;
-    el.result.innerHTML = html`
+    el.result.innerHTML = html`${warrantyCard()}
       <div class="ticket-hero-card">
         <div><h2 style="font-size:26px;font-weight:900;line-height:1.2;margin-bottom:8px;">${ticket.brandName} ${ticket.productName}</h2>
           <div class="ticket-hero-meta"><span>Mã phiếu: <strong class="mono">${ticket.code}</strong></span><span>Serial/IMEI: <strong class="mono">${ticket.serialOrImei}</strong></span></div></div>
@@ -171,7 +209,7 @@ export default function initialize() {
   }
 
   function renderRequest(request) {
-    el.result.innerHTML = html`<section class="content-panel-card"><div class="panel-head"><h2 class="card-heading-title">Yêu cầu bảo hành trực tuyến</h2>${badge(labels.WARRANTY_REQUEST_STATUS, request.status)}</div><div class="kv-list">
+    el.result.innerHTML = html`${warrantyCard()}<section class="content-panel-card"><div class="panel-head"><h2 class="card-heading-title">Yêu cầu bảo hành trực tuyến</h2>${badge(labels.WARRANTY_REQUEST_STATUS, request.status)}</div><div class="kv-list">
       <div class="kv-row"><span>Mã yêu cầu</span><strong class="mono">${request.code}</strong></div>
       <div class="kv-row"><span>Thiết bị</span><strong>${request.brandModel}</strong></div>
       <div class="kv-row"><span>Serial/IMEI</span><strong class="mono">${request.serialOrImei}</strong></div>
@@ -205,20 +243,50 @@ export default function initialize() {
     }
   }
 
+  async function showGrant(grant) {
+    api.portalTokens.set(grant);
+    if (grant.scope === "TICKET") renderTicket(await api.portal.ticket(grant.code));
+    else renderRequest(await api.portal.request(grant.code));
+  }
+
+  /**
+   * Mã phiếu: bắt buộc SĐT. Serial/IMEI: luôn kiểm tra bảo hành (không cần SĐT); có SĐT thì tra thêm phiếu/yêu cầu của máy đó.
+   * Máy chưa đăng ký nhưng đã gửi yêu cầu (YC) vẫn hiện yêu cầu nếu SĐT khớp.
+   */
   async function lookup() {
     clearErrors();
+    warranty = null;
+    el.result.hidden = true;
     const code = el.lookupId.value.trim().toUpperCase();
     const phone = el.lookupPhone.value.trim();
+    const byCode = /^(TN|YC)-/.test(code);
     const idError = lookupIdError(code);
     if (idError) invalid("lookupId", idError);
-    if (!phone) invalid("lookupPhone", "Vui lòng nhập số điện thoại đã đăng ký khi gửi máy.");
-    else if (phoneError(phone)) invalid("lookupPhone", phoneError(phone));
+    if (!phone && byCode) invalid("lookupPhone", "Vui lòng nhập số điện thoại đã đăng ký khi gửi máy.");
+    else if (phone && phoneError(phone)) invalid("lookupPhone", phoneError(phone));
     if (document.querySelector("[data-field].has-error")) return;
     try {
-      const grant = await window.LML_UI.busy(el.submit, () => api.portal.lookup(code, phone));
-      api.portalTokens.set(grant);
-      if (grant.scope === "TICKET") renderTicket(await api.portal.ticket(grant.code));
-      else renderRequest(await api.portal.request(grant.code));
+      if (byCode) {
+        await window.LML_UI.busy(el.submit, async () => showGrant(await api.portal.lookup(code, phone)));
+        return;
+      }
+      await window.LML_UI.busy(el.submit, async () => {
+        const [check, grant] = await Promise.allSettled([
+          api.portal.warrantyCheck(code),
+          phone ? api.portal.lookup(code, phone) : Promise.resolve(null),
+        ]);
+        if (check.status === "fulfilled") {
+          const notice = !phone ? "Nhập thêm số điện thoại đã đăng ký khi gửi máy để xem tiến độ và chi tiết từng lần sửa chữa."
+            : grant.status === "rejected" && grant.reason && grant.reason.code === "PORTAL_NOT_FOUND"
+              ? "Không có phiếu sửa chữa hay yêu cầu nào của máy này đăng ký bằng số điện thoại đã nhập. Kiểm tra lại số điện thoại nếu bạn đã gửi máy."
+              : null;
+          warranty = { data: check.value, notice };
+        }
+        if (grant.status === "fulfilled" && grant.value) return showGrant(grant.value);
+        if (warranty) return renderWarranty();
+        // Không có thiết bị: SĐT có nhập thì lỗi tra phiếu cụ thể hơn, không thì lỗi kiểm tra bảo hành.
+        throw phone && grant.status === "rejected" && check.reason && check.reason.code === "WARRANTY_SERIAL_NOT_FOUND" ? grant.reason : check.reason;
+      });
     } catch (error) {
       showError(error);
     }
@@ -306,7 +374,8 @@ export default function initialize() {
     el.category.addEventListener("change", updateSerialLabel);
     el.registerSubmit.addEventListener("click", register);
     liveCheck("lookupId", el.lookupId, lookupIdError);
-    liveCheck("lookupPhone", el.lookupPhone, (raw) => phoneError(raw) || null);
+    // Tra bằng Serial thì SĐT không bắt buộc: chỉ báo khi đã gõ mà sai; bỏ trống với mã phiếu thì báo lúc bấm Tra cứu.
+    liveCheck("lookupPhone", el.lookupPhone, (raw) => (raw.trim() ? phoneError(raw) || null : null));
     liveCheck("regName", document.querySelector("#reg-name"), (raw) => !raw.trim() ? "Vui lòng nhập họ và tên." : /[0-9]/.test(raw) ? "Họ và tên không được chứa chữ số." : null);
     liveCheck("regPhone", document.querySelector("#reg-phone"), (raw) => phoneError(raw) || null);
     liveCheck("regSerial", document.querySelector("#reg-serial"), (raw) => {

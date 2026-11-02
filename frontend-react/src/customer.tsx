@@ -112,11 +112,11 @@ const NAV_SIGNED_IN = [
   { key: 'home', href: '/account', label: 'Trang chủ' },
   { key: 'request', href: '/account#yeu-cau-moi', label: 'Gửi yêu cầu bảo hành' },
   { key: 'history', href: '/account#lich-su', label: 'Lịch sử bảo hành' },
-  { key: 'lookup', href: '/portal', label: 'Tra cứu tiến độ' },
+  { key: 'lookup', href: '/portal', label: 'Tra cứu bảo hành' },
 ];
 const NAV_GUEST = [
   { key: 'home', href: '/', label: 'Trang chủ' },
-  { key: 'lookup', href: '/portal', label: 'Tra cứu tiến độ' },
+  { key: 'lookup', href: '/portal', label: 'Tra cứu bảo hành' },
   { key: 'request', href: '/portal#dang-ky', label: 'Gửi yêu cầu bảo hành' },
   { key: 'history', href: '/login?next=' + encodeURIComponent('/account#lich-su'), label: 'Lịch sử bảo hành' },
 ];

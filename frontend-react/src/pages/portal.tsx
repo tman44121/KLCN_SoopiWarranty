@@ -5,14 +5,14 @@ import { CustomerFooter, CustomerHeader, Icon } from "../customer";
 
 /* Tra cứu công khai theo giao diện trang Tra cứu của web khách KLCN. id và data-* giữ nguyên vì customer-portal.js gắn vào. */
 export default function PortalPage() {
-  usePage("portal", {}, "Soopi — Tra cứu sửa chữa", controller);
+  usePage("portal", {}, "Soopi — Tra cứu bảo hành & sửa chữa", controller);
   return (
     <div className="kh-app">
       <CustomerHeader active="lookup" />
       <main className="kh-main">
         <section className="warranty-hero-banner lookup-hero" data-lookup-section="">
-          <h1 className="warranty-title">Tra cứu tiến độ sửa chữa</h1>
-          <p className="warranty-subtitle">Nhập mã phiếu (TN- hoặc YC-) hoặc số Serial/IMEI của thiết bị, cùng số điện thoại đã đăng ký để xem tiến độ, ghi chú và báo giá.</p>
+          <h1 className="warranty-title">Tra cứu bảo hành &amp; tiến độ sửa chữa</h1>
+          <p className="warranty-subtitle">Nhập số Serial/IMEI để xem hạn bảo hành của thiết bị. Thêm số điện thoại đã đăng ký (hoặc nhập mã phiếu TN-, YC-) để xem tiến độ, ghi chú và báo giá.</p>
           <div className="lookup-form">
             <div className="form-row-group" data-field="lookupId">
               <label htmlFor="lookupId">Mã phiếu hoặc Serial/IMEI</label>
@@ -21,7 +21,7 @@ export default function PortalPage() {
               </span>
             </div>
             <div className="form-row-group" data-field="lookupPhone">
-              <label htmlFor="lookupPhone">Số điện thoại</label>
+              <label htmlFor="lookupPhone">Số điện thoại <span className="lookup-optional">(không bắt buộc khi chỉ xem bảo hành)</span></label>
               <input type="tel" id="lookupPhone" className="regular-input" inputMode="tel" autoComplete="tel" placeholder="09xx xxx xxx" />
               <span className="form-field__error" hidden={true}>
               </span>

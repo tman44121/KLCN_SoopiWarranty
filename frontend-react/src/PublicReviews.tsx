@@ -70,7 +70,7 @@ export function PublicReviewsPanel() {
           <p className="home-review-summary-empty">Chưa có số liệu</p>
           <span className="home-review-summary-note">Điểm và số lượt chấm sẽ hiện khi tải được đánh giá.</span>
         </>}
-        <a href="/portal" className="home-review-lookup"><Icon glyph="search" /><span><strong>Tra cứu tiến độ</strong><span>Mã phiếu hoặc Serial + SĐT</span></span><span aria-hidden="true">→</span></a>
+        <a href="/portal" className="home-review-lookup"><Icon glyph="search" /><span><strong>Tra cứu bảo hành</strong><span>Serial/IMEI hoặc mã phiếu + SĐT</span></span><span aria-hidden="true">→</span></a>
       </aside>
       <div className="home-reviews-main">
         {hasReviews && <>
