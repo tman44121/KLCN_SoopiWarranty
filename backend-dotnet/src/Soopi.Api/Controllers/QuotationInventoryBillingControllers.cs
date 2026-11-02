@@ -48,7 +48,7 @@ public sealed class QuotationsController(QuotationService quotations, QuotationR
 [ApiController]
 [Authorize]
 [Route("api/v1")]
-public sealed class InventoryController(PartQueryService parts, StockIssueService issues, StockReceiptService receipts, StockTransferService transfers) : ControllerBase
+public sealed class InventoryController(StocktakeService stocktakes, PartQueryService parts, StockIssueService issues, StockReceiptService receipts, StockTransferService transfers) : ControllerBase
 {
     [HttpGet("parts")]
     public Task<List<PartView>> Parts([FromQuery] string? q, [FromQuery] string? category, [FromQuery] bool lowStock = false) =>
@@ -120,6 +120,26 @@ public sealed class InventoryController(PartQueryService parts, StockIssueServic
 
     [HttpPost("stock-transfers/{code}/reject")]
     public Task<TransferView> RejectTransfer(string code, [FromBody] ReasonRequest body) => transfers.RejectAsync(code, body.Reason);
+
+    [HttpGet("stocktakes/sheet")]
+    public Task<List<StocktakeSheetRow>> StocktakeSheet([FromQuery] string? category, [FromQuery] string? bin) => stocktakes.SheetAsync(category, bin);
+
+    [HttpGet("stocktakes/search")]
+    public Task<PageResponse<StocktakeView>> SearchStocktakes([FromQuery] string? status, [FromQuery] string? q, [FromQuery] DateTimeOffset? from,
+        [FromQuery] DateTimeOffset? to, [FromQuery] string sort = "newest", [FromQuery] int page = 0, [FromQuery] int size = 25) =>
+        stocktakes.SearchAsync(new(status, q, from, to, sort, page, size));
+
+    [HttpGet("stocktakes/{code}")]
+    public Task<StocktakeView> Stocktake(string code) => stocktakes.GetAsync(code);
+
+    [HttpPost("stocktakes")]
+    public async Task<IActionResult> CreateStocktake([FromBody] StocktakeRequest body) => StatusCode(StatusCodes.Status201Created, await stocktakes.CreateAsync(body));
+
+    [HttpPost("stocktakes/{code}/approve")]
+    public Task<StocktakeView> ApproveStocktake(string code) => stocktakes.ApproveAsync(code);
+
+    [HttpPost("stocktakes/{code}/reject")]
+    public Task<StocktakeView> RejectStocktake(string code, [FromBody] ReasonRequest body) => stocktakes.RejectAsync(code, body.Reason);
 }
 
 [ApiController]

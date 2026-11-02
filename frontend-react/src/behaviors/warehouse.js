@@ -25,6 +25,9 @@ export default function initialize() {
     receipts: [],
     issues: [],
     transfers: [],
+    stocktakes: [],
+    sheet: [],
+    activeStocktake: null,
     createItems: [],
     activeReceipt: null,
     activeIssue: null,
@@ -89,6 +92,22 @@ export default function initialize() {
     transferDetailReason: $("[data-transfer-detail-reason]"),
     transferApprove: $("[data-transfer-approve]"),
     transferReject: $("[data-transfer-reject]"),
+    stocktakeList: $("[data-stocktake-list]"),
+    stocktakeCreateDrawer: $("[data-create-stocktake-drawer]"),
+    stocktakeCategory: $("[data-stocktake-category]"),
+    stocktakeBin: $("[data-stocktake-bin]"),
+    stocktakeLoad: $("[data-stocktake-load]"),
+    stocktakeToolbar: $("[data-stocktake-toolbar]"),
+    stocktakeSummary: $("[data-stocktake-summary]"),
+    stocktakeFill: $("[data-stocktake-fill]"),
+    stocktakeLines: $("[data-stocktake-lines]"),
+    stocktakeNote: $("[data-stocktake-note]"),
+    stocktakeSubmit: $("[data-create-stocktake-submit]"),
+    stocktakeDrawer: $("[data-stocktake-drawer]"),
+    stocktakeSubtitle: $("[data-stocktake-drawer-subtitle]"),
+    stocktakeDetail: $("[data-stocktake-detail]"),
+    stocktakeApprove: $("[data-stocktake-approve]"),
+    stocktakeReject: $("[data-stocktake-reject]"),
   };
 
   const partName = (sku) => (state.parts.find((p) => p.sku === sku) || {}).name || "—";
@@ -96,15 +115,18 @@ export default function initialize() {
     [el.stockinList, createPage(el.stockinList, loadReceipts, 'phiếu nhập kho')],
     [el.stockoutList, createPage(el.stockoutList, loadIssues, 'phiếu xuất kho')],
     [el.transferList, createPage(el.transferList, loadTransfers, 'phiếu điều chuyển')],
+    [el.stocktakeList, createPage(el.stocktakeList, loadStocktakes, 'phiếu kiểm kê')],
   ]);
   const listFilters = new Map([
     [el.stockinList, createListFilters(el.stockinList, () => queueListLoad(el.stockinList, loadReceipts), { statuses: L.STOCK_RECEIPT_STATUS })],
     [el.stockoutList, createListFilters(el.stockoutList, () => queueListLoad(el.stockoutList, loadIssues), { statuses: L.STOCK_ISSUE_STATUS })],
     [el.transferList, createListFilters(el.transferList, () => queueListLoad(el.transferList, loadTransfers), { statuses: L.STOCK_TRANSFER_STATUS })],
+    [el.stocktakeList, createListFilters(el.stocktakeList, () => queueListLoad(el.stocktakeList, loadStocktakes), { statuses: L.STOCKTAKE_STATUS })],
   ]);
   listFilters.get(el.stockinList).toolbar.querySelector('[data-list-q]').placeholder = 'Mã phiếu, nhà cung cấp, lô, linh kiện…';
   listFilters.get(el.stockoutList).toolbar.querySelector('[data-list-q]').placeholder = 'Mã phiếu, báo giá, kỹ thuật viên, linh kiện…';
   listFilters.get(el.transferList).toolbar.querySelector('[data-list-q]').placeholder = 'Mã phiếu, linh kiện, kệ, lý do…';
+  listFilters.get(el.stocktakeList).toolbar.querySelector('[data-list-q]').placeholder = 'Mã phiếu, phạm vi, linh kiện, kệ…';
 
   function createPage(container, reload, label) {
     const pager = document.createElement('nav');
@@ -128,7 +150,7 @@ export default function initialize() {
   }
 
   function loadCurrentList() {
-    const current = { stockin: [el.stockinList,loadReceipts], stockout: [el.stockoutList,loadIssues], transfer: [el.transferList,loadTransfers] }[(location.hash || '').slice(1)];
+    const current = { stockin: [el.stockinList,loadReceipts], stockout: [el.stockoutList,loadIssues], transfer: [el.transferList,loadTransfers], stocktake: [el.stocktakeList,loadStocktakes] }[(location.hash || '').slice(1)];
     if (current && !listPages.get(current[0]).loaded) current[1]();
   }
 
@@ -594,6 +616,237 @@ export default function initialize() {
   }
 
   /* ---------------------------------------------------------------------- */
+  /* Kiểm kê: đếm thực tế theo kệ, duyệt thì điều chỉnh tồn theo chênh lệch  */
+  /* ---------------------------------------------------------------------- */
+
+  const signed = (n) => (n > 0 ? `+${n}` : String(n));
+
+  function stocktakeMeta(s) {
+    const diff = s.discrepancyCount
+      ? html`<strong class="stocktake-diff is-off">${s.discrepancyCount} dòng lệch</strong> (thừa ${s.surplus}, thiếu ${s.shortage})`
+      : html`<span class="stocktake-diff">Khớp tồn hệ thống</span>`;
+    return html`${s.scope} · ${s.lineCount} dòng · ${diff} · Lập ${fmt.dateTime(s.createdAt)} bởi ${s.requestedBy}`;
+  }
+
+  async function loadStocktakes() {
+    const items = await loadList(
+      el.stocktakeList,
+      api.inventory.searchStocktakes,
+      (s) => requestRow(
+        s.code,
+        stocktakeMeta(s),
+        fmt.badgeOf(L.STOCKTAKE_STATUS, s.status),
+        html`<button type="button" class="btn btn--secondary btn--sm" data-view-stocktake="${s.code}">${s.status === "PENDING" ? "Xem & duyệt" : "Xem chi tiết"}</button>`
+      ),
+      "Chưa có phiếu kiểm kê nào. Bấm “Lập phiếu kiểm kê” để bắt đầu đếm."
+    );
+    if (!items) return;
+    state.stocktakes = items;
+    el.stocktakeList.querySelectorAll("[data-view-stocktake]").forEach((btn) =>
+      btn.addEventListener("click", () => openStocktake(btn.getAttribute("data-view-stocktake")))
+    );
+  }
+
+  function openCreateStocktake() {
+    state.sheet = [];
+    el.stocktakeBin.value = "";
+    el.stocktakeNote.value = "";
+    el.stocktakeLines.innerHTML = html`<div class="empty-selection-hint">Chọn nhóm thiết bị và/hoặc khu kệ cần đếm (để trống = toàn kho), rồi bấm “Lấy danh sách cần đếm”.</div>`;
+    el.stocktakeToolbar.hidden = true;
+    window.openDialog(el.stocktakeCreateDrawer);
+  }
+
+  async function loadSheet() {
+    const bin = el.stocktakeBin.value.trim().toUpperCase();
+    if (bin && !/^KHO(-[A-Z](-\d{0,2}(-\d{0,2})?)?)?$/.test(bin)) {
+      window.showToast("Khu/kệ phải bắt đầu dạng KHO-A, KHO-A-01 hoặc KHO-A-01-02.", "error");
+      el.stocktakeBin.focus();
+      return;
+    }
+    if (state.sheet.some((row) => row.counted !== "") && !(await ui.confirm({
+      title: "Lấy lại danh sách cần đếm?", message: "Các số đã nhập ở danh sách hiện tại sẽ bị xóa.", confirmLabel: "Lấy lại danh sách",
+    }))) return;
+    try {
+      const rows = await ui.busy(el.stocktakeLoad, () => api.inventory.stocktakeSheet({ category: el.stocktakeCategory.value || null, bin: bin || null }));
+      state.sheet = rows.map((row) => ({ ...row, counted: "", note: "" }));
+      renderSheet();
+      el.stocktakeLines.querySelector("[data-count]")?.focus();
+    } catch (error) {
+      ui.showError(error);
+    }
+  }
+
+  function sheetDiff(row) {
+    return row.counted === "" ? null : Number(row.counted) - row.systemQty;
+  }
+
+  function renderSheetSummary() {
+    const counted = state.sheet.filter((row) => row.counted !== "");
+    const off = counted.filter((row) => sheetDiff(row) !== 0);
+    const surplus = off.filter((row) => sheetDiff(row) > 0).reduce((sum, row) => sum + sheetDiff(row), 0);
+    const shortage = -off.filter((row) => sheetDiff(row) < 0).reduce((sum, row) => sum + sheetDiff(row), 0);
+    el.stocktakeSummary.innerHTML = html`Đã đếm <strong>${counted.length}/${state.sheet.length}</strong> dòng · ${off.length
+      ? html`<strong class="stocktake-diff is-off">lệch ${off.length} dòng</strong> (thừa ${surplus}, thiếu ${shortage})`
+      : html`<span class="stocktake-diff">chưa có dòng lệch</span>`}`;
+  }
+
+  function renderSheet() {
+    el.stocktakeToolbar.hidden = !state.sheet.length;
+    if (!state.sheet.length) {
+      el.stocktakeLines.innerHTML = html`<div class="empty-selection-hint">Không có linh kiện nào trong phạm vi đã chọn. Thử đổi nhóm thiết bị hoặc khu kệ.</div>`;
+      return;
+    }
+    el.stocktakeLines.innerHTML = html`<div class="table-scroll stocktake-table-wrap"><table class="drawer-table stocktake-table">
+      <thead><tr><th>Kệ/Ngăn</th><th>Linh kiện</th><th class="num">Tồn hệ thống</th><th class="num">Thực tế</th><th class="num">Chênh lệch</th><th>Lý do chênh lệch</th></tr></thead>
+      <tbody>${state.sheet.map((row, i) => html`<tr data-sheet-row="${i}">
+        <td class="mono">${row.binCode}</td>
+        <td><span class="mono">${row.sku}</span><div class="cell-muted">${row.name}</div></td>
+        <td class="num">${row.systemQty}</td>
+        <td class="num"><input type="number" min="0" step="1" inputmode="numeric" class="stocktake-count" value="${row.counted}" data-count aria-label="Số đếm thực tế ${row.sku} tại ${row.binCode}" /></td>
+        <td class="num" data-diff>—</td>
+        <td><input type="text" maxlength="255" value="${row.note}" placeholder="Bắt buộc khi lệch" data-note aria-label="Lý do chênh lệch ${row.sku}" /></td>
+      </tr>`)}</tbody></table></div>`;
+    el.stocktakeLines.querySelectorAll("[data-sheet-row]").forEach((tr) => {
+      const row = state.sheet[Number(tr.getAttribute("data-sheet-row"))];
+      const count = tr.querySelector("[data-count]");
+      const note = tr.querySelector("[data-note]");
+      const paint = () => {
+        const diff = sheetDiff(row);
+        const invalidCount = row.counted !== "" && (!/^\d+$/.test(row.counted));
+        tr.classList.toggle("is-off", diff !== null && diff !== 0);
+        count.setAttribute("aria-invalid", invalidCount ? "true" : "false");
+        note.setAttribute("aria-invalid", diff && !row.note.trim() ? "true" : "false");
+        tr.querySelector("[data-diff]").innerHTML = invalidCount ? html`<span class="stocktake-diff is-off">Số không hợp lệ</span>`
+          : diff === null ? "—" : html`<span class="stocktake-diff ${diff ? "is-off" : ""}">${diff ? signed(diff) : "Khớp"}</span>`;
+        renderSheetSummary();
+      };
+      count.addEventListener("input", () => { row.counted = count.value.trim(); paint(); });
+      count.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        const next = tr.nextElementSibling?.querySelector("[data-count]");
+        if (next) next.focus();
+      });
+      note.addEventListener("input", () => { row.note = note.value; paint(); });
+      paint();
+    });
+  }
+
+  function fillSystemQty() {
+    state.sheet.forEach((row) => { if (row.counted === "") row.counted = String(row.systemQty); });
+    renderSheet();
+  }
+
+  async function submitStocktake() {
+    if (!state.sheet.length) {
+      window.showToast("Chưa có dòng nào — bấm “Lấy danh sách cần đếm” trước.", "error");
+      return;
+    }
+    const firstProblem = state.sheet.findIndex((row) => row.counted === "" || !/^\d+$/.test(row.counted) || (sheetDiff(row) !== 0 && !row.note.trim()));
+    if (firstProblem >= 0) {
+      const row = state.sheet[firstProblem];
+      const tr = el.stocktakeLines.querySelector(`[data-sheet-row="${firstProblem}"]`);
+      const missingCount = row.counted === "" || !/^\d+$/.test(row.counted);
+      window.showToast(missingCount
+        ? `Chưa nhập số đếm hợp lệ cho ${row.sku} tại ${row.binCode} (còn ${state.sheet.filter((r) => r.counted === "").length} dòng chưa đếm).`
+        : `Vui lòng ghi lý do chênh lệch cho ${row.sku} tại ${row.binCode} (lệch ${signed(sheetDiff(row))}).`, "error");
+      tr.querySelector(missingCount ? "[data-count]" : "[data-note]").focus();
+      return;
+    }
+    const scope = [el.stocktakeCategory.value ? `Nhóm ${L.CATEGORY[el.stocktakeCategory.value] || el.stocktakeCategory.value}` : "",
+      el.stocktakeBin.value.trim() ? `Khu ${el.stocktakeBin.value.trim().toUpperCase()}` : ""].filter(Boolean).join(" · ") || "Toàn kho";
+    try {
+      const created = await ui.busy(el.stocktakeSubmit, () => api.inventory.createStocktake({
+        scope,
+        note: el.stocktakeNote.value.trim() || null,
+        lines: state.sheet.map((row) => ({ sku: row.sku, binCode: row.binCode, countedQty: Number(row.counted), note: row.note.trim() || null })),
+      }));
+      window.closeDialog(el.stocktakeCreateDrawer);
+      window.showToast(`Đã lập phiếu kiểm kê ${created.code} — ${created.discrepancyCount ? `${created.discrepancyCount} dòng lệch, ` : ""}chờ duyệt.`, "success");
+      state.sheet = [];
+      listPages.get(el.stocktakeList).page = 0;
+      loadStocktakes();
+    } catch (error) {
+      ui.showError(error);
+    }
+  }
+
+  function openStocktake(code) {
+    const s = state.stocktakes.find((x) => x.code === code);
+    if (!s) return;
+    state.activeStocktake = s;
+    el.stocktakeSubtitle.innerHTML = html`<span class="mono">${s.code}</span> · ${L.STOCKTAKE_STATUS[s.status].label}`;
+    const off = s.lines.filter((line) => line.difference !== 0);
+    const lines = (list) => html`<div class="table-scroll stocktake-table-wrap"><table class="drawer-table stocktake-table">
+      <thead><tr><th>Kệ/Ngăn</th><th>Linh kiện</th><th class="num">Tồn hệ thống</th><th class="num">Thực tế</th><th class="num">Chênh lệch</th><th>Lý do</th></tr></thead>
+      <tbody>${list.map((line) => html`<tr class="${line.difference ? "is-off" : ""}">
+        <td class="mono">${line.binCode}</td><td><span class="mono">${line.sku}</span><div class="cell-muted">${line.name}</div></td>
+        <td class="num">${line.systemQty}</td><td class="num">${line.countedQty}</td>
+        <td class="num"><span class="stocktake-diff ${line.difference ? "is-off" : ""}">${line.difference ? signed(line.difference) : "Khớp"}</span></td>
+        <td>${line.note || "—"}</td></tr>`)}</tbody></table></div>`;
+    el.stocktakeDetail.innerHTML = html`
+      <div class="detail-grid">
+        <div class="detail-grid__item"><span class="kv-key">Phạm vi</span><span>${s.scope}</span></div>
+        <div class="detail-grid__item"><span class="kv-key">Người lập</span><span>${s.requestedBy} · ${fmt.dateTime(s.createdAt)}</span></div>
+        <div class="detail-grid__item"><span class="kv-key">Kết quả đếm</span><span>${s.lineCount} dòng · ${s.discrepancyCount ? html`<strong class="stocktake-diff is-off">${s.discrepancyCount} dòng lệch</strong> (thừa ${s.surplus}, thiếu ${s.shortage})` : "Khớp toàn bộ"}</span></div>
+        ${s.processedBy ? html`<div class="detail-grid__item"><span class="kv-key">${s.status === "REJECTED" ? "Người từ chối" : "Người duyệt"}</span><span>${s.processedBy} · ${fmt.dateTime(s.processedAt)}</span></div>` : ""}
+        ${s.note ? html`<div class="detail-grid__item detail-grid__item--wide"><span class="kv-key">Ghi chú</span><span>${s.note}</span></div>` : ""}
+        ${s.rejectedReason ? html`<div class="detail-grid__item detail-grid__item--wide"><span class="kv-key">Lý do từ chối</span><span>${s.rejectedReason}</span></div>` : ""}
+      </div>
+      ${s.status === "PENDING" && off.length ? html`<div class="stocktake-note" role="note">Khi duyệt, tồn kho được cộng/trừ đúng phần chênh lệch của ${off.length} dòng dưới đây (tính theo tồn lúc đếm, nên phiếu nhập/xuất phát sinh sau lúc đếm vẫn được giữ).</div>` : ""}
+      <hr class="section-divider" />
+      <h3 class="card__title card__title--sm" style="margin-bottom:10px;">${off.length ? `Dòng chênh lệch (${off.length})` : "Không có dòng chênh lệch"}</h3>
+      ${off.length ? lines(off) : html`<p class="cell-muted">Số đếm khớp tồn hệ thống ở mọi dòng — duyệt phiếu chỉ ghi nhận kết quả kiểm kê, không thay đổi tồn.</p>`}
+      ${s.lines.length > off.length ? html`<details class="stocktake-matched"><summary>Xem ${s.lines.length - off.length} dòng khớp</summary>${lines(s.lines.filter((line) => line.difference === 0))}</details>` : ""}`;
+    const pending = s.status === "PENDING";
+    el.stocktakeApprove.hidden = !pending;
+    el.stocktakeReject.hidden = !pending;
+    window.openDialog(el.stocktakeDrawer);
+  }
+
+  async function approveStocktake() {
+    const s = state.activeStocktake;
+    const confirmed = await ui.confirm({
+      title: "Duyệt phiếu kiểm kê và điều chỉnh tồn?",
+      message: s.discrepancyCount
+        ? `Tồn kho sẽ được điều chỉnh ${s.discrepancyCount} dòng: cộng ${s.surplus}, trừ ${s.shortage}. Thao tác được ghi vào nhật ký và không hoàn tác tự động.`
+        : "Số đếm khớp tồn hệ thống — phiếu được ghi nhận, tồn kho không đổi.",
+      confirmLabel: "Duyệt & Điều chỉnh tồn",
+      destructive: false,
+    });
+    if (!confirmed) return;
+    try {
+      await ui.busy(el.stocktakeApprove, () => api.inventory.approveStocktake(s.code));
+      window.closeDialog(el.stocktakeDrawer);
+      window.showToast(`Đã duyệt phiếu kiểm kê ${s.code}${s.discrepancyCount ? " và điều chỉnh tồn kho" : ""}.`, "success");
+      loadStocktakes();
+      loadParts();
+    } catch (error) {
+      ui.showError(error);
+    }
+  }
+
+  async function rejectStocktake() {
+    const s = state.activeStocktake;
+    const reason = await ui.promptReason({
+      title: "Từ chối phiếu kiểm kê?",
+      message: `Phiếu ${s.code} chuyển sang Từ chối, tồn kho không thay đổi. Có thể lập phiếu mới để đếm lại.`,
+      label: "Lý do từ chối",
+      confirmLabel: "Từ chối phiếu kiểm kê",
+      placeholder: "VD: Cần đếm lại khu KHO-A",
+    });
+    if (!reason) return;
+    try {
+      await api.inventory.rejectStocktake(s.code, reason);
+      window.closeDialog(el.stocktakeDrawer);
+      window.showToast(`Đã từ chối phiếu kiểm kê ${s.code}.`, "success");
+      loadStocktakes();
+    } catch (error) {
+      ui.showError(error);
+    }
+  }
+
+  /* ---------------------------------------------------------------------- */
   /* Khởi tạo                                                               */
   /* ---------------------------------------------------------------------- */
 
@@ -651,10 +904,21 @@ export default function initialize() {
     el.transferSubmit.addEventListener("click", submitTransfer);
     el.transferApprove.addEventListener("click", approveTransfer);
     el.transferReject.addEventListener("click", rejectTransfer);
+
+    bindDrawer(el.stocktakeCreateDrawer, ["[data-create-stocktake-close]", "[data-create-stocktake-cancel]"]);
+    bindDrawer(el.stocktakeDrawer, ["[data-stocktake-drawer-close]"]);
+    $("[data-open-create-stocktake]").addEventListener("click", openCreateStocktake);
+    el.stocktakeLoad.addEventListener("click", loadSheet);
+    el.stocktakeBin.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); loadSheet(); } });
+    el.stocktakeFill.addEventListener("click", fillSystemQty);
+    el.stocktakeSubmit.addEventListener("click", submitStocktake);
+    el.stocktakeApprove.addEventListener("click", approveStocktake);
+    el.stocktakeReject.addEventListener("click", rejectStocktake);
   }
 
   window.LML_AUTH.ready(async () => {
     ui.fillSelect(el.invGroup, Object.entries(L.CATEGORY).map(([value, label]) => ({ value, label })));
+    ui.fillSelect(el.stocktakeCategory, Object.entries(L.CATEGORY).map(([value, label]) => ({ value, label })));
     bindEvents();
     try {
       const suppliers = await api.catalog.list("suppliers");

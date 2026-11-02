@@ -534,3 +534,125 @@ public sealed class IssuedParts(InventoryDocumentStore documents, InventoryStore
         return result;
     }
 }
+
+public sealed record StocktakeLineView(string Sku, string Name, string BinCode, int SystemQty, int CountedQty, int Difference, string? Note);
+
+/// <summary>Kèm số dòng lệch, tổng thừa/thiếu để danh sách và màn duyệt không phải tự tính.</summary>
+public sealed record StocktakeView(
+    string Code, string Scope, string? Note, string Status, string RequestedBy, DateTimeOffset? CreatedAt, string? ProcessedBy,
+    DateTimeOffset? ProcessedAt, string? RejectedReason, IReadOnlyList<StocktakeLineView> Lines, int LineCount, int DiscrepancyCount, int Surplus,
+    int Shortage)
+{
+    public static StocktakeView From(Stocktake s, IReadOnlyDictionary<string, string> names)
+    {
+        var lines = s.Lines.Select(line => new StocktakeLineView(line.Sku, names.GetValueOrDefault(line.Sku, line.Sku), line.BinCode, line.SystemQty,
+            line.CountedQty, line.Difference, line.Note)).ToList();
+        return new(s.Id, s.Scope, s.Note, s.Status, s.RequestedBy, s.CreatedAt, s.ProcessedBy, s.ProcessedAt, s.RejectedReason, lines, lines.Count,
+            lines.Count(line => line.Difference != 0), lines.Where(line => line.Difference > 0).Sum(line => line.Difference),
+            -lines.Where(line => line.Difference < 0).Sum(line => line.Difference));
+    }
+}
+
+public sealed record StocktakeLineRequest([NotBlank] string Sku, [NotBlank] string BinCode, [NotNull, PositiveOrZero] int? CountedQty, string? Note);
+
+public sealed record StocktakeRequest(string? Scope, [Size(0, 255)] string? Note, [NotEmpty] List<StocktakeLineRequest>? Lines);
+
+/// <summary>
+/// Kiểm kê kho: lập phiếu từ danh sách cần đếm (tồn hệ thống do máy chủ chụp lúc lập, không tin số client gửi), duyệt thì điều
+/// chỉnh tồn theo chênh lệch từng dòng; từ chối phải ghi lý do.
+/// </summary>
+public sealed class StocktakeService(
+    InventoryDocumentStore documents, InventoryStore inventory, StaffDirectory staff, CodeGenerator codes, CurrentActor actors,
+    TransactionRunner transactions, AuditService audit, LowStockNotifier lowStock, TimeProvider clock)
+{
+    public async Task<List<StocktakeSheetRow>> SheetAsync(string? category, string? binPrefix)
+    {
+        actors.Require(Permission.STOCKTAKE_MANAGE);
+        return await inventory.StocktakeSheetAsync(category, binPrefix);
+    }
+
+    public Task<StocktakeView> CreateAsync(StocktakeRequest command)
+    {
+        actors.Require(Permission.STOCKTAKE_MANAGE);
+        return transactions.InTransactionAsync(async () =>
+        {
+            var actor = await WarehouseAsync();
+            var lines = new List<StocktakeLine>();
+            foreach (var line in command.Lines ?? [])
+            {
+                var sku = JavaText.Trim(line.Sku);
+                if (await inventory.FindPartAsync(sku) is null) throw DomainException.Invalid($"Linh kiện \"{sku}\" không tồn tại hoặc đã ngừng dùng.");
+                var bin = JavaText.Trim(line.BinCode).ToUpperInvariant();
+                lines.Add(new StocktakeLine(sku, bin, await inventory.BinQuantityAsync(sku, bin), line.CountedQty!.Value, line.Note));
+            }
+            var stocktake = new Stocktake(await codes.NextAsync(BusinessCodeType.Stocktake), command.Scope, command.Note, lines, actor.EmployeeId!);
+            await documents.SaveAsync(stocktake);
+            await AuditAsync(actor, "STOCKTAKE_CREATED", "Lập phiếu kiểm kê", stocktake.Id, null, "PENDING");
+            return await ViewAsync(stocktake);
+        });
+    }
+
+    public Task<StocktakeView> ApproveAsync(string code)
+    {
+        actors.Require(Permission.STOCKTAKE_MANAGE);
+        return transactions.InTransactionAsync(async () =>
+        {
+            var actor = await WarehouseAsync();
+            var stocktake = await RequireAsync(code);
+            stocktake.Approve(actor.EmployeeId!, clock.GetUtcNow());
+            // Khóa LinhKien trước TonKhoTheoKe theo thứ tự mã như các luồng kho khác.
+            foreach (var line in stocktake.Lines.Where(line => line.Difference != 0).OrderBy(line => line.Sku, StringComparer.Ordinal))
+                await inventory.AdjustAsync(line.Sku, line.BinCode, line.Difference);
+            await documents.SaveAsync(stocktake);
+            await AuditAsync(actor, "STOCKTAKE_APPROVED", "Duyệt kiểm kê, điều chỉnh tồn", code, "PENDING", "COMPLETED");
+            foreach (var sku in stocktake.Lines.Where(line => line.Difference < 0).Select(line => line.Sku).Distinct()) await lowStock.CheckAsync(sku);
+            return await ViewAsync(stocktake);
+        });
+    }
+
+    public Task<StocktakeView> RejectAsync(string code, string reason)
+    {
+        actors.Require(Permission.STOCKTAKE_MANAGE);
+        return transactions.InTransactionAsync(async () =>
+        {
+            var actor = await WarehouseAsync();
+            var stocktake = await RequireAsync(code);
+            stocktake.Reject(actor.EmployeeId!, reason, clock.GetUtcNow());
+            await documents.SaveAsync(stocktake);
+            await AuditAsync(actor, "STOCKTAKE_REJECTED", "Từ chối phiếu kiểm kê", code, "PENDING", "REJECTED");
+            return await ViewAsync(stocktake);
+        });
+    }
+
+    public async Task<StocktakeView> GetAsync(string code)
+    {
+        actors.Require(Permission.STOCKTAKE_MANAGE);
+        return await ViewAsync(await RequireAsync(code));
+    }
+
+    public async Task<PageResponse<StocktakeView>> SearchAsync(InventoryDocumentFilter filter)
+    {
+        actors.Require(Permission.STOCKTAKE_MANAGE);
+        var total = await documents.CountDocumentsAsync(InventoryDocumentKind.Stocktake, filter);
+        var names = await NamesAsync();
+        var items = (await documents.SearchStocktakesAsync(filter)).Select(item => StocktakeView.From(item, names)).ToList();
+        return PageResponse<StocktakeView>.Of(items, filter.Page, filter.Size, total);
+    }
+
+    private async Task<StocktakeView> ViewAsync(Stocktake stocktake) => StocktakeView.From(stocktake, await NamesAsync());
+
+    private async Task<Dictionary<string, string>> NamesAsync() =>
+        (await inventory.FindPartsAsync(null, null, false)).ToDictionary(part => part.Sku, part => part.Name);
+
+    private async Task<Stocktake> RequireAsync(string code) => await documents.FindStocktakeAsync(code) ?? throw new DomainException(ErrorCode.NOT_FOUND);
+
+    private async Task<AuthenticatedActor> WarehouseAsync()
+    {
+        var actor = actors.Current;
+        await staff.RequireActiveWithRoleAsync(actor.EmployeeId, Role.WAREHOUSE_KEEPER);
+        return actor;
+    }
+
+    private Task AuditAsync(AuthenticatedActor actor, string action, string label, string entityId, string? before, string? after) =>
+        audit.RecordAsync(actor.AuditId, actor.DisplayName, actor.RoleNames, action, label, "STOCKTAKE", entityId, before, after);
+}

@@ -53,6 +53,7 @@ sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\05_upgrade_exi
 sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\06_chat.sql
 sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\07_access_statistics.sql
 sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\08_public_reviews.sql
+sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\11_stocktake.sql
 ```
 
 `06_chat.sql` thêm hai bảng hội thoại/tin nhắn, không tạo tin nhắn mẫu và không xóa dữ liệu. Chạy trước khi dùng chat.
@@ -61,6 +62,8 @@ khởi động lại ứng dụng hoặc dọn refresh token. Cần chạy trư�
 xem [ACCESS_STATISTICS.md](ACCESS_STATISTICS.md) để biết cách đếm và kiểm thử.
 `08_public_reviews.sql` thêm bảng duyệt đánh giá cho trang chủ; chạy trước backend mới. Không tự công khai nhận xét cũ.
 Admin chọn tại `/admin#reports`, cột **Trang chủ**; xem [PUBLIC_REVIEWS.md](PUBLIC_REVIEWS.md).
+`11_stocktake.sql` thêm phiếu kiểm kê kho (`PhieuKiemKe`, `ChiTietKiemKe`) và quyền `STOCKTAKE_MANAGE` cho thủ kho; thiếu script
+thì màn Kho vật tư → Kiểm kê báo "Cơ sở dữ liệu chưa được nâng cấp". Chạy lại nhiều lần không sao.
 Chat chỉ dành cho tài khoản đăng nhập: khách và nhân viên tiếp nhận/KTV hiện đang phụ trách phiếu. Khi đổi KTV,
 cuộc trò chuyện cũ chỉ xem lịch sử; người mới không được đọc cuộc trò chuyện riêng của người cũ.
 Danh bạ nội bộ tìm theo tên/mã khách, mã phiếu, sản phẩm hoặc serial; không mở quyền đọc liên hệ khách toàn hệ thống cho KTV.

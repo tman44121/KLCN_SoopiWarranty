@@ -2916,3 +2916,100 @@ video.request-media-frame {
 @media (pointer: coarse), (max-width: 767px) {
   .inventory-document-pagination select { min-height: 44px; }
 }
+
+/* Kiểm kê kho */
+.drawer--wide {
+  width: 920px;
+}
+
+.stocktake-scope {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.stocktake-scope .btn {
+  margin-bottom: 2px;
+}
+
+.stocktake-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 16px 0 10px;
+  font-size: 13px;
+}
+
+.stocktake-table-wrap {
+  max-height: 52vh;
+  overflow: auto;
+  border-radius: var(--radius-table);
+}
+
+.stocktake-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.stocktake-table .num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.stocktake-table tr.is-off td {
+  background: var(--status-warning-bg);
+}
+
+.stocktake-table input {
+  width: 100%;
+  min-width: 72px;
+}
+
+.stocktake-table input.stocktake-count {
+  max-width: 96px;
+  text-align: right;
+}
+
+.stocktake-table input[aria-invalid="true"] {
+  border-color: var(--status-danger-text);
+}
+
+.stocktake-diff {
+  font-weight: 600;
+  color: var(--status-success-text);
+}
+
+.stocktake-diff.is-off {
+  color: var(--status-warning-text);
+}
+
+.stocktake-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-table);
+  background: var(--status-processing-bg);
+  color: var(--status-processing-text);
+  font-size: 13px;
+}
+
+.stocktake-matched {
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.stocktake-matched summary {
+  cursor: pointer;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 720px) {
+  .stocktake-scope {
+    grid-template-columns: 1fr;
+  }
+}

@@ -3,7 +3,7 @@ using Soopi.Api.DTOs.Shared;
 
 namespace Soopi.Api.Data.Stores;
 
-public enum InventoryDocumentKind { Receipt, Issue, Transfer }
+public enum InventoryDocumentKind { Receipt, Issue, Transfer, Stocktake }
 
 public sealed record InventoryDocumentFilter(string? Status, string? Query, DateTimeOffset? From, DateTimeOffset? To, string Sort, int Page, int Size)
 {

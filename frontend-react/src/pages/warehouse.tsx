@@ -113,6 +113,15 @@ export default function WarehousePage() {
               </svg>
               {"\n          Điều chuyển\n        "}
             </a>
+            <a className="sidebar-nav__item" data-page-tab="stocktake" data-roles="WAREHOUSE_KEEPER" href="#stocktake">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <rect x="5" y="3" width="10" height="14" rx="1.4">
+                </rect>
+                <path d="M8 3v2h4V3M8 9l1.5 1.5L12.5 8M8 14h4">
+                </path>
+              </svg>
+              {"\n          Kiểm kê\n        "}
+            </a>
           </div>
           <div className="sidebar-nav__group">
             <div className="sidebar-nav__group-title">
@@ -227,7 +236,7 @@ export default function WarehousePage() {
               {"Kho vật tư"}
             </h1>
             <div className="page-subtitle">
-              {"Theo dõi tồn kho linh kiện và duyệt phiếu nhập/xuất"}
+              {"Theo dõi tồn kho linh kiện, duyệt phiếu nhập/xuất và kiểm kê"}
             </div>
           </div>
         </div>
@@ -378,6 +387,25 @@ export default function WarehousePage() {
             </div>
           </section>
         </div>
+        <div data-page-panel="stocktake" hidden={true}>
+          <section className="card" aria-labelledby="stocktake-title">
+            <div className="card__header">
+              <div>
+                <h2 className="card__title" id="stocktake-title">
+                  {"Kiểm kê kho"}
+                </h2>
+                <div className="card__title-meta">
+                  {"Đếm thực tế theo kệ/nhóm, đối chiếu với tồn hệ thống; duyệt phiếu để điều chỉnh tồn"}
+                </div>
+              </div>
+              <button type="button" className="btn btn--primary btn--sm" data-open-create-stocktake="">
+                {"+ Lập phiếu kiểm kê"}
+              </button>
+            </div>
+            <div className="request-list" data-stocktake-list="">
+            </div>
+          </section>
+        </div>
       </main>
     </div>
     <div className="drawer-overlay" data-create-stockin-drawer="" hidden={true}>
@@ -461,6 +489,102 @@ export default function WarehousePage() {
           </button>
           <button type="button" className="btn btn--primary" data-create-stockin-submit="">
             {"Tạo phiếu nhập kho"}
+          </button>
+        </div>
+      </div>
+    </div>
+    <div className="drawer-overlay" data-create-stocktake-drawer="" hidden={true}>
+      <div className="drawer drawer--wide" role="dialog" aria-modal="true" aria-labelledby="create-stocktake-drawer-title">
+        <div className="drawer__header">
+          <div>
+            <div className="drawer__title" id="create-stocktake-drawer-title">
+              {"Lập phiếu kiểm kê"}
+            </div>
+            <div className="drawer__subtitle">
+              {"Nhập số đếm thực tế; tồn kho chỉ thay đổi khi phiếu được duyệt"}
+            </div>
+          </div>
+          <button type="button" className="modal__close" data-create-stocktake-close="" aria-label="Đóng">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M5 5l10 10M15 5L5 15">
+              </path>
+            </svg>
+          </button>
+        </div>
+        <div className="drawer__body">
+          <div className="stocktake-scope">
+            <div className="form-field">
+              <label htmlFor="stocktake-category">
+                {"Nhóm thiết bị"}
+              </label>
+              <select id="stocktake-category" data-stocktake-category="">
+                <option value="">
+                  {"Tất cả nhóm"}
+                </option>
+              </select>
+            </div>
+            <div className="form-field">
+              <label htmlFor="stocktake-bin">
+                {"Khu / kệ (tiền tố)"}
+              </label>
+              <input type="text" id="stocktake-bin" className="mono" placeholder="VD: KHO-A hoặc KHO-A-01" data-stocktake-bin="" />
+            </div>
+            <button type="button" className="btn btn--secondary" data-stocktake-load="">
+              {"Lấy danh sách cần đếm"}
+            </button>
+          </div>
+          <div className="stocktake-toolbar" data-stocktake-toolbar="" hidden={true}>
+            <span role="status" data-stocktake-summary="">
+            </span>
+            <button type="button" className="btn btn--secondary btn--sm" data-stocktake-fill="">
+              {"Điền tồn hệ thống cho dòng chưa đếm"}
+            </button>
+          </div>
+          <div data-stocktake-lines="">
+          </div>
+          <div className="form-field" style={{"marginTop": "16px"} as CSSProperties}>
+            <label htmlFor="stocktake-note">
+              {"Ghi chú phiếu"}
+            </label>
+            <input type="text" id="stocktake-note" maxLength={255} placeholder="VD: Kiểm kê định kỳ cuối tháng 11" data-stocktake-note="" />
+          </div>
+        </div>
+        <div className="drawer__footer">
+          <button type="button" className="btn btn--secondary" data-create-stocktake-cancel="">
+            {"Hủy"}
+          </button>
+          <button type="button" className="btn btn--primary" data-create-stocktake-submit="">
+            {"Tạo phiếu kiểm kê"}
+          </button>
+        </div>
+      </div>
+    </div>
+    <div className="drawer-overlay" data-stocktake-drawer="" hidden={true}>
+      <div className="drawer drawer--wide" role="dialog" aria-modal="true" aria-labelledby="stocktake-drawer-title">
+        <div className="drawer__header">
+          <div>
+            <div className="drawer__title" id="stocktake-drawer-title">
+              {"Phiếu kiểm kê"}
+            </div>
+            <div className="drawer__subtitle" data-stocktake-drawer-subtitle="">
+              {"—"}
+            </div>
+          </div>
+          <button type="button" className="modal__close" data-stocktake-drawer-close="" aria-label="Đóng">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M5 5l10 10M15 5L5 15">
+              </path>
+            </svg>
+          </button>
+        </div>
+        <div className="drawer__body" data-stocktake-detail="">
+        </div>
+        <div className="drawer__footer modal__footer--split">
+          <button type="button" className="btn btn--destructive" data-stocktake-reject="">
+            {"Từ chối phiếu kiểm kê"}
+          </button>
+          <button type="button" className="btn btn--primary" data-stocktake-approve="">
+            {"Duyệt & Điều chỉnh tồn"}
           </button>
         </div>
       </div>

@@ -157,7 +157,9 @@ public class IdentityTests
     {
         Assert.Equal(12, RolePermissions.ForRole(Role.ADMIN).Count);
         Assert.Equal(23, RolePermissions.ForRole(Role.DISPATCHER).Count);
-        Assert.Equal(41, Enum.GetValues<Permission>().Length);
+        Assert.Equal(42, Enum.GetValues<Permission>().Length);
+        Assert.Contains(Permission.STOCKTAKE_MANAGE, RolePermissions.ForRole(Role.WAREHOUSE_KEEPER));
+        Assert.DoesNotContain(Permission.STOCKTAKE_MANAGE, RolePermissions.ForRole(Role.TECHNICIAN));
         Assert.Contains(Permission.CUSTOMER_ACCOUNT_MANAGE, RolePermissions.ForRole(Role.ADMIN));
         Assert.Contains(Permission.CUSTOMER_PASSWORD_RESET, RolePermissions.ForRole(Role.RECEPTIONIST));
         Assert.DoesNotContain(Permission.CUSTOMER_ACCOUNT_MANAGE, RolePermissions.ForRole(Role.RECEPTIONIST));

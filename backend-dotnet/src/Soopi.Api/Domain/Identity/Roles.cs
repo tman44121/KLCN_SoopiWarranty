@@ -34,6 +34,7 @@ public enum Permission
     STOCK_ISSUE_PROCESS,
     STOCK_RECEIPT_MANAGE,
     STOCK_TRANSFER_MANAGE,
+    STOCKTAKE_MANAGE,
     INVENTORY_READ,
     INVENTORY_READ_COST,
     PAYMENT_COLLECT,
@@ -121,7 +122,7 @@ public static class RolePermissions
         [Role.WAREHOUSE_KEEPER] =
         [
             Permission.TICKET_READ_WAREHOUSE_VIEW, Permission.STOCK_ISSUE_REQUEST, Permission.STOCK_ISSUE_PROCESS,
-            Permission.STOCK_RECEIPT_MANAGE, Permission.STOCK_TRANSFER_MANAGE, Permission.INVENTORY_READ,
+            Permission.STOCK_RECEIPT_MANAGE, Permission.STOCK_TRANSFER_MANAGE, Permission.STOCKTAKE_MANAGE, Permission.INVENTORY_READ,
             Permission.INVENTORY_READ_COST, Permission.CATALOG_READ,
         ],
         [Role.CASHIER] =

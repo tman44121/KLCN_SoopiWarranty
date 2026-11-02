@@ -140,6 +140,7 @@ builder.Services.AddScoped<LowStockNotifier>();
 builder.Services.AddScoped<StockIssueService>();
 builder.Services.AddScoped<StockReceiptService>();
 builder.Services.AddScoped<StockTransferService>();
+builder.Services.AddScoped<StocktakeService>();
 builder.Services.AddScoped<IssuedParts>();
 builder.Services.AddScoped<BillingCalculator>();
 builder.Services.AddScoped<BillingQueryService>();

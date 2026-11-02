@@ -5,8 +5,12 @@ namespace Soopi.Api.Data;
 /// <summary>Mẫu LIKE "chứa chuỗi" cho SQL Server: ký tự đại diện người dùng gõ (%, _, [) được so khớp đúng nghĩa đen.</summary>
 public static class SqlLike
 {
-    public static string Contains(string value) =>
-        "%" + value.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
+    public static string Contains(string value) => "%" + Escape(value) + "%";
+
+    /// <summary>"Bắt đầu bằng" — lọc kệ theo tiền tố như KHO-A.</summary>
+    public static string StartsWith(string value) => Escape(value) + "%";
+
+    private static string Escape(string value) => value.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]");
 }
 
 /// <summary>SQL Server nhận tối đa 2100 tham số mỗi câu: danh sách cho IN (...) có thể dài thì chia lô.</summary>

@@ -129,6 +129,12 @@ export default function initialize() {
     REJECTED: { label: "Đã từ chối", tone: "danger" },
   };
 
+  const STOCKTAKE_STATUS = {
+    PENDING: { label: "Chờ duyệt", tone: "warning" },
+    COMPLETED: { label: "Đã điều chỉnh tồn", tone: "success" },
+    REJECTED: { label: "Đã từ chối", tone: "danger" },
+  };
+
   const WARRANTY_REQUEST_STATUS = {
     PENDING_INTAKE: { label: "Chờ tiếp nhận", tone: "warning" },
     CONVERTED: { label: "Đã tiếp nhận", tone: "success" },
@@ -264,6 +270,7 @@ export default function initialize() {
     STOCK_ISSUE_STATUS,
     STOCK_RECEIPT_STATUS,
     STOCK_TRANSFER_STATUS,
+    STOCKTAKE_STATUS,
     WARRANTY_REQUEST_STATUS,
     ACCOUNT_STATUS,
     CUSTOMER_ACCOUNT_STATUS,

@@ -17,6 +17,7 @@ public sealed record BusinessCodeType(string Prefix, CodeScope Scope, int Sequen
     public static readonly BusinessCodeType StockIssue = new("PX", CodeScope.Yearly, 5);
     public static readonly BusinessCodeType StockReceipt = new("PN", CodeScope.Yearly, 5);
     public static readonly BusinessCodeType StockTransfer = new("DC", CodeScope.Yearly, 5);
+    public static readonly BusinessCodeType Stocktake = new("KK", CodeScope.Yearly, 5);
     public static readonly BusinessCodeType Payment = new("PT", CodeScope.Yearly, 5);
     public static readonly BusinessCodeType Handover = new("PBG", CodeScope.Yearly, 5);
     public static readonly BusinessCodeType Assignment = new("PC", CodeScope.Yearly, 5);

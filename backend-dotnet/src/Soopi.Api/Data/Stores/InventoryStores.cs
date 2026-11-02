@@ -6,6 +6,8 @@ namespace Soopi.Api.Data.Stores;
 
 public sealed record Bin(string BinCode, int Qty);
 
+public sealed record StocktakeSheetRow(string Sku, string Name, string? Unit, string? CategoryCode, string BinCode, int SystemQty);
+
 public sealed record PartStock(
     string Sku, string Name, string? Unit, string? CategoryCode, string? BrandName, decimal CostPrice, decimal ServicePrice, int OnHand,
     int Reserved, int MinLevel, string PrimaryBin, IReadOnlyList<Bin> Bins, int WarrantyMonths, string? SupplierId, string? SupplierName,
@@ -93,6 +95,48 @@ public sealed class InventoryStore(Sql sql)
         await AddToBinAsync(sku, quantity, toBin);
     }
 
+    /// <summary>Danh sách cần đếm: mỗi linh kiện đang dùng × kệ đang có hàng (chưa có kệ nào thì kệ chính, tồn 0).</summary>
+    public Task<List<StocktakeSheetRow>> StocktakeSheetAsync(string? category, string? binPrefix)
+    {
+        var where = " WHERE lk.HoatDong = 1";
+        var args = new List<object?>();
+        if (!string.IsNullOrWhiteSpace(category)) { where += " AND lk.MaNhom = ?"; args.Add(category.Trim()); }
+        if (!string.IsNullOrWhiteSpace(binPrefix)) { where += " AND ISNULL(t.MaKe, lk.KeChinh) LIKE ?"; args.Add(SqlLike.StartsWith(binPrefix.Trim().ToUpperInvariant())); }
+        return sql.QueryAsync(
+            "SELECT lk.MaLK, lk.TenLK, lk.DonViTinh, lk.MaNhom, ISNULL(t.MaKe, lk.KeChinh) AS MaKe, ISNULL(t.SoLuong, 0) AS SoLuong "
+            + "FROM LinhKien lk LEFT JOIN TonKhoTheoKe t ON t.MaLK = lk.MaLK" + where + " ORDER BY ISNULL(t.MaKe, lk.KeChinh), lk.MaLK",
+            row => new StocktakeSheetRow(row.Str("MaLK")!, row.Str("TenLK")!, row.Str("DonViTinh"), row.Str("MaNhom"), row.Str("MaKe")!, row.Int("SoLuong")),
+            [.. args]);
+    }
+
+    /// <summary>Tồn hiện tại của một linh kiện tại một kệ (chưa có dòng kệ = 0).</summary>
+    public async Task<int> BinQuantityAsync(string sku, string binCode) =>
+        Convert.ToInt32(await sql.ScalarAsync("SELECT SoLuong FROM TonKhoTheoKe WHERE MaLK = ? AND MaKe = ?", sku, binCode) ?? 0);
+
+    /// <summary>
+    /// Điều chỉnh sau kiểm kê: cộng/trừ <paramref name="delta"/> vào tồn thực tế và kệ. Không cho tồn thực tế xuống dưới phần
+    /// đã giữ cho phiếu sửa chữa, cũng không cho kệ âm.
+    /// </summary>
+    public async Task AdjustAsync(string sku, string binCode, int delta)
+    {
+        if (delta == 0) return;
+        if (delta > 0)
+        {
+            var added = await sql.ExecuteAsync("UPDATE LinhKien SET SoLuongTon = SoLuongTon + ?, PhienBan = PhienBan + 1 WHERE MaLK = ?", delta, sku);
+            if (added != 1) throw new DomainException(ErrorCode.STOCK_ISSUE_PART_INVALID);
+            await AddToBinAsync(sku, delta, binCode);
+            return;
+        }
+        var part = await sql.FirstOrDefaultAsync("SELECT SoLuongTon, SoLuongDaGiu FROM LinhKien WITH (UPDLOCK) WHERE MaLK = ?",
+            row => (OnHand: row.Int("SoLuongTon"), Reserved: row.Int("SoLuongDaGiu")), sku);
+        if (part.OnHand + delta < part.Reserved)
+            throw new DomainException(ErrorCode.STOCKTAKE_BELOW_RESERVED, sku, part.OnHand + delta, part.Reserved);
+        await sql.ExecuteAsync("UPDATE LinhKien SET SoLuongTon = SoLuongTon + ?, PhienBan = PhienBan + 1 WHERE MaLK = ?", delta, sku);
+        var bin = await sql.ExecuteAsync(
+            "UPDATE TonKhoTheoKe SET SoLuong = SoLuong + ? WHERE MaLK = ? AND MaKe = ? AND SoLuong + ? >= 0", delta, sku, binCode, delta);
+        if (bin != 1) throw new DomainException(ErrorCode.STOCK_BIN_INSUFFICIENT, binCode);
+    }
+
     /// <summary>Cộng vào ngăn kệ, tạo ngăn nếu chưa có; HOLDLOCK để hai phiếu cùng tạo một ngăn không trùng khóa.</summary>
     private Task AddToBinAsync(string sku, int quantity, string binCode) =>
         sql.ExecuteAsync(
@@ -149,6 +193,12 @@ public sealed class InventoryDocumentStore(Sql sql, TimeProvider clock)
         return IssuesAsync(query, args);
     }
 
+    public Task<List<Stocktake>> SearchStocktakesAsync(InventoryDocumentFilter filter)
+    {
+        var (query, args) = DocumentQuery(InventoryDocumentKind.Stocktake, filter, false);
+        return StocktakesAsync(query, args);
+    }
+
     public Task<List<StockTransfer>> SearchTransfersAsync(InventoryDocumentFilter filter)
     {
         var (query, args) = DocumentQuery(InventoryDocumentKind.Transfer, filter, false);
@@ -170,6 +220,9 @@ public sealed class InventoryDocumentStore(Sql sql, TimeProvider clock)
             InventoryDocumentKind.Transfer => ("PhieuDieuChuyen", "MaPhieuDC", "NgayLap",
                 "d.MaPhieuDC LIKE ? OR d.MaLK LIKE ? OR d.TuKe LIKE ? OR d.DenKe LIKE ? OR d.LyDo LIKE ? "
                 + "OR EXISTS(SELECT 1 FROM LinhKien l WHERE l.MaLK=d.MaLK AND l.TenLK LIKE ?)"),
+            InventoryDocumentKind.Stocktake => ("PhieuKiemKe", "MaPhieuKK", "NgayLap",
+                "d.MaPhieuKK LIKE ? OR d.PhamVi LIKE ? OR d.GhiChu LIKE ? "
+                + "OR EXISTS(SELECT 1 FROM ChiTietKiemKe c JOIN LinhKien l ON l.MaLK=c.MaLK WHERE c.MaPhieuKK=d.MaPhieuKK AND (c.MaLK LIKE ? OR l.TenLK LIKE ? OR c.MaKe LIKE ?))"),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
         var query = $"SELECT {(count ? "COUNT(*)" : "d.*")} FROM {table} d WHERE 1=1";
@@ -392,4 +445,56 @@ public sealed class InventoryDocumentStore(Sql sql, TimeProvider clock)
             RejectedReason = row.Str("LyDoTuChoi"),
             Persisted = true,
         }, args);
+
+    // ------------------------------------------------------------------ kiểm kê
+
+    public async Task SaveAsync(Stocktake stocktake)
+    {
+        object?[] values = [stocktake.Scope, stocktake.Note, stocktake.Status, stocktake.RequestedBy, stocktake.ProcessedBy, stocktake.ProcessedAt, stocktake.RejectedReason];
+        if (stocktake.Persisted)
+        {
+            await sql.ExecuteAsync(
+                "UPDATE PhieuKiemKe SET PhamVi = ?, GhiChu = ?, TrangThai = ?, MaNguoiLap = ?, MaNguoiDuyet = ?, NgayDuyet = ?, LyDoTuChoi = ? WHERE MaPhieuKK = ?",
+                [.. values, stocktake.Id]);
+            return;
+        }
+        stocktake.CreatedAt = clock.GetUtcNow();
+        await sql.ExecuteAsync(
+            "INSERT INTO PhieuKiemKe (PhamVi, GhiChu, TrangThai, MaNguoiLap, MaNguoiDuyet, NgayDuyet, LyDoTuChoi, MaPhieuKK, NgayLap) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [.. values, stocktake.Id, stocktake.CreatedAt]);
+        foreach (var line in stocktake.Lines)
+            await sql.ExecuteAsync(
+                "INSERT INTO ChiTietKiemKe (MaPhieuKK, MaLK, MaKe, SoLuongHeThong, SoLuongThucTe, GhiChu) VALUES (?, ?, ?, ?, ?, ?)",
+                stocktake.Id, line.Sku, line.BinCode, line.SystemQty, line.CountedQty, line.Note);
+        stocktake.Persisted = true;
+    }
+
+    public async Task<Stocktake?> FindStocktakeAsync(string code) =>
+        (await StocktakesAsync($"SELECT * FROM PhieuKiemKe{sql.LockHint} WHERE MaPhieuKK = ?", code)).FirstOrDefault();
+
+    private async Task<List<Stocktake>> StocktakesAsync(string query, params object?[] args)
+    {
+        var stocktakes = await sql.QueryAsync(query, row => new Stocktake
+        {
+            Id = row.Str("MaPhieuKK")!,
+            Scope = row.Str("PhamVi")!,
+            Note = row.Str("GhiChu"),
+            Status = row.Str("TrangThai")!,
+            RequestedBy = row.Str("MaNguoiLap")!,
+            CreatedAt = row.Time("NgayLap"),
+            ProcessedBy = row.Str("MaNguoiDuyet"),
+            ProcessedAt = row.Time("NgayDuyet"),
+            RejectedReason = row.Str("LyDoTuChoi"),
+            Persisted = true,
+        }, args);
+        if (stocktakes.Count == 0) return stocktakes;
+        var codes = stocktakes.Select(item => item.Id).ToList();
+        var lines = await sql.QueryAsync(
+            $"SELECT MaPhieuKK, MaLK, MaKe, SoLuongHeThong, SoLuongThucTe, GhiChu FROM ChiTietKiemKe WHERE MaPhieuKK IN ({string.Join(", ", codes.Select(_ => "?"))}) "
+            + "ORDER BY MaKe, MaLK",
+            row => (Code: row.Str("MaPhieuKK")!, Line: new StocktakeLine(row.Str("MaLK")!, row.Str("MaKe")!, row.Int("SoLuongHeThong"), row.Int("SoLuongThucTe"), row.Str("GhiChu"))),
+            codes.Cast<object?>().ToArray());
+        stocktakes.ForEach(item => item.Lines = lines.Where(line => line.Code == item.Id).Select(line => line.Line).ToList());
+        return stocktakes;
+    }
 }

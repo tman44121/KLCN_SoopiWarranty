@@ -257,3 +257,88 @@ public sealed class StockTransfer
         if (Status != "PENDING") throw new DomainException(ErrorCode.STOCK_DOC_NOT_PENDING);
     }
 }
+
+/// <summary>Một dòng kiểm kê: tồn hệ thống chụp lúc lập phiếu và số đếm thực tế của một linh kiện tại một kệ/ngăn.</summary>
+public sealed record StocktakeLine(string Sku, string BinCode, int SystemQty, int CountedQty, string? Note)
+{
+    public int Difference => CountedQty - SystemQty;
+}
+
+/// <summary>
+/// Phiếu kiểm kê (PhieuKiemKe + ChiTietKiemKe): chờ duyệt → hoàn tất (đã điều chỉnh tồn) / từ chối. Điều chỉnh theo chênh
+/// lệch lúc đếm nên hàng nhập/xuất xảy ra giữa lúc đếm và lúc duyệt không bị ghi đè.
+/// </summary>
+public sealed class Stocktake
+{
+    private static readonly System.Text.RegularExpressions.Regex BinPattern = new("^KHO-[A-Z]-[0-9]{2}-[0-9]{2}$");
+
+    internal Stocktake()
+    {
+    }
+
+    public Stocktake(string id, string? scope, string? note, IReadOnlyList<StocktakeLine> lines, string requestedBy)
+    {
+        if (lines.Count == 0) throw DomainException.Invalid("Phiếu kiểm kê phải có ít nhất 1 dòng linh kiện.");
+        foreach (var line in lines)
+        {
+            if (!BinPattern.IsMatch(line.BinCode))
+                throw DomainException.Invalid($"Kệ/ngăn \"{line.BinCode}\" của {line.Sku} không đúng dạng KHO-A-01-01.");
+            if (line.CountedQty < 0) throw DomainException.Invalid($"Số đếm thực tế của {line.Sku} tại {line.BinCode} không được âm.");
+            if (line.Difference != 0 && JavaText.IsBlank(line.Note))
+                throw DomainException.Invalid($"Vui lòng ghi lý do chênh lệch của {line.Sku} tại {line.BinCode} (lệch {line.Difference:+#;-#}).");
+        }
+        var duplicate = lines.GroupBy(line => (line.Sku, line.BinCode)).FirstOrDefault(group => group.Count() > 1);
+        if (duplicate is not null) throw DomainException.Invalid($"Linh kiện {duplicate.Key.Sku} tại {duplicate.Key.BinCode} bị nhập trùng 2 dòng.");
+        Id = id;
+        Scope = JavaText.IsBlank(scope) ? "Toàn kho" : JavaText.Trim(scope!);
+        Note = JavaText.IsBlank(note) ? null : JavaText.Trim(note!);
+        Lines = lines.Select(line => line with { Note = JavaText.IsBlank(line.Note) ? null : JavaText.Trim(line.Note!) }).ToList();
+        Status = "PENDING";
+        RequestedBy = requestedBy;
+    }
+
+    public DateTimeOffset? CreatedAt { get; internal set; }
+
+    public string Id { get; internal set; } = "";
+
+    public string Scope { get; internal set; } = "";
+
+    public string? Note { get; internal set; }
+
+    public IReadOnlyList<StocktakeLine> Lines { get; internal set; } = [];
+
+    public string Status { get; internal set; } = "";
+
+    public string RequestedBy { get; internal set; } = "";
+
+    public string? ProcessedBy { get; internal set; }
+
+    public DateTimeOffset? ProcessedAt { get; internal set; }
+
+    public string? RejectedReason { get; internal set; }
+
+    internal bool Persisted { get; set; }
+
+    public void Approve(string employeeId, DateTimeOffset now)
+    {
+        RequirePending();
+        Status = "COMPLETED";
+        ProcessedBy = employeeId;
+        ProcessedAt = now;
+    }
+
+    public void Reject(string employeeId, string? reason, DateTimeOffset now)
+    {
+        RequirePending();
+        if (JavaText.IsBlank(reason)) throw DomainException.Invalid("Vui lòng ghi lý do từ chối.");
+        Status = "REJECTED";
+        ProcessedBy = employeeId;
+        ProcessedAt = now;
+        RejectedReason = JavaText.Trim(reason);
+    }
+
+    private void RequirePending()
+    {
+        if (Status != "PENDING") throw new DomainException(ErrorCode.STOCK_DOC_NOT_PENDING);
+    }
+}

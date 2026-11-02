@@ -110,6 +110,7 @@ không drop/reset khi nâng cấp. Xem [ACCESS_STATISTICS.md](ACCESS_STATISTICS.
 Trước bản có đánh giá trên trang chủ, chạy thêm `database/08_public_reviews.sql`. Bảng duyệt ban đầu trống;
 admin tự chọn nhận xét sau khi kiểm tra thông tin riêng. Xem [PUBLIC_REVIEWS.md](PUBLIC_REVIEWS.md).
 Trước bản hỗ trợ duyệt điểm cũ thiếu ngày, chạy `database/10_legacy_review_publication.sql`.
+Trước bản có kiểm kê kho, chạy `database/11_stocktake.sql` (chỉ thêm bảng và quyền, không sửa tồn kho).
 Script chỉ cho phép ngày trong bảng duyệt để trống, không điền ngày giả hay tự công khai điểm cũ.
 `database/09_sample_public_reviews.sql` là script dữ liệu mẫu tùy chọn, lưu riêng trong DB;
 API công khai không trả các hàng này và trang chủ không hiển thị chúng. Không chạy tự động trong CI/CD.

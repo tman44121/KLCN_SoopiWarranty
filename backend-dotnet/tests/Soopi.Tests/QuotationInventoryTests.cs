@@ -69,4 +69,27 @@ public class QuotationInventoryTests
         Assert.Equal(6, PortalTicketView.CurrentStep(TicketStatus.DELIVERED));
         Assert.True(PortalTicketView.IsStopped(TicketStatus.RETURNED_UNREPAIRED));
     }
+
+    [Fact]
+    public void Stocktake_RequiresReasonForDiscrepancyAndRejectsDuplicates()
+    {
+        var even = new StocktakeLine("LK001", "KHO-A-01-01", 5, 5, null);
+        var stocktake = new Stocktake("KK-1", " ", null, [even, new StocktakeLine("LK002", "KHO-A-01-02", 3, 1, "Vỡ 2 cái")], "NV-003");
+        Assert.Equal("Toàn kho", stocktake.Scope);
+        Assert.Equal(-2, stocktake.Lines[1].Difference);
+
+        string Reason(Func<Stocktake> create)
+        {
+            var error = Assert.Throws<DomainException>(() => create());
+            return (string)error.Arguments[0]!;
+        }
+        Assert.Contains("lý do chênh lệch của LK002", Reason(() => new Stocktake("KK-2", null, null, [new StocktakeLine("LK002", "KHO-A-01-02", 3, 1, " ")], "NV-003")));
+        Assert.Contains("nhập trùng", Reason(() => new Stocktake("KK-3", null, null, [even, even], "NV-003")));
+        Assert.Contains("KHO-A-01-01", Reason(() => new Stocktake("KK-4", null, null, [even with { BinCode = "A1" }], "NV-003")));
+        Assert.Contains("ít nhất 1 dòng", Reason(() => new Stocktake("KK-5", null, null, [], "NV-003")));
+
+        stocktake.Approve("NV-106", Now);
+        Assert.Equal("COMPLETED", stocktake.Status);
+        Assert.Equal(ErrorCode.STOCK_DOC_NOT_PENDING, Assert.Throws<DomainException>(() => stocktake.Reject("NV-106", "x", Now)).Code);
+    }
 }

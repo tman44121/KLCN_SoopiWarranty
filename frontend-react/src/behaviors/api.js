@@ -329,6 +329,12 @@ export default function initialize(global = window) {
       createTransfer: (body) => post("/stock-transfers", body),
       approveTransfer: (code) => post(`/stock-transfers/${enc(code)}/approve`),
       rejectTransfer: (code, reason) => post(`/stock-transfers/${enc(code)}/reject`, { reason }),
+      stocktakeSheet: (query) => get("/stocktakes/sheet", query),
+      searchStocktakes: (query) => get("/stocktakes/search", query),
+      stocktake: (code) => get(`/stocktakes/${enc(code)}`),
+      createStocktake: (body) => post("/stocktakes", body),
+      approveStocktake: (code) => post(`/stocktakes/${enc(code)}/approve`),
+      rejectStocktake: (code, reason) => post(`/stocktakes/${enc(code)}/reject`, { reason }),
     },
 
     warrantyRequests: {
