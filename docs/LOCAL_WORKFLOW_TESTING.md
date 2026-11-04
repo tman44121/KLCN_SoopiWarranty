@@ -2,6 +2,31 @@
 
 Phạm vi: giờ hẹn AM/PM, thứ Hai–thứ Bảy 08:00–17:00 theo giờ Việt Nam; tên “Số phiếu đang xử lý”; tìm toàn bộ báo giá theo mã báo giá/mã phiếu/tên/SĐT, trạng thái, ngày; danh sách mới nhất trước và bộ lọc theo từng màn. Không triển khai VPS.
 
+## Kiểm thử ghi và đồng thời trên SQL Server, không reset dữ liệu
+
+Chạy từ thư mục gốc dự án, chỉ trên database thử được phép ghi:
+
+```powershell
+dotnet test backend-dotnet/tests/Soopi.SqlServer.Tests/Soopi.SqlServer.Tests.csproj --configuration Release
+```
+
+Project này tách khỏi `Soopi.slnx` để lệnh unit test thông thường không truy cập database.
+Kết nối ưu tiên biến `SOOPI_SQL_TEST_CONNECTION`, sau đó User Secrets `ConnectionStrings:Default`
+của API. Nếu cả hai chưa có, dùng `MSSQL_TEST_URL`, `MSSQL_TEST_USER`, `MSSQL_TEST_PASSWORD`
+đang có trong môi trường để nối tới `TrungTamBaoHanhDB_Dev`. Không ghi mật khẩu vào source/log.
+Chỉ chấp nhận tên database chính xác `TrungTamBaoHanhDB_Dev` hoặc `SoopiIntegrationTests`;
+database cần có schema hiện hành, gồm thống kê truy cập. Thiếu cấu hình/schema thì báo lỗi,
+không tự tạo, nâng cấp hoặc bỏ qua kiểm thử.
+
+Tám ca chạy service thật và các kết nối độc lập để kiểm đua refresh token, duyệt xuất, thu tiền
+có phí/miễn phí, hoàn tác khi thiếu tồn kệ hoặc lỗi sau thu tiền, và chặn ngừng linh kiện đang chờ xuất.
+Mỗi ca tạo bộ dữ liệu riêng có mã `IT` + UUID rồi dọn đúng bộ đó. Tài khoản ứng dụng không được
+xóa nhật ký thì các dòng nhật ký thử được giữ lại theo quyền hiện hành. Bộ đếm mã/IDENTITY có thể
+tăng; kiểm thử không chỉnh lùi bộ đếm chung. Không chạy lệnh reset ở mục tiếp theo để chạy bộ này.
+
+CI tự tạo container SQL Server với database tạm `SoopiIntegrationTests`, chạy bộ kiểm thử và lưu
+kết quả TRX; deploy bị chặn nếu job SQL thất bại. Không dùng database hay bí mật local trong CI.
+
 ## Tạo lại toàn bộ dữ liệu
 
 Chạy từ thư mục gốc dự án:

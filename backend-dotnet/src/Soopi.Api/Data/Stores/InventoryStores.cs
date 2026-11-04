@@ -193,7 +193,8 @@ public sealed class InventoryStore(Sql sql)
                 row.Int("DinhMucTonToiThieu"), row.Str("KeChinh")!, [], row.Int("ThoiHanBaoHanhThang"), row.Str("MaNCC"), row.Str("TenNCC"),
                 row.Str("SDTNhaCungCap"), row.Bool("HoatDong"))),
             row => bins.Add((row.Str("MaLK")!, new Bin(row.Str("MaKe")!, row.Int("SoLuong")))));
-        return parts.Select(part => part with { Bins = bins.Where(item => item.Sku == part.Sku).Select(item => item.Bin).ToList() }).ToList();
+        var binsBySku = bins.ToLookup(item => item.Sku, item => item.Bin);
+        return parts.Select(part => part with { Bins = binsBySku[part.Sku].ToList() }).ToList();
     }
 
     /// <summary>Đổi "?" thành @p0, @p1… để dùng cùng tham số cho cả hai câu của lô.</summary>

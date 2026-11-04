@@ -75,7 +75,8 @@ public sealed class CatalogStore(Sql sql)
     public async Task<Dictionary<string, object?>?> FindAsync(string collection, string id)
     {
         var table = TableOf(collection);
-        var rows = await sql.QueryAsync($"SELECT * FROM {table.Name} WHERE {table.Key} = ?", row => Read(table, row), id);
+        var lockHint = collection == "parts" ? sql.LockHint : "";
+        var rows = await sql.QueryAsync($"SELECT * FROM {table.Name}{lockHint} WHERE {table.Key} = ?", row => Read(table, row), id);
         await EnrichAsync(collection, rows);
         return rows.FirstOrDefault();
     }
@@ -118,8 +119,11 @@ public sealed class CatalogStore(Sql sql)
             "stations" => "SELECT TOP 1 1 FROM PhieuTiepNhan WHERE ConMo = 1 AND MaTram = ?",
             "products" => "SELECT TOP 1 1 " + devices + " AND sp.MaSP = ?",
             "brands" => "SELECT TOP 1 1 " + devices + " AND sp.MaHang = ?",
-            "parts" => "SELECT TOP 1 1 FROM ChiTietBaoGia ct JOIN PhieuBaoGia bg ON bg.MaBaoGia = ct.MaBaoGia "
-                + "JOIN PhieuTiepNhan ptn ON ptn.MaPhieuTN = bg.MaPhieuTN WHERE ptn.ConMo = 1 AND ct.MaLK = ?",
+            "parts" => "SELECT 1 FROM LinhKien lk WHERE lk.MaLK = ? AND ("
+                + "EXISTS (SELECT 1 FROM ChiTietBaoGia ct JOIN PhieuBaoGia bg ON bg.MaBaoGia = ct.MaBaoGia "
+                + "JOIN PhieuTiepNhan ptn ON ptn.MaPhieuTN = bg.MaPhieuTN WHERE ptn.ConMo = 1 AND ct.MaLK = lk.MaLK) "
+                + "OR EXISTS (SELECT 1 FROM ChiTietXuatKho ct JOIN PhieuXuatKho px ON px.MaPhieuXuat = ct.MaPhieuXuat "
+                + "WHERE px.TrangThai = 'PENDING' AND ct.MaLK = lk.MaLK))",
             _ => null,
         };
         return query is not null && await sql.ScalarAsync(query, id) is not null;

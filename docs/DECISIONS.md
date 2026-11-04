@@ -167,6 +167,35 @@ Cùng cơ chế bảo vệ cả ảnh/video yêu cầu bảo hành và chữ ký
 Kiểm thử dùng kết nối ghi nhận lệnh, Request/FormFile giả lập và thư mục tệp tạm riêng trong artifacts.
 Không ghi SQL Server thật, không đổi schema, không dọn tệp thừa có sẵn và không thêm package.
 
+## D-057 — Sửa audit mục 10–12: khóa danh mục, kiểm thử SQL và ghép tồn kệ (2026-11-04)
+
+Không ngừng sử dụng linh kiện đang nằm trên phiếu xuất `PENDING`, kể cả xuất bảo hành miễn phí
+không có báo giá. Giữ kiểm tra tham chiếu báo giá của phiếu tiếp nhận còn mở. Đọc linh kiện khi sửa
+danh mục giữ khóa `UPDLOCK, HOLDLOCK` trong transaction để tuần tự với UPDATE giữ hàng.
+Phiếu xuất bị từ chối không tiếp tục chặn linh kiện nếu không còn tham chiếu khác.
+
+Ghép tồn theo kệ bằng một `ToLookup` theo mã linh kiện: chi phí O(số linh kiện + số kệ),
+giữ nguyên thứ tự và danh sách kệ rỗng. Không thay đổi truy vấn hoặc hợp đồng API.
+
+Thêm project `Soopi.SqlServer.Tests`, chạy chủ động ngoài solution kiểm thử không dùng DB.
+Tám ca gọi service thật qua các DbContext/kết nối độc lập: đua refresh token, duyệt xuất trùng,
+thu tiền trùng (có phí và miễn phí), hoàn tác xuất khi kệ thứ hai thiếu hàng, hoàn tác phiếu thu
+và nhật ký sau lỗi (hai loại thu), chặn ngừng linh kiện đang chờ xuất rồi cho phép sau từ chối.
+Ca cuối đã tái hiện lỗi trước khi sửa. Cả 8 ca đạt trên `TrungTamBaoHanhDB_Dev` được người dùng
+cho phép; 187 unit test backend đạt, không bỏ qua ca nào.
+
+Fixture dùng mã `IT` + UUID riêng, không reset/nạp lại dữ liệu hoặc sửa schema `_Dev`.
+Dọn các bản ghi nghiệp vụ do chính ca kiểm thử tạo. Giữ nguyên quyền chỉ ghi thêm nhật ký:
+nếu tài khoản không được DELETE `NhatKyThaoTac`, các dòng nhật ký thử vẫn còn. Bộ đếm sinh mã
+và IDENTITY có thể tăng; không chỉnh lùi vì có thể có phiên khác đang dùng database.
+
+CI có job SQL Server 2022 riêng, database `SoopiIntegrationTests` trong container tạm,
+mật khẩu ngẫu nhiên mỗi lần chạy, nạp schema/tham chiếu và thống kê truy cập trước kiểm thử.
+Deploy phải chờ cả job này và job verify. Cấu hình container theo
+[hướng dẫn Microsoft](https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker?view=sql-server-ver16).
+Chưa chạy job GitHub Actions/container tại local do Docker daemon không hoạt động;
+đã kiểm YAML và cú pháp shell. Không thay đổi package nghiệp vụ hoặc schema đang có.
+
 ## Giai đoạn 3 — cách triển khai theo yêu cầu Ponytail
 
 - React Router + 10 trang TSX giữ markup và CSS cũ; module JavaScript giữ xử lý bảng/form động.

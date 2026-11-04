@@ -112,9 +112,71 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  sql-server:
+    name: SQL Server write and concurrency tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SQL_CONTAINER: soopi-sql-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Start a disposable SQL Server
+        run: |
+          set -euo pipefail
+          SQL_TEST_PASSWORD="Ci!$(openssl rand -hex 20)"
+          echo "::add-mask::$SQL_TEST_PASSWORD"
+          echo "SQL_TEST_PASSWORD=$SQL_TEST_PASSWORD" >> "$GITHUB_ENV"
+          echo "SOOPI_SQL_TEST_CONNECTION=Server=localhost,1433;Database=SoopiIntegrationTests;User Id=sa;Password=$SQL_TEST_PASSWORD;Encrypt=False;TrustServerCertificate=True" >> "$GITHUB_ENV"
+          docker run --detach --name "$SQL_CONTAINER" --publish 127.0.0.1:1433:1433 \
+            --env ACCEPT_EULA=Y --env MSSQL_PID=Developer --env MSSQL_SA_PASSWORD="$SQL_TEST_PASSWORD" \
+            mcr.microsoft.com/mssql/server:2022-latest
+          for attempt in {1..45}; do
+            if docker exec --env SQLCMDPASSWORD="$SQL_TEST_PASSWORD" "$SQL_CONTAINER" \
+              /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -Q 'SELECT 1' >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'SQL Server did not become ready' >&2
+          exit 1
+
+      - name: Initialize only the disposable database
+        run: |
+          set -euo pipefail
+          docker exec --env SQLCMDPASSWORD="$SQL_TEST_PASSWORD" "$SQL_CONTAINER" \
+            /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b \
+            -Q 'CREATE DATABASE SoopiIntegrationTests COLLATE Latin1_General_100_CI_AI'
+          for script in 01_schema.sql 02_reference_data.sql 07_access_statistics.sql; do
+            docker cp "database/$script" "$SQL_CONTAINER:/tmp/$script"
+            docker exec --env SQLCMDPASSWORD="$SQL_TEST_PASSWORD" "$SQL_CONTAINER" \
+              /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -d SoopiIntegrationTests -i "/tmp/$script"
+          done
+
+      - name: Run SQL Server regression tests
+        run: dotnet test backend-dotnet/tests/Soopi.SqlServer.Tests/Soopi.SqlServer.Tests.csproj --configuration Release --logger trx --results-directory artifacts/sql-tests -p:NuGetAudit=true -p:NuGetAuditMode=all -p:NuGetAuditLevel=high -warnaserror
+
+      - name: Upload SQL Server results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sql-server-tests
+          path: artifacts/sql-tests
+          if-no-files-found: warn
+
+      - name: Remove disposable SQL Server
+        if: always()
+        run: docker rm --force "$SQL_CONTAINER"
+
   deploy:
     name: Deploy to Ubuntu VPS
-    needs: verify
+    needs: [verify, sql-server]
     if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
