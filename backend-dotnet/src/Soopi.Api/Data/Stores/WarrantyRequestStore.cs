@@ -77,10 +77,13 @@ public sealed class WarrantyRequestStore(Sql sql)
             request.BrandModel, request.IdentifierType, request.SerialOrImei, request.Symptom, request.PreferredStation,
             request.PreferredFrom, request.PreferredTo, request.CreatedAt);
 
-    public Task CancelAsync(string code, string reason, string? employeeId, DateTimeOffset now) =>
-        sql.ExecuteAsync(
+    public async Task CancelAsync(string code, string reason, string? employeeId, DateTimeOffset now)
+    {
+        var updated = await sql.ExecuteAsync(
             "UPDATE YeuCauBaoHanh SET TrangThai = 'CANCELLED', LyDoHuy = ?, MaNVXuLy = ?, NgayXuLy = ? WHERE MaYeuCau = ? AND TrangThai = 'PENDING_INTAKE'",
             reason.Length > 255 ? reason[..255] : reason, employeeId, now, code);
+        if (updated != 1) throw new DomainException(ErrorCode.WARRANTY_REQUEST_NOT_PENDING);
+    }
 
     /// <summary>Gọi sau khi phiếu tiếp nhận đã được ghi (khóa ngoại MaPhieuTN).</summary>
     public async Task ConvertAsync(string code, string ticketCode, string? employeeId, DateTimeOffset now)

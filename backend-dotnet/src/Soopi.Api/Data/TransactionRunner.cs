@@ -14,6 +14,7 @@ public sealed class TransactionRunner(AppDbContext db)
 {
     private const int MaxAttempts = 3;
     private readonly List<Action> afterCommit = [];
+    private readonly List<Action> afterRollback = [];
 
     public async Task<T> InTransactionAsync<T>(Func<Task<T>> operation)
     {
@@ -21,19 +22,36 @@ public sealed class TransactionRunner(AppDbContext db)
         for (var attempt = 1; ; attempt++)
         {
             await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            T result;
+            var committing = false;
             try
             {
-                var result = await operation();
+                result = await operation();
                 await db.SaveChangesAsync();
+                committing = true;
                 await transaction.CommitAsync();
-                RunAfterCommit();
-                return result;
             }
             catch (Exception exception)
             {
-                // Transaction chưa commit tự rollback khi dispose (cuối vòng lặp hoặc khi ném lỗi).
-                db.ChangeTracker.Clear();
-                afterCommit.Clear();
+                if (committing)
+                {
+                    try { await transaction.RollbackAsync(); }
+                    catch (Exception rollbackFailure)
+                    {
+                        // An unknown commit outcome must not delete files that the database may have committed.
+                        afterRollback.Clear();
+                        afterCommit.Clear();
+                        db.ChangeTracker.Clear();
+                        throw new AggregateException("Commit outcome is unknown; files were retained.", exception, rollbackFailure);
+                    }
+                }
+                try { await transaction.DisposeAsync(); }
+                finally
+                {
+                    db.ChangeTracker.Clear();
+                    afterCommit.Clear();
+                    RunAfterRollback(exception);
+                }
                 var translated = SqlErrors.Translate(exception);
                 var retryable = translated is not DomainException
                     && (exception is DbUpdateConcurrencyException || SqlErrors.IsRetryable(exception));
@@ -43,7 +61,11 @@ public sealed class TransactionRunner(AppDbContext db)
                     throw translated;
                 }
                 if (attempt == MaxAttempts) throw new DomainException(ErrorCode.CONCURRENT_MODIFICATION);
+                continue;
             }
+            afterRollback.Clear();
+            RunAfterCommit();
+            return result;
         }
     }
 
@@ -59,6 +81,25 @@ public sealed class TransactionRunner(AppDbContext db)
     {
         if (db.Database.CurrentTransaction is null) action();
         else afterCommit.Add(action);
+    }
+
+    public void AfterRollback(Action action)
+    {
+        if (db.Database.CurrentTransaction is null) throw new InvalidOperationException("Rollback cleanup requires a transaction.");
+        afterRollback.Add(action);
+    }
+
+    private void RunAfterRollback(Exception cause)
+    {
+        var actions = afterRollback.ToArray();
+        afterRollback.Clear();
+        var failures = new List<Exception>();
+        foreach (var action in actions)
+        {
+            try { action(); }
+            catch (Exception exception) { failures.Add(exception); }
+        }
+        if (failures.Count > 0) throw new AggregateException("Transaction failed and cleanup was incomplete.", [cause, .. failures]);
     }
 
     private void RunAfterCommit()

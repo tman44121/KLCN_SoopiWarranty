@@ -235,6 +235,8 @@ public sealed class Ticket
 
     public Inspection? Inspection { get; internal set; }
 
+    internal bool InspectionChanged { get; set; }
+
     public RepairOrder? RepairOrder { get; internal set; }
 
     public string? ActiveQuotationId { get; internal set; }
@@ -277,6 +279,7 @@ public sealed class Ticket
         if (Status != TicketStatus.INSPECTING) throw new DomainException(ErrorCode.TICKET_INVALID_STATE);
         RequireAssigned(actor);
         Inspection = ValidatedInspection(inspectionCode, input, receivedDate, now, actor);
+        InspectionChanged = true;
         TransitionTo(TicketStatus.DIAGNOSED, actor, null, now, "TECHNICIAN");
     }
 
@@ -285,6 +288,7 @@ public sealed class Ticket
         if (Status != TicketStatus.DIAGNOSED || Inspection is null) throw new DomainException(ErrorCode.TICKET_INVALID_STATE);
         RequireAssigned(actor);
         Inspection = ValidatedInspection(Inspection.Code, input, receivedDate, now, actor);
+        InspectionChanged = true;
     }
 
     public void StartFreeRepair(DateTimeOffset now, AuthenticatedActor actor)

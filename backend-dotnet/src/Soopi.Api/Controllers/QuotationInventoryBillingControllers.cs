@@ -168,7 +168,7 @@ public sealed class BillingHandoverController(PaymentService payments, BillingQu
     public async Task<TicketView> HandOver(string code)
     {
         var data = await MultipartJson.ReadAsync<HandoverRequest>(Request);
-        var signature = (await MultipartJson.FilesAsync(Request, "signature")).FirstOrDefault();
+        var signature = (await MultipartJson.FilesAsync(Request, "signature", maxFiles: 1, maxBytes: 200 * 1024)).FirstOrDefault();
         return await handovers.HandOverAsync(code, data.Input(), signature?.Content);
     }
 

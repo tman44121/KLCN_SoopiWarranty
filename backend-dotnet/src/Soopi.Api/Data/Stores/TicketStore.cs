@@ -156,13 +156,14 @@ public sealed class TicketStore(Sql sql, Services.Tickets.TicketProgressNotifier
                 + "PhanLoaiBaoHanh, LyDoNgoaiBaoHanh, HuongKhacPhucDeXuat, GhiChuPhanLoaiLai, SoLanSuaPhanLoai) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)",
                 [inspection.Code, ticket.Id, inspection.InspectedAt, .. fields]);
         }
-        else if (DbTime.Local(inspection.InspectedAt) != DbTime.Local(existing.Effective))
+        else if (ticket.InspectionChanged)
         {
             await sql.ExecuteAsync(
                 "UPDATE PhieuKiemTra SET MaKTV = ?, KetQuaKiemTraChiTiet = ?, ChecklistKetQua = ?, TinhTrangVaoNuoc = ?, PhanLoaiBaoHanh = ?, "
                 + "LyDoNgoaiBaoHanh = ?, HuongKhacPhucDeXuat = ?, GhiChuPhanLoaiLai = ?, SoLanSuaPhanLoai = ?, NgayCapNhat = ? WHERE MaPhieuKT = ?",
                 [.. fields, existing.Revisions + 1, inspection.InspectedAt, inspection.Code]);
         }
+        ticket.InspectionChanged = false;
     }
 
     private async Task SaveRepairOrderAsync(Ticket ticket)

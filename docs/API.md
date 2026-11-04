@@ -128,6 +128,10 @@ gán Content-Type cho FormData. Cấu trúc `WarrantyRequestData`/`OwnWarrantyRe
 [`PortalServices.cs`](../backend-dotnet/src/Soopi.Api/Services/Portal/PortalServices.cs).
 
 Backend tối đa 5 tệp: JPEG/PNG/WebP ≤5 MiB/tệp, MP4 ≤30 MiB/tệp; kiểm magic bytes, không tin đuôi tên/MIME header.
+Part `data` tối đa 64 KiB. Số tệp, kích thước và chữ ký định dạng được kiểm trước khi cấp bộ nhớ cho toàn bộ nội dung;
+chữ ký bàn giao giới hạn một tệp, tối đa 200 KiB. Đọc tệp chỉ cấp một mảng đúng kích thước, không chép thêm bằng `ToArray()`.
+Hạn mức gửi yêu cầu công khai (3 lượt/giờ/IP) và theo tài khoản khách (5 lượt/giờ) được kiểm trước khi đọc multipart;
+lượt gửi có dữ liệu không hợp lệ cũng tính vào hạn mức.
 Giới hạn request/multipart chung 100 MiB. UI cũ ghi 3 tệp, chưa chốt thay đổi nghiệp vụ.
 Chữ ký bàn giao PNG ≤200 KiB có contract riêng tại
 [`HandoverService.cs`](../backend-dotnet/src/Soopi.Api/Services/Tickets/HandoverService.cs).

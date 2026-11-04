@@ -217,22 +217,24 @@ public sealed class PortalWarrantyRequestService(
     PortalPolicy policy, WarrantyRequestStore requests, WarrantyRequestSubmissionService submissions, RateLimiter limiter, CurrentActor actors)
 {
     /// <summary>Tối đa 3 yêu cầu/giờ/IP (mục 11.2).</summary>
-    public Task<string> SubmitAsync(WarrantyRequestData data, IReadOnlyList<Upload> uploads, string? clientIp)
+    public async Task<string> SubmitAsync(Func<Task<(WarrantyRequestData Data, IReadOnlyList<Upload> Uploads)>> readSubmission, string? clientIp)
     {
         limiter.Acquire("portal-warranty-request-ip:" + clientIp, 3, TimeSpan.FromHours(1));
+        var (data, uploads) = await readSubmission();
         var customer = data.Customer!;
-        return submissions.SubmitAsync(
+        return await submissions.SubmitAsync(
             new SubmissionCommand(customer.FullName, customer.Phone, customer.Email, customer.Address, data.CategoryCode, data.DeviceTypeCode,
                 data.BrandModel, data.IdentifierType, data.SerialOrImei, data.Symptom, data.PreferredStation, data.PreferredFrom, data.PreferredTo),
             uploads);
     }
 
     /// <summary>App khách hàng: họ tên, SĐT, liên hệ lấy từ hồ sơ; giới hạn theo tài khoản vì thuê bao 4G dùng chung IP.</summary>
-    public async Task<string> SubmitOwnAsync(OwnWarrantyRequestData data, IReadOnlyList<Upload> uploads)
+    public async Task<string> SubmitOwnAsync(Func<Task<(OwnWarrantyRequestData Data, IReadOnlyList<Upload> Uploads)>> readSubmission)
     {
         actors.Require(Permission.PORTAL_SELF);
         var customer = await policy.RequireCustomerAsync();
         limiter.Acquire("portal-warranty-request-customer:" + customer.Id, 5, TimeSpan.FromHours(1));
+        var (data, uploads) = await readSubmission();
         return await submissions.SubmitAsync(
             new SubmissionCommand(customer.FullName, customer.Phone, customer.Email, customer.Address, data.CategoryCode, data.DeviceTypeCode,
                 data.BrandModel, data.IdentifierType, data.SerialOrImei, data.Symptom, data.PreferredStation, data.PreferredFrom, data.PreferredTo, customer.Id),

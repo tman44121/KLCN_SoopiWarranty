@@ -30,7 +30,6 @@ public sealed class WarrantyRequestService(
         if (JavaText.IsBlank(reason)) throw new DomainException(ErrorCode.VALIDATION_FAILED);
         return transactions.InTransactionAsync(async () =>
         {
-            if (!await store.IsPendingAsync(code)) throw new DomainException(ErrorCode.WARRANTY_REQUEST_NOT_PENDING);
             await store.CancelAsync(code, JavaText.Trim(reason), actor.EmployeeId, clock.GetUtcNow());
             await audit.RecordAsync(actor.AuditId, actor.DisplayName, actor.RoleNames, "WARRANTY_REQUEST_CANCELLED", "Hủy yêu cầu bảo hành",
                 "WARRANTY_REQUEST", code, "PENDING_INTAKE", "CANCELLED");
@@ -74,17 +73,8 @@ public sealed class WarrantyRequestSubmissionService(
             await RequireDeviceTypeAsync(command.CategoryCode, command.DeviceTypeCode, command.IdentifierType);
             await RequireStationAsync(command.PreferredStation);
             var request = Validated(await codes.NextAsync(BusinessCodeType.WarrantyRequest), command, clock.GetUtcNow());
-            var stored = new List<Attachment>();
-            try
-            {
-                stored.AddRange(await attachments.StoreWarrantyRequestFilesAsync(request.Code, uploads));
-                await store.InsertAsync(request);
-            }
-            catch
-            {
-                await attachments.DiscardAsync(stored);
-                throw;
-            }
+            await attachments.StoreWarrantyRequestFilesAsync(request.Code, uploads);
+            await store.InsertAsync(request);
             await notifications.ForRoleAsync("RECEPTIONIST", "WARRANTY_REQUEST_NEW", $"Có yêu cầu bảo hành trực tuyến mới {request.Code}.",
                 "/receptionist#" + request.Code, request.Code);
             return request.Code;

@@ -27,19 +27,20 @@ public sealed record StoredFile(string Id, string FileName, string ContentType, 
 /// Nội dung tệp nằm trên đĩa (<c>Storage:Directory</c>); bảng TepDinhKem giữ tên, loại, kích thước, chủ sở hữu và khóa lưu
 /// trữ (đường dẫn tương đối). Mã tệp trả cho API là MaTep.
 /// </summary>
-public sealed class FileStorage(Sql sql, TimeProvider clock, IConfiguration configuration)
+public sealed class FileStorage(Sql sql, TimeProvider clock, IConfiguration configuration, TransactionRunner transactions)
 {
     private readonly string root = Path.GetFullPath(configuration["Storage:Directory"] ?? "./data/files");
 
-    public async Task<string> StoreAsync(string fileName, string contentType, byte[] content, FileOwner owner)
+    public Task<string> StoreAsync(string fileName, string contentType, byte[] content, FileOwner owner) => transactions.InTransactionAsync(async () =>
     {
         var now = clock.GetUtcNow();
         var key = now.ToOffset(DbTime.Offset).ToString("yyyy/MM") + "/" + Guid.NewGuid();
         var target = Resolve(key);
         Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-        await File.WriteAllBytesAsync(target, content);
+        transactions.AfterRollback(() => File.Delete(target));
         try
         {
+            await File.WriteAllBytesAsync(target, content);
             var id = await sql.ScalarAsync(
                 "INSERT INTO TepDinhKem (LoaiChuSoHuu, MaChuSoHuu, TenTep, LoaiNoiDung, KichThuoc, DuongDanLuuTru, NguoiTaiLen, NgayTaiLen) "
                 + "OUTPUT inserted.MaTep VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -51,7 +52,7 @@ public sealed class FileStorage(Sql sql, TimeProvider clock, IConfiguration conf
             File.Delete(target);
             throw;
         }
-    }
+    });
 
     public async Task<StoredFile?> FindAsync(string? fileId)
     {
@@ -71,14 +72,6 @@ public sealed class FileStorage(Sql sql, TimeProvider clock, IConfiguration conf
         return File.Exists(path) ? new StoredFile(fileId!, row.Name, row.Type, await File.ReadAllBytesAsync(path), row.Owner) : null;
     }
 
-    public async Task DeleteAsync(string fileId)
-    {
-        if (!long.TryParse(fileId, out var id)) return;
-        foreach (var key in await sql.QueryAsync("SELECT DuongDanLuuTru FROM TepDinhKem WHERE MaTep = ?", row => row.Str("DuongDanLuuTru")!, id))
-            File.Delete(Resolve(key));
-        await sql.ExecuteAsync("DELETE FROM TepDinhKem WHERE MaTep = ?", id);
-    }
-
     private string Resolve(string key)
     {
         var path = Path.GetFullPath(Path.Combine(root, key));
@@ -90,39 +83,28 @@ public sealed class FileStorage(Sql sql, TimeProvider clock, IConfiguration conf
     private static string? Limit(string? value, int max) => value is null || value.Length <= max ? value : value[..max];
 }
 
-public sealed class AttachmentService(FileStorage storage, Sql sql, CurrentActor actors)
+public sealed class AttachmentService(FileStorage storage, Sql sql, CurrentActor actors, TransactionRunner transactions)
 {
     public const string WarrantyRequest = "WARRANTY_REQUEST";
     public const string HandoverSignature = "HANDOVER_SIGNATURE";
-    private const int MaxFiles = 5;
+    public const int MaxFiles = 5;
+    public const int MaxImageBytes = 5 * 1024 * 1024;
+    public const int MaxVideoBytes = 30 * 1024 * 1024;
 
     /// <summary>Ảnh/video lỗi của yêu cầu bảo hành online: tối đa 5 file, kiểm tra hết trước khi lưu file nào.</summary>
-    public async Task<List<Attachment>> StoreWarrantyRequestFilesAsync(string requestCode, IReadOnlyList<Upload> uploads)
+    public Task<List<Attachment>> StoreWarrantyRequestFilesAsync(string requestCode, IReadOnlyList<Upload> uploads) => transactions.InTransactionAsync(async () =>
     {
         if (uploads.Count > MaxFiles) throw new DomainException(ErrorCode.VALIDATION_FAILED);
         var types = uploads.Select(upload => RequireAllowed(upload.Content)).ToList();
         var stored = new List<Attachment>();
-        try
+        for (var index = 0; index < uploads.Count; index++)
         {
-            for (var index = 0; index < uploads.Count; index++)
-            {
-                var name = uploads[index].SafeFileName();
-                var id = await storage.StoreAsync(name, types[index], uploads[index].Content, new FileOwner(WarrantyRequest, requestCode, null, "PORTAL"));
-                stored.Add(new Attachment(id, name, types[index], uploads[index].Content.Length));
-            }
-            return stored;
+            var name = uploads[index].SafeFileName();
+            var id = await storage.StoreAsync(name, types[index], uploads[index].Content, new FileOwner(WarrantyRequest, requestCode, null, "PORTAL"));
+            stored.Add(new Attachment(id, name, types[index], uploads[index].Content.Length));
         }
-        catch
-        {
-            await DiscardAsync(stored);
-            throw;
-        }
-    }
-
-    public async Task DiscardAsync(IEnumerable<Attachment> attachments)
-    {
-        foreach (var attachment in attachments) await storage.DeleteAsync(attachment.FileId);
-    }
+        return stored;
+    });
 
     /// <summary>POL-13; ngoài phạm vi được xem trả 404 để không lộ sự tồn tại của file.</summary>
     public async Task<StoredFile> DownloadAsync(string fileId)
@@ -165,7 +147,7 @@ public sealed class AttachmentService(FileStorage storage, Sql sql, CurrentActor
     public static string RequireAllowed(byte[] content)
     {
         var type = Sniff(content) ?? throw new DomainException(ErrorCode.VALIDATION_FAILED);
-        var limit = type.StartsWith("video/", StringComparison.Ordinal) ? 30L * 1024 * 1024 : 5L * 1024 * 1024;
+        var limit = type.StartsWith("video/", StringComparison.Ordinal) ? MaxVideoBytes : MaxImageBytes;
         return content.Length > limit ? throw new DomainException(ErrorCode.VALIDATION_FAILED) : type;
     }
 

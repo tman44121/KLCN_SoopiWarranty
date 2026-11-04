@@ -143,6 +143,30 @@ phạm vi transaction, commit thu hồi token dùng lại, xoay token hợp lệ
 xung đột phiên bản, thu hồi phiên nhân viên và các nhánh email trùng. Ba tình huống trình duyệt
 thu ngân dùng API giả lập. Chưa chạy kiểm thử đồng thời trên database thật trong lần sửa này.
 
+## D-056 — Sửa audit mục 6–9: kiểm tra, upload, hủy yêu cầu và hoàn tác tệp (2026-11-04)
+
+Kết quả kiểm tra có dấu thay đổi nội bộ trong aggregate Ticket. Ghi/sửa kết quả đặt dấu này;
+TicketStore lưu rồi xóa dấu, không so sánh timestamp đã làm tròn tới giây. Hai lần sửa cùng thời điểm
+vẫn được lưu; thêm ghi chú hoặc lưu phiếu không sửa kết quả không tăng số lần sửa phân loại.
+
+Hạn mức gửi yêu cầu được kiểm trước khi gọi hàm đọc multipart. JSON `data` tối đa 64 KiB;
+kiểm số tệp và kích thước khai báo của tất cả tệp, sau đó đọc đầu tệp để kiểm định dạng và giới hạn
+ảnh/video trước khi cấp mảng nội dung. Đọc đúng kích thước và từ chối luồng thừa/thiếu dữ liệu.
+Giữ giới hạn 5 ảnh/video, ảnh 5 MiB, video 30 MiB; chữ ký bàn giao tối đa 1 tệp 200 KiB.
+
+Hủy yêu cầu dùng kết quả câu UPDATE có điều kiện như chuyển thành phiếu. Không cập nhật đúng một dòng
+thì trả `WARRANTY_REQUEST_NOT_PENDING`, không ghi nhật ký hoặc thông báo hủy.
+
+FileStorage đăng ký xóa tệp mới với `TransactionRunner.AfterRollback`. Dọn sau khi giao dịch lỗi đã
+được giải phóng, trước lần thử lại, kể cả lỗi thông báo hoặc lỗi commit được rollback xác nhận.
+Thử dọn mọi tệp dù một lần xóa thất bại và giữ cả lỗi gốc trong lỗi tổng hợp. Lỗi sau commit
+không chạy lại nghiệp vụ hoặc xóa tệp đã commit. Nếu commit và rollback đều lỗi, không xác định
+được kết quả thì giữ tệp, báo lỗi và không tự thử lại để tránh xóa dữ liệu có thể đã commit.
+Cùng cơ chế bảo vệ cả ảnh/video yêu cầu bảo hành và chữ ký bàn giao; bỏ các nhánh dọn bằng SQL riêng.
+
+Kiểm thử dùng kết nối ghi nhận lệnh, Request/FormFile giả lập và thư mục tệp tạm riêng trong artifacts.
+Không ghi SQL Server thật, không đổi schema, không dọn tệp thừa có sẵn và không thêm package.
+
 ## Giai đoạn 3 — cách triển khai theo yêu cầu Ponytail
 
 - React Router + 10 trang TSX giữ markup và CSS cũ; module JavaScript giữ xử lý bảng/form động.

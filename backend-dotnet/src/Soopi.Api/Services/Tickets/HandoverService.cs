@@ -39,19 +39,7 @@ public sealed class HandoverService(
     public Task<TicketView> HandOverAsync(string ticketCode, HandoverInput input, byte[]? signatureContent)
     {
         actors.Require(Permission.HANDOVER_COMPLETE);
-        return transactions.InTransactionAsync(async () =>
-        {
-            var storedFiles = new List<string>();
-            try
-            {
-                return await HandOverOnceAsync(ticketCode, input, signatureContent, storedFiles);
-            }
-            catch
-            {
-                foreach (var file in storedFiles) await files.DeleteAsync(file);
-                throw;
-            }
-        });
+        return transactions.InTransactionAsync(() => HandOverOnceAsync(ticketCode, input, signatureContent));
     }
 
     public async Task<SlipView> SlipAsync(string ticketCode)
@@ -64,7 +52,7 @@ public sealed class HandoverService(
             await issuedParts.FindByTicketAsync(ticketCode));
     }
 
-    private async Task<TicketView> HandOverOnceAsync(string ticketCode, HandoverInput input, byte[]? signatureContent, List<string> storedFiles)
+    private async Task<TicketView> HandOverOnceAsync(string ticketCode, HandoverInput input, byte[]? signatureContent)
     {
         var actor = await HandoverActorAsync();
         var ticket = await views.RequireAsync(ticketCode);
@@ -76,7 +64,6 @@ public sealed class HandoverService(
             : async () =>
             {
                 var fileId = await StoreSignatureAsync(ticketCode, ticket.CustomerId, actor.EmployeeId, signatureContent);
-                storedFiles.Add(fileId);
                 return new Signature(fileId, now);
             };
         await ticket.HandOverAsync(await codes.NextAsync(BusinessCodeType.Handover), input, signature, now, actor);

@@ -51,8 +51,8 @@ public sealed class PortalController(
     [AllowAnonymous]
     public async Task<IActionResult> Submit()
     {
-        var data = await MultipartJson.ReadAsync<WarrantyRequestData>(Request);
-        var code = await requests.SubmitAsync(data, await MultipartJson.FilesAsync(Request, "files"), actors.ClientIp);
+        var code = await requests.SubmitAsync(async () => (await MultipartJson.ReadAsync<WarrantyRequestData>(Request),
+            await MultipartJson.FilesAsync(Request, "files")), actors.ClientIp);
         return StatusCode(StatusCodes.Status201Created, new SubmittedRequest(code));
     }
 
@@ -77,8 +77,8 @@ public sealed class PortalController(
     [HttpPost("my/warranty-requests")]
     public async Task<IActionResult> SubmitMine()
     {
-        var data = await MultipartJson.ReadAsync<OwnWarrantyRequestData>(Request);
-        var code = await requests.SubmitOwnAsync(data, await MultipartJson.FilesAsync(Request, "files"));
+        var code = await requests.SubmitOwnAsync(async () => (await MultipartJson.ReadAsync<OwnWarrantyRequestData>(Request),
+            await MultipartJson.FilesAsync(Request, "files")));
         return StatusCode(StatusCodes.Status201Created, new SubmittedRequest(code));
     }
 }
