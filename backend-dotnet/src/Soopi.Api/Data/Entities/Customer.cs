@@ -21,7 +21,7 @@ public class Customer
         Id = id;
         FullName = RequireText(fullName);
         Phone = PhoneNumber.Require(phone);
-        Email = BlankToNull(email);
+        Email = NormalizedEmail(email);
         Address = BlankToNull(address);
         Status = CustomerStatus.ACTIVE;
         CreatedAt = now;
@@ -49,7 +49,7 @@ public class Customer
     public void UpdateContact(string? phone, string? email, string? address)
     {
         if (phone is not null) Phone = PhoneNumber.Require(phone);
-        if (email is not null) Email = BlankToNull(email);
+        if (email is not null) Email = NormalizedEmail(email);
         if (address is not null) Address = BlankToNull(address);
     }
 
@@ -65,6 +65,8 @@ public class Customer
         JavaText.IsBlank(value) ? throw DomainException.Invalid("Vui lòng nhập họ và tên khách hàng.") : JavaText.Trim(value);
 
     private static string? BlankToNull(string? value) => JavaText.IsBlank(value) ? null : JavaText.Trim(value);
+
+    private static string? NormalizedEmail(string? value) => JavaText.IsBlank(value) ? null : EmailAddress.Require(value);
 }
 
 /// <summary>Chỉ hai cột của NhanVien cần cho liên kết tài khoản; hồ sơ nhân viên đọc/ghi bằng SQL (EmployeeRecordStore).</summary>

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Soopi.Api.Data;
 using Soopi.Api.Data.Entities;
+using Soopi.Api.Data.Stores;
 using Soopi.Api.Domain.Identity;
 using Soopi.Api.Domain.Shared;
 using Soopi.Api.DTOs.Shared;
@@ -55,7 +56,7 @@ public sealed record MergeCustomerRequest([NotBlank] string TargetCode);
 
 public sealed class CustomerService(
     AppDbContext db, Sql sql, CodeGenerator codes, CurrentActor actors, AuditService audit, TimeProvider clock, TransactionRunner transactions,
-    CustomerAccountAdminService customerAccounts, SecurityVersionCache securityVersions)
+    CustomerAccountAdminService customerAccounts, SecurityVersionCache securityVersions, CustomerProfileStore profiles)
 {
     public async Task<PageResponse<CustomerView>> SearchAsync(string? query, int page, int size)
     {
@@ -103,6 +104,7 @@ public sealed class CustomerService(
             var before = Summary(customer);
             var oldPhone = customer.Phone;
             customer.UpdateContact(body.Phone, body.Email, body.Address);
+            if (customer.AccountId is not null) await profiles.RequireAvailableEmailAsync(customer.Email, customer.Id);
             await db.SaveChangesAsync();
             var changedAccount = await customerAccounts.FollowPhoneAsync(customer.AccountId, oldPhone, customer.Phone);
             await AuditAsync("CUSTOMER_CONTACT_UPDATED", "Cập nhật liên hệ khách hàng", code, before, Summary(customer));
@@ -150,6 +152,7 @@ public sealed class CustomerService(
             if (source.AccountId is { } account && target.AccountId is null)
             {
                 await sql.ExecuteAsync("UPDATE KhachHang SET MaTaiKhoan = NULL WHERE MaKH = ?", sourceCode);
+                await profiles.RequireAvailableEmailAsync(target.Email, targetCode);
                 await sql.ExecuteAsync("UPDATE KhachHang SET MaTaiKhoan = ? WHERE MaKH = ?", account, targetCode);
             }
             else if (source.AccountId is { } orphan)

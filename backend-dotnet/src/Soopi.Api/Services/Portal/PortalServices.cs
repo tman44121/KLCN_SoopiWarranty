@@ -263,7 +263,7 @@ public sealed class PortalWarrantyRequestService(
 /// nhập, đối chiếu phiếu) do quầy cập nhật.
 /// </summary>
 public sealed class PortalProfileService(
-    AppDbContext db, PortalPolicy policy, DeviceService devices, TransactionRunner transactions, AuditService audit, CurrentActor actors)
+    AppDbContext db, PortalPolicy policy, DeviceService devices, TransactionRunner transactions, AuditService audit, CurrentActor actors, CustomerProfileStore profiles)
 {
     public async Task<Profile> ProfileAsync()
     {
@@ -280,6 +280,7 @@ public sealed class PortalProfileService(
             var customer = await policy.RequireCustomerAsync();
             var before = Contact(customer);
             customer.UpdateContact(null, body.Email, body.Address);
+            await profiles.RequireAvailableEmailAsync(customer.Email, customer.Id);
             await db.SaveChangesAsync();
             if (before != Contact(customer))
                 await audit.RecordAsync("KH:" + customer.Id, customer.FullName, ["CUSTOMER"], "CUSTOMER_CONTACT_UPDATED",

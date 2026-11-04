@@ -128,6 +128,8 @@ public class Account
         SecurityVersion++;
     }
 
+    public void InvalidateSessions() => SecurityVersion++;
+
     public void Unlock()
     {
         Status = AccountStatus.ACTIVE;

@@ -8,6 +8,7 @@ export default function initialize() {
   const queue = document.querySelector("[data-handover-queue]");
   const detail = document.querySelector("[data-handover-detail]");
   const state = { tickets: [], selected: null, billing: null, signed: false };
+  let selectionVersion = 0;
   const queueFilters = createListFilters(queue, () => renderQueue(), { statuses: { COMPLETED: 'Chờ bàn giao', AWAITING_RETURN: 'Chờ trả máy' } });
 
   async function loadQueue() {
@@ -46,14 +47,20 @@ export default function initialize() {
   }
 
   async function selectTicket(code) {
+    const version = ++selectionVersion;
     ui.blockState(detail, "loading");
     try {
-      state.selected = await api.tickets.get(code);
-      state.billing = state.selected.status === "COMPLETED" ? await api.tickets.billing(code) : null;
+      const ticket = await api.tickets.get(code);
+      if (version !== selectionVersion) return;
+      const billing = ticket.status === "COMPLETED" ? await api.tickets.billing(code) : null;
+      if (version !== selectionVersion) return;
+      state.selected = ticket;
+      state.billing = billing;
       state.signed = false;
       renderQueue();
       renderDetail();
     } catch (error) {
+      if (version !== selectionVersion) return;
       ui.blockState(detail, "error", { desc: error.detail }, () => selectTicket(code));
     }
   }

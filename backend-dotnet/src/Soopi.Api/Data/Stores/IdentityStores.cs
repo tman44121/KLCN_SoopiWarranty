@@ -83,11 +83,27 @@ public sealed class CustomerProfileStore(Sql sql)
             phone);
 
     /// <summary>Hồ sơ đang dùng có tài khoản gắn với email này (email dùng để nhận OTP quên mật khẩu).</summary>
-    public Task<CustomerProfile?> FindActiveWithAccountByEmailAsync(string email) =>
-        sql.FirstOrDefaultAsync(
-            "SELECT TOP 1 MaKH, HoTen, MaTaiKhoan FROM KhachHang WHERE Email = ? AND TrangThai = 'ACTIVE' AND MaTaiKhoan IS NOT NULL ORDER BY MaKH",
+    public async Task<CustomerProfile?> FindActiveWithAccountByEmailAsync(string email)
+    {
+        var matches = await sql.QueryAsync(
+            $"SELECT TOP 2 MaKH, HoTen, MaTaiKhoan FROM KhachHang{sql.LockHint} WHERE LOWER(LTRIM(RTRIM(Email))) = ? AND TrangThai = 'ACTIVE' AND MaTaiKhoan IS NOT NULL ORDER BY MaKH",
             row => new CustomerProfile(row.Str("MaKH")!, row.Str("HoTen")!, row.LongOrNull("MaTaiKhoan"), email),
-            email);
+            EmailAddress.Normalize(email));
+        if (matches.Count > 1) throw new DomainException(ErrorCode.CUSTOMER_EMAIL_DUPLICATE);
+        return matches.FirstOrDefault();
+    }
+
+    public async Task RequireAvailableEmailAsync(string? email, string? customerCode = null)
+    {
+        if (JavaText.IsBlank(email)) return;
+        if (!sql.InTransaction) throw new InvalidOperationException("Recovery email changes require a transaction.");
+        // HOLDLOCK also protects an absent match; no schema change is needed to prevent simultaneous claims.
+        if (await sql.ScalarAsync(
+            "SELECT TOP 1 MaKH FROM KhachHang WITH (UPDLOCK, HOLDLOCK) WHERE TrangThai = 'ACTIVE' AND MaTaiKhoan IS NOT NULL "
+            + "AND LOWER(LTRIM(RTRIM(Email))) = ? AND (? IS NULL OR MaKH <> ?)",
+            EmailAddress.Require(email), customerCode, customerCode) is not null)
+            throw new DomainException(ErrorCode.CUSTOMER_EMAIL_DUPLICATE);
+    }
 
     public Task CreateAsync(string code, string fullName, string phone, string? email, DateTimeOffset now) =>
         sql.ExecuteAsync("INSERT INTO KhachHang (MaKH, HoTen, SDT, Email, NgayTao) VALUES (?, ?, ?, ?, ?)", code, fullName, phone, email, now);
@@ -98,6 +114,8 @@ public sealed class CustomerProfileStore(Sql sql)
     /// </summary>
     public async Task LinkAccountAsync(string customerCode, long accountId, string email)
     {
+        email = EmailAddress.Require(email);
+        await RequireAvailableEmailAsync(email, customerCode);
         var updated = await sql.ExecuteAsync(
             "UPDATE KhachHang SET MaTaiKhoan = ?, Email = ? WHERE MaKH = ? AND MaTaiKhoan IS NULL AND LOWER(LTRIM(RTRIM(Email))) = ?",
             accountId, email, customerCode, email);

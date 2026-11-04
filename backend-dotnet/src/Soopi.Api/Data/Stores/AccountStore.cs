@@ -45,6 +45,16 @@ public sealed class AccountStore(AppDbContext db)
     public Task<Account?> FindByIdAsync(long? id) =>
         id is null ? Task.FromResult<Account?>(null) : FirstAsync(db.Accounts.Where(a => a.Id == id));
 
+    public async Task LockAsync(long accountId)
+    {
+        if (db.Database.CurrentTransaction is null) throw new InvalidOperationException("Account mutation requires a transaction.");
+        // Account first, then refresh tokens: the same order as logout and password changes.
+        await db.Database.ExecuteSqlInterpolatedAsync($"SELECT MaTaiKhoan FROM TaiKhoan WITH (UPDLOCK, HOLDLOCK) WHERE MaTaiKhoan = {accountId}");
+        var tracked = db.Accounts.Local.FirstOrDefault(account => account.Id == accountId);
+        if (tracked is not null && db.Entry(tracked).State == EntityState.Unchanged)
+            await db.Entry(tracked).ReloadAsync();
+    }
+
     public Task<Account?> FindByEmployeeIdAsync(string employeeId) =>
         FirstAsync(db.Accounts.Where(a => db.EmployeeLinks.Any(e => e.AccountId == a.Id && e.Code == employeeId)));
 

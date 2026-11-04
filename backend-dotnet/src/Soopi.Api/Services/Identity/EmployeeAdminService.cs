@@ -83,8 +83,8 @@ public sealed partial class EmployeeAdminService(
         return transactions.InTransactionAsync(async () =>
         {
             var actor = actors.Current;
-            var current = await RequireEmployeeAsync(code);
             var account = await accounts.FindByEmployeeIdForUpdateAsync(code);
+            var current = await RequireEmployeeAsync(code);
             if (account is not null)
             {
                 policy.RequireCanManage(actor, account);
@@ -104,6 +104,13 @@ public sealed partial class EmployeeAdminService(
                 WorkStatus = command.WorkStatus ?? current.WorkStatus,
             };
             await employees.SaveAsync(updated);
+            if (account is not null && current.WorkStatus != updated.WorkStatus && updated.WorkStatus == "INACTIVE")
+            {
+                account.InvalidateSessions();
+                await accounts.SaveAsync();
+                await RevokeTokensAsync(account.Id);
+                transactions.AfterCommit(() => securityVersions.Evict(account.Id));
+            }
             await RecordAsync(actor, "EMPLOYEE_UPDATED", "Sửa hồ sơ nhân viên", code, Summary(current, account), Summary(updated, account));
             return View(updated, account);
         });

@@ -95,8 +95,13 @@ public sealed class CustomerAccountService(
         AccountPolicy.RequireCustomerAccount(account);
         passwordPolicy.Validate(account.Username, newPassword);
         await otp.ConsumeAsync(email, OtpPurpose.RESET_PASSWORD, code);
-        await auth.RecoverPasswordAsync(account.Id, newPassword);
-        await pushDevices.ForgetAllAsync(account.Id);
+        await transactions.InTransactionAsync(async () =>
+        {
+            if ((await profiles.FindActiveWithAccountByEmailAsync(email))?.AccountId != account.Id)
+                throw new DomainException(ErrorCode.CUSTOMER_EMAIL_NOT_FOUND);
+            await auth.RecoverPasswordAsync(account.Id, newPassword);
+            await pushDevices.ForgetAllAsync(account.Id);
+        });
     }
 
     private async Task<long> CreateAccountAsync(string phone, string email, RegisterCommand command)

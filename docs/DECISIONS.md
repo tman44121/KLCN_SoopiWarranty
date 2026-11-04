@@ -119,6 +119,30 @@ tạm riêng (schema/reference của dự án, RCSI bật), gồm nâng quyền 
 rollback các lệnh bị từ chối và liên kết khách sai. Database thử đã xóa; không sửa tài khoản đang sử dụng.
 Lượt rà soát độc lập không còn lỗi nghiêm trọng; chủ dự án chọn không thêm lượt kiểm tra bằng công cụ khác.
 
+## D-055 — Sửa audit mục 1–5: phiên, email khôi phục và thu ngân (2026-11-04)
+
+Refresh khóa dòng tài khoản trước khi đọc lại và xoay token trong cùng transaction.
+Nhánh phát hiện dùng lại token commit việc thu hồi cả họ trước khi trả lỗi.
+Đổi/khôi phục mật khẩu dùng cùng khóa; EF kiểm `PhienBanBaoMat` khi cập nhật tài khoản
+để thao tác dựa trên phiên bản cũ không ghi đè thay đổi bảo mật. Cấp phiên đọc lại tài khoản
+sau khi khóa và đối chiếu phiên bản đã xác thực, kể cả khi transaction phải thử lại.
+Chuyển nhân viên sang `INACTIVE` tăng phiên bản, thu hồi refresh token và xóa cache sau commit.
+
+Email khách được chuẩn hóa khi tạo/sửa. Luồng sửa liên hệ và gắn/chuyển tài khoản kiểm
+email khôi phục trong transaction với `UPDLOCK, HOLDLOCK`; chỉ hồ sơ ACTIVE có tài khoản
+tham gia ràng buộc này. Tra cứu khôi phục đọc tối đa hai kết quả và trả
+`CUSTOMER_EMAIL_DUPLICATE` (409) nếu dữ liệu cũ trùng, không tự chọn tài khoản hoặc sửa dữ liệu.
+Không đổi schema hay thêm package. Ràng buộc này áp dụng qua ứng dụng; lệnh SQL ngoài ứng dụng
+vẫn cần người vận hành bảo đảm email không trùng.
+
+Màn thu ngân chỉ áp dụng dữ liệu và lỗi của lần chọn phiếu mới nhất; phản hồi đến trễ
+không được ghép chi phí của phiếu cũ vào phiếu đang chọn.
+
+Kiểm thử hồi quy backend dùng kết nối ghi nhận lệnh, không mở SQL Server: kiểm thứ tự khóa,
+phạm vi transaction, commit thu hồi token dùng lại, xoay token hợp lệ, từ chối token hết hạn,
+xung đột phiên bản, thu hồi phiên nhân viên và các nhánh email trùng. Ba tình huống trình duyệt
+thu ngân dùng API giả lập. Chưa chạy kiểm thử đồng thời trên database thật trong lần sửa này.
+
 ## Giai đoạn 3 — cách triển khai theo yêu cầu Ponytail
 
 - React Router + 10 trang TSX giữ markup và CSS cũ; module JavaScript giữ xử lý bảng/form động.

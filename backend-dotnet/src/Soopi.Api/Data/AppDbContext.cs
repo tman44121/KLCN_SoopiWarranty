@@ -43,7 +43,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(a => a.FailedLoginAttempts).HasColumnName("SoLanSaiLienTiep");
             entity.Property(a => a.TemporaryLockUntil).HasColumnName("KhoaTamDen");
             entity.Property(a => a.MustChangePassword).HasColumnName("BatBuocDoiMatKhau");
-            entity.Property(a => a.SecurityVersion).HasColumnName("PhienBanBaoMat");
+            entity.Property(a => a.SecurityVersion).HasColumnName("PhienBanBaoMat").IsConcurrencyToken();
             entity.Property(a => a.LastLoginAt).HasColumnName("LanDangNhapCuoi");
             entity.Property(a => a.PasswordChangedAt).HasColumnName("NgayDoiMatKhau");
             entity.HasMany(a => a.RoleRows).WithOne().HasForeignKey(r => r.AccountId);
