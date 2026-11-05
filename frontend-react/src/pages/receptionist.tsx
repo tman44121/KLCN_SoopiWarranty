@@ -515,14 +515,14 @@ export default function ReceptionistPage() {
                   <span className="checklist-item__label">
                     {"Vết trầy"}
                   </span>
-                  <div className="result-toggle" data-cosmetic="scratches">
-                    <button type="button" className="result-toggle__btn is-active" data-value="NONE">
+                  <div className="result-toggle" data-cosmetic="scratches" role="group" aria-label="Vết trầy">
+                    <button type="button" className="result-toggle__btn is-active" data-value="NONE" aria-pressed={true}>
                       {"Không"}
                     </button>
-                    <button type="button" className="result-toggle__btn" data-value="LIGHT">
+                    <button type="button" className="result-toggle__btn" data-value="LIGHT" aria-pressed={false}>
                       {"Nhẹ"}
                     </button>
-                    <button type="button" className="result-toggle__btn" data-value="HEAVY">
+                    <button type="button" className="result-toggle__btn" data-value="HEAVY" aria-pressed={false}>
                       {"Nặng"}
                     </button>
                   </div>
@@ -531,11 +531,11 @@ export default function ReceptionistPage() {
                   <span className="checklist-item__label">
                     {"Cấn móp"}
                   </span>
-                  <div className="result-toggle" data-cosmetic="dents">
-                    <button type="button" className="result-toggle__btn is-active" data-value="false">
+                  <div className="result-toggle" data-cosmetic="dents" role="group" aria-label="Cấn móp">
+                    <button type="button" className="result-toggle__btn is-active" data-value="false" aria-pressed={true}>
                       {"Không"}
                     </button>
-                    <button type="button" className="result-toggle__btn" data-value="true">
+                    <button type="button" className="result-toggle__btn" data-value="true" aria-pressed={false}>
                       {"Có"}
                     </button>
                   </div>
@@ -544,11 +544,11 @@ export default function ReceptionistPage() {
                   <span className="checklist-item__label">
                     {"Nứt/vỡ"}
                   </span>
-                  <div className="result-toggle" data-cosmetic="cracks">
-                    <button type="button" className="result-toggle__btn is-active" data-value="false">
+                  <div className="result-toggle" data-cosmetic="cracks" role="group" aria-label="Nứt/vỡ">
+                    <button type="button" className="result-toggle__btn is-active" data-value="false" aria-pressed={true}>
                       {"Không"}
                     </button>
-                    <button type="button" className="result-toggle__btn" data-value="true">
+                    <button type="button" className="result-toggle__btn" data-value="true" aria-pressed={false}>
                       {"Có"}
                     </button>
                   </div>
@@ -557,14 +557,14 @@ export default function ReceptionistPage() {
                   <span className="checklist-item__label">
                     {"Dấu hiệu ẩm nước"}
                   </span>
-                  <div className="result-toggle" data-cosmetic="moisture">
-                    <button type="button" className="result-toggle__btn is-active" data-value="NONE">
+                  <div className="result-toggle" data-cosmetic="moisture" role="group" aria-label="Dấu hiệu ẩm nước">
+                    <button type="button" className="result-toggle__btn is-active" data-value="NONE" aria-pressed={true}>
                       {"Không"}
                     </button>
-                    <button type="button" className="result-toggle__btn" data-value="SUSPECTED">
+                    <button type="button" className="result-toggle__btn" data-value="SUSPECTED" aria-pressed={false}>
                       {"Nghi ngờ"}
                     </button>
-                    <button type="button" className="result-toggle__btn" data-value="YES">
+                    <button type="button" className="result-toggle__btn" data-value="YES" aria-pressed={false}>
                       {"Có"}
                     </button>
                   </div>
@@ -573,11 +573,11 @@ export default function ReceptionistPage() {
                   <span className="checklist-item__label">
                     {"Phụ kiện đi kèm"}
                   </span>
-                  <div className="result-toggle" data-cosmetic="accessories">
-                    <button type="button" className="result-toggle__btn is-active" data-value="COMPLETE">
+                  <div className="result-toggle" data-cosmetic="accessories" role="group" aria-label="Phụ kiện đi kèm">
+                    <button type="button" className="result-toggle__btn is-active" data-value="COMPLETE" aria-pressed={true}>
                       {"Đủ"}
                     </button>
-                    <button type="button" className="result-toggle__btn" data-value="MISSING">
+                    <button type="button" className="result-toggle__btn" data-value="MISSING" aria-pressed={false}>
                       {"Thiếu"}
                     </button>
                   </div>

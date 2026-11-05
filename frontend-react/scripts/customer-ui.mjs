@@ -20,6 +20,22 @@ try {
       if (request.url().includes('/api/v1/') && request.method() !== 'GET') writes.push(new URL(request.url()).pathname);
     });
     await s.context.route(`**/api/v1/portal/tickets/${code}`, route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ticket) }));
+    // Exercise the real contact/conversation flow; the former local demo chat no longer exists.
+    const messages = [];
+    let unread = 0;
+    const contact = { ticketCode: code, staffAccountId: 'NVTEST', conversationId: 'CHAT-TEST', name: 'Kỹ thuật viên thử',
+      role: 'Kỹ thuật viên', productName: 'Galaxy S24', serial: '356000000000001', canSend: true };
+    await s.context.route('**/api/v1/chat/**', route => {
+      const request = route.request(), url = new URL(request.url());
+      let data;
+      if (url.pathname.endsWith('/contacts')) data = { items: [{ ...contact, unreadCount: unread }], unreadCount: unread, hasMore: false };
+      else if (url.pathname.endsWith('/read')) { unread = 0; data = {}; }
+      else if (url.pathname.endsWith('/messages') && request.method() === 'POST') {
+        data = { id: String(messages.length + 1), mine: true, text: request.postDataJSON().text, createdAt: new Date().toISOString() };
+        messages.push(data);
+      } else data = { items: messages.filter(message => BigInt(message.id) > BigInt(url.searchParams.get('after') || '0')), hasMore: false, canSend: true };
+      return route.fulfill({ json: data });
+    });
     await s.page.goto(`${base}/account#phieu/${code}`);
     const trigger = s.page.getByRole('button', { name: /Thử thanh toán \(mô phỏng\)/ });
     await trigger.waitFor();
@@ -60,7 +76,8 @@ try {
       assert.equal(await s.page.locator('.paid-badge-box').count(), 0); checks++;
       assert.equal(await trigger.isVisible(), true); checks++;
     }
-    assert.deepEqual(writes.filter(path => !path.endsWith('/auth/refresh')), []); checks++;
+    // Session renewal and presence are expected; payment simulation must never write business data.
+    assert.deepEqual(writes.filter(path => !['/api/v1/auth/refresh', '/api/v1/access/heartbeat'].includes(path)), []); checks++;
     await s.page.reload();
     await trigger.waitFor(); checks++;
     await trigger.click();
@@ -77,18 +94,24 @@ try {
 
     const scroll = await s.page.evaluate(() => scrollY);
     await s.page.getByRole('button', { name: 'Mở chat hỗ trợ', exact: true }).click();
+    await s.page.locator('.chat-contact', { hasText: contact.name }).click();
     const input = s.page.getByRole('textbox', { name: 'Nhập tin nhắn', exact: true });
     assert.equal(await s.page.getByRole('button', { name: 'Gửi tin nhắn', exact: true }).isDisabled(), true); checks++;
     await input.fill('Tin nhắn kiểm thử');
     await input.press('Enter');
-    await s.page.getByRole('button', { name: 'Thu nhỏ', exact: true }).click();
-    await s.page.locator('.chat-minimized-bar .chat-fab-badge').waitFor(); checks++;
-    await s.page.getByRole('button', { name: 'Khôi phục chat hỗ trợ', exact: true }).click();
-    assert.equal(await s.page.locator('.chat-fab-badge').count(), 0); checks++;
+    await s.page.locator('.chat-bubble-msg', { hasText: 'Tin nhắn kiểm thử' }).waitFor(); checks++;
+    messages.push({ id: String(messages.length + 1), mine: false, text: 'Phản hồi khi thu gọn', createdAt: new Date().toISOString() }); unread = 1;
+    await s.page.getByRole('button', { name: 'Thu gọn chat', exact: true }).click();
+    await s.page.locator('.chat-mini .chat-fab-badge').waitFor(); checks++;
+    await s.page.getByRole('button', { name: 'Mở lại chat với ' + contact.name, exact: true }).click();
+    await s.page.locator('.chat-bubble-msg', { hasText: 'Phản hồi khi thu gọn' }).waitFor();
+    await s.page.locator('.chat-fab-badge').waitFor({ state: 'hidden' }); checks++;
     await input.fill('Tin nhắn khi đóng cửa sổ');
     await input.press('Enter');
+    await s.page.locator('.chat-bubble-msg', { hasText: 'Tin nhắn khi đóng cửa sổ' }).waitFor(); checks++;
+    messages.push({ id: String(messages.length + 1), mine: false, text: 'Phản hồi khi đóng', createdAt: new Date().toISOString() }); unread = 1;
     await s.page.getByRole('button', { name: 'Đóng chat', exact: true }).click();
-    await s.page.locator('#live-chat-bubble-btn .chat-fab-badge').waitFor(); checks++;
+    await s.page.locator('[data-chat-open] .chat-fab-badge').waitFor(); checks++;
     await s.page.getByRole('button', { name: 'Mở chat hỗ trợ', exact: true }).click();
     await s.page.locator('.chat-window').evaluate(node => Promise.all(node.getAnimations().map(animation => animation.finished)));
     assert.equal(await s.page.evaluate(() => scrollY), scroll); checks++;

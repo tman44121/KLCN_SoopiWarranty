@@ -1,6 +1,6 @@
 // Chụp toàn bộ màn hình và luồng nghiệp vụ trên API + database THẬT (ghi dữ liệu vào DB đang cấu hình).
 // Chạy khi API (8080) và Vite (5173) đang chạy: node scripts/screenshots.mjs [giai-doan...]
-// Ảnh lưu vào docs/screenshots/, trạng thái giữa các giai đoạn (mã phiếu…) ở test-results/screenshots-state.json.
+// Ảnh lưu vào docs/06-design/screenshots/, trạng thái giữa các giai đoạn (mã phiếu…) ở test-results/screenshots-state.json.
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +8,7 @@ const require = createRequire(new URL('../../../warranty-system-mysql/e2e/packag
 const { chromium } = require('playwright-core');
 
 export const base = process.env.E2E_BASE_URL || 'http://localhost:5173';
-const out = new URL('../../docs/screenshots/', import.meta.url);
+const out = new URL('../../docs/06-design/screenshots/', import.meta.url);
 const stateFile = new URL('../test-results/screenshots-state.json', import.meta.url);
 mkdirSync(out, { recursive: true });
 mkdirSync(new URL('../test-results/', import.meta.url), { recursive: true });

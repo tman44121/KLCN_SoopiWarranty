@@ -69,10 +69,45 @@ export default function initialize() {
     if (retry && onRetry) retry.addEventListener("click", onRetry);
   }
 
+  let fieldErrorId = 0;
   function clearFieldErrors(form) {
     if (!form) return;
-    form.querySelectorAll(".form-field.has-error").forEach((field) => field.classList.remove("has-error"));
-    form.querySelectorAll("[data-api-field-error]").forEach((node) => node.remove());
+    form.querySelectorAll("[data-api-field-error]").forEach((note) => {
+      const wrapper = note.parentElement;
+      wrapper.querySelectorAll('[aria-describedby]').forEach((input) => {
+        const ids = input.getAttribute('aria-describedby').split(/\s+/);
+        if (!ids.includes(note.id)) return;
+        const remaining = ids.filter(id => id !== note.id).join(' ');
+        if (remaining) input.setAttribute('aria-describedby', remaining);
+        else input.removeAttribute('aria-describedby');
+        if (!input.validity?.customError) input.removeAttribute('aria-invalid');
+      });
+      wrapper.classList.remove('has-error');
+      note.remove();
+    });
+  }
+
+  /** One inline error pattern for staff forms and the public portal; preserve existing hints. */
+  function fieldError(wrapper, message) {
+    if (!wrapper) return false;
+    let note = wrapper.querySelector(':scope > [data-api-field-error]');
+    if (!note) {
+      note = document.createElement('span');
+      note.id = `soopi-field-error-${++fieldErrorId}`;
+      note.className = 'form-field__error';
+      note.setAttribute('data-api-field-error', '');
+      note.setAttribute('role', 'alert');
+      wrapper.appendChild(note);
+    }
+    note.textContent = message || 'Giá trị không hợp lệ.';
+    wrapper.classList.add('has-error');
+    wrapper.querySelectorAll('input:not([hidden]):not([type="hidden"]), select, textarea, [role="radiogroup"]').forEach(input => {
+      const ids = new Set((input.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
+      ids.add(note.id);
+      input.setAttribute('aria-describedby', [...ids].join(' '));
+      input.setAttribute('aria-invalid', 'true');
+    });
+    return true;
   }
 
   /** Hiện lỗi API: lỗi theo trường nằm cạnh trường tương ứng (name hoặc data-field), còn lại là toast. */
@@ -80,8 +115,8 @@ export default function initialize() {
     clearFieldErrors(form);
     let placed = 0;
     if (form && error && Array.isArray(error.fieldErrors)) {
-      error.fieldErrors.forEach((fieldError) => {
-        const key = String(fieldError.field || "");
+      error.fieldErrors.forEach((errorField) => {
+        const key = String(errorField.field || "");
         const leaf = key.split(".").pop();
         const input =
           form.querySelector(`[data-field="${CSS.escape(key)}"]`) ||
@@ -89,15 +124,10 @@ export default function initialize() {
           form.querySelector(`[name="${CSS.escape(leaf)}"]`);
         const wrapper = input && input.closest(".form-field");
         if (!wrapper) return;
-        wrapper.classList.add("has-error");
-        const note = document.createElement("span");
-        note.className = "form-field__error";
-        note.setAttribute("data-api-field-error", "");
-        note.textContent = fieldError.message || "Giá trị không hợp lệ.";
-        wrapper.appendChild(note);
-        placed++;
+        if (fieldError(wrapper, errorField.message)) placed++;
       });
     }
+    if (placed) form.querySelector('[aria-invalid="true"]')?.focus();
     if (placed === 0 || (error && error.code !== "VALIDATION_FAILED")) {
       window.showToast((error && error.detail) || "Đã xảy ra lỗi hệ thống. Vui lòng thử lại.", "error");
     }
@@ -127,6 +157,7 @@ export default function initialize() {
       overlay.className = "modal-overlay";
       overlay.setAttribute("role", "dialog");
       overlay.setAttribute("aria-modal", "true");
+      overlay.setAttribute("aria-label", title);
       overlay.innerHTML = window.html`
         <div class="modal modal--critical">
           <div class="modal__header"><div>
@@ -162,6 +193,7 @@ export default function initialize() {
       overlay.className = "modal-overlay";
       overlay.setAttribute("role", "dialog");
       overlay.setAttribute("aria-modal", "true");
+      overlay.setAttribute("aria-label", title);
       overlay.innerHTML = window.html`
         <div class="modal modal--critical">
           <div class="modal__header"><div>
@@ -171,8 +203,7 @@ export default function initialize() {
           <div class="modal__body">
             <div class="form-field" data-reason-field>
               <label for="lml-reason-input">${label}<span class="required-mark">*</span></label>
-              <textarea id="lml-reason-input" data-reason-input placeholder="${placeholder}"></textarea>
-              <span class="form-field__error" data-reason-error hidden>Vui lòng nhập lý do.</span>
+              <textarea id="lml-reason-input" data-reason-input placeholder="${placeholder}" aria-required="true"></textarea>
             </div>
           </div>
           <div class="modal__footer">
@@ -193,8 +224,7 @@ export default function initialize() {
       overlay.querySelector("[data-confirm-ok]").addEventListener("click", () => {
         const value = input.value.trim();
         if (!value) {
-          overlay.querySelector("[data-reason-field]").classList.add("has-error");
-          overlay.querySelector("[data-reason-error]").hidden = false;
+          fieldError(overlay.querySelector("[data-reason-field]"), "Vui lòng nhập lý do.");
           input.focus();
           return;
         }
@@ -213,6 +243,7 @@ export default function initialize() {
       overlay.className = "modal-overlay";
       overlay.setAttribute("role", "dialog");
       overlay.setAttribute("aria-modal", "true");
+      overlay.setAttribute("aria-label", title);
       overlay.innerHTML = window.html`
         <div class="modal">
           <div class="modal__header"><div>
@@ -285,6 +316,7 @@ export default function initialize() {
     blockState,
     showError,
     clearFieldErrors,
+    fieldError,
     busy,
     confirm,
     promptReason,

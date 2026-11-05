@@ -75,7 +75,7 @@ export default function AccountPage() {
 
   let body: ReactNode;
   if (error) body = <div className="page-container"><LoadError message={error} retry={reload} /></div>;
-  else if (!data) body = <div className="page-container"><Skeleton /></div>;
+  else if (!data) body = <div className="page-container account-loading"><Skeleton /></div>;
   else if (route.view === "history") body = <History key={route.filter} data={data} filter={route.filter} />;
   else if (route.view === "ticket") body = <TicketDetail key={route.code} code={route.code} onChanged={reload} />;
   else if (route.view === "request") body = <NewRequest key={route.serial} data={data} serial={route.serial} onSubmitted={reload} />;
@@ -84,7 +84,7 @@ export default function AccountPage() {
 
   return (
     <div className="kh-app">
-      <CustomerHeader name={data?.profile.fullName || user?.displayName} active={ACTIVE_NAV[route.view]} />
+      <CustomerHeader name={data?.profile.fullName || user?.displayName || "Tài khoản"} active={ACTIVE_NAV[route.view]} />
       <main className="kh-main">{body}</main>
       <CustomerFooter />
     </div>
@@ -515,6 +515,7 @@ function TicketDetail({ code, onChanged }: { code: string; onChanged: () => void
 
 type PayMethod = "bank_transfer" | "card" | "momo" | "zalopay" | "vnpay";
 type PayState = "select" | "confirm" | "processing" | "success" | "error";
+type CardFormError = { field: "number" | "holder" | "expiry" | "cvv"; message: string };
 
 const METHOD_DETAILS: Record<PayMethod, { name: string; desc: string; icon: string }> = {
   bank_transfer: { name: "Chuyển khoản VietQR", desc: "Mã QR minh họa", icon: "🏦" },
@@ -614,8 +615,12 @@ function PaymentModal({
   const [cardHolder, setCardHolder] = useState(ticket.customerName ? String(ticket.customerName).toUpperCase() : "NGUYEN MINH TUAN");
   const [cardExpiry, setCardExpiry] = useState("12/28");
   const [cardCvv, setCardCvv] = useState("888");
-  const [cardError, setCardError] = useState("");
+  const [cardError, setCardError] = useState<CardFormError | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const editCard = (field: CardFormError["field"], update: (value: string) => void) => (value: string) => {
+    update(value);
+    setCardError(current => current?.field === field ? null : current);
+  };
 
   useEffect(() => {
     const overlay = modalRef.current!;
@@ -629,12 +634,16 @@ function PaymentModal({
 
   const handleCardSubmit = (e: FormEvent) => {
     e.preventDefault();
+    const invalid = (field: CardFormError["field"], message: string) => {
+      setCardError({ field, message });
+      document.getElementById(`payment-card-${field}`)?.focus();
+    };
     const cleanNum = cardNumber.replace(/\s/g, "");
-    if (cleanNum.length < 15) return setCardError("Số thẻ không hợp lệ (tối thiểu 15-16 chữ số).");
-    if (!cardHolder.trim()) return setCardError("Vui lòng nhập tên chủ thẻ.");
-    if (!/^\d{2}\/\d{2}$/.test(cardExpiry)) return setCardError("Hạn thẻ không hợp lệ (MM/YY).");
-    if (cardCvv.length < 3) return setCardError("Mã CVV không hợp lệ.");
-    setCardError("");
+    if (cleanNum.length < 15) return invalid("number", "Số thẻ không hợp lệ (tối thiểu 15-16 chữ số).");
+    if (!cardHolder.trim()) return invalid("holder", "Vui lòng nhập tên chủ thẻ.");
+    if (!/^\d{2}\/\d{2}$/.test(cardExpiry)) return invalid("expiry", "Hạn thẻ không hợp lệ (MM/YY).");
+    if (cardCvv.length < 3) return invalid("cvv", "Mã CVV không hợp lệ.");
+    setCardError(null);
     startProcessing();
   };
 
@@ -718,13 +727,13 @@ function PaymentModal({
             <CardPaymentConfirm
               costs={costs}
               cardNumber={cardNumber}
-              setCardNumber={setCardNumber}
+              setCardNumber={editCard("number", setCardNumber)}
               cardHolder={cardHolder}
-              setCardHolder={setCardHolder}
+              setCardHolder={editCard("holder", setCardHolder)}
               cardExpiry={cardExpiry}
-              setCardExpiry={setCardExpiry}
+              setCardExpiry={editCard("expiry", setCardExpiry)}
               cardCvv={cardCvv}
-              setCardCvv={setCardCvv}
+              setCardCvv={editCard("cvv", setCardCvv)}
               error={cardError}
               onSubmit={handleCardSubmit}
             />
@@ -918,7 +927,7 @@ function CardPaymentConfirm({
   setCardExpiry: (s: string) => void;
   cardCvv: string;
   setCardCvv: (s: string) => void;
-  error: string;
+  error: CardFormError | null;
   onSubmit: (e: FormEvent) => void;
 }) {
   const handleNumChange = (val: string) => {
@@ -946,54 +955,66 @@ function CardPaymentConfirm({
       </div>
 
       <div className="payment-form-group">
-        <label className="payment-form-label">Số thẻ tín dụng / ghi nợ</label>
+        <label className="payment-form-label" htmlFor="payment-card-number">Số thẻ tín dụng / ghi nợ</label>
         <input
+          id="payment-card-number"
           type="text"
           className="payment-form-input mono"
           placeholder="4111 1111 1111 1111"
           value={cardNumber}
           onChange={(e) => handleNumChange(e.target.value)}
           maxLength={19}
+          aria-invalid={error?.field === "number" || undefined}
+          aria-describedby={error?.field === "number" ? "payment-card-error" : undefined}
         />
       </div>
 
       <div className="payment-form-group">
-        <label className="payment-form-label">Tên in trên thẻ (không dấu)</label>
+        <label className="payment-form-label" htmlFor="payment-card-holder">Tên in trên thẻ (không dấu)</label>
         <input
+          id="payment-card-holder"
           type="text"
           className="payment-form-input"
           placeholder="NGUYEN MINH TUAN"
           value={cardHolder}
           onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
+          aria-invalid={error?.field === "holder" || undefined}
+          aria-describedby={error?.field === "holder" ? "payment-card-error" : undefined}
         />
       </div>
 
       <div className="payment-card-grid-row">
         <div className="payment-form-group">
-          <label className="payment-form-label">Hạn thẻ (MM/YY)</label>
+          <label className="payment-form-label" htmlFor="payment-card-expiry">Hạn thẻ (MM/YY)</label>
           <input
+            id="payment-card-expiry"
             type="text"
             className="payment-form-input mono"
             placeholder="12/28"
             value={cardExpiry}
             onChange={(e) => handleExpiryChange(e.target.value)}
             maxLength={5}
+            aria-invalid={error?.field === "expiry" || undefined}
+            aria-describedby={error?.field === "expiry" ? "payment-card-error" : undefined}
           />
         </div>
         <div className="payment-form-group">
-          <label className="payment-form-label">Mã CVV</label>
+          <label className="payment-form-label" htmlFor="payment-card-cvv">Mã CVV</label>
           <input
+            id="payment-card-cvv"
             type="password"
             className="payment-form-input mono"
             placeholder="•••"
             value={cardCvv}
             onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
             maxLength={4}
+            aria-invalid={error?.field === "cvv" || undefined}
+            aria-describedby={error?.field === "cvv" ? "payment-card-error" : undefined}
           />
         </div>
       </div>
 
-      {error && <div className="field-error" style={{ margin: "2px 0 0" }}>{error}</div>}
+      {error && <div className="field-error" id="payment-card-error" role="alert" style={{ margin: "2px 0 0" }}>{error.message}</div>}
 
       <div style={{ fontSize: 11.5, color: "var(--kh-muted)", background: "var(--kh-cream)", padding: "8px 10px", borderRadius: 8 }}>
         <strong>Thẻ mẫu:</strong> Dùng <code className="mono">4111 1111 1111 1111</code> để mô phỏng thành công, hoặc <code className="mono">4000 0000 0000 0002</code> để mô phỏng từ chối. Không nhập thẻ thật.
@@ -1327,18 +1348,30 @@ function QuoteConfirmModal({
   onConfirm: () => void;
   onClose: () => void;
 }) {
+  const modalRef = useRef<HTMLDivElement>(null);
   const [agreed, setAgreed] = useState(false);
   const deviceName = [ticket.brandName, ticket.productName].filter(Boolean).join(" ") || "Thiết bị bảo hành";
+  useEffect(() => {
+    const overlay = modalRef.current!;
+    (window as Json).openDialog(overlay);
+    return () => (window as Json).closeDialog(overlay);
+  }, []);
 
   return (
-    <div className="payment-overlay" role="dialog" aria-modal="true">
+    <div ref={modalRef} className="payment-overlay" role="dialog" aria-modal="true" aria-labelledby="quote-confirm-title"
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.preventDefault(); event.stopPropagation();
+          if (!busy) onClose();
+        }
+      }}>
       <div className="payment-modal quote-confirm-modal">
         {/* HEADER */}
         <div className="quote-modal-header">
           <div className="quote-modal-title-wrap">
             <div className="quote-modal-icon-badge">🛡️</div>
             <div>
-              <h2 className="quote-modal-title">Xác nhận chi phí sửa chữa</h2>
+              <h2 className="quote-modal-title" id="quote-confirm-title">Xác nhận chi phí sửa chữa</h2>
               <div className="quote-modal-subtitle">{deviceName} · Phiếu <span className="mono">{ticket.code}</span></div>
             </div>
           </div>
@@ -1405,7 +1438,7 @@ function QuoteConfirmModal({
             <ul className="quote-commit-list">
               <li>
                 <span className="quote-commit-icon">🛡️</span>
-                <span><strong>Bảo hành linh kiện:</strong> Linh kiện thay thế chính hãng được bảo hành 3–6 tháng.</span>
+                <span><strong>Bảo hành linh kiện:</strong> Thời hạn bảo hành áp dụng theo chính sách của từng linh kiện.</span>
               </li>
               <li>
                 <span className="quote-commit-icon">🔒</span>
@@ -1455,7 +1488,7 @@ function QuoteConfirmModal({
             className="btn-submit"
             onClick={onConfirm}
             disabled={!agreed || busy}
-            style={{ minWidth: 200, opacity: agreed ? 1 : 0.6 }}
+            style={{ opacity: agreed ? 1 : 0.6 }}
           >
             {busy ? "Đang gửi xác nhận…" : `Xác nhận duyệt giá (${fmt().money(quote.grandTotal)})`}
           </button>

@@ -19,7 +19,7 @@ const browser = await chromium.launch({ channel: 'msedge', headless: true });
 
 const DEVICES = { phone: { width: 390, height: 844, mobile: true }, tablet: { width: 820, height: 1180, mobile: true }, desktop: { width: 1440, height: 900 } };
 const ACCOUNTS = { customer: 'kh.tuan', receptionist: 'letan', dispatcher: 'dieuphoi', technician: 'ktv.chinh', warehouse: 'khovattu', cashier: 'thungan.nhu' };
-const PASSWORD = '1234'; // tài khoản demo — docs/TAI_KHOAN_DEMO.md
+const PASSWORD = '1234'; // tài khoản demo — docs/04-van-hanh/TAI_KHOAN_DEMO.md
 const PART = { sku: 'LK004', name: 'Bàn phím Laptop Dell Inspiron 15', bin: 'KHO-B-02-01' };
 
 let failures = 0;

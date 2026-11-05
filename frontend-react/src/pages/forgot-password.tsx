@@ -137,7 +137,7 @@ export default function ForgotPasswordPage() {
   }
 
   const invalid = (field: Field) => (errors[field] ? true : undefined);
-  const fieldError = (field: Field) => errors[field] && <div className="field-error" id={`${field}-error`} role="alert">{errors[field]}</div>;
+  const fieldError = (field: Field, visible = true) => <div className="field-error" id={`${field}-error`} role="alert" hidden={!errors[field] || !visible}>{errors[field] || ""}</div>;
   const suggestion = emailSuggestion(form.email);
 
   return (
@@ -202,12 +202,12 @@ export default function ForgotPasswordPage() {
                   <label htmlFor="password">Mật khẩu mới</label>
                   <PasswordInput id="password" name="password" autoComplete="new-password" placeholder="Tối thiểu 10 ký tự, gồm chữ và số"
                     value={form.password} onChange={set("password")} invalid={invalid("password")} describedBy="password-rules password-error" />
-                  {form.password && <ul className="password-rules" id="password-rules" aria-label="Điều kiện mật khẩu">
+                  <ul className="password-rules" id="password-rules" aria-label="Điều kiện mật khẩu" hidden={!form.password}>
                     {passwordRules(form.password, "").slice(0, 3).map((rule) => <li key={rule.label} className={rule.ok ? "is-ok" : ""}>
                       <span aria-hidden="true">{rule.ok ? "✓" : "•"}</span>{rule.label}
                     </li>)}
-                  </ul>}
-                  {!form.password && fieldError("password")}
+                  </ul>
+                  {fieldError("password", !form.password)}
                 </div>
 
                 <div className="form-group">

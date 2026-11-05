@@ -37,8 +37,7 @@ export default function initialize() {
   }
 
   function clearErrors() {
-    document.querySelectorAll("[data-field].has-error").forEach((node) => node.classList.remove("has-error"));
-    document.querySelectorAll(".form-field__error").forEach((node) => node.setAttribute("hidden", ""));
+    window.LML_UI.clearFieldErrors(document);
     el.error.hidden = true;
     el.error.textContent = "";
   }
@@ -46,9 +45,7 @@ export default function initialize() {
   function clearField(name) {
     const wrapper = field(name);
     if (!wrapper) return;
-    wrapper.classList.remove("has-error");
-    const note = wrapper.querySelector(".form-field__error");
-    if (note) note.hidden = true;
+    window.LML_UI.clearFieldErrors(wrapper);
   }
 
   /** Mã phiếu (TN-/YC-) hoặc số Serial/IMEI. */
@@ -75,14 +72,7 @@ export default function initialize() {
   }
 
   function invalid(name, message) {
-    const wrapper = field(name);
-    if (!wrapper) return;
-    wrapper.classList.add("has-error");
-    const note = wrapper.querySelector(".form-field__error");
-    if (note) {
-      note.textContent = message;
-      note.hidden = false;
-    }
+    window.LML_UI.fieldError(field(name), message);
   }
 
   function showError(error) {
@@ -264,7 +254,10 @@ export default function initialize() {
     if (idError) invalid("lookupId", idError);
     if (!phone && byCode) invalid("lookupPhone", "Vui lòng nhập số điện thoại đã đăng ký khi gửi máy.");
     else if (phone && phoneError(phone)) invalid("lookupPhone", phoneError(phone));
-    if (document.querySelector("[data-field].has-error")) return;
+    if (document.querySelector("[data-field].has-error")) {
+      document.querySelector('[data-field].has-error [aria-invalid="true"]')?.focus();
+      return;
+    }
     try {
       if (byCode) {
         await window.LML_UI.busy(el.submit, async () => showGrant(await api.portal.lookup(code, phone)));
@@ -313,6 +306,9 @@ export default function initialize() {
 
   async function register() {
     clearErrors();
+    // BusinessDateTime owns its date-specific message; do not replace it with a missing-value error.
+    const date = document.querySelector('#reg-time-date');
+    if (date.validity.customError) { date.focus(); return; }
     const category = selectedCategory();
     const type = category && category.deviceTypes[0];
     const value = (id) => document.querySelector(id).value.trim();
@@ -325,7 +321,10 @@ export default function initialize() {
     let valid = true;
     required.forEach(([name, selector, message]) => { if (!value(selector)) { invalid(name, message); valid = false; } });
     if (value("#reg-phone") && phoneError(value("#reg-phone"))) { invalid("regPhone", phoneError(value("#reg-phone"))); valid = false; }
-    if (!valid || !type) return;
+    if (!valid || !type) {
+      el.register.querySelector('[aria-invalid="true"]')?.focus();
+      return;
+    }
     const chosen = value("#reg-time");
     if (businessTimeError(chosen) || businessInstant(chosen).getTime() < Date.now()) {
       invalid("regTime", businessTimeError(chosen) || "Thời gian hẹn phải ở tương lai."); return;

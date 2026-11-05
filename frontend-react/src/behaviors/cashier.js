@@ -9,6 +9,7 @@ export default function initialize() {
   const detail = document.querySelector("[data-handover-detail]");
   const state = { tickets: [], selected: null, billing: null, signed: false };
   let selectionVersion = 0;
+  let canvasAbort;
   const queueFilters = createListFilters(queue, () => renderQueue(), { statuses: { COMPLETED: 'Chờ bàn giao', AWAITING_RETURN: 'Chờ trả máy' } });
 
   async function loadQueue() {
@@ -48,6 +49,7 @@ export default function initialize() {
 
   async function selectTicket(code) {
     const version = ++selectionVersion;
+    canvasAbort?.abort();
     ui.blockState(detail, "loading");
     try {
       const ticket = await api.tickets.get(code);
@@ -66,6 +68,7 @@ export default function initialize() {
   }
 
   function renderDetail() {
+    canvasAbort?.abort();
     const ticket = state.selected;
     if (!ticket) {
       ui.blockState(detail, "empty", { desc: "Chọn một phiếu trong danh sách “Sẵn sàng bàn giao” để thu tiền và bàn giao." });
@@ -146,18 +149,36 @@ export default function initialize() {
   }
 
   function bindCanvas(canvas) {
+    canvasAbort = new AbortController();
     const context = canvas.getContext("2d");
     context.strokeStyle = getComputedStyle(canvas).getPropertyValue("--text-strong").trim();
     context.lineWidth = 2;
     context.lineCap = "round";
-    let drawing = false;
+    let activePointer = null;
+    const stopDrawing = (event) => {
+      if (event?.pointerId !== undefined && event.pointerId !== activePointer) return;
+      const pointerId = activePointer;
+      activePointer = null;
+      if (pointerId !== null && canvas.hasPointerCapture(pointerId)) canvas.releasePointerCapture(pointerId);
+    };
     const point = (event) => {
       const rect = canvas.getBoundingClientRect();
       return { x: ((event.clientX - rect.left) / rect.width) * canvas.width, y: ((event.clientY - rect.top) / rect.height) * canvas.height };
     };
-    canvas.addEventListener("pointerdown", (event) => { drawing = true; const p = point(event); context.beginPath(); context.moveTo(p.x, p.y); canvas.setPointerCapture(event.pointerId); });
-    canvas.addEventListener("pointermove", (event) => { if (!drawing) return; const p = point(event); context.lineTo(p.x, p.y); context.stroke(); state.signed = true; });
-    canvas.addEventListener("pointerup", () => { drawing = false; });
+    canvas.addEventListener("pointerdown", (event) => {
+      if (activePointer !== null || event.button !== 0) return;
+      activePointer = event.pointerId;
+      const p = point(event);
+      context.beginPath(); context.moveTo(p.x, p.y);
+      canvas.setPointerCapture(event.pointerId);
+    });
+    canvas.addEventListener("pointermove", (event) => {
+      if (event.pointerId !== activePointer) return;
+      const p = point(event); context.lineTo(p.x, p.y); context.stroke(); state.signed = true;
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => canvas.addEventListener(type, stopDrawing));
+    // Re-rendering the detail replaces this canvas; avoid retaining it through a window listener.
+    window.addEventListener('blur', stopDrawing, { signal: canvasAbort.signal });
   }
 
   function canvasBlob(canvas) {

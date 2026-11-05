@@ -189,7 +189,7 @@ export default function initialize() {
     );
   }
 
-  function renderDetail() {
+  function renderDetail(focusSelector) {
     const t = state.ticket;
     if (!t) return;
     const sections = [summaryCard(t)];
@@ -221,6 +221,7 @@ export default function initialize() {
     renderTicketMedia(el.detail.querySelector("[data-ticket-media]"), t);
     bindDetail(t);
     tickTimers();
+    if (focusSelector) el.detail.querySelector(focusSelector)?.focus({ preventScroll: true });
   }
 
   /* ---- Chẩn đoán & phân loại bảo hành (T3/T3b — UI 16C, 16C2) ---- */
@@ -257,7 +258,7 @@ export default function initialize() {
     const needsReason = d.classification !== "FREE_WARRANTY";
     const needsNote = reclassRequired(t, d.classification);
     const toggle = (name, value, current, label, tone) =>
-      html`<button type="button" class="result-toggle__btn ${current === value ? `is-active--${tone}` : ""}" data-${name}="${value}">${label}</button>`;
+      html`<button type="button" class="result-toggle__btn ${current === value ? `is-active--${tone}` : ""}" aria-pressed="${current === value}" data-${name}="${value}">${label}</button>`;
     return card(
       revise ? "Sửa lại phân loại" : "Chẩn đoán & phân loại bảo hành",
       `Lễ tân ghi nhận ban đầu: ${(L.WARRANTY_STATUS[(t.warrantyAtIntake || {}).status] || {}).label || "—"}`,
@@ -268,7 +269,7 @@ export default function initialize() {
                 <div class="qc-step">
                   <span class="qc-step__index">${pad(i + 1)}</span>
                   <span class="qc-step__label">${c.item}</span>
-                  <div class="result-toggle" data-check-index="${i}">
+                  <div class="result-toggle" data-check-index="${i}" role="group" aria-label="${c.item}">
                     ${toggle("check-result", "PASS", c.result, "Đạt", "PASS")}
                     ${toggle("check-result", "FAIL", c.result, "Không đạt", "FAIL")}
                     ${toggle("check-result", "NA", c.result, "Không áp dụng", "NA")}
@@ -284,8 +285,8 @@ export default function initialize() {
             <label for="insp-water">Thiết bị có dấu hiệu vào nước</label>
           </div>
           <div class="form-field" data-field="classification">
-            <label>Tình trạng bảo hành thực tế<span class="required-mark">*</span></label>
-            <div class="result-toggle">
+            <label id="insp-classification-label">Tình trạng bảo hành thực tế<span class="required-mark">*</span></label>
+            <div class="result-toggle" role="group" aria-labelledby="insp-classification-label">
               ${toggle("classification", "FREE_WARRANTY", d.classification, "Trong bảo hành", "PASS")}
               ${toggle("classification", "OUT_OF_WARRANTY", d.classification, "Ngoài bảo hành", "PASS")}
               ${toggle("classification", "PARTIAL_WARRANTY", d.classification, "Bảo hành một phần", "PASS")}
@@ -528,7 +529,7 @@ export default function initialize() {
     const pending = values.includes("PENDING");
     const failed = values.includes("FAIL");
     const toggle = (code, value, label) =>
-      html`<button type="button" class="result-toggle__btn ${qc.steps[code] === value ? `is-active--${value}` : ""}" data-qc-step="${code}" data-qc-value="${value}">${label}</button>`;
+      html`<button type="button" class="result-toggle__btn ${qc.steps[code] === value ? `is-active--${value}` : ""}" aria-pressed="${qc.steps[code] === value}" data-qc-step="${code}" data-qc-value="${value}">${label}</button>`;
     return card(
       "Sửa chữa & kiểm tra chất lượng (QC)",
       "Hoàn tất đủ 6 bước trước khi xác nhận sửa chữa xong",
@@ -542,7 +543,7 @@ export default function initialize() {
             <div class="qc-step">
               <span class="qc-step__index">${pad(i + 1)}</span>
               <span class="qc-step__label">${s.label}</span>
-              <div class="result-toggle">
+              <div class="result-toggle" role="group" aria-label="${s.label}">
                 ${toggle(s.code, "PASS", "Đạt")}${toggle(s.code, "FAIL", "Không đạt")}${toggle(s.code, "NA", "Không áp dụng")}
               </div>
             </div>`)}</div>
@@ -643,14 +644,16 @@ export default function initialize() {
     });
     form.querySelectorAll("[data-check-result]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        d.checklist[Number(btn.closest("[data-check-index]").getAttribute("data-check-index"))].result = btn.getAttribute("data-check-result");
-        renderDetail();
+        const index = Number(btn.closest('[data-check-index]').getAttribute('data-check-index'));
+        const result = btn.getAttribute('data-check-result');
+        d.checklist[index].result = result;
+        renderDetail(`[data-check-index="${index}"] [data-check-result="${CSS.escape(result)}"]`);
       });
     });
     form.querySelectorAll("[data-classification]").forEach((btn) => {
       btn.addEventListener("click", () => {
         d.classification = btn.getAttribute("data-classification");
-        renderDetail();
+        renderDetail(`[data-classification="${CSS.escape(d.classification)}"]`);
       });
     });
     const cancel = form.querySelector("[data-cancel-revise]");
@@ -762,8 +765,9 @@ export default function initialize() {
     });
     form.querySelectorAll("[data-qc-step]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        qc.steps[btn.getAttribute("data-qc-step")] = btn.getAttribute("data-qc-value");
-        renderDetail();
+        const code = btn.getAttribute('data-qc-step'), value = btn.getAttribute('data-qc-value');
+        qc.steps[code] = value;
+        renderDetail(`[data-qc-step="${CSS.escape(code)}"][data-qc-value="${CSS.escape(value)}"]`);
       });
     });
     form.querySelector("[data-submit-qc]").addEventListener("click", (e) => {

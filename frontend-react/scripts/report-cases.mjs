@@ -1,6 +1,6 @@
 // Test case chức năng cho báo cáo (chương 5): ca hợp lệ, ca sai dữ liệu, ca thiếu quyền, gửi thẳng tới API.
 // GHI DỮ LIỆU vào database API đang dùng — chạy trên database kiểm thử riêng (cấu hình api-kiemthu trong .claude/launch.json).
-// Chạy sau `node scripts/lifecycle.mjs ...` (đọc test-results/lifecycle/state.json). Tài khoản mẫu: docs/TAI_KHOAN_DEMO.md.
+// Chạy sau `node scripts/lifecycle.mjs ...` (đọc test-results/lifecycle/state.json). Tài khoản mẫu: docs/04-van-hanh/TAI_KHOAN_DEMO.md.
 //   node scripts/report-cases.mjs      → test-results/report-cases.json
 import fs from 'node:fs';
 

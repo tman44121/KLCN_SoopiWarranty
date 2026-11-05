@@ -175,12 +175,12 @@ export default function ChatBubble({ customer, launcherTarget, ticketRequest }: 
 
   return <>
     {createPortal(<button ref={launcher} type="button" className="icon-button chat-header-launcher" data-chat-open="" title="Tin nhắn"
-      aria-label="Mở chat hỗ trợ" aria-expanded={open} aria-controls="support-chat" aria-haspopup="dialog" onClick={expand}>
+      aria-label="Mở chat hỗ trợ" aria-expanded={open} aria-controls={open ? "support-chat" : undefined} aria-haspopup="dialog" onClick={expand}>
       <Icon glyph="chatDots" />{unread > 0 && <span className="chat-fab-badge" aria-label={`${unread} tin nhắn chưa đọc`}>{unread > 99 ? '99+' : unread}</span>}
     </button>, launcherTarget)}
     {minimized && !open && createPortal(<div className="chat-mini">
       <button ref={miniLauncher} type="button" className="chat-mini-restore" onClick={expand} title={selected?.name || 'Chat hỗ trợ'}
-        aria-label={selected ? `Mở lại chat với ${selected.name}` : 'Mở lại chat hỗ trợ'} aria-haspopup="dialog" aria-controls="support-chat">
+        aria-label={selected ? `Mở lại chat với ${selected.name}` : 'Mở lại chat hỗ trợ'} aria-haspopup="dialog" aria-controls={open ? "support-chat" : undefined}>
         {selected ? <span aria-hidden="true">{selected.name.trim().split(/\s+/).slice(-2).map(word => word[0]).join('').toLocaleUpperCase('vi-VN')}</span> : <Icon glyph="chatDots" />}
         {unread > 0 && <span className="chat-fab-badge" aria-label={`${unread} tin nhắn chưa đọc`}>{unread > 99 ? '99+' : unread}</span>}
       </button>

@@ -291,7 +291,7 @@ export default function WarehousePage() {
                 {"—"}
               </div>
             </div>
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0} role="region" aria-label="Bảng tồn kho linh kiện">
               <table className="data-table">
                 <thead>
                   <tr>

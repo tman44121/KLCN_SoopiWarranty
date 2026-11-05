@@ -26,6 +26,7 @@ export function createListFilters(container, onChange, { statuses = {}, dateKey 
   const toolbar = document.createElement('div');
   toolbar.className = 'toolbar list-filters';
   toolbar.setAttribute('aria-label', 'Tìm kiếm và lọc danh sách');
+  toolbar.setAttribute('role', 'group');
   const { html } = window;
   toolbar.innerHTML = html`
     ${search ? html`<label class="toolbar__field list-filters__search">Tìm kiếm<input type="search" class="text-field" data-list-q placeholder="Mã phiếu, khách hàng, thiết bị…"></label>` : ''}

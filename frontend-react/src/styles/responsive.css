@@ -68,7 +68,7 @@
     position: fixed;
     inset: 0;
     z-index: calc(var(--z-dropdown) - 1);
-    background: rgba(41, 53, 74, 0.4);
+    background: color-mix(in srgb, var(--surface-inverse) 40%, transparent);
   }
 
   .app-menu-toggle {
@@ -461,12 +461,17 @@
     min-height: 44px;
   }
 
-  .btn--sm {
-    min-height: 36px;
+  .btn--sm,
+  .data-table thead th.is-sortable .sort-button {
+    min-height: 44px;
   }
 
   .icon-button,
   .pagination__nav-btn {
+    min-width: 44px;
+  }
+
+  .result-toggle__btn {
     min-width: 44px;
   }
 
@@ -482,6 +487,20 @@
   .checkbox-row input[type="checkbox"] {
     width: 20px;
     height: 20px;
+  }
+
+  .checkbox-row {
+    align-items: center;
+    padding-block: 0;
+  }
+
+  .checkbox-row label {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-height: 44px;
+    padding-block: 12px;
+    cursor: pointer;
   }
 
   /* Bảng nhập liệu (dòng báo giá, dòng phiếu kho) và dòng hạng mục cũng là vùng chạm. */

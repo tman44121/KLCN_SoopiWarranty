@@ -1,9 +1,9 @@
-// Reuse the original project's installed browser runner; all API calls are mocked.
+// Isolated Edge runner; all API calls are mocked.
 import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
 import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-const require = createRequire(process.env.PLAYWRIGHT_PACKAGE || new URL('../../../warranty-system-mysql/e2e/package.json', import.meta.url));
+const require = createRequire(process.env.PLAYWRIGHT_PACKAGE || import.meta.url);
 const { chromium } = require('playwright-core');
 const base = process.env.E2E_BASE_URL || 'http://localhost:5173';
 const output = new URL('../test-results/', import.meta.url);
@@ -134,7 +134,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
   await staff.page.fill('#new-password', 'Mock-new-password1');
   await staff.page.fill('#confirm-password', 'Not-matching1');
   await staff.page.click('[data-change-password-form] button[type="submit"]');
-  await staff.page.getByText('Mật khẩu nhập lại không khớp.', { exact: true }).waitFor(); assertions++;
+  await staff.page.getByText('Mật khẩu nhập lại không khớp với mật khẩu mới.', { exact: true }).waitFor(); assertions++;
   assert(!staff.calls.includes('/auth/change-password')); assertions++;
   await staff.page.fill('#confirm-password', 'Mock-new-password1');
   await staff.page.click('[data-change-password-form] button[type="submit"]');
@@ -179,7 +179,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
   await s.page.waitForSelector('#reg-category option[value="PHONE"]', { state: 'attached' });
   await s.page.click('[data-lookup-submit]');
   assert(await s.page.locator('[data-field="lookupId"]').evaluate(node => node.classList.contains('has-error'))); assertions++;
-  await s.page.fill('#lookupId', 'TN-MOCK');
+  await s.page.fill('#lookupId', 'TN-2030-1002-00001');
   await s.page.fill('#lookupPhone', '0900000000');
   await s.page.click('[data-lookup-submit]');
   await s.page.getByText('Không tìm thấy mã tra cứu thử.', { exact: true }).waitFor(); assertions++;
@@ -287,7 +287,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await c.page.fill('#pw-new', 'Khach-mat-khau-2');
     await c.page.fill('#pw-confirm', 'khac');
     await c.page.getByRole('button', { name: 'Đổi mật khẩu' }).click();
-    await c.page.getByText('Mật khẩu xác nhận không khớp.').waitFor(); assertions++;
+    await c.page.getByText('Mật khẩu xác nhận chưa khớp với mật khẩu mới.', { exact: true }).waitFor(); assertions++;
     assert.equal(await c.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `account ${width}: horizontal scroll`); assertions++;
     if (width === 1440) {
       await c.page.goto(base + '/portal');

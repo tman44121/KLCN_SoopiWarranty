@@ -47,6 +47,19 @@ test('text/background token pairs meet WCAG AA (4.5:1)', () => {
   assert.deepEqual(failing.map((p) => `${p.fg} on ${p.bg}: ${p.ratio.toFixed(2)}:1`), []);
 });
 
+test('control boundaries remain distinguishable from paper and cream at 3:1', () => {
+  for (const surface of ['--surface-card', '--surface-page']) {
+    assert(contrast('--border-control', surface) >= 3, `--border-control on ${surface}`);
+  }
+});
+
+test('component colours resolve through the shared palette', () => {
+  for (const name of ['base.css', 'components.css', 'responsive.css', 'customer.css']) {
+    const source = css(name).replace(/\/\*[\s\S]*?\*\//g, '');
+    assert(!/#[0-9a-f]{3,8}\b|\brgba?\(/i.test(source), `${name}: literal colour outside palette`);
+  }
+});
+
 test('account uses shared colors, with readable payment provider QR ink', () => {
   const account = readFileSync(new URL('../src/pages/account.tsx', import.meta.url), 'utf8');
   assert.deepEqual(account.match(/#[0-9a-fA-F]{3,8}\b/g) || [], []);
@@ -66,7 +79,7 @@ const rules = (source) => [...source.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/
 const customerRules = [...rules(css('customer.css')), ...rules(css('brand.css'))];
 
 test('honey and peach are text colours only on dark surfaces', () => {
-  const darkSurface = /warranty-hero-banner|lookup-form|footer|\.dark-|\.cta-/;
+  const darkSurface = /warranty-hero-banner|lookup-form|footer|\.dark-|\.cta-|\.home-review-summary/;
   const offenders = customerRules
     .filter((r) => /(^|[;\s])color:\s*var\(--(kh-honey|kh-peach|chart-series-2|color-destructive-border)\)/.test(r.body))
     .filter((r) => !darkSurface.test(r.selector))

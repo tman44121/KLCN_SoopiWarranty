@@ -388,6 +388,14 @@ export default function initialize() {
     return active ? active.getAttribute("data-value") : null;
   }
 
+  function selectCosmetic(group, selected) {
+    group.querySelectorAll('.result-toggle__btn').forEach(button => {
+      const active = button === selected;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+  }
+
   function validate() {
     const errors = [];
     const need = (condition, field, message) => {
@@ -518,7 +526,7 @@ export default function initialize() {
     el.ack.checked = false;
     el.ackError.hidden = true;
     document.querySelectorAll("[data-cosmetic]").forEach((group) => {
-      group.querySelectorAll(".result-toggle__btn").forEach((btn, i) => btn.classList.toggle("is-active", i === 0));
+      selectCosmetic(group, group.querySelector('.result-toggle__btn'));
     });
     el.category.value = "";
     onCategoryChange();
@@ -801,8 +809,7 @@ export default function initialize() {
     document.querySelectorAll("[data-cosmetic]").forEach((group) => {
       group.querySelectorAll(".result-toggle__btn").forEach((btn) => {
         btn.addEventListener("click", () => {
-          group.querySelectorAll(".result-toggle__btn").forEach((b) => b.classList.remove("is-active"));
-          btn.classList.add("is-active");
+          selectCosmetic(group, btn);
           markDirty();
         });
       });

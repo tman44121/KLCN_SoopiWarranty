@@ -142,9 +142,9 @@ export default function RegisterPage() {
 
   const invalid = (field: Field) => (errorOf(field) ? true : undefined);
   const valid = (field: Field) => (touched[field] && form[field] && !errorOf(field) ? "true" : undefined);
-  const fieldError = (field: Field) => {
+  const fieldError = (field: Field, visible = true) => {
     const message = errorOf(field);
-    return message && <div className="field-error" id={`${field}-error`} role="alert">{message}</div>;
+    return <div className="field-error" id={`${field}-error`} role="alert" hidden={!message || !visible}>{message || ""}</div>;
   };
   const suggestion = emailSuggestion(form.email);
   const rules = passwordRules(form.password, form.phone);
@@ -256,12 +256,12 @@ export default function RegisterPage() {
               <label htmlFor="password">Mật khẩu</label>
               <PasswordInput id="password" name="password" autoComplete="new-password" placeholder="Tối thiểu 10 ký tự, gồm chữ và số"
                 value={form.password} onChange={set("password")} invalid={invalid("password")} describedBy="password-rules password-error" />
-              {form.password && <ul className="password-rules" id="password-rules" aria-label="Điều kiện mật khẩu">
+              <ul className="password-rules" id="password-rules" aria-label="Điều kiện mật khẩu" hidden={!form.password}>
                 {rules.map((rule) => <li key={rule.label} className={rule.ok ? "is-ok" : ""}>
                   <span aria-hidden="true">{rule.ok ? "✓" : "•"}</span>{rule.label}
                 </li>)}
-              </ul>}
-              {(serverErrors.password || !form.password) && fieldError("password")}
+              </ul>
+              {fieldError("password", Boolean(serverErrors.password || !form.password))}
             </div>
 
             <div className="form-group">

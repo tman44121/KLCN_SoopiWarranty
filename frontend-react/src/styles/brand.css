@@ -5,6 +5,8 @@
    ========================================================================== */
 
 :root {
+  --surface-media: #000000;
+  --text-on-dark-muted: #c9d1dc;
   /* Payment provider identity: QR ink, readable text and outline are separate roles. */
   --payment-momo-ink: #a21caf;
   --payment-momo-text: #9d174d;
@@ -19,6 +21,7 @@
 
   /* ---- Borders ---- */
   --border-universal: #d9e3db;
+  --border-control: #62716c;
   --border-divider: #eaefe9;
 
   /* ---- Primary: Xanh rừng ---- */

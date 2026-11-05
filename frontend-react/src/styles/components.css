@@ -198,7 +198,7 @@
 .header-search input {
   width: 100%;
   padding: 8px 12px 8px 34px;
-  border: 1px solid var(--border-universal);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-input);
   background: var(--surface-utility);
   font-size: 13px;
@@ -475,13 +475,13 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.5);
+  border: 2px solid color-mix(in srgb, var(--surface-card) 50%, transparent);
   border-top-color: var(--text-on-primary);
   animation: btn-spin 0.6s linear infinite;
 }
 
 .btn--secondary.btn--loading::after {
-  border: 2px solid rgba(51, 65, 85, 0.25);
+  border: 2px solid color-mix(in srgb, var(--surface-inverse) 25%, transparent);
   border-top-color: var(--text-default);
 }
 
@@ -607,7 +607,7 @@
 .text-field {
   height: 30px;
   padding: 0 10px;
-  border: 1px solid var(--border-universal);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-input);
   background: var(--surface-card);
   font-size: 12.5px;
@@ -976,7 +976,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: color-mix(in srgb, var(--surface-inverse) 45%, transparent);
   z-index: var(--z-modal-overlay);
   display: flex;
   align-items: center;
@@ -1374,6 +1374,11 @@ button.queue-item {
 
 .result-toggle__btn:last-child {
   border-right: none;
+}
+
+/* Keep the focus ring inside the segmented group's clipped edges. */
+.result-toggle__btn:focus-visible {
+  outline-offset: -3px;
 }
 
 .result-toggle__btn:hover {
@@ -1860,7 +1865,7 @@ button.queue-item {
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.35);
+  background: color-mix(in srgb, var(--surface-inverse) 35%, transparent);
   z-index: var(--z-modal-overlay);
   display: flex;
   justify-content: flex-end;
@@ -1942,7 +1947,7 @@ button.queue-item {
 .form-field textarea {
   height: 34px;
   padding: 0 10px;
-  border: 1px solid var(--border-universal);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-input);
   font-size: 12.5px;
   color: var(--text-strong);
@@ -2184,7 +2189,7 @@ a.request-media-frame:hover img {
 
 video.request-media-frame {
   object-fit: contain;
-  background: #000;
+  background: var(--surface-media);
 }
 
 .request-media-frame.is-loading {
@@ -2882,16 +2887,16 @@ video.request-media-frame {
 .access-report p { margin: 8px 0; }
 .access-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; }
 .access-filters label, .access-log-controls label { display: grid; gap: 6px; min-width: 0; font-weight: 600; }
-.access-filters input, .access-filters select, .access-log-controls select { width: 100%; min-width: 0; padding: 9px; border: 1px solid var(--border-default, #94a3b8); border-radius: 6px; background: white; color: var(--text-primary, #1f2937); }
+.access-filters input, .access-filters select, .access-log-controls select { width: 100%; min-width: 0; padding: 9px; border: 1px solid var(--border-control); border-radius: 6px; background: var(--surface-card); color: var(--text-strong); }
 .access-actions, .access-log-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
 .access-actions { grid-column: 1 / -1; }
 .access-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
-.access-report .access-meta { font-size: 13px; color: var(--text-secondary, #475569); }
+.access-report .access-meta { font-size: 13px; color: var(--text-muted); }
 .access-pagination { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
 .access-chart { overflow-x: auto; max-width: 100%; }
 .access-report .data-table td { overflow-wrap: anywhere; }
-.access-report .data-table small { display: block; color: var(--text-secondary, #475569); }
-.admin-help { margin: 12px 0; color: var(--text-secondary, #475569); font-size: 13px; }
+.access-report .data-table small { display: block; color: var(--text-muted); }
+.admin-help { margin: 12px 0; color: var(--text-muted); font-size: 13px; }
 .admin-help > summary { width: fit-content; cursor: pointer; font-weight: 600; }
 .admin-help ul { margin: 8px 0; padding-left: 20px; }
 .admin-help li + li { margin-top: 4px; }

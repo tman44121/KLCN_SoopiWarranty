@@ -282,7 +282,7 @@ export default function TicketsPage() {
               {"—"}
             </div>
           </div>
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0} role="region" aria-label="Danh sách phiếu bảo hành">
             <table className="data-table data-table--fluid">
               <thead>
                 <tr>
