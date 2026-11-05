@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using Soopi.Api.Data;
 using Soopi.Api.Data.Stores;
 using Soopi.Api.Domain.Shared;
 using Soopi.Api.DTOs.Identity;
@@ -10,8 +11,8 @@ using Soopi.Api.Services.Shared;
 namespace Soopi.Api.Services.Identity;
 
 /// <summary>
-/// OTP 6 chữ số gửi qua email: sống 5 phút, dùng một lần, tối đa 5 lần nhập sai. Không chạy trong transaction của người gọi
-/// để lần nhập sai luôn được ghi lại kể cả khi thao tác chính thất bại.
+/// OTP 6 chữ số gửi qua email: sống 5 phút, dùng một lần, tối đa 5 lần nhập sai. Xác minh trong giao dịch riêng trước
+/// nghiệp vụ đăng ký/khôi phục để lượt sai được commit trước khi trả lỗi.
 /// </summary>
 public sealed partial class OtpService
 {
@@ -28,16 +29,19 @@ public sealed partial class OtpService
     private readonly RateLimiter limiter;
     private readonly TimeProvider clock;
     private readonly ILogger<OtpService> logger;
+    private readonly TransactionRunner transactions;
     private readonly string subject;
     private readonly string template;
 
-    public OtpService(OtpStore store, IEmailSender email, RateLimiter limiter, TimeProvider clock, IConfiguration configuration, ILogger<OtpService> logger)
+    public OtpService(OtpStore store, IEmailSender email, RateLimiter limiter, TimeProvider clock, IConfiguration configuration, ILogger<OtpService> logger,
+        TransactionRunner transactions)
     {
         this.store = store;
         this.email = email;
         this.limiter = limiter;
         this.clock = clock;
         this.logger = logger;
+        this.transactions = transactions;
         var configuredSubject = configuration["Email:OtpSubject"];
         subject = string.IsNullOrWhiteSpace(configuredSubject) ? DefaultSubject : configuredSubject;
         var configured = configuration["Email:OtpTemplate"];
@@ -70,30 +74,32 @@ public sealed partial class OtpService
     /// <summary>Sai mã, hết hạn, đã dùng hay sai quá số lần đều trả cùng một lỗi.</summary>
     public async Task ConsumeAsync(string address, OtpPurpose purpose, string? code)
     {
-        var pending = await MatchAsync(address, purpose, code);
-        if (!await store.ConsumeAsync(pending.Id, clock.GetUtcNow())) throw new DomainException(ErrorCode.OTP_INVALID);
+        if (!await MatchAsync(address, purpose, code, consume: true)) throw new DomainException(ErrorCode.OTP_INVALID);
     }
 
     /// <summary>
     /// Kiểm mã mà không tiêu (web chỉ mở bước đặt mật khẩu khi mã đúng). Lần sai vẫn được đếm chung với ConsumeAsync nên
     /// tổng số lần thử của một mã vẫn tối đa 5.
     /// </summary>
-    public Task VerifyAsync(string address, OtpPurpose purpose, string? code) => MatchAsync(address, purpose, code);
+    public async Task VerifyAsync(string address, OtpPurpose purpose, string? code)
+    {
+        if (!await MatchAsync(address, purpose, code, consume: false)) throw new DomainException(ErrorCode.OTP_INVALID);
+    }
 
-    private async Task<PendingOtp> MatchAsync(string address, OtpPurpose purpose, string? code)
+    private Task<bool> MatchAsync(string address, OtpPurpose purpose, string? code, bool consume) => transactions.InTransactionAsync(async () =>
     {
         var pending = await store.LatestAsync(address, purpose.ToString(), clock.GetUtcNow());
-        if (pending is null || pending.FailedAttempts >= MaxFailedAttempts) throw new DomainException(ErrorCode.OTP_INVALID);
+        if (pending is null || pending.ExpiresAt <= clock.GetUtcNow() || pending.FailedAttempts >= MaxFailedAttempts) return false;
         var matches = code is not null
             && SixDigits().IsMatch(code)
             && CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(Hash(code)), Encoding.ASCII.GetBytes(pending.CodeHash.Trim()));
         if (!matches)
         {
             await store.RecordFailureAsync(pending.Id);
-            throw new DomainException(ErrorCode.OTP_INVALID);
+            return false;
         }
-        return pending;
-    }
+        return !consume || await store.ConsumeAsync(pending.Id, clock.GetUtcNow());
+    });
 
     private static string Hash(string code) => AuthService.Hash(code);
 

@@ -123,7 +123,7 @@ public sealed class CustomerProfileStore(Sql sql)
     }
 }
 
-public sealed record PendingOtp(long Id, string CodeHash, int FailedAttempts);
+public sealed record PendingOtp(long Id, string CodeHash, int FailedAttempts, DateTimeOffset ExpiresAt);
 
 /// <summary>Bảng MaXacThucOTP: chỉ lưu SHA-256 của mã.</summary>
 public sealed class OtpStore(Sql sql, TransactionRunner transactions)
@@ -143,9 +143,9 @@ public sealed class OtpStore(Sql sql, TransactionRunner transactions)
     /// <summary>Mã mới nhất chưa dùng và chưa hết hạn.</summary>
     public Task<PendingOtp?> LatestAsync(string email, string purpose, DateTimeOffset now) =>
         sql.FirstOrDefaultAsync(
-            "SELECT TOP 1 MaOTP, MaHash, SoLanNhapSai FROM MaXacThucOTP WHERE Email = ? AND MucDich = ? "
+            "SELECT TOP 1 MaOTP, MaHash, SoLanNhapSai, HetHan FROM MaXacThucOTP" + sql.LockHint + " WHERE Email = ? AND MucDich = ? "
             + "AND DaDungLuc IS NULL AND HetHan > ? ORDER BY NgayTao DESC, MaOTP DESC",
-            row => new PendingOtp(row.Long("MaOTP"), row.Str("MaHash")!, row.Int("SoLanNhapSai")),
+            row => new PendingOtp(row.Long("MaOTP"), row.Str("MaHash")!, row.Int("SoLanNhapSai"), row.Time("HetHan")!.Value),
             email, purpose, now);
 
     public Task RecordFailureAsync(long id) =>
@@ -153,5 +153,5 @@ public sealed class OtpStore(Sql sql, TransactionRunner transactions)
 
     /// <summary>Đánh dấu đã dùng; false nếu phiên khác vừa dùng trước (chống dùng hai lần).</summary>
     public async Task<bool> ConsumeAsync(long id, DateTimeOffset now) =>
-        await sql.ExecuteAsync("UPDATE MaXacThucOTP SET DaDungLuc = ? WHERE MaOTP = ? AND DaDungLuc IS NULL", now, id) == 1;
+        await sql.ExecuteAsync("UPDATE MaXacThucOTP SET DaDungLuc = ? WHERE MaOTP = ? AND DaDungLuc IS NULL AND HetHan > ?", now, id, now) == 1;
 }

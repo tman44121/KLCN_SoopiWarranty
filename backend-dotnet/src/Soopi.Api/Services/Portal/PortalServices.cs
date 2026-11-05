@@ -94,12 +94,13 @@ public sealed record ProfileUpdate([Email, Size(0, 100)] string? Email, [Size(0,
 /// </summary>
 public sealed class PortalPolicy(AppDbContext db, CurrentActor actors)
 {
-    /// <summary>Yêu cầu không gắn mã khách, chỉ lưu SĐT người gửi (D-071): portal token đúng mã, hoặc tài khoản đang dùng SĐT đó.</summary>
-    public async Task RequireRequestAsync(string code, string? requestPhone)
+    /// <summary>Ưu tiên mã khách đã gắn; chỉ yêu cầu vãng lai mới dùng SĐT. Portal token vẫn chỉ được xem đúng mã.</summary>
+    public async Task RequireRequestAsync(string code, string? requestCustomerId, string? requestPhone)
     {
         var byToken = actors.PortalGrant?.AllowsRequest(code) == true;
         var byAccount = CustomerAccount is { } customerId
-            && await db.Customers.AnyAsync(c => c.Id == customerId && c.Status == CustomerStatus.ACTIVE && c.Phone == requestPhone);
+            && await db.Customers.AnyAsync(c => c.Id == customerId && c.Status == CustomerStatus.ACTIVE
+                && (requestCustomerId != null ? c.Id == requestCustomerId : c.Phone == requestPhone));
         if (!byToken && !byAccount) throw new DomainException(ErrorCode.NOT_FOUND);
     }
 
@@ -118,9 +119,12 @@ public sealed class PortalPolicy(AppDbContext db, CurrentActor actors)
 
 /// <summary>Tra cứu công khai bằng Mã phiếu hoặc số Serial/IMEI + SĐT (mục 9.8, D-014) và danh mục cho form đăng ký yêu cầu.</summary>
 public sealed class PortalAccessService(
-    Sql sql, AppDbContext db, ProductCatalog products, WarrantyRequestStore requests, CatalogStore catalog, JwtService tokens, RateLimiter limiter,
+    Sql sql, AppDbContext db, ProductCatalog products, CatalogStore catalog, JwtService tokens, RateLimiter limiter,
     TimeProvider clock)
 {
+    private const string RequestsByPhone = "FROM YeuCauBaoHanh yc LEFT JOIN KhachHang kh ON kh.MaKH = yc.MaKH AND kh.TrangThai = 'ACTIVE' "
+        + "WHERE CASE WHEN yc.MaKH IS NULL THEN yc.SDTKhach ELSE kh.SDT END = ?";
+
     /// <summary>Tối đa 10 lần/phút/IP để không dò được danh sách Serial.</summary>
     public async Task<WarrantyCheck> WarrantyCheckAsync(string? serial, string? clientIp)
     {
@@ -185,10 +189,8 @@ public sealed class PortalAccessService(
         }
         if (code.StartsWith("YC-", StringComparison.Ordinal))
         {
-            var request = await requests.FindAsync(code);
-            return request?["customer"] is Dictionary<string, object?> customer && PhoneNumber.Normalize(customer["phone"] as string) == phone
-                ? new PortalGrant(PortalScope.REQUEST, code)
-                : null;
+            return await sql.ScalarAsync("SELECT 1 " + RequestsByPhone + " AND yc.MaYeuCau = ?", phone, code) is not null
+                ? new PortalGrant(PortalScope.REQUEST, code) : null;
         }
         return await GrantBySerialAsync(SerialNumber.Normalize(code), phone);
     }
@@ -207,8 +209,8 @@ public sealed class PortalAccessService(
         if (tickets.FirstOrDefault(ticket => PhoneNumber.Normalize(ticket.Phone) == phone).Code is { } ticketCode)
             return new PortalGrant(PortalScope.TICKET, ticketCode);
         var requestCodes = await sql.QueryAsync(
-            "SELECT MaYeuCau FROM YeuCauBaoHanh WHERE SoSerial_IMEI = ? AND SDTKhach = ? ORDER BY NgayTao DESC, MaYeuCau DESC",
-            row => row.Str("MaYeuCau"), serial, phone);
+            "SELECT yc.MaYeuCau " + RequestsByPhone + " AND yc.SoSerial_IMEI = ? ORDER BY yc.NgayTao DESC, yc.MaYeuCau DESC",
+            row => row.Str("MaYeuCau"), phone, serial);
         return requestCodes.FirstOrDefault() is { } requestCode ? new PortalGrant(PortalScope.REQUEST, requestCode) : null;
     }
 }
@@ -255,7 +257,8 @@ public sealed class PortalWarrantyRequestService(
     {
         actors.RequireOrPortal(Permission.PORTAL_SELF);
         var request = await requests.FindAsync(code) ?? throw new DomainException(ErrorCode.NOT_FOUND);
-        await policy.RequireRequestAsync(code, (request["customer"] as Dictionary<string, object?>)?["phone"] as string);
+        await policy.RequireRequestAsync(code, request["customerId"] as string,
+            (request["customer"] as Dictionary<string, object?>)?["phone"] as string);
         return RequestView.From(request);
     }
 }

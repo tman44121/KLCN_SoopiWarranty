@@ -148,6 +148,7 @@ public sealed class CustomerService(
             await sql.ExecuteAsync("UPDATE ThietBi SET MaKH = ? WHERE MaKH = ?", targetCode, sourceCode);
             // Tăng PhienBan để lần lưu phiếu đọc trước khi gộp không ghi đè ngược MaKH (optimistic lock của phiếu).
             await sql.ExecuteAsync("UPDATE PhieuTiepNhan SET MaKH = ?, PhienBan = PhienBan + 1 WHERE MaKH = ?", targetCode, sourceCode);
+            await sql.ExecuteAsync("UPDATE YeuCauBaoHanh SET MaKH = ? WHERE MaKH = ?", targetCode, sourceCode);
             long? locked = null;
             if (source.AccountId is { } account && target.AccountId is null)
             {

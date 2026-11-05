@@ -23,6 +23,8 @@ public sealed record FileOwner(string Type, string Id, string? CustomerId, strin
 
 public sealed record StoredFile(string Id, string FileName, string ContentType, byte[] Content, FileOwner Owner);
 
+public sealed record FileMetadata(string Id, string FileName, string ContentType, string StorageKey, FileOwner Owner);
+
 /// <summary>
 /// Nội dung tệp nằm trên đĩa (<c>Storage:Directory</c>); bảng TepDinhKem giữ tên, loại, kích thước, chủ sở hữu và khóa lưu
 /// trữ (đường dẫn tương đối). Mã tệp trả cho API là MaTep.
@@ -54,22 +56,31 @@ public sealed class FileStorage(Sql sql, TimeProvider clock, IConfiguration conf
         }
     });
 
-    public async Task<StoredFile?> FindAsync(string? fileId)
+    public async Task<FileMetadata?> FindMetadataAsync(string? fileId)
     {
         if (!long.TryParse(fileId, out var id)) return null;
         var row = await sql.FirstOrDefaultAsync(
-            // Chủ phiếu (chữ ký bàn giao) hoặc hồ sơ khách đang dùng SĐT người gửi yêu cầu bảo hành.
+            // Chủ phiếu/yêu cầu đã gắn mã khách; SĐT chỉ dùng cho yêu cầu vãng lai.
             "SELECT t.LoaiChuSoHuu, t.MaChuSoHuu, t.TenTep, t.LoaiNoiDung, t.DuongDanLuuTru, t.NguoiTaiLen, "
-            + "COALESCE(ptn.MaKH, kh.MaKH) AS MaKH FROM TepDinhKem t LEFT JOIN PhieuTiepNhan ptn "
+            + "COALESCE(ptn.MaKH, yc.MaKH, kh.MaKH) AS MaKH FROM TepDinhKem t LEFT JOIN PhieuTiepNhan ptn "
             + "ON t.LoaiChuSoHuu = 'HANDOVER_SIGNATURE' AND ptn.MaPhieuTN = t.MaChuSoHuu "
             + "LEFT JOIN YeuCauBaoHanh yc ON t.LoaiChuSoHuu = 'WARRANTY_REQUEST' AND yc.MaYeuCau = t.MaChuSoHuu "
-            + "LEFT JOIN KhachHang kh ON kh.SDT = yc.SDTKhach AND kh.TrangThai = 'ACTIVE' WHERE t.MaTep = ?",
+            + "LEFT JOIN KhachHang kh ON yc.MaKH IS NULL AND kh.SDT = yc.SDTKhach AND kh.TrangThai = 'ACTIVE' WHERE t.MaTep = ?",
             row => (Name: row.Str("TenTep")!, Type: row.Str("LoaiNoiDung")!, Key: row.Str("DuongDanLuuTru")!,
                 Owner: new FileOwner(row.Str("LoaiChuSoHuu")!, row.Str("MaChuSoHuu")!, row.Str("MaKH"), row.Str("NguoiTaiLen"))),
             id);
-        if (row.Owner is null) return null;
-        var path = Resolve(row.Key);
-        return File.Exists(path) ? new StoredFile(fileId!, row.Name, row.Type, await File.ReadAllBytesAsync(path), row.Owner) : null;
+        return row.Owner is null ? null : new FileMetadata(fileId!, row.Name, row.Type, row.Key, row.Owner);
+    }
+
+    public async Task<StoredFile?> ReadAsync(FileMetadata file)
+    {
+        try
+        {
+            var content = await File.ReadAllBytesAsync(Resolve(file.StorageKey));
+            return new StoredFile(file.Id, file.FileName, file.ContentType, content, file.Owner);
+        }
+        catch (FileNotFoundException) { return null; }
+        catch (DirectoryNotFoundException) { return null; }
     }
 
     private string Resolve(string key)
@@ -109,9 +120,10 @@ public sealed class AttachmentService(FileStorage storage, Sql sql, CurrentActor
     /// <summary>POL-13; ngoài phạm vi được xem trả 404 để không lộ sự tồn tại của file.</summary>
     public async Task<StoredFile> DownloadAsync(string fileId)
     {
-        var file = await storage.FindAsync(fileId);
-        return file is not null && (CanRead(file.Owner) || await CanReadThroughTicketAsync(file.Owner))
-            ? file : throw new DomainException(ErrorCode.NOT_FOUND);
+        var file = await storage.FindMetadataAsync(fileId);
+        if (file is null || !(CanRead(file.Owner) || await CanReadThroughTicketAsync(file.Owner)))
+            throw new DomainException(ErrorCode.NOT_FOUND);
+        return await storage.ReadAsync(file) ?? throw new DomainException(ErrorCode.NOT_FOUND);
     }
 
     /// <summary>

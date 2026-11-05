@@ -13,7 +13,7 @@
 -- Script tạo database TrungTamBaoHanhDB (collation Latin1_General_100_CI_AI) nếu chưa có. Database đã có bảng hoặc sai
 -- collation thì script báo lỗi và bỏ qua mọi lô phía sau (SET NOEXEC ON) — kể cả trong SSMS — không xóa hay ghi gì.
 -- Chỉ dùng cho dev/demo. Production: chỉ 01_schema.sql + 04_app_user.sql.
--- Tài khoản demo: admin / admin123, các tài khoản khác mật khẩu 1234 (docs/TAI_KHOAN_DEMO.md).
+-- Tài khoản demo: admin / admin123, các tài khoản khác mật khẩu 1234 (docs/04-van-hanh/TAI_KHOAN_DEMO.md).
 -- ============================================================================
 SET NOEXEC OFF;
 SET ANSI_NULLS ON;
@@ -35,7 +35,7 @@ GO
 -- utf8mb4_unicode_ci của MySQL). Script không tạo/xóa database, không nạp dữ liệu.
 --   sqlcmd -S <server> -d <database> -U <quản trị> -I -b -i db/sqlserver/01_schema.sql
 --
--- Khác MySQL (xem docs/DECISIONS.md D-077 → D-081):
+-- Khác MySQL (xem docs/02-ky-thuat/DECISIONS.md D-077 → D-081):
 --   * VARCHAR/TEXT → NVARCHAR, JSON → NVARCHAR(MAX) + ISJSON, DATETIME → DATETIME2(0) giờ Việt Nam, TINYINT(1) → BIT.
 --   * Cột sinh bỏ; "một phiếu mở mỗi thiết bị", "một báo giá hiệu lực", "một yêu cầu xuất đang chờ", "SĐT khách
 --     đang hoạt động" là filtered unique index. ConMo, ThanhTien thành cột thường do Java ghi, có CHECK đối chiếu.

@@ -117,6 +117,9 @@ public sealed class SqlFixture : IAsyncLifetime
                 await sql.ExecuteAsync("DELETE ThongBao WHERE MaDoiTuong IN (?,?,?)", Id, PartA, PartB);
                 // Application credentials intentionally cannot erase audit history, even for test fixtures.
                 if (canDeleteAudit) await sql.ExecuteAsync("DELETE NhatKyThaoTac WHERE MaNguoiThaoTac IN (?,?)", Id, AccountId.ToString());
+                await sql.ExecuteAsync("DELETE MaXacThucOTP WHERE Email=?", Id + "@example.invalid");
+                await sql.ExecuteAsync("DELETE TepDinhKem WHERE LoaiChuSoHuu='WARRANTY_REQUEST' AND MaChuSoHuu IN (?,?)", "YC-" + Id, "YC-" + Id + "G");
+                await sql.ExecuteAsync("DELETE YeuCauBaoHanh WHERE MaYeuCau IN (?,?)", "YC-" + Id, "YC-" + Id + "G");
                 foreach (var table in new[] { "HoaDon_PhieuThu", "LichSuTrangThai_ThietBi", "PhieuSuaChua", "PhanCong" })
                     await sql.ExecuteAsync($"DELETE {table} WHERE MaPhieuTN=?", Id);
                 await sql.ExecuteAsync("DELETE ChiTietXuatKho WHERE MaPhieuXuat=?", Id);
@@ -128,6 +131,7 @@ public sealed class SqlFixture : IAsyncLifetime
                 foreach (var (table, key) in new[] { ("ThietBi", "MaThietBi"), ("SanPham", "MaSP"), ("LoaiThietBi", "MaLoai"),
                     ("HangSanXuat", "MaHang"), ("NhomThietBi", "MaNhom"), ("KhachHang", "MaKH"), ("NhanVien", "MaNV"), ("TramDichVu", "MaTram") })
                     await sql.ExecuteAsync($"DELETE {table} WHERE {key}=?", Id);
+                await sql.ExecuteAsync("DELETE KhachHang WHERE MaKH=?", Id + "B");
                 await sql.ExecuteAsync("DELETE LuotTruyCap WHERE MaTaiKhoan=?; DELETE TruyCapTheoNgay WHERE MaTaiKhoan=?; DELETE TaiKhoan WHERE MaTaiKhoan=?", AccountId, AccountId, AccountId);
             });
         }

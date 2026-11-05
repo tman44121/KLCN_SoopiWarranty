@@ -22,6 +22,35 @@ namespace Soopi.Tests;
 
 public class SecurityRegressionTests
 {
+    [Fact]
+    public async Task FailedLoginRetry_ReloadsTheCounterAfterTheTrackerWasCleared()
+    {
+        var commits = 0;
+        using var connection = new RecordingConnection(sql =>
+        {
+            if (sql.Contains("UPDATE [")) return Table(("Result", 1));
+            if (sql.Contains("[TaiKhoan_VaiTro]")) return Table(("MaTaiKhoan", 1L), ("MaVaiTro", "TECHNICIAN"), ("Parent", 1L));
+            if (sql.Contains("SELECT") && sql.Contains("[MatKhauHash]")) return AccountRow(sql.Contains("[NhanVien]"));
+            return Table(("Result", 1));
+        }) { BeforeCommit = () => { if (++commits == 1) throw new DbUpdateConcurrencyException("retry"); } };
+        await using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlServer(connection).Options);
+        var account = Account.Employee("staff", "unused", [Role.TECHNICIAN], "NV-1", false);
+        db.Entry(account).Property(a => a.Id).CurrentValue = 1L;
+        account.RoleRows[0].AccountId = 1L;
+        db.Accounts.Attach(account);
+        var transactions = new TransactionRunner(db);
+        var auth = new AuthService(db, new AccountStore(db), null!, null!, null!, null!, new AuditService(new Sql(db), TimeProvider.System),
+            Options.Create(new SecurityOptions()), null!, transactions, TimeProvider.System, null!);
+        var method = typeof(AuthService).GetMethod("FailedLoginAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+
+        var error = await Assert.ThrowsAsync<DomainException>(async () => await (Task)method.Invoke(auth, [account, "staff", "staff"])!);
+
+        Assert.Equal(ErrorCode.AUTH_INVALID_CREDENTIALS, error.Code);
+        Assert.Equal(4, Assert.Single(error.Arguments));
+        Assert.Equal(2, connection.Commands.Count(c => c.Sql.Contains("UPDATE [TaiKhoan]")));
+        Assert.Equal(["rollback", "commit"], connection.Transactions);
+    }
+
     private static DataTable Table(params (string Name, object? Value)[] values)
     {
         var table = new DataTable();

@@ -58,7 +58,7 @@ public sealed class WarrantyRequestStore(Sql sql)
 
     /// <summary>Yêu cầu của khách (gắn MaKH, hoặc gửi vãng lai bằng SĐT này đã chuẩn hóa), mới nhất trước — không kèm tệp.</summary>
     public Task<List<Dictionary<string, object?>>> FindByCustomerAsync(string customerId, string phone) =>
-        sql.QueryAsync($"SELECT {Columns} FROM YeuCauBaoHanh WHERE MaKH = ? OR SDTKhach = ? ORDER BY NgayTao DESC, MaYeuCau DESC", Map, customerId, phone);
+        sql.QueryAsync($"SELECT {Columns} FROM YeuCauBaoHanh WHERE MaKH = ? OR (MaKH IS NULL AND SDTKhach = ?) ORDER BY NgayTao DESC, MaYeuCau DESC", Map, customerId, phone);
 
     public async Task<bool> IsPendingAsync(string code) =>
         await sql.ScalarAsync("SELECT 1 FROM YeuCauBaoHanh WHERE MaYeuCau = ? AND TrangThai = 'PENDING_INTAKE'", code) is not null;

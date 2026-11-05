@@ -8,7 +8,7 @@
 -- utf8mb4_unicode_ci của MySQL). Script không tạo/xóa database, không nạp dữ liệu.
 --   sqlcmd -S <server> -d <database> -U <quản trị> -I -b -i db/sqlserver/01_schema.sql
 --
--- Khác MySQL (xem docs/DECISIONS.md D-077 → D-081):
+-- Khác MySQL (xem docs/02-ky-thuat/DECISIONS.md D-077 → D-081):
 --   * VARCHAR/TEXT → NVARCHAR, JSON → NVARCHAR(MAX) + ISJSON, DATETIME → DATETIME2(0) giờ Việt Nam, TINYINT(1) → BIT.
 --   * Cột sinh bỏ; "một phiếu mở mỗi thiết bị", "một báo giá hiệu lực", "một yêu cầu xuất đang chờ", "SĐT khách
 --     đang hoạt động" là filtered unique index. ConMo, ThanhTien thành cột thường do Java ghi, có CHECK đối chiếu.

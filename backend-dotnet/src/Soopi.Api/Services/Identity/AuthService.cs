@@ -181,31 +181,44 @@ public sealed class AuthService(
         var account = await accounts.FindForSignInAsync(username);
         var matches = PasswordHasher.Matches(password, account?.PasswordHash ?? PasswordHasher.DummyHash);
         if (account is null || !matches) await FailedLoginAsync(account, normalized, JavaText.Trim(username));
-        var now = clock.GetUtcNow();
-        if (account!.TemporarilyLocked(now)) throw new DomainException(ErrorCode.AUTH_TEMPORARILY_LOCKED);
-        var displayName = account.Status == AccountStatus.LOCKED ? null : await principals.ActiveNameAsync(account);
-        if (displayName is null) throw new DomainException(ErrorCode.AUTH_ACCOUNT_LOCKED);
-        if (customerOnly && account.PrincipalType != PrincipalType.CUSTOMER) throw new DomainException(ErrorCode.ACCESS_DENIED);
-        account.RegisterSuccessfulLogin(now);
-        await accounts.SaveAsync();
-        return (account, displayName);
+        var verifiedVersion = account!.SecurityVersion;
+        return await transactions.InTransactionAsync(async () =>
+        {
+            await accounts.LockAsync(account.Id);
+            var current = await accounts.FindByIdAsync(account.Id) ?? throw new DomainException(ErrorCode.AUTH_TOKEN_REVOKED);
+            if (current.SecurityVersion != verifiedVersion) throw new DomainException(ErrorCode.AUTH_TOKEN_REVOKED);
+            var now = clock.GetUtcNow();
+            if (current.TemporarilyLocked(now)) throw new DomainException(ErrorCode.AUTH_TEMPORARILY_LOCKED);
+            var displayName = current.Status == AccountStatus.LOCKED ? null : await principals.ActiveNameAsync(current);
+            if (displayName is null) throw new DomainException(ErrorCode.AUTH_ACCOUNT_LOCKED);
+            if (customerOnly && current.PrincipalType != PrincipalType.CUSTOMER) throw new DomainException(ErrorCode.ACCESS_DENIED);
+            current.RegisterSuccessfulLogin(now);
+            await accounts.SaveAsync();
+            return (current, displayName);
+        });
     }
 
     /// <summary>Báo rõ "không có tài khoản" hay "sai mật khẩu (còn n lần)" — cùng đánh đổi quyền riêng tư như D-070, đã có rate limit.</summary>
     private async Task FailedLoginAsync(Account? account, string normalized, string login)
     {
-        var now = clock.GetUtcNow();
-        if (account is not null && account.TemporarilyLocked(now)) throw new DomainException(ErrorCode.AUTH_TEMPORARILY_LOCKED);
         if (account is null)
         {
             await audit.RecordAsync(normalized, normalized, ["ANONYMOUS"], "AUTH_LOGIN_FAILED", "Đăng nhập thất bại", "ACCOUNT", normalized);
             throw new DomainException(ErrorCode.AUTH_ACCOUNT_NOT_FOUND, login);
         }
-        var locked = account.RegisterFailedLogin(now, Settings.Login.MaxFailedAttempts, Settings.Login.TemporaryLock);
-        await accounts.SaveAsync();
-        await AuditAsync(account, "AUTH_LOGIN_FAILED", "Đăng nhập thất bại");
-        if (locked) throw new DomainException(ErrorCode.AUTH_TEMPORARILY_LOCKED);
-        throw new DomainException(ErrorCode.AUTH_INVALID_CREDENTIALS, Settings.Login.MaxFailedAttempts - account.FailedLoginAttempts);
+        var result = await transactions.InTransactionAsync(async () =>
+        {
+            await accounts.LockAsync(account.Id);
+            var current = await accounts.FindByIdAsync(account.Id) ?? throw new DomainException(ErrorCode.AUTH_TOKEN_REVOKED);
+            var now = clock.GetUtcNow();
+            if (current.TemporarilyLocked(now)) return (Locked: true, Remaining: 0);
+            var shouldLock = current.RegisterFailedLogin(now, Settings.Login.MaxFailedAttempts, Settings.Login.TemporaryLock);
+            await accounts.SaveAsync();
+            await AuditAsync(current, "AUTH_LOGIN_FAILED", "Đăng nhập thất bại");
+            return (Locked: shouldLock, Remaining: Settings.Login.MaxFailedAttempts - current.FailedLoginAttempts);
+        });
+        if (result.Locked) throw new DomainException(ErrorCode.AUTH_TEMPORARILY_LOCKED);
+        throw new DomainException(ErrorCode.AUTH_INVALID_CREDENTIALS, result.Remaining);
     }
 
     private Task<AuthResult> IssueAsync(Account account, string displayName, bool remember, string familyId, string? ip, string? userAgent, bool login = false)
