@@ -46,6 +46,8 @@ export default function initialize() {
       const active = Array.from(container.querySelectorAll("[data-value]")).find((b) => b.getAttribute("data-value") === next);
       if (active) active.focus();
       if (container.closest("[data-intake-form]")) markDirty();
+      // Đã chọn thì lỗi "Vui lòng chọn…" của lần submit trước không còn đúng; giữ lại khiến người dùng tưởng chưa chọn được.
+      ui.clearFieldErrors(container.closest(".form-field"));
       listeners.forEach((listener) => listener());
     }
     container.addEventListener("click", (event) => {

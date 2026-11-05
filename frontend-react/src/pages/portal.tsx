@@ -21,7 +21,7 @@ export default function PortalPage() {
               </span>
             </div>
             <div className="form-row-group" data-field="lookupPhone">
-              <label htmlFor="lookupPhone">Số điện thoại <span className="lookup-optional">(không bắt buộc khi chỉ xem bảo hành)</span></label>
+              <label htmlFor="lookupPhone">Số điện thoại</label>
               <input type="tel" id="lookupPhone" className="regular-input" inputMode="tel" autoComplete="tel" placeholder="09xx xxx xxx" />
               <span className="form-field__error" hidden={true}>
               </span>

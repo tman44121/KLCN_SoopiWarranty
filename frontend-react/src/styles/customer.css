@@ -3097,11 +3097,6 @@ a.method-card:hover {
   color: var(--kh-peach);
 }
 
-.lookup-optional {
-  font-weight: 400;
-  opacity: 0.8;
-}
-
 .warranty-check-card .kv-row strong {
   text-align: right;
 }
