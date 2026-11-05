@@ -282,6 +282,17 @@ không chặn bản Web JavaScript. Workflow qua actionlint, kiểm YAML và qua
 kiểm tra cấu trúc, 95 liên kết local và `git diff --check` đạt. Đã đối chiếu SDK Linux với kho phát hành chính thức.
 Chưa chạy GitHub Actions hoặc kiểm thử thiết bị thật; chưa commit/push.
 
+## D-061 — Mã VietQR cho thanh toán chuyển khoản (2026-11-06)
+
+Dùng VietQR Quick Link `https://img.vietqr.io/image/<BankId>-<AccountNo>-<Template>.png?amount=..&addInfo=..`:
+không API key, không thêm thư viện. Tài khoản nhận nằm ở mục `VietQR` của appsettings (MB · 0961575900,
+template `compact2`), ghi đè được bằng biến môi trường; thiếu BankId/AccountNo thì không phát QR.
+Server (`VietQr` trong `BillingServices.cs`) chỉ trả `paymentQr` khi phiếu `COMPLETED`, `UNPAID` và tổng > 0,
+số tiền lấy đúng tổng báo giá. Nội dung `SOOPI <mã phiếu bỏ ký tự đặc biệt>` (≤ 25 ký tự) vì nhiều ngân hàng lọc dấu gạch.
+Web thu ngân hiện QR khi chọn Chuyển khoản; cổng khách web và app Flutter hiện QR trong khối chi phí.
+CSP `img-src` mở thêm `https://img.vietqr.io`. Không tự đối soát: thu ngân kiểm tra tiền vào rồi bấm xác nhận như cũ;
+tự động xác nhận (webhook ngân hàng/Casso/SePay) là việc riêng khi cần.
+
 ## Giai đoạn 3 — cách triển khai theo yêu cầu Ponytail
 
 - React Router + 10 trang TSX giữ markup và CSS cũ; module JavaScript giữ xử lý bảng/form động.

@@ -136,6 +136,8 @@ Host chạy `Soopi.Api.dll` từ thư mục publish và nhận cấu hình ngoà
   Development không có key tự sinh khóa tạm, access/portal token cũ mất hiệu lực khi restart.
 - `Storage__Directory` là thư mục bền vững ngoài repo/artifact, nên dùng đường dẫn tuyệt đối.
 - `Security__AllowedOrigins` khớp origin thật, `Push__Provider=log` theo phạm vi đã chốt.
+- `VietQR__BankId`/`VietQR__AccountNo` (mặc định MB · 0961575900 trong appsettings), tùy chọn `VietQR__AccountName`;
+  để trống BankId hoặc AccountNo thì web/app không hiện QR chuyển khoản.
 - `Email__Smtp__Password` (Gmail App Password của `hsostd74@gmail.com`) để gửi OTP; Production thiếu thì startup lỗi.
 
 ASP.NET phục vụ React cùng origin; HTTPS cần cho cookie Secure. Với proxy, cấu hình host/network chỉ cho

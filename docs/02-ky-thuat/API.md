@@ -158,7 +158,7 @@ Upload/tạo yêu cầu/bàn giao là luồng ghi, cần DB kiểm được duy�
 | Nhân viên/tài khoản | `/admin/employees`, `Controllers/Identity/` |
 | Danh mục/khách/thiết bị | `/catalog`, `/customers`, `/devices`, `CatalogCustomerDeviceControllers.cs` |
 | Phiếu/KTV/tìm kiếm | `/tickets`, `/technicians`, `/search`, `TicketControllers.cs` |
-| Báo giá/kho/thu tiền/bàn giao | `/quotations`, `/parts`, `/stock-issues`, `/stock-receipts`, `/stock-transfers`, `/stocktakes` (sheet, search, tạo, duyệt, từ chối), `/tickets/*`, `QuotationInventoryBillingControllers.cs` |
+| Báo giá/kho/thu tiền/bàn giao | `/quotations`, `/parts`, `/stock-issues`, `/stock-receipts`, `/stock-transfers`, `/stocktakes` (sheet, search, tạo, duyệt, từ chối), `/tickets/*`, `QuotationInventoryBillingControllers.cs`; `GET /tickets/{code}/billing` và `costs` của `/portal/tickets/{code}` có `paymentQr` (D-061) |
 | Portal/yêu cầu/tệp | `/portal`, `/warranty-requests`, `/files`, `PortalRequestFileControllers.cs` |
 | Báo cáo/audit/thông báo | `/reports`, `/audit-logs`, `/notifications`, `ReportNotificationControllers.cs` |
 

@@ -548,6 +548,41 @@ void main() {
     expect(find.text('TỪ CHỐI'), findsNothing);
   });
 
+  testWidgets('completed unpaid ticket shows VietQR from the server', (
+    tester,
+  ) async {
+    final data = _ticketJson()..['status'] = 'COMPLETED';
+    (data['costs'] as Map<String, dynamic>)
+      ..['total'] = 275000
+      ..['paymentQr'] = {
+        'imageUrl':
+            'https://img.vietqr.io/image/MB-0961575900-compact2.png?amount=275000&addInfo=SOOPI%20TNOLD',
+        'bankId': 'MB',
+        'accountNo': '0961575900',
+        'accountName': null,
+        'amount': 275000,
+        'transferNote': 'SOOPI TNOLD',
+      };
+    final api = _FakeApi()..detail = PortalTicketDetail.fromJson(data);
+    final auth = await _auth(api);
+    addTearDown(auth.dispose);
+    await tester.pumpWidget(
+      ChangeNotifierProvider<AuthViewModel>.value(
+        value: auth,
+        child: const MaterialApp(home: RealTicketDetailScreen(code: 'TN-OLD')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('SOOPI TNOLD'), 300);
+    expect(find.text('Chuyển khoản VietQR'), findsOneWidget);
+    expect(find.text('0961575900'), findsOneWidget);
+    final image = tester.widget<Image>(find.byType(Image).last);
+    expect(
+      (image.image as NetworkImage).url,
+      contains('amount=275000&addInfo=SOOPI%20TNOLD'),
+    );
+  });
+
   testWidgets('stopped ticket does not show an active repair step', (
     tester,
   ) async {

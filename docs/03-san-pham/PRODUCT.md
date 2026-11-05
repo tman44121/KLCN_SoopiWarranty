@@ -15,7 +15,7 @@ Soopi phục vụ một trung tâm bảo hành và sửa chữa thiết bị đi
   - **Điều phối viên:** theo dõi phiếu đang xử lý và cờ SLA, phân công hoặc đổi kỹ thuật viên, duyệt báo giá, xem báo cáo SLA, hiệu suất và nhật ký.
   - **Kỹ thuật viên:** làm việc trên hàng đợi của mình: chẩn đoán theo checklist, lập báo giá, yêu cầu xuất linh kiện, sửa, ghi kết quả và QC 6 bước, ghi chú cho khách hoặc nội bộ.
   - **Quản lý kho vật tư:** quản lý tồn kho; lập và duyệt phiếu nhập, phiếu xuất, điều chuyển.
-  - **Thu ngân & Bàn giao:** thu tiền hoặc xác nhận miễn phí; bàn giao máy kèm kiểm tra lại, chữ ký vẽ tay và đánh giá.
+  - **Thu ngân & Bàn giao:** thu tiền (chuyển khoản có mã VietQR điền sẵn số tiền và mã phiếu) hoặc xác nhận miễn phí; bàn giao máy kèm kiểm tra lại, chữ ký vẽ tay và đánh giá.
   - **Quản trị viên:** quản lý tài khoản nhân viên, vai trò, khóa/mở, đặt lại mật khẩu, danh mục và báo cáo tổng.
 - **Khách hàng mang máy đi bảo hành/sửa:** tra cứu tiến độ bằng mã phiếu và số điện thoại mà không cần đăng nhập; hoặc đăng ký bằng số điện thoại có OTP để xem lịch sử, chi tiết phiếu, đồng ý hoặc từ chối báo giá, và gửi yêu cầu bảo hành online kèm ảnh/video.
 

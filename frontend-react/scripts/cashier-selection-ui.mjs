@@ -42,6 +42,23 @@ try {
     assert.match(await detail.innerText(), /222\.000/);
     console.log(`PASS cashier ignores stale ${scenario} response`);
   }
+  // VietQR do server tạo chỉ hiện khi thu ngân chọn Chuyển khoản.
+  const qrUrl = 'https://img.vietqr.io/image/MB-0961575900-compact2.png?amount=222000&addInfo=SOOPI%20TNB';
+  await s.context.route('https://img.vietqr.io/**', route => route.fulfill({ contentType: 'image/svg+xml',
+    body: '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><rect width="240" height="240" fill="#000"/></svg>' }));
+  await s.context.route(/\/api\/v1\/tickets\/TN-B\/billing$/, route => route.fulfill({ json: { ...billing('B'),
+    paymentQr: { imageUrl: qrUrl, bankId: 'MB', accountNo: '0961575900', accountName: null, amount: 222000, transferNote: 'SOOPI TNB' } } }));
+  await s.page.goto(base + '/cashier');
+  await s.page.locator('[data-ticket="TN-B"]').click();
+  const qr = detail.locator('[data-payment-qr]');
+  await qr.waitFor({ state: 'attached' });
+  assert.equal(await qr.isVisible(), false);
+  await detail.locator('[data-payment-method]').selectOption('BANK_TRANSFER');
+  await qr.waitFor();
+  assert.equal(await qr.locator('img').getAttribute('src'), qrUrl);
+  assert.match(await qr.innerText(), /0961575900[\s\S]*222\.000[\s\S]*SOOPI TNB/);
+  if (process.env.QR_SCREENSHOT) await detail.screenshot({ path: process.env.QR_SCREENSHOT });
+  console.log('PASS cashier shows VietQR for bank transfer');
   assert.deepEqual(s.errors.filter(message => !message.includes('500')), []);
   await s.context.close();
 } finally { await browser.close(); }
