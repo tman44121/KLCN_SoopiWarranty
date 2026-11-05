@@ -481,6 +481,45 @@ class _RealTicketDetailScreenState extends State<RealTicketDetailScreen> {
             ],
           ),
         ),
+        if (ticket.costs.paymentQr case final qr?) ...[
+          const SizedBox(height: 16),
+          SoopiPanel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const PanelHeading(
+                  title: 'Chuyển khoản VietQR',
+                  description:
+                      'Quét bằng ứng dụng ngân hàng; số tiền và nội dung đã điền sẵn.',
+                ),
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    color: Colors.white,
+                    child: Image.network(
+                      qr.imageUrl,
+                      width: 240,
+                      semanticLabel:
+                          'Mã VietQR chuyển khoản ${_money(qr.amount)}, nội dung ${qr.transferNote}',
+                      errorBuilder: (_, _, _) => const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          'Không tải được mã QR, vui lòng chuyển khoản theo thông tin bên dưới.',
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                KvRow(label: 'Ngân hàng', value: qr.bankId),
+                KvRow(label: 'Số tài khoản', value: qr.accountNo),
+                if (qr.accountName?.isNotEmpty == true)
+                  KvRow(label: 'Chủ tài khoản', value: qr.accountName!),
+                KvRow(label: 'Nội dung', value: qr.transferNote),
+                KvRow(label: 'Số tiền', value: _money(qr.amount), total: true),
+              ],
+            ),
+          ),
+        ],
       ],
     ),
   );

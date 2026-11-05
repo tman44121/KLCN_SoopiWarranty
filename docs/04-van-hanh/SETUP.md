@@ -130,6 +130,7 @@ Khi chạy ngoài Development, cung cấp qua cấu hình của host/biến môi
 | `Security:Jwt:PublicKeyLocation` | `Security__Jwt__PublicKeyLocation` |
 | `Storage:Directory` | `Storage__Directory` |
 | `Security:AllowedOrigins` | `Security__AllowedOrigins` |
+| `VietQR:BankId`, `VietQR:AccountNo`, `VietQR:AccountName` | `VietQR__BankId`, `VietQR__AccountNo`, `VietQR__AccountName` |
 
 Không thực thi các script SQL Server/schema/seed trong project Java để “sửa kết nối”. Tài khoản DB cần quyền
 phù hợp các thao tác được chủ dự án cho phép; tài liệu này không tự tạo login/user hay cấp quyền.

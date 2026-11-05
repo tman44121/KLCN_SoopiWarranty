@@ -4,7 +4,7 @@ namespace Soopi.Api.Infrastructure;
 public sealed class SecurityHeadersMiddleware(RequestDelegate next, IHostEnvironment environment)
 {
     private const string Csp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' "
-        + "https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; "
+        + "https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://img.vietqr.io; "
         + "connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
 
     public Task InvokeAsync(HttpContext context)

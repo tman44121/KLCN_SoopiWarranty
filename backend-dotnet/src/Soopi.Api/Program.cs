@@ -144,6 +144,8 @@ builder.Services.AddScoped<StockTransferService>();
 builder.Services.AddScoped<StocktakeService>();
 builder.Services.AddScoped<StockLedgerService>();
 builder.Services.AddScoped<IssuedParts>();
+builder.Services.Configure<VietQrOptions>(config.GetSection("VietQR"));
+builder.Services.AddSingleton<VietQr>();
 builder.Services.AddScoped<BillingCalculator>();
 builder.Services.AddScoped<BillingQueryService>();
 builder.Services.AddScoped<PaymentService>();

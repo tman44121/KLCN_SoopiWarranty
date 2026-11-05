@@ -145,7 +145,12 @@ export default function initialize() {
             <div class="kv-row"><span>Phí dịch vụ</span><span>${fmt.money(costs.serviceFee)}</span></div>
             <div class="kv-row"><span>VAT</span><span>${fmt.money(costs.vat)}</span></div>
             <div class="kv-row is-total"><span>Tổng thanh toán</span><span>${fmt.money(costs.total)}</span></div>
-          </div></section>
+          </div>${costs.paymentQr ? html`<figure class="payment-qr">
+            <img src="${costs.paymentQr.imageUrl}" alt="Mã VietQR chuyển khoản ${fmt.money(costs.paymentQr.amount)}, nội dung ${costs.paymentQr.transferNote}" width="240" height="240" loading="lazy" />
+            <figcaption><div>Quét bằng ứng dụng ngân hàng để chuyển khoản</div>
+              <div>${costs.paymentQr.bankId} · <strong class="mono">${costs.paymentQr.accountNo}</strong></div>
+              <div>Nội dung: <strong class="mono">${costs.paymentQr.transferNote}</strong></div></figcaption>
+          </figure>` : ""}</section>
         </div>
       </div>
       <section class="content-panel-card"><h2 class="card-heading-title" style="margin-bottom:16px;">Ghi chú từ trung tâm sửa chữa</h2>

@@ -64,6 +64,7 @@ class PortalCosts {
     required this.vat,
     required this.total,
     required this.paymentStatus,
+    this.paymentQr,
   });
   final num inWarrantyAmount;
   final num outOfWarrantyParts;
@@ -72,6 +73,9 @@ class PortalCosts {
   final num total;
   final String paymentStatus;
 
+  /// Chỉ có khi phiếu hoàn tất, còn nợ và server đã cấu hình tài khoản VietQR.
+  final PaymentQr? paymentQr;
+
   factory PortalCosts.fromJson(Map<String, dynamic> json) => PortalCosts(
     inWarrantyAmount: json['inWarrantyAmount'] as num,
     outOfWarrantyParts: json['outOfWarrantyParts'] as num,
@@ -79,6 +83,36 @@ class PortalCosts {
     vat: json['vat'] as num,
     total: json['total'] as num,
     paymentStatus: json['paymentStatus'] as String,
+    paymentQr: json['paymentQr'] == null
+        ? null
+        : PaymentQr.fromJson(json['paymentQr'] as Map<String, dynamic>),
+  );
+}
+
+/// Ảnh VietQR do server tạo sẵn số tiền và nội dung chuyển khoản.
+class PaymentQr {
+  const PaymentQr({
+    required this.imageUrl,
+    required this.bankId,
+    required this.accountNo,
+    required this.amount,
+    required this.transferNote,
+    this.accountName,
+  });
+  final String imageUrl;
+  final String bankId;
+  final String accountNo;
+  final String? accountName;
+  final num amount;
+  final String transferNote;
+
+  factory PaymentQr.fromJson(Map<String, dynamic> json) => PaymentQr(
+    imageUrl: json['imageUrl'] as String,
+    bankId: json['bankId'] as String,
+    accountNo: json['accountNo'] as String,
+    accountName: json['accountName'] as String?,
+    amount: json['amount'] as num,
+    transferNote: json['transferNote'] as String,
   );
 }
 

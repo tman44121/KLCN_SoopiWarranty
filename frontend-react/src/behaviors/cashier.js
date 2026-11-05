@@ -106,8 +106,19 @@ export default function initialize() {
     const free = Number(billing.total) === 0;
     return html`<section class="card"><div class="card__header"><h2 class="card__title">Thanh toán</h2></div><div class="card__body">
       ${free ? "" : html`<div class="form-field" style="max-width:260px"><label for="payment-method">Phương thức thanh toán</label><select id="payment-method" data-payment-method><option value="CASH">Tiền mặt</option><option value="BANK_TRANSFER">Chuyển khoản</option><option value="E_WALLET">Ví điện tử</option><option value="CARD">Thẻ</option></select></div>`}
+      ${free || !billing.paymentQr ? "" : paymentQr(billing.paymentQr)}
       <button type="button" class="btn btn--primary" data-confirm-payment>${free ? "Xác nhận miễn phí bảo hành" : "Xác nhận đã thanh toán"}</button>
     </div></section>`;
+  }
+
+  function paymentQr(qr) {
+    return html`<figure class="payment-qr" data-payment-qr hidden>
+      <img src="${qr.imageUrl}" alt="Mã VietQR chuyển khoản ${fmt.money(qr.amount)}, nội dung ${qr.transferNote}" width="240" height="240" loading="lazy" />
+      <figcaption><div><span class="kv-key">Tài khoản</span> <strong>${qr.bankId} · <span class="mono">${qr.accountNo}</span></strong>${qr.accountName ? html` · ${qr.accountName}` : ""}</div>
+        <div><span class="kv-key">Số tiền</span> <strong>${fmt.money(qr.amount)}</strong></div>
+        <div><span class="kv-key">Nội dung</span> <strong class="mono">${qr.transferNote}</strong></div>
+        <p class="card-heading-desc">Kiểm tra tiền đã vào tài khoản rồi mới bấm xác nhận.</p></figcaption>
+    </figure>`;
   }
 
   function rechecks() {
@@ -121,6 +132,9 @@ export default function initialize() {
   function bindDetail() {
     const payment = detail.querySelector("[data-confirm-payment]");
     if (payment) payment.addEventListener("click", () => collect(payment));
+    const method = detail.querySelector("[data-payment-method]");
+    const qr = detail.querySelector("[data-payment-qr]");
+    if (method && qr) method.addEventListener("change", () => { qr.hidden = method.value !== "BANK_TRANSFER"; });
     const canvas = detail.querySelector("[data-signature]");
     if (canvas) bindCanvas(canvas);
     const clear = detail.querySelector("[data-clear-signature]");

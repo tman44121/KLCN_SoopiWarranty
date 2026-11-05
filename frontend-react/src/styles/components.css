@@ -1556,6 +1556,32 @@ button.queue-item {
   color: var(--color-primary);
 }
 
+/* VietQR: viền trắng quanh mã để app ngân hàng quét ổn định. */
+.payment-qr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin: 12px 0 16px;
+  font-size: 13px;
+}
+
+.payment-qr img {
+  width: 240px;
+  max-width: 100%;
+  height: auto;
+  padding: 8px;
+  border: 1px solid var(--border-divider);
+  border-radius: 8px;
+  background: var(--surface-card);
+}
+
+.payment-qr figcaption {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
 .payment-summary-note {
   font-size: 12px;
   color: var(--text-muted);

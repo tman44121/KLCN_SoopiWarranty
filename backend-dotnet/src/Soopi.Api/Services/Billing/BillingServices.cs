@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Soopi.Api.Data;
 using Soopi.Api.Data.Entities;
 using Soopi.Api.Data.Stores;
@@ -27,12 +28,55 @@ public sealed record BillingBreakdown(
 
 public sealed record BillingView(
     string TicketCode, string TicketStatus, string? QuotationCode, decimal FreeWarrantyAmount, decimal PartsFee, decimal ServiceFee, decimal Vat,
-    decimal Discount, decimal Total, string PaymentStatus, PaymentView? Payment);
+    decimal Discount, decimal Total, string PaymentStatus, PaymentView? Payment, PaymentQr? PaymentQr);
 
 public sealed record CollectPaymentRequest([NotBlank] string PayerName, [Pattern("CASH|BANK_TRANSFER|E_WALLET|CARD")] string? Method, string? Note,
     [PositiveOrZero] decimal? ExpectedAmount);
 
 public sealed record FreeWarrantyRequest(string? Note);
+
+/// <summary>Ảnh QR chuyển khoản VietQR kèm thông tin để khách chuyển tay nếu không quét được.</summary>
+public sealed record PaymentQr(string ImageUrl, string BankId, string AccountNo, string? AccountName, decimal Amount, string TransferNote);
+
+/// <summary>Mục VietQR trong appsettings (biến môi trường VietQR__BankId, VietQR__AccountNo...). Thiếu BankId/AccountNo thì không hiện QR.</summary>
+public sealed class VietQrOptions
+{
+    public string BankId { get; set; } = "";
+
+    public string AccountNo { get; set; } = "";
+
+    public string AccountName { get; set; } = "";
+
+    public string Template { get; set; } = "compact2";
+}
+
+/// <summary>
+/// VietQR Quick Link (https://www.vietqr.io): ảnh QR có sẵn số tiền và nội dung chuyển khoản chứa mã phiếu, không cần API key.
+/// Chỉ phát QR khi phiếu đã hoàn tất, còn nợ và tổng lớn hơn 0; thu ngân vẫn tự xác nhận đã nhận tiền.
+/// </summary>
+public sealed class VietQr(IOptions<VietQrOptions> options)
+{
+    public PaymentQr? For(Ticket ticket, BillingBreakdown billing) =>
+        ticket.Status == TicketStatus.COMPLETED && billing.PaymentStatus == "UNPAID" && billing.Total > 0 ? Build(ticket.Id, billing.Total) : null;
+
+    public PaymentQr? Build(string ticketCode, decimal amount)
+    {
+        var o = options.Value;
+        if (string.IsNullOrWhiteSpace(o.BankId) || string.IsNullOrWhiteSpace(o.AccountNo)) return null;
+        var bank = o.BankId.Trim();
+        var account = o.AccountNo.Trim();
+        var name = string.IsNullOrWhiteSpace(o.AccountName) ? null : o.AccountName.Trim();
+        var template = string.IsNullOrWhiteSpace(o.Template) ? "compact2" : o.Template.Trim();
+        var note = TransferNote(ticketCode);
+        var url = $"https://img.vietqr.io/image/{Uri.EscapeDataString(bank)}-{Uri.EscapeDataString(account)}-{Uri.EscapeDataString(template)}.png"
+            + $"?amount={amount.ToString("0", CultureInfo.InvariantCulture)}&addInfo={Uri.EscapeDataString(note)}"
+            + (name is null ? "" : "&accountName=" + Uri.EscapeDataString(name));
+        return new PaymentQr(url, bank, account, name, amount, note);
+    }
+
+    /// <summary>Bỏ ký tự đặc biệt vì nhiều ngân hàng lọc mất dấu gạch: TN-2026-0917-00421 → "SOOPI TN2026091700421" (≤ 25 ký tự).</summary>
+    public static string TransferNote(string ticketCode) => "SOOPI " + new string(ticketCode.Where(char.IsAsciiLetterOrDigit).ToArray()).ToUpperInvariant();
+}
 
 /// <summary>Chi phí của một phiếu (UI 19A); nơi gọi tự chịu trách nhiệm phân quyền. D-009: không giảm trừ.</summary>
 public sealed class BillingCalculator(QuotationStore quotations, AppDbContext db, IssuedParts issuedParts)
@@ -52,7 +96,8 @@ public sealed class BillingCalculator(QuotationStore quotations, AppDbContext db
     }
 }
 
-public sealed class BillingQueryService(TicketQueryService tickets, TicketStore ticketStore, AppDbContext db, BillingCalculator calculator, CurrentActor actors)
+public sealed class BillingQueryService(
+    TicketQueryService tickets, TicketStore ticketStore, AppDbContext db, BillingCalculator calculator, VietQr vietQr, CurrentActor actors)
 {
     public async Task<BillingView> BillingAsync(string ticketCode)
     {
@@ -60,7 +105,7 @@ public sealed class BillingQueryService(TicketQueryService tickets, TicketStore 
         var ticket = await tickets.RequireAsync(ticketCode);
         var value = await calculator.BreakdownAsync(ticketCode);
         return new BillingView(ticket.Id, ticket.Status.ToString(), value.QuotationCode, value.FreeWarrantyAmount, value.PartsFee, value.ServiceFee,
-            value.Vat, value.Discount, value.Total, value.PaymentStatus, value.Payment);
+            value.Vat, value.Discount, value.Total, value.PaymentStatus, value.Payment, vietQr.For(ticket, value));
     }
 
     public async Task<List<PaymentView>> ByCustomerAsync(string customerCode)

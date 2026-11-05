@@ -17,7 +17,8 @@ public sealed record PortalStep(string Key, string Label, string State);
 
 public sealed record PortalNote(DateTimeOffset At, string Text);
 
-public sealed record PortalCosts(decimal InWarrantyAmount, decimal OutOfWarrantyParts, decimal ServiceFee, decimal Vat, decimal Total, string PaymentStatus);
+public sealed record PortalCosts(decimal InWarrantyAmount, decimal OutOfWarrantyParts, decimal ServiceFee, decimal Vat, decimal Total, string PaymentStatus,
+    PaymentQr? PaymentQr);
 
 public sealed record PortalQuotationLine(int LineNo, string? Description, int Quantity, decimal? UnitPrice, decimal? LaborFee, decimal? LineTotal);
 
@@ -36,7 +37,7 @@ public sealed record PortalTicketView(
     private static readonly string[] StepKeys = ["RECEIVED", "DIAGNOSIS", "AWAITING_PARTS", "REPAIRING", "QC", "READY"];
     private static readonly string[] StepLabels = ["Tiếp nhận", "Chẩn đoán", "Chờ linh kiện", "Đang sửa", "QC", "Sẵn sàng nhận máy"];
 
-    public static PortalTicketView From(Ticket ticket, BillingBreakdown billing, Quotation? pending)
+    public static PortalTicketView From(Ticket ticket, BillingBreakdown billing, Quotation? pending, PaymentQr? paymentQr = null)
     {
         var device = ticket.DeviceSnapshot;
         var isDelivered = ticket.Status is TicketStatus.DELIVERED or TicketStatus.RETURNED_UNREPAIRED;
@@ -44,7 +45,8 @@ public sealed record PortalTicketView(
             ticket.Id, device.GetValueOrDefault("productName"), device.GetValueOrDefault("brandName"), device.GetValueOrDefault("serialOrImei"),
             ticket.ReceivedAt, ticket.PromisedReturnAt, ticket.Status.ToString(), IsStopped(ticket.Status), BuildSteps(ticket.Status),
             ticket.CustomerNotes.Select(note => new PortalNote(note.At, note.Text)).ToList(),
-            new PortalCosts(billing.FreeWarrantyAmount, billing.PartsFee, billing.ServiceFee, billing.Vat, billing.Total, billing.PaymentStatus),
+            new PortalCosts(billing.FreeWarrantyAmount, billing.PartsFee, billing.ServiceFee, billing.Vat, billing.Total, billing.PaymentStatus,
+                paymentQr),
             pending is null
                 ? null
                 : new PendingQuotation(pending.Id, pending.ValidUntil, pending.VatRate,
@@ -86,6 +88,7 @@ public sealed class PortalTicketService(
     TicketStore tickets,
     QuotationStore quotations,
     BillingCalculator billing,
+    VietQr vietQr,
     CustomerDecisionService decisions,
     PortalPolicy policy,
     CurrentActor actors,
@@ -168,6 +171,7 @@ public sealed class PortalTicketService(
         if (ticket.Status == TicketStatus.AWAITING_CUSTOMER_CONFIRMATION && ticket.ActiveQuotationId is not null
             && await quotations.FindAsync(ticket.ActiveQuotationId) is { Approval.Status: "APPROVED", CustomerDecision.Status: "PENDING" } quote)
             pending = quote;
-        return PortalTicketView.From(ticket, await billing.BreakdownAsync(ticket.Id), pending);
+        var costs = await billing.BreakdownAsync(ticket.Id);
+        return PortalTicketView.From(ticket, costs, pending, vietQr.For(ticket, costs));
     }
 }
