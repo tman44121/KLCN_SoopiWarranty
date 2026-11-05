@@ -1,5 +1,5 @@
 @echo off
-rem Chạy Soopi trên bất kỳ máy Windows 10/11 nào (xem docs/SETUP.md).
+rem Chạy Soopi trên bất kỳ máy Windows 10/11 nào (xem docs/04-van-hanh/SETUP.md).
 rem   run.bat                   kiểm tra/cài mọi thứ còn thiếu, chạy API .NET + Vite, mở trang chủ (đăng nhập ở góc phải)
 rem   run.bat build             build React vào wwwroot rồi chỉ chạy API (một cổng)
 rem   run.bat check             chỉ kiểm tra/cài công cụ và database, không chạy server
@@ -49,7 +49,7 @@ call :pick_api || goto fail
 if defined API_RUNNING (
   echo API Soopi đã chạy sẵn ở cổng %API_PORT% - dùng lại.
 ) else (
-  rem Job cảnh báo SLA tắt khi chạy dev như docs/SETUP.md.
+  rem Job cảnh báo SLA tắt khi chạy dev như docs/04-van-hanh/SETUP.md.
   start "Soopi API (%API_PORT%)" /d "%~dp0backend-dotnet" cmd /k dotnet run --project src/Soopi.Api --launch-profile http -- --urls http://localhost:%API_PORT% --Sla:Alerts:Enabled=false
 )
 set "WEB=http://localhost:%API_PORT%/"
@@ -69,7 +69,7 @@ echo Đang chờ API khởi động ^(lần đầu trên máy mới có thể m�
 call :wait http://localhost:%API_PORT%/actuator/health || goto fail
 curl -s -m 5 http://localhost:%API_PORT%/actuator/health | findstr /c:"UP" >nul || echo [Cảnh báo] API chạy nhưng chưa kết nối được database - chạy "run.bat initdb" hoặc kiểm tra SQL Server.
 start "" "%WEB%"
-echo Đã mở %WEB%. Tài khoản demo: docs\TAI_KHOAN_DEMO.md. Đóng các cửa sổ "Soopi API"/"Soopi Web" để dừng.
+echo Đã mở %WEB%. Tài khoản demo: docs\04-van-hanh\TAI_KHOAN_DEMO.md. Đóng các cửa sổ "Soopi API"/"Soopi Web" để dừng.
 exit /b 0
 
 :initdb_mode

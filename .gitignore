@@ -492,3 +492,6 @@ deploy/compose.env
 backend-dotnet/data/
 # … hoặc tương đối với thư mục project khi chạy bằng dotnet run --project
 backend-dotnet/src/Soopi.Api/Data/files/
+
+# Hook generated for this machine (contains absolute user paths).
+/.codex/hooks.json

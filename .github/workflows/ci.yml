@@ -59,6 +59,9 @@ jobs:
       - name: Test deployment rollback logic
         run: python3 -m unittest discover -s deploy -p 'test_*.py'
 
+      - name: Check repository layout and documentation links
+        run: python3 verification/check-layout.py
+
       - name: Install frontend dependencies
         run: npm ci --no-audit
         working-directory: frontend-react
@@ -111,6 +114,36 @@ jobs:
           path: artifacts/soopi-image.tar.gz
           if-no-files-found: error
           retention-days: 14
+
+  flutter:
+    name: Check Flutter
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: Warrant_App
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: '3.47.8'
+          cache: true
+
+      - name: Install locked Flutter dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Analyze Flutter
+        run: flutter analyze --no-pub
+
+      - name: Test Flutter
+        run: flutter test --no-pub
+
+      - name: Build Flutter Web
+        run: flutter build web --release --no-pub --dart-define=API_URL=https://ci.invalid/api/v1
 
   sql-server:
     name: SQL Server write and concurrency tests
@@ -176,7 +209,7 @@ jobs:
 
   deploy:
     name: Deploy to Ubuntu VPS
-    needs: [verify, sql-server]
+    needs: [verify, sql-server, flutter]
     if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15

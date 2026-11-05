@@ -1,0 +1,131 @@
+{
+  "date": "2026-11-03",
+  "score": 20,
+  "scope": "Local technical audit of Soopi web, light theme, mocked API, Edge",
+  "sourceSha256": "12680a9d553ccf2b112e6f288f04d874b37391aa38f743a8968168d35b20fc7a",
+  "sourceFiles": 94,
+  "unitChecks": 29,
+  "uiChecks": 502,
+  "accessibilityChecks": 49,
+  "fullyRenderedLandingChecks": 3,
+  "axeVersion": "4.14.0",
+  "violations": 0,
+  "unresolvedAriaReferences": 0,
+  "horizontalOverflow": 0,
+  "performanceProfile": "Cold cache; CPU 4x; network 1.6Mbps, 150ms RTT; API mocked",
+  "performance": [
+    {
+      "path": "/",
+      "width": 1440,
+      "lcp": 2180,
+      "cls": 0.047732556051874354,
+      "worstEvent": 0,
+      "longTasks": [
+        78,
+        55
+      ],
+      "fcp": 2180,
+      "bytes": 335374,
+      "interactionMs": 32,
+      "errors": []
+    },
+    {
+      "path": "/login",
+      "width": 1440,
+      "lcp": 1976,
+      "cls": 1.779513888888889e-05,
+      "worstEvent": 0,
+      "longTasks": [
+        91,
+        225
+      ],
+      "fcp": 1976,
+      "bytes": 246441,
+      "interactionMs": 32,
+      "errors": []
+    },
+    {
+      "path": "/portal",
+      "width": 1440,
+      "lcp": 1920,
+      "cls": 0.0017420337818287034,
+      "worstEvent": 0,
+      "longTasks": [
+        74
+      ],
+      "fcp": 1920,
+      "bytes": 351008,
+      "interactionMs": 128,
+      "errors": []
+    },
+    {
+      "path": "/account",
+      "width": 1440,
+      "lcp": 2068,
+      "cls": 0.004389198753241812,
+      "worstEvent": 0,
+      "longTasks": [],
+      "fcp": 1724,
+      "bytes": 380653,
+      "interactionMs": 40,
+      "errors": []
+    },
+    {
+      "path": "/",
+      "width": 390,
+      "lcp": 2040,
+      "cls": 0.01289692564893954,
+      "worstEvent": 0,
+      "longTasks": [
+        75,
+        59
+      ],
+      "fcp": 2040,
+      "bytes": 335374,
+      "interactionMs": 40,
+      "errors": []
+    },
+    {
+      "path": "/login",
+      "width": 390,
+      "lcp": 1768,
+      "cls": 0,
+      "worstEvent": 0,
+      "longTasks": [
+        81,
+        191
+      ],
+      "fcp": 1768,
+      "bytes": 246441,
+      "interactionMs": 40,
+      "errors": []
+    },
+    {
+      "path": "/portal",
+      "width": 390,
+      "lcp": 1980,
+      "cls": 0.0015125546058879394,
+      "worstEvent": 0,
+      "longTasks": [
+        89,
+        53
+      ],
+      "fcp": 1980,
+      "bytes": 351008,
+      "interactionMs": 104,
+      "errors": []
+    },
+    {
+      "path": "/account",
+      "width": 390,
+      "lcp": 2044,
+      "cls": 0.016190097934472934,
+      "worstEvent": 0,
+      "longTasks": [],
+      "fcp": 1704,
+      "bytes": 380653,
+      "interactionMs": 32,
+      "errors": []
+    }
+  ]
+}

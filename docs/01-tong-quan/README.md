@@ -1,0 +1,97 @@
+# Soopi — hệ thống quản lý bảo hành
+
+Soopi gồm ASP.NET Core Web API, web React và mobile Flutter trong `Warrant_App`, giữ nghiệp vụ và schema SQL Server hiện có.
+Project Java `../warranty-system-mysql` là nguồn đối chiếu chỉ đọc.
+
+Tài liệu này được chuyển từ gốc dự án; các lệnh bên dưới vẫn chạy từ `warranty-system-soopi`.
+Xem [mục lục](../README.md), [bản đồ dự án](ban-do-du-an.md) và [hướng dẫn mobile](Warrant_App/README.md).
+
+**Trạng thái 20/10/2026:** backend có 114 endpoint như bản Java + 2 endpoint riêng (D-047, D-050), frontend có 10 trang nội bộ/cổng khách và các trang tài khoản khách. Giai đoạn 4 đã đối chiếu một phần;
+chưa nghiệm thu toàn bộ API có token và luồng ghi/đồng thời. Xem [báo cáo kiểm chứng](../handoff/MIGRATION_VERIFICATION.md).
+
+## Bắt đầu
+
+1. Đọc [cài đặt và cấu hình](../04-van-hanh/SETUP.md). Máy hiện tại đã có User Secrets nối `TrungTamBaoHanhDB_Dev`;
+   không chạy lại lệnh đặt connection string nếu cấu hình đó vẫn đúng.
+2. Mở terminal tại `warranty-system-soopi` và chạy backend:
+
+   ```powershell
+   Set-Location backend-dotnet
+   dotnet run --project src/Soopi.Api --launch-profile http -- --Sla:Alerts:Enabled=false
+   ```
+
+3. Terminal thứ hai tại `warranty-system-soopi`, chạy frontend:
+
+   ```powershell
+   Set-Location frontend-react
+   npm.cmd ci
+   npm.cmd run dev
+   ```
+
+4. Mở trang giới thiệu `http://localhost:5173/`, đăng nhập `http://localhost:5173/login` hoặc portal `http://localhost:5173/portal`.
+   Kiểm kết nối bằng `GET http://localhost:8080/actuator/health`.
+
+Đăng nhập, refresh/logout và các form thật có thể ghi DB. Tham số trên chỉ tắt job SLA;
+job dọn refresh token vẫn chạy lúc 02:00 giờ Việt Nam. Trong phiên chỉ đọc, dừng API trước lịch này.
+Hướng dẫn chi tiết và giới hạn kiểm thử nằm ở [verification](../04-van-hanh/verification/README.md).
+
+## Cấu trúc
+
+```text
+warranty-system-soopi/
+├── backend-dotnet/       # Soopi.Api (.NET 10) và Soopi.Tests
+├── frontend-react/       # React, Vite, TypeScript, React Router
+├── Warrant_App/          # Flutter, giữ tên package warrant_safe và định danh nền tảng
+├── docs/                 # Tài liệu chia nhóm theo Test-pro; bắt đầu ở docs/README.md
+├── verification/         # Đối chiếu Java/.NET, oracle và metadata DB
+├── contract-snapshots/   # Response mẫu không chứa secret
+├── database/             # SQL Server
+└── deploy/               # Docker, Caddy và script triển khai
+```
+
+React dùng `fetch`; backend dùng EF Core SQL Server và T-SQL tham số hóa trên cùng connection/transaction.
+Không có EF migration hay tự tạo schema. Bản build React được phục vụ từ `Soopi.Api/wwwroot`.
+
+## Tài liệu
+
+| Cần làm | Đọc |
+|---|---|
+| Cài máy, nối DB, chạy local, xử lý lỗi khởi động | [SETUP](../04-van-hanh/SETUP.md) |
+| Hiểu luồng xử lý, lưu trữ, phân quyền và phạm vi migration | [ARCHITECTURE](ARCHITECTURE.md) |
+| Gọi API, đăng nhập, JSON, phân trang, lỗi và upload | [API](../02-ky-thuat/API.md) |
+| Kiểm thử, đóng gói và vận hành | [OPERATIONS](../04-van-hanh/OPERATIONS.md) |
+| CI/CD với Caddy, aaPanel và Docker | [DEPLOY_VPS](../04-van-hanh/DEPLOY_VPS.md) |
+| Danh sách đủ 114 method/URL | [ENDPOINTS](../02-ky-thuat/ENDPOINTS.md) |
+| Entity/bảng, trang UI và logic Java gốc | [MIGRATION_PLAN](MIGRATION_PLAN.md) |
+| Lý do các lựa chọn đã chốt | [DECISIONS](../02-ky-thuat/DECISIONS.md) |
+| Tiến độ và bằng chứng tương đương | [PROGRESS](../handoff/PROGRESS.md), [MIGRATION_VERIFICATION](../handoff/MIGRATION_VERIFICATION.md) |
+| Chi tiết frontend và audit giao diện | [Frontend README](frontend-react/README.md), [UI_AUDIT](../06-design/UI_AUDIT.md) |
+| Chạy oracle/đối chiếu mà không ghi DB | [Verification README](../04-van-hanh/verification/README.md) |
+
+## Kiểm tra
+
+Trong `backend-dotnet`:
+
+```powershell
+dotnet build Soopi.slnx --artifacts-path artifacts/stage4
+dotnet test Soopi.slnx --artifacts-path artifacts/stage4 --no-build --no-restore
+```
+
+Trong `frontend-react`:
+
+```powershell
+npm.cmd run build
+npm.cmd run lint
+npm.cmd test
+```
+
+Kết quả gần nhất: backend 45/45 test; frontend 7/7; smoke 49 kiểm tra dùng API mock.
+44 HTTP case đã đối chiếu nội dung, trong đó 4 raw diff chỉ là thứ tự lỗi validation; chưa chứng minh toàn bộ nghiệp vụ.
+
+## Quy tắc khi tiếp tục phát triển
+
+- Chỉ sửa repo Soopi; không sửa, xóa, di chuyển hoặc build trong project Java gốc.
+- Giữ schema/dữ liệu SQL Server; không chạy migration, seed hay script DDL/DML trong phiên chỉ đọc.
+- Secret nằm ngoài Git, trong User Secrets/biến môi trường; `VITE_*` chỉ chứa cấu hình công khai.
+- Package mới ngoài danh sách đã duyệt và kiểm thử ghi DB phải được chủ dự án duyệt trước.
+- Cập nhật quyết định/báo cáo khi thay đổi hợp đồng API hoặc phát hiện lệch nghiệp vụ. Không commit tự động.

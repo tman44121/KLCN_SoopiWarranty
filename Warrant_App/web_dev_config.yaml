@@ -1,0 +1,9 @@
+# Cấu hình `flutter run -d edge/chrome` (chỉ dùng khi phát triển).
+# App web chạy cố định ở http://localhost:5175 và chuyển tiếp /api/* sang API Soopi
+# ở localhost:8080, nên trình duyệt gọi cùng origin và không cần mở CORS ở backend.
+server:
+  host: localhost
+  port: 5175
+  proxy:
+    - prefix: "/api/"
+      target: "http://localhost:8080/"

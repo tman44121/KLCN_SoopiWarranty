@@ -1,0 +1,294 @@
+# DECISIONS — warranty-system-soopi
+
+Quyết định kỹ thuật khi chuyển LongManLoc Service Center từ Spring Boot (`warranty-system-mysql`, nhánh `azure-sql`) sang
+ASP.NET Core Web API + React. Định dạng như `docs/02-ky-thuat/DECISIONS.md` của bản Java. D-001 → D-017 chốt trong phiên hỏi đáp
+2026-10-01 (xem `MIGRATION_PLAN.md` mục 8.3); từ D-018 là quyết định phát sinh khi viết code.
+
+| Mã | Bối cảnh | Quyết định | Lý do |
+|---|---|---|---|
+| D-001 | Chỗ đặt code mới | Repo riêng `warranty-system-soopi/` (`backend-dotnet/`, `frontend-react/`, `docs/`), git riêng, chỉ commit khi chủ dự án yêu cầu. Repo Java chỉ đọc và sẽ ngừng dùng | Không đụng project gốc; tách lịch sử |
+| D-002 | App di động do bên khác làm | Giữ nguyên hợp đồng API: REST `/api/v1`, RFC 9457 + `code`/`correlationId`/`fieldErrors`, mô tả ở `docs/MOBILE_API.md` của bản Java. Không cần giữ phiên đăng nhập liên tục khi chuyển | API hiện tại đã chuẩn và có tài liệu; không redesign |
+| D-003 | Phạm vi | Port đủ 114 endpoint. OTP SMS và push FCM chỉ ở chế độ `log`; cấu hình `esms`/`fcm` thì app dừng khi khởi động | Hợp đồng đầy đủ cho app; tích hợp ngoài làm khi có khóa thật, không âm thầm "tưởng đã gửi" |
+| D-004 | Xác thực | Phương án A: JWT RS256 (access 15', claim như Java: `sub, username, roles, principalType, displayName, ver, typ, employeeId/customerId`), refresh token ngẫu nhiên lưu SHA-256 hex, xoay vòng theo họ, dùng lại → thu hồi cả họ; web dùng cookie `LML_RT` (HttpOnly, Secure, SameSite=Strict, Path `/api/v1/auth`), mobile dùng body; portal token `typ=portal` 30'. Dev không cấu hình khóa thì tự sinh khóa tạm, Production bắt buộc PEM | Giống bản Java, app không phải sửa; cookie/session của ASP.NET làm hỏng mobile, ASP.NET Identity đòi đổi schema |
+| D-005 | Mật khẩu cũ dạng `{bcrypt}$2a$12$…` | Gói `BCrypt.Net-Next`; lưu/kiểm với tiền tố `{bcrypt}` (CHECK `CK_TaiKhoan_Hash`); so hash thật khi sai tên đăng nhập | .NET không có BCrypt; đã test hash do Spring tạo |
+| D-006 | Map EF Core vào schema có sẵn | Map tay chỉ các bảng bản Java dùng JPA; các bảng còn lại dùng helper `Sql` với câu T-SQL giữ nguyên (`?` theo vị trí). Không migration, không gói EF Design | Dễ đối chiếu từng câu SQL; không entity thừa |
+| D-007 | Cấu trúc | .NET 10, một project `Soopi.Api` + `Soopi.Tests`; thư mục `Controllers/ Services/ Domain/ Data/(Entities, Stores) DTOs/ Infrastructure/` chia module bên trong; `[ApiController]` | Theo đề bài; `Domain/` để luật nghiệp vụ test được không cần DB |
+| D-008 | Test | Unit test không chạm DB (xUnit; bỏ `coverlet.collector` của template vì không nằm trong danh sách duyệt). Integration test đồng thời để giai đoạn 4, trên database `_IT` riêng | Mọi thao tác ghi DB phải hỏi trước |
+| D-009 | Kiểm chứng | Connection string `TrungTamBaoHanhDB_Dev` do chủ dự án đặt vào User Secrets (không đọc `.env`). Chạy bản Java **một lần** bằng biến môi trường (không profile `dev`) để lưu JSON mẫu vào `contract-snapshots/` | Biết chắc định dạng JSON thật thay vì suy từ code |
+| D-010 | Triển khai | Cùng origin: .NET phục vụ bản build React. Dev: Vite (5173) proxy `/api` + CORS cho `http://localhost:5173` | Giữ cookie SameSite=Strict, CSP như cũ |
+| D-011 | Route React | `/login /dispatch /receptionist /technician /warehouse /cashier /tickets /reports /admin /portal` (+ hash). `UserView.landing` trả route mới; thông báo mới lưu route mới; link `*.html` cũ trong DB được frontend dịch, server 301 | Không sửa dữ liệu cũ |
+| D-012 | `Security:DefaultResetPassword` (Java mặc định `LML@123`) | Không có giá trị mặc định trong code; thiếu cấu hình thì "Đặt lại mật khẩu" trả 500 (Java: không khởi động) | Không ghi bí mật vào code |
+| D-013 | Swagger | Không Swagger UI; chỉ `/openapi/v1.json` ở Development | Không thêm gói |
+| D-014 | Frontend | React + Vite + TypeScript; CSS cũ dùng nguyên văn (phần CSS được D-046 nới); không thêm tính năng (khách đăng nhập web chỉ tra cứu như cũ; lễ tân vẫn nhận 403 ở phần thanh toán) | Không redesign |
+| D-015 | Nhịp làm | Dừng duyệt sau đợt 3 (khung, hạ tầng chung, identity), sau đó làm đợt 4–8 | Khuôn sai phát hiện muộn thì sửa lại ~110 endpoint |
+| D-016 | Ví dụ Swagger `priority: "HIGH"` | Giữ enum `URGENT/NORMAL/LOW` | Web chỉ dùng ba giá trị này; ví dụ tài liệu sai |
+| D-017 | Gói NuGet | Chỉ: `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.AspNetCore.Authentication.JwtBearer`, `Microsoft.AspNetCore.OpenApi`, `BCrypt.Net-Next`; test: `xunit`, `xunit.runner.visualstudio`, `Microsoft.NET.Test.Sdk` | Đã duyệt; gói khác phải hỏi |
+| D-018 | `Microsoft.AspNetCore.OpenApi` 10.0.10 kéo `Microsoft.OpenApi` 2.0.0 có lỗ hổng cao (NU1903) | Nâng lên 10.0.12 (`Microsoft.OpenApi` 2.12.0) | Vá lỗ hổng, cùng gói đã duyệt |
+| D-019 | Kiểm quyền | Ở tầng service bằng `CurrentActor.Require(Permission…)` / `RequireOrPortal(…)` / `RequireSignedIn()`, không dùng `[Authorize(Policy)]`; controller chỉ `[Authorize]` + `[AllowAnonymous]` cho endpoint công khai. Thiếu quyền → 403 `ACCESS_DENIED` | Như `@PreAuthorize` trên service của Java; một service có nhiều controller gọi |
+| D-020 | Ràng buộc DTO | Thuộc tính đặt tên như Bean Validation (`NotBlank, NotNull, NotEmpty, Positive, PositiveOrZero, Size, Email, Min, Max, DecimalMin, DecimalMax, Pattern`), thông điệp tiếng Anh mặc định của Hibernate Validator; đặt trên tham số record (không `property:`); tắt Required ngầm cho kiểu không-null. `fieldErrors[].field` camelCase dạng `customer.newCustomer.phone` | Hibernate Validator không có bản tiếng Việt → Java đang trả tiếng Anh; port DTO thành chép annotation |
+| D-021 | JSON — giả định ban đầu, đã được D-043 hiệu chỉnh | camelCase, thời điểm UTC `…Z`, bool primitive null=false, UTF-8 không thoát. Giả định “enum không nhận số” đã bị oracle Java bác bỏ; xem D-043 | Không giữ test/giả định trái hành vi bản Java |
+| D-022 | Thông điệp lỗi | Đọc `messages_vi.properties` (nhúng vào assembly) và định dạng như `java.text.MessageFormat`: `{i}` thiếu đối số giữ nguyên | `string.Format` ném lỗi khi thiếu đối số |
+| D-023 | `SET LOCK_TIMEOUT 10000` (Java: init-sql của Hikari) | Interceptor gắn vào đầu mỗi lệnh (cả lệnh EF lẫn helper `Sql`) | Không tốn thêm một vòng mạng tới DB ở xa |
+| D-024 | Transaction | `TransactionRunner`: READ COMMITTED, gọi lồng thì tham gia transaction ngoài, thử lại 3 lần khi `DbUpdateConcurrencyException`/SQL 1205/1222 rồi báo `CONCURRENT_MODIFICATION`; `AfterCommit` cho việc chạy sau commit (push) | Như `TransactionRunner` + `TransactionSynchronization` của Java |
+| D-025 | `Account.employeeId/customerId` là `@Formula` | EF map thêm tối thiểu `NhanVien(MaNV, MaTaiKhoan)`; `KhachHang` map đủ cột kể cả `MaTaiKhoan`; tài khoản + vai trò + mã NV/KH tải trong một truy vấn chiếu (projection) | Một lượt DB cho đăng nhập và `/auth/me` |
+| D-026 | `ConcurrentReads` (D-075 của Java) | Không port: các lượt đọc trên cùng `DbContext` chạy tuần tự | `DbContext` không an toàn đa luồng; đo được chậm thì mới thêm context riêng |
+| D-027 | Rate limit | `RateLimiter` cửa sổ cố định trên `IMemoryCache`, một khóa chung (`ponytail:` ghi trong code) | Khóa theo tên đăng nhập/mã phiếu/SĐT, middleware RateLimiter của ASP.NET không làm được |
+| D-028 | Thời gian | `TimeProvider`; cột `DATETIME2(0)` lưu giờ Việt Nam (+07:00 cố định) không phần lẻ giây qua converter chung `VietnamTimeConverter`/`DbTime` | Như `DbTime` của Java, không phụ thuộc múi giờ máy chủ |
+| D-029 | Làm tròn tiền | `Money.Round` = `MidpointRounding.AwayFromZero` | .NET mặc định làm tròn kiểu ngân hàng ≠ HALF_UP |
+| D-030 | Cổng dev | API chạy `http://localhost:8080` như bản Java | Origin mặc định trong cấu hình cũ |
+| D-031 | Aggregate phiếu (PhieuTiepNhan + 8 bảng con): Java dùng các `*Row` JPA như DTO, logic diff tự viết (đếm dòng lịch sử, khóa phiên bản thủ công) | `TicketStore` dùng SQL: `UPDATE PhieuTiepNhan … PhienBan = PhienBan + 1 WHERE MaPhieuTN = ? AND PhienBan = ?` (0 dòng → `DbUpdateConcurrencyException` → thử lại), bảng con chỉ thêm phần mới. Điều chỉnh D-006 cho riêng aggregate này | Đúng y logic Java, ít mã hơn EF tracking 9 bảng, kiểm phiên bản tường minh |
+| D-032 | Nạp phiếu: Java đọc 11 bảng song song (`ConcurrentReads`) | `Sql.ReadBatchAsync`: 11 câu SELECT trong một lệnh, một vòng mạng, đọc lần lượt từng result set | Nhanh như bản Java với DB ở xa mà không cần nhiều `DbContext` (thay D-026 cho chỗ này) |
+| D-033 | `/search` cần truy vấn phiếu; `/portal/tickets/*` cần báo giá | Dời `/search`, `/customers/{code}/tickets` sang đợt 6; `/portal/tickets/*`, `/portal/my/tickets`, `/customers/{code}/payments` sang đợt 7 | Port theo thứ tự phụ thuộc |
+| D-034 | Tra cứu portal theo mã `TN-` (Java nạp cả aggregate phiếu) | Một câu SQL so SĐT hồ sơ khách của phiếu | Cùng kết quả, không cần nạp aggregate |
+| D-035 | Multipart `data` (JSON) của portal | `MultipartJson`: nhận part dạng tệp (Blob từ web) hoặc trường văn bản (app); ràng buộc đặt trên thuộc tính (`[property: NotBlank]`), kiểm cả record lồng; lỗi → 400 kèm `fieldErrors` | DTO không qua model binding nên không dùng ràng buộc trên tham số record |
+| D-036 | Java `synchronized` quanh việc giữ tồn khi tạo yêu cầu xuất | `SemaphoreSlim(1,1)` tĩnh (ghi chú `ponytail:`); nhiều máy chủ thì vẫn an toàn nhờ UPDATE có điều kiện | Giữ đúng hành vi xếp hàng trong một tiến trình |
+| D-037 | `@JsonInclude(NON_NULL)` ở `PartView`, `StockViews.Issue/IssueLine` | `[property: JsonIgnore(Condition = WhenWritingNull)]` trên đúng các trường có thể null của các view đó | Giữ hình dạng JSON (giá vốn biến mất khi không có quyền) |
+| D-038 | Chuỗi số trong nhật ký/thông báo (vd. tổng báo giá) | `CultureInfo.DefaultThreadCurrentCulture = InvariantCulture`; định dạng tiền "2.160.000 đ" vẫn dùng vi-VN như `String.format(vi-VN)` | Không phụ thuộc culture máy chủ |
+| D-039 | `BigDecimal.setScale(2/1, HALF_UP)` trong báo cáo (giữ số chữ số thập phân: 4.50, 50.0) | `Math.Round(…, AwayFromZero) + 0.00m/0.0m` | `decimal` .NET giữ scale khi cộng, JSON ra đúng 4.50 |
+| D-040 | Hộp thông báo: Java đọc danh sách và số chưa đọc song song | Một lô hai câu (`ReadBatchAsync`) | Một vòng mạng |
+| D-041 | Link trong thông báo mới | Route React: `/dispatch`, `/dispatch#quotes`, `/dispatch#<mã>`, `/receptionist[#<mã>]`, `/technician[#<mã>]`, `/cashier#<mã>`, `/warehouse#stockout`, `/warehouse#parts`, `/portal` | Theo D-011; thông báo cũ (`*.html`) frontend tự dịch |
+| D-042 | Giai đoạn 4 thấy health/route sai/Actuator và HTTP security boundary khác Java; chủ dự án yêu cầu “sửa cho khớp tất cả” | `SpringSecurityBoundaryMiddleware` giữ hai SecurityFilterChain: public API theo URL/method, authentication trước dispatch, static denyAll, bearer chỉ `/api/**`, prefix case-sensitive; health có groups. Giữ Soopi/React routes/assets và OpenAPI dev đã chốt | 28 GET contract status/body/Content-Type khớp Java; chưa cho phép login/ghi DB để nghiệm thu toàn bộ |
+| D-043 | Đối chiếu sâu JSON/validation/Payment bằng thư viện trong WAR, không DB | Dùng tên field/enum case-sensitive và ordinal enum hợp lệ như Jackson; giữ scalar coercion/nullable/date đã kiểm, Instant ghi nhóm 3/6/9 chữ số. Port Java isBlank/trim ở domain và báo giá/thu tiền/yêu cầu; Email theo Hibernate 9.1.3; Pattern full-match. Payment constructor giữ scale/tiền lẻ, chuẩn hóa note; EF read converter chỉ bỏ scale số nguyên như @PostLoad | 100 quan sát oracle + 45 unit test đạt. Không đổi schema/package/xác thực. DateTimeOffset 100ns/decimal có giới hạn kiểu, chưa tuyên bố tương đương mọi giá trị |
+| D-044 | Raw fieldErrors đổi thứ tự giữa framework và giữa hai lần khởi động Java | Giữ raw snapshot/diff; chỉ checker so fieldErrors của VALIDATION_FAILED/400 theo multiset, giữ duplicates và mọi field/message; không sort JSON app hoặc mảng nghiệp vụ. Body null trả fieldErrors rỗng như Java | Chứng minh 6/16 case Java tự đổi thứ tự; self-check bắt thiếu/thừa lỗi, đổi message/status/trường khác. 44 HTTP case đạt nội dung; 4 raw order-only diff ở lần cuối |
+| D-045 | Giao diện khách, đăng ký, đăng nhập theo web khách KLCN (Thymeleaf), bỏ giao diện cũ của các màn này | `/login` đổi giao diện nhưng giữ id/name và `login.js` (nhân viên dùng chung); thêm `/register` (OTP qua `/auth/mobile/otp|register`, xong đăng nhập phiên web và thu hồi refresh token kiểu mobile) và `/account` (React state, mục con theo hash: tổng quan, lịch sử, chi tiết phiếu + báo giá, gửi yêu cầu, hồ sơ, đổi mật khẩu); `/portal` đổi giao diện, giữ id/data-*. CSS `customer.css` riêng, rule thẻ HTML bọc `:where(.kh-app)`. Landing CUSTOMER → `/account`. Bỏ số liệu/hotline/QR/đăng nhập mạng xã hội giả của bản cũ; không có “kích hoạt bảo hành” vì backend không có endpoint cho khách | Không thêm endpoint/thư viện; backend đã có `/portal/my/*`. 3 CSS gốc và parity id/name 10 trang giữ nguyên |
+| D-046 | Soopi dùng cho trung tâm bảo hành thật; chủ dự án yêu cầu mọi màn (kể cả nhân viên) chạy được trên điện thoại/tablet, mục tiêu WCAG 2.2 AA (`PRODUCT.md`, 2026-10-02) | Bỏ ràng buộc giữ nguyên byte `tokens.css`/`base.css`/`components.css`: được sửa CSS/token cho responsive, accessibility, hiệu năng và thương hiệu; vẫn giữ bố cục, nghiệp vụ, luồng thao tác và parity `id`/`name` 10 trang (`scripts/check.mjs`). Bỏ `body { min-width: 1280px }` | Màn khóa 1280px không dùng được ở quầy, bàn kỹ thuật bằng tablet; parity id/name vẫn cần vì controller JS gắn vào đó |
+| D-047 | Quên mật khẩu trên web: chủ dự án yêu cầu xác nhận đúng OTP rồi mới cho nhập mật khẩu mới; `/auth/mobile/password-reset` của Java vừa kiểm vừa tiêu mã trong một lần | Thêm `POST /api/v1/auth/mobile/password-reset/verify` `{phone, otp}` → 204 hoặc 422 `OTP_INVALID` (công khai). Kiểm mã **không tiêu**; lần sai đếm chung với lần tiêu (tối đa 5/mã). `password-reset` giữ nguyên hợp đồng, vẫn kiểm lại và tiêu mã. `compare.py` coi đây là endpoint riêng của Soopi (`SOOPI_ONLY`), 114 route còn lại vẫn khớp Java 1:1 | Thêm, không đổi endpoint cũ nên app di động không ảnh hưởng; không cấp token tạm vì mã đã có hạn 5 phút và giới hạn số lần thử |
+| D-048 | Trang chủ `/` của web khách KLCN (home/index.html + home.css) chưa được chuyển; `/` chỉ chuyển hướng về `/login` | `/` port đủ bố cục cũ (`src/pages/home.tsx`): hero + thẻ tiến độ, dải nhóm thiết bị, khối giới thiệu + bảng giám sát tối, 2 lưới tiện ích, quy trình 4 bước, hỏi đáp, băng CTA; giữ tên class cũ, CSS bọc `.kh-home` trong `customer.css`, đổi sang bộ màu soopiwarranty. Số liệu lấy thật: nhóm thiết bị/trạm từ `/portal/catalog`, phiếu của khách đăng nhập từ `/portal/my/tickets`; khách vãng lai thấy phiếu mẫu ghi “Ví dụ minh họa” như bản cũ. ASP.NET trả `index.html` cho `/` thay vì redirect | Không thêm endpoint; bỏ số liệu/hotline/thương hiệu cố định của bản cũ như D-045 |
+| D-049 | Nhóm trạng thái phiếu phía khách theo luồng trung tâm (yêu cầu của chủ dự án): máy sửa xong hoặc không sửa đang chờ lấy không phải "chờ linh kiện / xác nhận" hay "hoàn thành" | Bộ lọc `/account` và số liệu `/`: Tất cả · Đang xử lý (RECEIVED, INSPECTING, DIAGNOSED, REPAIRING) · Chờ linh kiện / xác nhận (AWAITING_PARTS, AWAITING_QUOTE_APPROVAL, AWAITING_CUSTOMER_CONFIRMATION) · Chờ nhận máy (COMPLETED, AWAITING_RETURN) · Hoàn thành (DELIVERED, RETURNED_UNREPAIRED); khai báo một nơi (`TICKET_GROUPS`, `TICKET_FILTERS` trong `customer.tsx`). Nhãn khách `TICKET_STATUS_CUSTOMER` (labels.js): AWAITING_RETURN → "Chờ nhận máy", COMPLETED → "Sửa xong – Chờ nhận máy". Trang tổng quan `/account` (chủ dự án chọn phương án A): Đang xử lý · Chờ bạn xác nhận · Chờ nhận máy, đếm theo cùng nhóm; bấm ô mở Lịch sử với bộ lọc đó (`#lich-su/<nhóm>`). Phiếu chờ linh kiện không có ô riêng ở đây, xem ở bộ lọc "Chờ linh kiện / xác nhận" | Không đổi mã trạng thái, DB hay nhãn màn nhân viên ("Chờ trả máy"); hệ thống không có trạng thái hủy phiếu nên không có bộ lọc "Đã hủy" |
+| D-050 | OTP đăng ký/quên mật khẩu của khách gửi qua email thay SMS (chủ dự án yêu cầu); gửi từ `hsostd74@gmail.com` qua Gmail SMTP | SĐT vẫn là tên đăng nhập. Đăng ký bắt buộc email, mã gửi tới email đó và email đã xác minh ghi vào hồ sơ khách; quên mật khẩu nhập email. `MaXacThucOTP.SDT` đổi thành `Email` (05_upgrade mục 5). Mỗi email chỉ gắn một tài khoản (`CUSTOMER_EMAIL_DUPLICATE`). `/auth/mobile/otp|register|password-reset[/verify]` đổi body sang `email` — app di động dùng hợp đồng cũ phải cập nhật. `Email:Provider` = `smtp` | `log`; mật khẩu là App Password đặt qua User Secrets/biến môi trường | Gmail miễn phí, không cần nhà cung cấp SMS; dùng `System.Net.Mail` sẵn có, không thêm thư viện |
+
+## D-050 — Xuất báo cáo thống kê Excel (2026-10-20)
+
+Quản trị viên tải `.xlsx` từ `/admin#reports`, theo khoảng thời gian và trạm đang chọn. Endpoint bổ sung `GET /api/v1/reports/export`
+đòi cả `REPORT_SYSTEM` và `REPORT_OPERATIONS`; giữ các API JSON hiện có. Sáu sheet dùng lại các truy vấn thống kê,
+không ghi DB. File là snapshot tại thời điểm xuất, có bộ lọc/giờ Việt Nam và ghi rõ cách tính kỳ của từng chỉ số.
+Đóng gói SpreadsheetML bằng `ZipArchive`/XML có sẵn trong .NET để không thêm dependency. Chuỗi luôn là `inlineStr`
+(kể cả tên bắt đầu bằng `=`); số giữ dạng số, chỉ số chưa có dữ liệu để trống. UI tắt xuất khi báo cáo đang tải/lỗi
+và giữ bộ lọc tại lúc bấm tải, kể cả khi người dùng đổi bộ lọc trong lúc chờ. Kiểm bằng unit test file/quyền/biên ngày,
+API blob có refresh và browser mock ở 1440/768/390px.
+
+## D-051 — Vá dependency Pkcs chặn CI (2026-10-22)
+
+Chủ dự án yêu cầu xử lý cảnh báo bảo mật trước khi triển khai CI/CD. Thêm tham chiếu trực tiếp
+`System.Security.Cryptography.Pkcs 10.0.13` trong API để thay bản gián tiếp 9.0.11 do SqlClient kéo vào;
+đây là bản vá theo dòng .NET 10 cho [CVE-2026-84008](https://github.com/advisories/GHSA-846f-f764-76mx).
+Chỉ nâng EF Core lên 10.0.13 chưa đủ: [SqlClient 6.1.7](https://www.nuget.org/packages/Microsoft.Data.SqlClient/6.1.7#dependencies-body-tab)
+vẫn khai báo Pkcs >= 9.0.11 cho net9.0. Bỏ tham chiếu trực tiếp khi chuỗi dependency upstream
+đã yêu cầu bản vá hoặc mới hơn; kiểm lại audit trước khi bỏ. Không đổi SQL/schema hay cấu hình xác thực.
+Chọn dòng 10 để bản publish ưu tiên DLL đã vá so với DLL dòng 10 của shared runtime cũ;
+đã kiểm `Soopi.Api.deps.json` và file version của DLL trong artifact là 10.0.13.
+Restore/audit theo lệnh CI đạt; NuGet không báo lỗ hổng kể cả dependency gián tiếp; Release build
+0 warning/error, 60/60 unit test và publish đạt. npm audit vẫn timeout, chưa xác nhận phần frontend.
+
+## D-052 — GitHub Actions deploy lên Ubuntu VPS (2026-10-22)
+
+Chủ dự án chọn VPS Ubuntu 24.04 x64, 4 GB RAM vật lý, SQL Server cùng máy;
+domain `soopiwarranty.id.vn` đã có A về VPS.
+Kiểm tra VPS mới ngày 22/10/2026: aaPanel và Docker/Compose đã có, không có container,
+Nginx không chạy, 80/443 đang trống; fingerprint SSH mới khớp console.
+GitHub Actions build/test/audit rồi publish React + .NET, đóng thành image runtime .NET 10,
+lưu artifact nén và tải qua SSH. Compose chạy Caddy reverse proxy HTTPS, app và SQL Server 2025;
+aaPanel giữ chức năng quản lý host, không cài Nginx thứ hai.
+Job deploy chỉ chạy từ `main` sau CI và khi `DEPLOY_ENABLED=true`, dùng SSH key riêng của
+`soopi-deploy` và host key pin. Secrets DB/RSA ở VPS, upload bind mount và DB volume ngoài release.
+App chạy non-root UID 1654; chỉ publish app/SQL ra loopback. Không cấp group Docker cho CI user;
+sudo chỉ chạy script activation cố định, Compose/script do root sở hữu. Load image, chuyển symlink
+release, recreate riêng app và kiểm health local + HTTPS; fail thì quay lại image trước, lần đầu fail
+thì dừng app. Không tự chạy DDL/seed, không xóa image/volume/release/backup hoặc recreate DB
+theo mỗi deploy. Có gián đoạn ngắn lúc recreate app. Rerun deploy dùng đúng artifact của job verify.
+Chi tiết vận hành: [DEPLOY_VPS](../04-van-hanh/DEPLOY_VPS.md). VPS mới báo 3916 MiB RAM và 4096 MiB swap;
+đã đăng nhập chỉ đọc sau khi người dùng nhập mật khẩu, pin SSH được xác minh.
+Compose thêm Caddy; Let’s Encrypt cấp TLS, HTTP chuyển 308, health HTTPS trả `UP` và trang chủ trả 200.
+App và SQL Server 2025 Express đang chạy; `TrungTamBaoHanhDB` đã restore từ `_Dev` (17.469 hàng),
+và user CI chỉ có sudo cho script activation. GitHub secrets/variables chưa cấu hình, nên CI deploy tự động
+chưa bật. Release đầu được build từ gói publish local; các lần sau sẽ dùng GitHub Actions sau khi repo cập nhật.
+
+## D-053 — Phân cấp quản trị gốc (2026-10-31)
+
+Chủ dự án chọn tài khoản `admin` hiện tại làm quản trị gốc. Chỉ tài khoản này khi có vai trò `ADMIN`
+được cấp vai trò quản trị và quản lý các quản trị viên khác. Quản trị thường vẫn quản lý nhân viên thường.
+Áp dụng ở service cho tạo tài khoản, đổi vai trò, khóa/mở khóa, đặt lại mật khẩu và sửa/ngừng hoạt động hồ sơ;
+giữ bảo vệ tự khóa/tự bỏ vai trò. Không thêm vai trò, cấu hình hoặc API xóa nhân viên.
+UserView bổ sung `isRootAdmin` để giao diện chỉ hiện các lựa chọn được phép; API tự quyết định quyền.
+Khóa `UPDLOCK, HOLDLOCK` tài khoản trước khi đọc vai trò và ghi thay đổi, giữ tới cuối transaction,
+để yêu cầu dựa trên vai trò cũ không sửa được tài khoản vừa được nâng lên quản trị khi RCSI bật.
+Các luồng tài khoản khách/khôi phục mật khẩu từ chối liên kết sai tới tài khoản nhân viên hoặc vai trò hỗn hợp.
+
+Kiểm tra: 11 trường hợp policy, 54 kiểm tra giao diện giả lập và 27 kiểm tra service trên database SQL Server
+tạm riêng (schema/reference của dự án, RCSI bật), gồm nâng quyền đồng thời với đặt lại mật khẩu,
+rollback các lệnh bị từ chối và liên kết khách sai. Database thử đã xóa; không sửa tài khoản đang sử dụng.
+Lượt rà soát độc lập không còn lỗi nghiêm trọng; chủ dự án chọn không thêm lượt kiểm tra bằng công cụ khác.
+
+## D-054 — Trừ tồn khi thực xuất linh kiện (2026-11-03)
+
+Mốc ghi giảm tồn vật lý là lúc thủ kho xác nhận cấp linh kiện và duyệt phiếu xuất
+thành `ISSUED`. Kỹ thuật viên yêu cầu linh kiện thì hệ thống giữ hàng, làm giảm tồn
+khả dụng nhưng chưa giảm tồn vật lý. Khi duyệt xuất, `StockIssueService.ApproveAsync`
+trừ tồn tổng, tồn kệ và giải phóng lượng giữ trong cùng transaction với phiếu xuất
+và chuyển phiếu tiếp nhận sang sửa chữa. Sai trạng thái, thiếu hàng hoặc lỗi lưu
+thì rollback; cùng phiếu đã xuất không thể duyệt lại.
+
+`RepairService.RecordResultAsync` ghi nhận công việc thay thế và kết quả QC, không
+trừ kho lần hai. QC không đạt rồi kiểm tra lại cũng không phát sinh lần xuất trùng.
+Đây là cách cụ thể hóa yêu cầu tự động cập nhật tồn khi thay linh kiện trong đề
+cương: chứng từ cấp linh kiện là căn cứ kho, kết quả sửa chữa là căn cứ kỹ thuật.
+Không chuyển mốc trừ tồn sang QC, không thay đổi API hoặc schema trong quyết định này.
+
+Kiểm kê là chứng từ điều chỉnh riêng: khi duyệt, cộng chênh lệch
+`số đếm thực tế − tồn hệ thống lúc lập phiếu` vào tồn hiện tại, không ghi đè số đếm
+lên tồn mới. Nhờ đó nhập/xuất giữa lúc lập và duyệt vẫn được giữ. Tồn tổng sau
+điều chỉnh không được thấp hơn lượng đã giữ; tồn kệ không được âm. Phiếu chờ duyệt
+hoặc bị từ chối không đổi tồn. Lịch kiểm kê định kỳ do thủ kho chủ động thực hiện.
+
+## D-055 — Sửa audit mục 1–5: phiên, email khôi phục và thu ngân (2026-11-04)
+
+Refresh khóa dòng tài khoản trước khi đọc lại và xoay token trong cùng transaction.
+Nhánh phát hiện dùng lại token commit việc thu hồi cả họ trước khi trả lỗi.
+Đổi/khôi phục mật khẩu dùng cùng khóa; EF kiểm `PhienBanBaoMat` khi cập nhật tài khoản
+để thao tác dựa trên phiên bản cũ không ghi đè thay đổi bảo mật. Cấp phiên đọc lại tài khoản
+sau khi khóa và đối chiếu phiên bản đã xác thực, kể cả khi transaction phải thử lại.
+Chuyển nhân viên sang `INACTIVE` tăng phiên bản, thu hồi refresh token và xóa cache sau commit.
+
+Email khách được chuẩn hóa khi tạo/sửa. Luồng sửa liên hệ và gắn/chuyển tài khoản kiểm
+email khôi phục trong transaction với `UPDLOCK, HOLDLOCK`; chỉ hồ sơ ACTIVE có tài khoản
+tham gia ràng buộc này. Tra cứu khôi phục đọc tối đa hai kết quả và trả
+`CUSTOMER_EMAIL_DUPLICATE` (409) nếu dữ liệu cũ trùng, không tự chọn tài khoản hoặc sửa dữ liệu.
+Không đổi schema hay thêm package. Ràng buộc này áp dụng qua ứng dụng; lệnh SQL ngoài ứng dụng
+vẫn cần người vận hành bảo đảm email không trùng.
+
+Màn thu ngân chỉ áp dụng dữ liệu và lỗi của lần chọn phiếu mới nhất; phản hồi đến trễ
+không được ghép chi phí của phiếu cũ vào phiếu đang chọn.
+
+Kiểm thử hồi quy backend dùng kết nối ghi nhận lệnh, không mở SQL Server: kiểm thứ tự khóa,
+phạm vi transaction, commit thu hồi token dùng lại, xoay token hợp lệ, từ chối token hết hạn,
+xung đột phiên bản, thu hồi phiên nhân viên và các nhánh email trùng. Ba tình huống trình duyệt
+thu ngân dùng API giả lập. Chưa chạy kiểm thử đồng thời trên database thật trong lần sửa này.
+
+## D-056 — Sửa audit mục 6–9: kiểm tra, upload, hủy yêu cầu và hoàn tác tệp (2026-11-04)
+
+Kết quả kiểm tra có dấu thay đổi nội bộ trong aggregate Ticket. Ghi/sửa kết quả đặt dấu này;
+TicketStore lưu rồi xóa dấu, không so sánh timestamp đã làm tròn tới giây. Hai lần sửa cùng thời điểm
+vẫn được lưu; thêm ghi chú hoặc lưu phiếu không sửa kết quả không tăng số lần sửa phân loại.
+
+Hạn mức gửi yêu cầu được kiểm trước khi gọi hàm đọc multipart. JSON `data` tối đa 64 KiB;
+kiểm số tệp và kích thước khai báo của tất cả tệp, sau đó đọc đầu tệp để kiểm định dạng và giới hạn
+ảnh/video trước khi cấp mảng nội dung. Đọc đúng kích thước và từ chối luồng thừa/thiếu dữ liệu.
+Giữ giới hạn 5 ảnh/video, ảnh 5 MiB, video 30 MiB; chữ ký bàn giao tối đa 1 tệp 200 KiB.
+
+Hủy yêu cầu dùng kết quả câu UPDATE có điều kiện như chuyển thành phiếu. Không cập nhật đúng một dòng
+thì trả `WARRANTY_REQUEST_NOT_PENDING`, không ghi nhật ký hoặc thông báo hủy.
+
+FileStorage đăng ký xóa tệp mới với `TransactionRunner.AfterRollback`. Dọn sau khi giao dịch lỗi đã
+được giải phóng, trước lần thử lại, kể cả lỗi thông báo hoặc lỗi commit được rollback xác nhận.
+Thử dọn mọi tệp dù một lần xóa thất bại và giữ cả lỗi gốc trong lỗi tổng hợp. Lỗi sau commit
+không chạy lại nghiệp vụ hoặc xóa tệp đã commit. Nếu commit và rollback đều lỗi, không xác định
+được kết quả thì giữ tệp, báo lỗi và không tự thử lại để tránh xóa dữ liệu có thể đã commit.
+Cùng cơ chế bảo vệ cả ảnh/video yêu cầu bảo hành và chữ ký bàn giao; bỏ các nhánh dọn bằng SQL riêng.
+
+Kiểm thử dùng kết nối ghi nhận lệnh, Request/FormFile giả lập và thư mục tệp tạm riêng trong artifacts.
+Không ghi SQL Server thật, không đổi schema, không dọn tệp thừa có sẵn và không thêm package.
+
+## D-057 — Sửa audit mục 10–12: khóa danh mục, kiểm thử SQL và ghép tồn kệ (2026-11-04)
+
+Không ngừng sử dụng linh kiện đang nằm trên phiếu xuất `PENDING`, kể cả xuất bảo hành miễn phí
+không có báo giá. Giữ kiểm tra tham chiếu báo giá của phiếu tiếp nhận còn mở. Đọc linh kiện khi sửa
+danh mục giữ khóa `UPDLOCK, HOLDLOCK` trong transaction để tuần tự với UPDATE giữ hàng.
+Phiếu xuất bị từ chối không tiếp tục chặn linh kiện nếu không còn tham chiếu khác.
+
+Ghép tồn theo kệ bằng một `ToLookup` theo mã linh kiện: chi phí O(số linh kiện + số kệ),
+giữ nguyên thứ tự và danh sách kệ rỗng. Không thay đổi truy vấn hoặc hợp đồng API.
+
+Thêm project `Soopi.SqlServer.Tests`, chạy chủ động ngoài solution kiểm thử không dùng DB.
+Tám ca gọi service thật qua các DbContext/kết nối độc lập: đua refresh token, duyệt xuất trùng,
+thu tiền trùng (có phí và miễn phí), hoàn tác xuất khi kệ thứ hai thiếu hàng, hoàn tác phiếu thu
+và nhật ký sau lỗi (hai loại thu), chặn ngừng linh kiện đang chờ xuất rồi cho phép sau từ chối.
+Ca cuối đã tái hiện lỗi trước khi sửa. Cả 8 ca đạt trên `TrungTamBaoHanhDB_Dev` được người dùng
+cho phép; 187 unit test backend đạt, không bỏ qua ca nào.
+
+Fixture dùng mã `IT` + UUID riêng, không reset/nạp lại dữ liệu hoặc sửa schema `_Dev`.
+Dọn các bản ghi nghiệp vụ do chính ca kiểm thử tạo. Giữ nguyên quyền chỉ ghi thêm nhật ký:
+nếu tài khoản không được DELETE `NhatKyThaoTac`, các dòng nhật ký thử vẫn còn. Bộ đếm sinh mã
+và IDENTITY có thể tăng; không chỉnh lùi vì có thể có phiên khác đang dùng database.
+
+CI có job SQL Server 2022 riêng, database `SoopiIntegrationTests` trong container tạm,
+mật khẩu ngẫu nhiên mỗi lần chạy, nạp schema/tham chiếu và thống kê truy cập trước kiểm thử.
+Deploy phải chờ cả job này và job verify. Cấu hình container theo
+[hướng dẫn Microsoft](https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker?view=sql-server-ver16).
+Chưa chạy job GitHub Actions/container tại local do Docker daemon không hoạt động;
+đã kiểm YAML và cú pháp shell. Không thay đổi package nghiệp vụ hoặc schema đang có.
+
+## D-058 — Sửa audit sau gộp mobile, mục 1–3: chủ yêu cầu và bộ đếm bảo mật (2026-11-04)
+
+Yêu cầu đã gắn `MaKH` thuộc mã khách đó, không chuyển quyền theo SĐT snapshot. Chỉ yêu cầu vãng lai
+`MaKH IS NULL` được đối chiếu SĐT. Áp dụng cho danh sách, chi tiết, tệp; tra cứu công khai bằng mã YC
+hoặc Serial dùng SĐT hiện tại của hồ sơ chủ yêu cầu đang hoạt động. Gộp khách chuyển cả `YeuCauBaoHanh.MaKH`
+cùng thiết bị và phiếu tiếp nhận. Không sửa tên file/thư mục, schema hoặc dữ liệu lịch sử có sẵn.
+
+Xác minh/tiêu OTP dùng chung transaction và khóa `UPDLOCK, HOLDLOCK` khi đọc mã mới nhất.
+Sai mã cập nhật bộ đếm rồi commit trước khi trả `OTP_INVALID`; không quá 5 lượt sai đồng thời.
+Đọc lại hạn dùng sau khi chờ khóa; tiêu mã kiểm tra thêm hạn dùng trong UPDATE. Verify đúng vẫn không tiêu mã.
+Luồng đăng ký/khôi phục gọi OTP trước giao dịch nghiệp vụ, giữ lượt sai khi nghiệp vụ sau đó không thành công.
+
+Đăng nhập đúng/sai cùng khóa dòng tài khoản trước khi sửa bộ đếm. Đọc lại tài khoản trong mỗi lần thử giao dịch,
+kể cả sau khi EF bỏ tracking do xung đột; không tiếp tục dùng đối tượng cũ đã tách. Nhánh sai commit bộ đếm,
+khóa tạm và nhật ký trước khi trả lỗi. Nhánh đúng đối chiếu lại phiên bản đã xác minh mật khẩu rồi xóa bộ đếm.
+
+Kiểm thử mới đã tái hiện lỗi trước sửa. Bổ sung unit test về commit lượt sai OTP, hạn dùng, giới hạn lượt thử,
+verify/consume và thử lại đăng nhập sau rollback; SQL test dùng kết nối độc lập cho tranh chấp và tái sử dụng SĐT.
+Fixture có mã riêng trên `_Dev` đã được phép; không reset, nâng cấp schema hoặc chỉnh dữ liệu ngoài fixture.
+Nhật ký thử vẫn giữ lại nếu tài khoản ứng dụng không có quyền DELETE. Không tự commit/push.
+Kết quả: 196 unit test và toàn bộ 13 kiểm thử SQL Server đạt; build kiểm tra warning như lỗi.
+Kiểm tra cấu trúc/liên kết tài liệu và `git diff --check` đạt. Chưa chạy GitHub Actions.
+
+## D-059 — Sửa audit sau gộp mobile, mục 4–6: phản hồi hồ sơ, refresh POST và tải tệp (2026-11-04)
+
+Hồ sơ mobile chụp mã phiên, tài khoản, API, chế độ Mock/Real và Base URL trước khi gọi GET.
+Chỉ áp dụng dữ liệu, lỗi và kết thúc loading khi phạm vi đó còn hiệu lực; đăng nhập cùng một tài khoản lần nữa
+vẫn được coi là phiên khác. Login/register không để phần tải hồ sơ của phiên cũ kết thúc loading của phiên mới.
+Refresh bị từ chối kết thúc phiên và xóa loading để màn đăng nhập không bị kẹt.
+
+GET và POST cần xác thực dùng chung cơ chế refresh một lần cho cùng token bị 401. Chỉ thử lại tối đa một lần
+sau 401, giữ chặn yêu cầu cũ chạy dưới phiên mới; không tự gửi lại khi timeout, mất mạng, 409 hoặc 5xx.
+Multipart được tạo mới cùng luồng tệp cho mỗi lần gửi. Login/refresh/logout công khai bỏ Bearer cũ, không tham gia
+refresh để tránh vòng lặp; logout không nối phiên mới vào promise refresh đang chờ của phiên cũ.
+
+FileStorage tách đọc metadata và đọc nội dung. AttachmentService kiểm quyền trực tiếp hoặc quyền qua phiếu
+trước khi đọc storage. Không đọc nội dung/tạo mảng byte cho người bị từ chối. Tệp đã mất trả 404 cho người có quyền;
+giữ hợp đồng binary, Content-Type và cache của endpoint tải tệp. Chưa đổi sang streaming cho lượt tải hợp lệ.
+
+Kiểm thử hồi quy đã tái hiện dữ liệu/lỗi hồ sơ đến trễ, loading phiên mới, token hết hạn khi ghi,
+multipart bị tiêu luồng, refresh chéo phiên và đọc tệp bị khóa trước kiểm quyền. Không đổi schema, dependency,
+tên ứng dụng hoặc các chỉnh sửa có sẵn. Kiểm thử SQL chỉ dùng fixture riêng trên `_Dev` đã được phép.
+Kết quả: 152 test Flutter, 204 unit test backend và toàn bộ 13 ca SQL đạt; Flutter analyze không có lỗi,
+build Flutter Web JavaScript thành công. Cảnh báo Wasm của plugin vẫn như trước; chưa kiểm chứng Wasm/thiết bị thật.
+Kiểm tra cấu trúc/liên kết và `git diff --check` đạt. Chưa commit/push hoặc chạy GitHub Actions.
+
+## D-060 — Sửa audit sau gộp mobile, mục 7–9: CI Flutter và bỏ mã thừa (2026-11-05)
+
+Thêm job Flutter riêng trên Ubuntu, cố định SDK stable `3.47.8` như môi trường local đã kiểm chứng.
+Action flutter-action được cố định bằng commit SHA; bật cache SDK, cài package bằng `pub get --enforce-lockfile`,
+analyze/test với `--no-pub`, rồi build Web release. Deploy chờ đủ verify, SQL Server và Flutter.
+URL `https://ci.invalid/api/v1` chỉ dành cho build kiểm chứng, không kết nối hoặc phát hành mobile.
+Không thêm bí mật, dependency nghiệp vụ, job ký APK/iOS hoặc artifact mobile chưa được yêu cầu.
+
+Bỏ lời gọi và hàm `_addInterceptors()` rỗng. Trong `tryAutoLogin`, thiếu refresh token luôn xóa phiên của
+chế độ hiện tại và bỏ trạng thái chờ thử lại; bỏ biến access token và hai nhánh giống hệt nhau.
+Giữ hành vi trước sửa, bao gồm giữ nguyên vùng lưu phiên của chế độ còn lại. Bổ sung bốn ca khôi phục phiên
+cho Mock/Real với access token thiếu hoặc còn sót; chạy trước và sau khi gọn mã.
+
+Kết quả local: cài package với `--enforce-lockfile` đạt; analyze không có lỗi; toàn bộ 156 test Flutter đạt;
+build Web release theo đúng lệnh CI thành công. Cảnh báo Wasm của flutter_secure_storage_web còn như trước,
+không chặn bản Web JavaScript. Workflow qua actionlint, kiểm YAML và quan hệ chờ deploy;
+kiểm tra cấu trúc, 95 liên kết local và `git diff --check` đạt. Đã đối chiếu SDK Linux với kho phát hành chính thức.
+Chưa chạy GitHub Actions hoặc kiểm thử thiết bị thật; chưa commit/push.
+
+## Giai đoạn 3 — cách triển khai theo yêu cầu Ponytail
+
+- React Router + 10 trang TSX giữ markup và CSS cũ; module JavaScript giữ xử lý bảng/form động.
+  Điều hướng giữa trang tải lại tài liệu như cũ, tab giữ hash. Chưa chuyển các bảng động sang React state.
+- Trình xử lý trang được nạp sẵn và gắn đồng bộ trước paint để form không submit GET khi module tới trễ.
+  Hồi quy tải chậm login và browser 49 kiểm tra đã đạt. Giới hạn: bundle JS 601,57 kB (gzip 149,51 kB).
+- `fetch` dùng base URL từ `VITE_API_BASE_URL`, credentials include; auth vẫn theo phương án đã chốt.
+  Không thêm thư viện UI/state/HTTP hay thay đổi nghiệp vụ.
+- ASP.NET phục vụ build cùng origin và chỉ fallback HTML cho 10 route UI; URL API sai vẫn trả Problem Details.
+- Kiểm tra ghi ở frontend dùng API giả lập; DB thật chỉ GET. Không phải xác nhận tương đương giai đoạn 4.

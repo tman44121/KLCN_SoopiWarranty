@@ -208,7 +208,7 @@ def main():
     for row in dotnet:
         if (row["method"], normalized(row["path"])) in SOOPI_ONLY:
             appendix.append(f'| {row["method"]} | `{row["path"]}` | {row["controller"]} |')
-    (ROOT / "verification/ENDPOINTS.md").write_text("\n".join(appendix) + "\n", encoding="utf-8")
+    (ROOT / "docs/02-ky-thuat/ENDPOINTS.md").write_text("\n".join(appendix) + "\n", encoding="utf-8")
     if args.live:
         paths = ["/actuator/health", "/api/v1/portal/catalog", "/api/v1/auth/me", "/api/v1/customers",
                  "/api/v1/portal/my/profile", "/api/v1/tickets", "/api/v1/files/1", "/api/v1/migration-not-found",

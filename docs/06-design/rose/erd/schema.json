@@ -1,0 +1,4124 @@
+{
+ "DanhMucNhan": {
+  "cols": [
+   [
+    "Nhom",
+    "NVARCHAR(40)"
+   ],
+   [
+    "Ma",
+    "NVARCHAR(40)"
+   ],
+   [
+    "NhanNghiepVu",
+    "NVARCHAR(100)"
+   ],
+   [
+    "NhanGiaoDien",
+    "NVARCHAR(100)"
+   ],
+   [
+    "Tone",
+    "NVARCHAR(20)"
+   ],
+   [
+    "ThuTu",
+    "INT"
+   ]
+  ],
+  "pk": [
+   "Nhom",
+   "Ma"
+  ],
+  "fks": [],
+  "nullable": [
+   "Tone"
+  ],
+  "unique": [
+   [
+    "Nhom",
+    "Ma"
+   ]
+  ],
+  "notes": {
+   "ThuTu": [
+    "DEFAULT 0"
+   ]
+  }
+ },
+ "ChuyenTrangThaiHopLe": {
+  "cols": [
+   [
+    "TuTrangThai",
+    "NVARCHAR(40)"
+   ],
+   [
+    "DenTrangThai",
+    "NVARCHAR(40)"
+   ],
+   [
+    "MoTa",
+    "NVARCHAR(255)"
+   ]
+  ],
+  "pk": [
+   "TuTrangThai",
+   "DenTrangThai"
+  ],
+  "fks": [],
+  "nullable": [
+   "MoTa"
+  ],
+  "unique": [
+   [
+    "TuTrangThai",
+    "DenTrangThai"
+   ]
+  ],
+  "notes": {}
+ },
+ "BoDemMa": {
+  "cols": [
+   [
+    "Khoa",
+    "NVARCHAR(30)"
+   ],
+   [
+    "GiaTri",
+    "INT"
+   ]
+  ],
+  "pk": [
+   "Khoa"
+  ],
+  "fks": [],
+  "nullable": [],
+  "unique": [
+   [
+    "Khoa"
+   ]
+  ],
+  "notes": {
+   "GiaTri": [
+    "DEFAULT 0"
+   ]
+  }
+ },
+ "VaiTro": {
+  "cols": [
+   [
+    "MaVaiTro",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TenHienThi",
+    "NVARCHAR(60)"
+   ],
+   [
+    "TenCuV1",
+    "NVARCHAR(50)"
+   ],
+   [
+    "TrangDich",
+    "NVARCHAR(100)"
+   ],
+   [
+    "MoTa",
+    "NVARCHAR(255)"
+   ]
+  ],
+  "pk": [
+   "MaVaiTro"
+  ],
+  "fks": [],
+  "nullable": [
+   "TenCuV1",
+   "MoTa"
+  ],
+  "unique": [
+   [
+    "TenHienThi"
+   ],
+   [
+    "MaVaiTro"
+   ]
+  ],
+  "notes": {}
+ },
+ "QuyenHan": {
+  "cols": [
+   [
+    "MaQuyen",
+    "NVARCHAR(50)"
+   ],
+   [
+    "MoTa",
+    "NVARCHAR(255)"
+   ]
+  ],
+  "pk": [
+   "MaQuyen"
+  ],
+  "fks": [],
+  "nullable": [],
+  "unique": [
+   [
+    "MaQuyen"
+   ]
+  ],
+  "notes": {}
+ },
+ "VaiTro_QuyenHan": {
+  "cols": [
+   [
+    "MaVaiTro",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaQuyen",
+    "NVARCHAR(50)"
+   ]
+  ],
+  "pk": [
+   "MaVaiTro",
+   "MaQuyen"
+  ],
+  "fks": [
+   [
+    [
+     "MaVaiTro"
+    ],
+    "VaiTro",
+    [
+     "MaVaiTro"
+    ]
+   ],
+   [
+    [
+     "MaQuyen"
+    ],
+    "QuyenHan",
+    [
+     "MaQuyen"
+    ]
+   ]
+  ],
+  "nullable": [],
+  "unique": [
+   [
+    "MaVaiTro",
+    "MaQuyen"
+   ]
+  ],
+  "notes": {}
+ },
+ "TaiKhoan": {
+  "cols": [
+   [
+    "MaTaiKhoan",
+    "BIGINT"
+   ],
+   [
+    "TenDangNhap",
+    "NVARCHAR(50)"
+   ],
+   [
+    "MatKhauHash",
+    "NVARCHAR(255)"
+   ],
+   [
+    "LoaiChuThe",
+    "NVARCHAR(20)"
+   ],
+   [
+    "TrangThai",
+    "NVARCHAR(20)"
+   ],
+   [
+    "SoLanSaiLienTiep",
+    "INT"
+   ],
+   [
+    "KhoaTamDen",
+    "DATETIME2(0)"
+   ],
+   [
+    "BatBuocDoiMatKhau",
+    "BIT"
+   ],
+   [
+    "PhienBanBaoMat",
+    "INT"
+   ],
+   [
+    "LanDangNhapCuoi",
+    "DATETIME2(0)"
+   ],
+   [
+    "NgayDoiMatKhau",
+    "DATETIME2(0)"
+   ],
+   [
+    "NgayTao",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaTaiKhoan"
+  ],
+  "fks": [],
+  "nullable": [
+   "KhoaTamDen",
+   "LanDangNhapCuoi",
+   "NgayDoiMatKhau"
+  ],
+  "unique": [
+   [
+    "TenDangNhap"
+   ],
+   [
+    "MaTaiKhoan"
+   ]
+  ],
+  "notes": {
+   "MaTaiKhoan": [
+    "IDENTITY"
+   ],
+   "TrangThai": [
+    "DEFAULT 'ACTIVE'"
+   ],
+   "SoLanSaiLienTiep": [
+    "DEFAULT 0"
+   ],
+   "BatBuocDoiMatKhau": [
+    "DEFAULT 0"
+   ],
+   "PhienBanBaoMat": [
+    "DEFAULT 1"
+   ],
+   "NgayTao": [
+    "DEFAULT CONVERT(DATETIME2(0)"
+   ]
+  }
+ },
+ "TaiKhoan_VaiTro": {
+  "cols": [
+   [
+    "MaTaiKhoan",
+    "BIGINT"
+   ],
+   [
+    "MaVaiTro",
+    "NVARCHAR(30)"
+   ]
+  ],
+  "pk": [
+   "MaTaiKhoan",
+   "MaVaiTro"
+  ],
+  "fks": [
+   [
+    [
+     "MaTaiKhoan"
+    ],
+    "TaiKhoan",
+    [
+     "MaTaiKhoan"
+    ]
+   ],
+   [
+    [
+     "MaVaiTro"
+    ],
+    "VaiTro",
+    [
+     "MaVaiTro"
+    ]
+   ]
+  ],
+  "nullable": [],
+  "unique": [
+   [
+    "MaTaiKhoan",
+    "MaVaiTro"
+   ]
+  ],
+  "notes": {}
+ },
+ "RefreshToken": {
+  "cols": [
+   [
+    "MaToken",
+    "BIGINT"
+   ],
+   [
+    "TokenHash",
+    "NCHAR(64)"
+   ],
+   [
+    "MaTaiKhoan",
+    "BIGINT"
+   ],
+   [
+    "HoToken",
+    "NCHAR(36)"
+   ],
+   [
+    "NgayCap",
+    "DATETIME2(0)"
+   ],
+   [
+    "HetHan",
+    "DATETIME2(0)"
+   ],
+   [
+    "ThuHoiLuc",
+    "DATETIME2(0)"
+   ],
+   [
+    "ThayBangHash",
+    "NCHAR(64)"
+   ],
+   [
+    "GhiNho",
+    "BIT"
+   ],
+   [
+    "DiaChiIP",
+    "NVARCHAR(45)"
+   ],
+   [
+    "UserAgent",
+    "NVARCHAR(255)"
+   ]
+  ],
+  "pk": [
+   "MaToken"
+  ],
+  "fks": [
+   [
+    [
+     "MaTaiKhoan"
+    ],
+    "TaiKhoan",
+    [
+     "MaTaiKhoan"
+    ]
+   ]
+  ],
+  "nullable": [
+   "ThuHoiLuc",
+   "ThayBangHash",
+   "DiaChiIP",
+   "UserAgent"
+  ],
+  "unique": [
+   [
+    "TokenHash"
+   ],
+   [
+    "MaToken"
+   ]
+  ],
+  "notes": {
+   "MaToken": [
+    "IDENTITY"
+   ],
+   "GhiNho": [
+    "DEFAULT 0"
+   ]
+  }
+ },
+ "TramDichVu": {
+  "cols": [
+   [
+    "MaTram",
+    "NVARCHAR(20)"
+   ],
+   [
+    "TenTram",
+    "NVARCHAR(100)"
+   ],
+   [
+    "DiaChi",
+    "NVARCHAR(255)"
+   ],
+   [
+    "HoatDong",
+    "BIT"
+   ]
+  ],
+  "pk": [
+   "MaTram"
+  ],
+  "fks": [],
+  "nullable": [
+   "DiaChi"
+  ],
+  "unique": [
+   [
+    "MaTram"
+   ]
+  ],
+  "notes": {
+   "HoatDong": [
+    "DEFAULT 1"
+   ]
+  }
+ },
+ "NhanVien": {
+  "cols": [
+   [
+    "MaNV",
+    "NVARCHAR(20)"
+   ],
+   [
+    "HoTen",
+    "NVARCHAR(100)"
+   ],
+   [
+    "SDT",
+    "NVARCHAR(15)"
+   ],
+   [
+    "Email",
+    "NVARCHAR(100)"
+   ],
+   [
+    "ChuyenMon",
+    "NVARCHAR(100)"
+   ],
+   [
+    "KyNang",
+    "NVARCHAR(MAX)"
+   ],
+   [
+    "TrangThaiLamViec",
+    "NVARCHAR(20)"
+   ],
+   [
+    "SoPhieuToiDa",
+    "INT"
+   ],
+   [
+    "CoMatTaiTram",
+    "BIT"
+   ],
+   [
+    "MaTram",
+    "NVARCHAR(20)"
+   ],
+   [
+    "MaTaiKhoan",
+    "BIGINT"
+   ]
+  ],
+  "pk": [
+   "MaNV"
+  ],
+  "fks": [
+   [
+    [
+     "MaTaiKhoan"
+    ],
+    "TaiKhoan",
+    [
+     "MaTaiKhoan"
+    ]
+   ],
+   [
+    [
+     "MaTram"
+    ],
+    "TramDichVu",
+    [
+     "MaTram"
+    ]
+   ]
+  ],
+  "nullable": [
+   "Email",
+   "ChuyenMon",
+   "KyNang",
+   "MaTaiKhoan"
+  ],
+  "unique": [
+   [
+    "SDT"
+   ],
+   [
+    "MaNV"
+   ],
+   [
+    "Email"
+   ],
+   [
+    "MaTaiKhoan"
+   ]
+  ],
+  "notes": {
+   "TrangThaiLamViec": [
+    "DEFAULT 'ACTIVE'"
+   ],
+   "SoPhieuToiDa": [
+    "DEFAULT 10"
+   ],
+   "CoMatTaiTram": [
+    "DEFAULT 1"
+   ],
+   "MaTram": [
+    "DEFAULT 'HCM'"
+   ]
+  }
+ },
+ "KhachHang": {
+  "cols": [
+   [
+    "MaKH",
+    "NVARCHAR(20)"
+   ],
+   [
+    "HoTen",
+    "NVARCHAR(100)"
+   ],
+   [
+    "SDT",
+    "NVARCHAR(15)"
+   ],
+   [
+    "Email",
+    "NVARCHAR(100)"
+   ],
+   [
+    "DiaChi",
+    "NVARCHAR(255)"
+   ],
+   [
+    "MaTaiKhoan",
+    "BIGINT"
+   ],
+   [
+    "TrangThai",
+    "NVARCHAR(20)"
+   ],
+   [
+    "GopVaoMaKH",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayTao",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaKH"
+  ],
+  "fks": [
+   [
+    [
+     "MaTaiKhoan"
+    ],
+    "TaiKhoan",
+    [
+     "MaTaiKhoan"
+    ]
+   ],
+   [
+    [
+     "GopVaoMaKH"
+    ],
+    "KhachHang",
+    [
+     "MaKH"
+    ]
+   ]
+  ],
+  "nullable": [
+   "Email",
+   "DiaChi",
+   "MaTaiKhoan",
+   "GopVaoMaKH"
+  ],
+  "unique": [
+   [
+    "MaKH"
+   ],
+   [
+    "MaTaiKhoan"
+   ]
+  ],
+  "notes": {
+   "TrangThai": [
+    "DEFAULT 'ACTIVE'"
+   ],
+   "NgayTao": [
+    "DEFAULT CONVERT(DATETIME2(0)"
+   ]
+  }
+ },
+ "NhomThietBi": {
+  "cols": [
+   [
+    "MaNhom",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TenNhom",
+    "NVARCHAR(100)"
+   ],
+   [
+    "ThuTu",
+    "INT"
+   ],
+   [
+    "HoatDong",
+    "BIT"
+   ]
+  ],
+  "pk": [
+   "MaNhom"
+  ],
+  "fks": [],
+  "nullable": [],
+  "unique": [
+   [
+    "TenNhom"
+   ],
+   [
+    "MaNhom"
+   ]
+  ],
+  "notes": {
+   "ThuTu": [
+    "DEFAULT 0"
+   ],
+   "HoatDong": [
+    "DEFAULT 1"
+   ]
+  }
+ },
+ "LoaiThietBi": {
+  "cols": [
+   [
+    "MaLoai",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaNhom",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TenLoai",
+    "NVARCHAR(100)"
+   ],
+   [
+    "LoaiDinhDanh",
+    "NVARCHAR(10)"
+   ],
+   [
+    "ChecklistChanDoan",
+    "NVARCHAR(MAX)"
+   ],
+   [
+    "HoatDong",
+    "BIT"
+   ]
+  ],
+  "pk": [
+   "MaLoai"
+  ],
+  "fks": [
+   [
+    [
+     "MaNhom"
+    ],
+    "NhomThietBi",
+    [
+     "MaNhom"
+    ]
+   ]
+  ],
+  "nullable": [],
+  "unique": [
+   [
+    "MaLoai"
+   ]
+  ],
+  "notes": {
+   "HoatDong": [
+    "DEFAULT 1"
+   ]
+  }
+ },
+ "HangSanXuat": {
+  "cols": [
+   [
+    "MaHang",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TenHang",
+    "NVARCHAR(100)"
+   ],
+   [
+    "HoatDong",
+    "BIT"
+   ]
+  ],
+  "pk": [
+   "MaHang"
+  ],
+  "fks": [],
+  "nullable": [],
+  "unique": [
+   [
+    "TenHang"
+   ],
+   [
+    "MaHang"
+   ]
+  ],
+  "notes": {
+   "HoatDong": [
+    "DEFAULT 1"
+   ]
+  }
+ },
+ "HangSanXuat_NhomThietBi": {
+  "cols": [
+   [
+    "MaHang",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaNhom",
+    "NVARCHAR(30)"
+   ]
+  ],
+  "pk": [
+   "MaHang",
+   "MaNhom"
+  ],
+  "fks": [
+   [
+    [
+     "MaHang"
+    ],
+    "HangSanXuat",
+    [
+     "MaHang"
+    ]
+   ],
+   [
+    [
+     "MaNhom"
+    ],
+    "NhomThietBi",
+    [
+     "MaNhom"
+    ]
+   ]
+  ],
+  "nullable": [],
+  "unique": [
+   [
+    "MaHang",
+    "MaNhom"
+   ]
+  ],
+  "notes": {}
+ },
+ "SanPham": {
+  "cols": [
+   [
+    "MaSP",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TenSP",
+    "NVARCHAR(150)"
+   ],
+   [
+    "MaHang",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaLoai",
+    "NVARCHAR(30)"
+   ],
+   [
+    "DongSanPham",
+    "NVARCHAR(100)"
+   ],
+   [
+    "ThoiHanBaoHanhMacDinhThang",
+    "INT"
+   ],
+   [
+    "HoatDong",
+    "BIT"
+   ]
+  ],
+  "pk": [
+   "MaSP"
+  ],
+  "fks": [
+   [
+    [
+     "MaHang"
+    ],
+    "HangSanXuat",
+    [
+     "MaHang"
+    ]
+   ],
+   [
+    [
+     "MaLoai"
+    ],
+    "LoaiThietBi",
+    [
+     "MaLoai"
+    ]
+   ]
+  ],
+  "nullable": [
+   "DongSanPham"
+  ],
+  "unique": [
+   [
+    "MaHang",
+    "TenSP"
+   ],
+   [
+    "MaSP"
+   ]
+  ],
+  "notes": {
+   "ThoiHanBaoHanhMacDinhThang": [
+    "DEFAULT 12"
+   ],
+   "HoatDong": [
+    "DEFAULT 1"
+   ]
+  }
+ },
+ "ChinhSachBaoHanh": {
+  "cols": [
+   [
+    "MaChinhSach",
+    "NVARCHAR(30)"
+   ],
+   [
+    "PhamVi",
+    "NVARCHAR(10)"
+   ],
+   [
+    "MaSP",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaHang",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TenChinhSach",
+    "NVARCHAR(150)"
+   ],
+   [
+    "SoThangBaoHanh",
+    "INT"
+   ],
+   [
+    "DieuKienBaoHanh",
+    "NVARCHAR(MAX)"
+   ],
+   [
+    "TruongHopTuChoi",
+    "NVARCHAR(MAX)"
+   ],
+   [
+    "NhaPhanPhoi",
+    "NVARCHAR(150)"
+   ],
+   [
+    "HoatDong",
+    "BIT"
+   ]
+  ],
+  "pk": [
+   "MaChinhSach"
+  ],
+  "fks": [
+   [
+    [
+     "MaSP"
+    ],
+    "SanPham",
+    [
+     "MaSP"
+    ]
+   ],
+   [
+    [
+     "MaHang"
+    ],
+    "HangSanXuat",
+    [
+     "MaHang"
+    ]
+   ]
+  ],
+  "nullable": [
+   "MaSP",
+   "DieuKienBaoHanh",
+   "TruongHopTuChoi",
+   "NhaPhanPhoi"
+  ],
+  "unique": [
+   [
+    "MaChinhSach"
+   ]
+  ],
+  "notes": {
+   "HoatDong": [
+    "DEFAULT 1"
+   ]
+  }
+ },
+ "BangGiaDichVu": {
+  "cols": [
+   [
+    "MaDichVu",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TenDichVu",
+    "NVARCHAR(150)"
+   ],
+   [
+    "MaNhom",
+    "NVARCHAR(30)"
+   ],
+   [
+    "DonGia",
+    "DECIMAL(18,2)"
+   ],
+   [
+    "HoatDong",
+    "BIT"
+   ]
+  ],
+  "pk": [
+   "MaDichVu"
+  ],
+  "fks": [
+   [
+    [
+     "MaNhom"
+    ],
+    "NhomThietBi",
+    [
+     "MaNhom"
+    ]
+   ]
+  ],
+  "nullable": [],
+  "unique": [
+   [
+    "MaDichVu"
+   ]
+  ],
+  "notes": {
+   "HoatDong": [
+    "DEFAULT 1"
+   ]
+  }
+ },
+ "ThietBi": {
+  "cols": [
+   [
+    "MaThietBi",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaSP",
+    "NVARCHAR(30)"
+   ],
+   [
+    "LoaiDinhDanh",
+    "NVARCHAR(10)"
+   ],
+   [
+    "SoSerial_IMEI",
+    "NVARCHAR(50)"
+   ],
+   [
+    "MaKH",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayKichHoatBaoHanh",
+    "DATE"
+   ],
+   [
+    "NgayHetHanBaoHanh",
+    "DATE"
+   ],
+   [
+    "NhaPhanPhoi",
+    "NVARCHAR(150)"
+   ],
+   [
+    "NgayTao",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaThietBi"
+  ],
+  "fks": [
+   [
+    [
+     "MaSP"
+    ],
+    "SanPham",
+    [
+     "MaSP"
+    ]
+   ],
+   [
+    [
+     "MaKH"
+    ],
+    "KhachHang",
+    [
+     "MaKH"
+    ]
+   ]
+  ],
+  "nullable": [
+   "MaKH",
+   "NgayKichHoatBaoHanh",
+   "NgayHetHanBaoHanh",
+   "NhaPhanPhoi"
+  ],
+  "unique": [
+   [
+    "SoSerial_IMEI"
+   ],
+   [
+    "MaThietBi"
+   ]
+  ],
+  "notes": {
+   "NgayTao": [
+    "DEFAULT CONVERT(DATETIME2(0)"
+   ]
+  }
+ },
+ "YeuCauBaoHanh": {
+  "cols": [
+   [
+    "MaYeuCau",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaKH",
+    "NVARCHAR(20)"
+   ],
+   [
+    "HoTenKhach",
+    "NVARCHAR(100)"
+   ],
+   [
+    "SDTKhach",
+    "NVARCHAR(15)"
+   ],
+   [
+    "EmailKhach",
+    "NVARCHAR(100)"
+   ],
+   [
+    "DiaChiKhach",
+    "NVARCHAR(255)"
+   ],
+   [
+    "MaNhom",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaLoai",
+    "NVARCHAR(30)"
+   ],
+   [
+    "HangModel",
+    "NVARCHAR(150)"
+   ],
+   [
+    "LoaiDinhDanh",
+    "NVARCHAR(10)"
+   ],
+   [
+    "SoSerial_IMEI",
+    "NVARCHAR(50)"
+   ],
+   [
+    "MoTaLoi",
+    "NVARCHAR(MAX)"
+   ],
+   [
+    "MaTramMongMuon",
+    "NVARCHAR(20)"
+   ],
+   [
+    "ThoiGianMongMuonTu",
+    "DATETIME2(0)"
+   ],
+   [
+    "ThoiGianMongMuonDen",
+    "DATETIME2(0)"
+   ],
+   [
+    "TrangThai",
+    "NVARCHAR(20)"
+   ],
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaNVXuLy",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayXuLy",
+    "DATETIME2(0)"
+   ],
+   [
+    "LyDoHuy",
+    "NVARCHAR(255)"
+   ],
+   [
+    "NgayTao",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaYeuCau"
+  ],
+  "fks": [
+   [
+    [
+     "MaKH"
+    ],
+    "KhachHang",
+    [
+     "MaKH"
+    ]
+   ],
+   [
+    [
+     "MaNhom"
+    ],
+    "NhomThietBi",
+    [
+     "MaNhom"
+    ]
+   ],
+   [
+    [
+     "MaLoai"
+    ],
+    "LoaiThietBi",
+    [
+     "MaLoai"
+    ]
+   ],
+   [
+    [
+     "MaTramMongMuon"
+    ],
+    "TramDichVu",
+    [
+     "MaTram"
+    ]
+   ],
+   [
+    [
+     "MaNVXuLy"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ],
+   [
+    [
+     "MaPhieuTN"
+    ],
+    "PhieuTiepNhan",
+    [
+     "MaPhieuTN"
+    ]
+   ]
+  ],
+  "nullable": [
+   "MaKH",
+   "EmailKhach",
+   "DiaChiKhach",
+   "ThoiGianMongMuonTu",
+   "ThoiGianMongMuonDen",
+   "MaPhieuTN",
+   "MaNVXuLy",
+   "NgayXuLy",
+   "LyDoHuy"
+  ],
+  "unique": [
+   [
+    "MaYeuCau"
+   ],
+   [
+    "MaPhieuTN"
+   ]
+  ],
+  "notes": {
+   "TrangThai": [
+    "DEFAULT 'PENDING_INTAKE'"
+   ]
+  }
+ },
+ "TepDinhKem": {
+  "cols": [
+   [
+    "MaTep",
+    "BIGINT"
+   ],
+   [
+    "LoaiChuSoHuu",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaChuSoHuu",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TenTep",
+    "NVARCHAR(255)"
+   ],
+   [
+    "LoaiNoiDung",
+    "NVARCHAR(50)"
+   ],
+   [
+    "KichThuoc",
+    "INT"
+   ],
+   [
+    "DuongDanLuuTru",
+    "NVARCHAR(500)"
+   ],
+   [
+    "NguoiTaiLen",
+    "NVARCHAR(30)"
+   ],
+   [
+    "NgayTaiLen",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaTep"
+  ],
+  "fks": [],
+  "nullable": [
+   "NguoiTaiLen"
+  ],
+  "unique": [
+   [
+    "MaTep"
+   ]
+  ],
+  "notes": {
+   "MaTep": [
+    "IDENTITY"
+   ]
+  }
+ },
+ "PhieuTiepNhan": {
+  "cols": [
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaTram",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayTiepNhan",
+    "DATETIME2(0)"
+   ],
+   [
+    "KenhTiepNhan",
+    "NVARCHAR(20)"
+   ],
+   [
+    "LoaiYeuCau",
+    "NVARCHAR(20)"
+   ],
+   [
+    "MaYeuCau",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaKH",
+    "NVARCHAR(20)"
+   ],
+   [
+    "MaThietBi",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaNVTiepNhan",
+    "NVARCHAR(20)"
+   ],
+   [
+    "BH_TrangThaiLucNhan",
+    "NVARCHAR(20)"
+   ],
+   [
+    "BH_NgayKichHoat",
+    "DATE"
+   ],
+   [
+    "BH_NgayHetHan",
+    "DATE"
+   ],
+   [
+    "BH_MaChinhSach",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TinhTrangTem",
+    "NVARCHAR(100)"
+   ],
+   [
+    "NQ_VetTray",
+    "NVARCHAR(10)"
+   ],
+   [
+    "NQ_CanMop",
+    "BIT"
+   ],
+   [
+    "NQ_NutVo",
+    "BIT"
+   ],
+   [
+    "NQ_DauHieuAmNuoc",
+    "NVARCHAR(10)"
+   ],
+   [
+    "NQ_PhuKien",
+    "NVARCHAR(10)"
+   ],
+   [
+    "PhuKienKemTheo",
+    "NVARCHAR(255)"
+   ],
+   [
+    "TinhTrangNgoaiQuan",
+    "NVARCHAR(255)"
+   ],
+   [
+    "KhachXacNhanNgoaiQuan",
+    "BIT"
+   ],
+   [
+    "MoTaLoiKhachBao",
+    "NVARCHAR(MAX)"
+   ],
+   [
+    "NgayHenTra",
+    "DATETIME2(0)"
+   ],
+   [
+    "ChiPhiDuKien",
+    "DECIMAL(18,2)"
+   ],
+   [
+    "MucSLA",
+    "NVARCHAR(20)"
+   ],
+   [
+    "HanSLA",
+    "DATETIME2(0)"
+   ],
+   [
+    "TrangThaiXuLy",
+    "NVARCHAR(40)"
+   ],
+   [
+    "NgayCapNhatTrangThai",
+    "DATETIME2(0)"
+   ],
+   [
+    "NguoiCapNhatTrangThai",
+    "NVARCHAR(30)"
+   ],
+   [
+    "VaiTroCapNhatTrangThai",
+    "NVARCHAR(30)"
+   ],
+   [
+    "GhiChuTrangThai",
+    "NVARCHAR(255)"
+   ],
+   [
+    "PhienBan",
+    "INT"
+   ],
+   [
+    "ConMo",
+    "BIT"
+   ]
+  ],
+  "pk": [
+   "MaPhieuTN"
+  ],
+  "fks": [
+   [
+    [
+     "MaTram"
+    ],
+    "TramDichVu",
+    [
+     "MaTram"
+    ]
+   ],
+   [
+    [
+     "MaYeuCau"
+    ],
+    "YeuCauBaoHanh",
+    [
+     "MaYeuCau"
+    ]
+   ],
+   [
+    [
+     "MaKH"
+    ],
+    "KhachHang",
+    [
+     "MaKH"
+    ]
+   ],
+   [
+    [
+     "MaThietBi"
+    ],
+    "ThietBi",
+    [
+     "MaThietBi"
+    ]
+   ],
+   [
+    [
+     "MaNVTiepNhan"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ],
+   [
+    [
+     "BH_MaChinhSach"
+    ],
+    "ChinhSachBaoHanh",
+    [
+     "MaChinhSach"
+    ]
+   ]
+  ],
+  "nullable": [
+   "MaYeuCau",
+   "BH_NgayKichHoat",
+   "BH_NgayHetHan",
+   "BH_MaChinhSach",
+   "TinhTrangTem",
+   "PhuKienKemTheo",
+   "TinhTrangNgoaiQuan",
+   "NgayHenTra",
+   "NgayCapNhatTrangThai",
+   "NguoiCapNhatTrangThai",
+   "VaiTroCapNhatTrangThai",
+   "GhiChuTrangThai"
+  ],
+  "unique": [
+   [
+    "MaPhieuTN"
+   ],
+   [
+    "MaYeuCau"
+   ]
+  ],
+  "notes": {
+   "MaTram": [
+    "DEFAULT 'HCM'"
+   ],
+   "KenhTiepNhan": [
+    "DEFAULT 'COUNTER'"
+   ],
+   "LoaiYeuCau": [
+    "DEFAULT 'WARRANTY'"
+   ],
+   "NQ_VetTray": [
+    "DEFAULT 'NONE'"
+   ],
+   "NQ_CanMop": [
+    "DEFAULT 0"
+   ],
+   "NQ_NutVo": [
+    "DEFAULT 0"
+   ],
+   "NQ_DauHieuAmNuoc": [
+    "DEFAULT 'NONE'"
+   ],
+   "NQ_PhuKien": [
+    "DEFAULT 'COMPLETE'"
+   ],
+   "ChiPhiDuKien": [
+    "DEFAULT 0"
+   ],
+   "MucSLA": [
+    "DEFAULT 'STANDARD_48H'"
+   ],
+   "TrangThaiXuLy": [
+    "DEFAULT 'RECEIVED'"
+   ],
+   "PhienBan": [
+    "DEFAULT 0"
+   ],
+   "ConMo": [
+    "DEFAULT 1"
+   ]
+  }
+ },
+ "LichSuTrangThai_ThietBi": {
+  "cols": [
+   [
+    "MaLichSu",
+    "BIGINT"
+   ],
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TrangThai",
+    "NVARCHAR(40)"
+   ],
+   [
+    "ThoiGianCapNhat",
+    "DATETIME2(0)"
+   ],
+   [
+    "MoTaChiTiet",
+    "NVARCHAR(255)"
+   ],
+   [
+    "NguoiCapNhat",
+    "NVARCHAR(100)"
+   ],
+   [
+    "TenNguoiCapNhat",
+    "NVARCHAR(100)"
+   ],
+   [
+    "VaiTroNguoiCapNhat",
+    "NVARCHAR(30)"
+   ]
+  ],
+  "pk": [
+   "MaLichSu"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuTN"
+    ],
+    "PhieuTiepNhan",
+    [
+     "MaPhieuTN"
+    ]
+   ]
+  ],
+  "nullable": [
+   "MoTaChiTiet",
+   "NguoiCapNhat",
+   "TenNguoiCapNhat",
+   "VaiTroNguoiCapNhat"
+  ],
+  "unique": [
+   [
+    "MaLichSu"
+   ]
+  ],
+  "notes": {
+   "MaLichSu": [
+    "IDENTITY"
+   ]
+  }
+ },
+ "GhiChuPhieu": {
+  "cols": [
+   [
+    "MaGhiChu",
+    "BIGINT"
+   ],
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "Loai",
+    "NVARCHAR(10)"
+   ],
+   [
+    "NoiDung",
+    "NVARCHAR(1000)"
+   ],
+   [
+    "NguoiViet",
+    "NVARCHAR(20)"
+   ],
+   [
+    "VaiTroNguoiViet",
+    "NVARCHAR(30)"
+   ],
+   [
+    "ThoiGian",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaGhiChu"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuTN"
+    ],
+    "PhieuTiepNhan",
+    [
+     "MaPhieuTN"
+    ]
+   ],
+   [
+    [
+     "NguoiViet"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ]
+  ],
+  "nullable": [
+   "VaiTroNguoiViet"
+  ],
+  "unique": [
+   [
+    "MaGhiChu"
+   ]
+  ],
+  "notes": {
+   "MaGhiChu": [
+    "IDENTITY"
+   ]
+  }
+ },
+ "PhanCong": {
+  "cols": [
+   [
+    "MaPhanCong",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaNVQuanLy",
+    "NVARCHAR(20)"
+   ],
+   [
+    "MaKTV",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayPhanCong",
+    "DATETIME2(0)"
+   ],
+   [
+    "MucDoUuTien",
+    "NVARCHAR(10)"
+   ],
+   [
+    "GhiChu",
+    "NVARCHAR(255)"
+   ]
+  ],
+  "pk": [
+   "MaPhanCong"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuTN"
+    ],
+    "PhieuTiepNhan",
+    [
+     "MaPhieuTN"
+    ]
+   ],
+   [
+    [
+     "MaNVQuanLy"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ],
+   [
+    [
+     "MaKTV"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ]
+  ],
+  "nullable": [
+   "GhiChu"
+  ],
+  "unique": [
+   [
+    "MaPhieuTN"
+   ],
+   [
+    "MaPhanCong"
+   ]
+  ],
+  "notes": {
+   "MucDoUuTien": [
+    "DEFAULT 'NORMAL'"
+   ]
+  }
+ },
+ "LichSuPhanCong": {
+  "cols": [
+   [
+    "MaLichSu",
+    "BIGINT"
+   ],
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaKTVCu",
+    "NVARCHAR(20)"
+   ],
+   [
+    "MaKTVMoi",
+    "NVARCHAR(20)"
+   ],
+   [
+    "MaNVThucHien",
+    "NVARCHAR(20)"
+   ],
+   [
+    "ThoiGian",
+    "DATETIME2(0)"
+   ],
+   [
+    "GhiChu",
+    "NVARCHAR(255)"
+   ]
+  ],
+  "pk": [
+   "MaLichSu"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuTN"
+    ],
+    "PhieuTiepNhan",
+    [
+     "MaPhieuTN"
+    ]
+   ],
+   [
+    [
+     "MaKTVCu"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ],
+   [
+    [
+     "MaKTVMoi"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ],
+   [
+    [
+     "MaNVThucHien"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ]
+  ],
+  "nullable": [
+   "GhiChu"
+  ],
+  "unique": [
+   [
+    "MaLichSu"
+   ]
+  ],
+  "notes": {
+   "MaLichSu": [
+    "IDENTITY"
+   ]
+  }
+ },
+ "PhieuKiemTra": {
+  "cols": [
+   [
+    "MaPhieuKT",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaKTV",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayKiemTra",
+    "DATETIME2(0)"
+   ],
+   [
+    "KetQuaKiemTraChiTiet",
+    "NVARCHAR(MAX)"
+   ],
+   [
+    "ChecklistKetQua",
+    "NVARCHAR(MAX)"
+   ],
+   [
+    "TinhTrangVaoNuoc",
+    "BIT"
+   ],
+   [
+    "PhanLoaiBaoHanh",
+    "NVARCHAR(20)"
+   ],
+   [
+    "LyDoNgoaiBaoHanh",
+    "NVARCHAR(255)"
+   ],
+   [
+    "HuongKhacPhucDeXuat",
+    "NVARCHAR(MAX)"
+   ],
+   [
+    "GhiChuPhanLoaiLai",
+    "NVARCHAR(500)"
+   ],
+   [
+    "SoLanSuaPhanLoai",
+    "INT"
+   ],
+   [
+    "NgayCapNhat",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaPhieuKT"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuTN"
+    ],
+    "PhieuTiepNhan",
+    [
+     "MaPhieuTN"
+    ]
+   ],
+   [
+    [
+     "MaKTV"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ]
+  ],
+  "nullable": [
+   "ChecklistKetQua",
+   "LyDoNgoaiBaoHanh",
+   "HuongKhacPhucDeXuat",
+   "GhiChuPhanLoaiLai",
+   "NgayCapNhat"
+  ],
+  "unique": [
+   [
+    "MaPhieuTN"
+   ],
+   [
+    "MaPhieuKT"
+   ]
+  ],
+  "notes": {
+   "TinhTrangVaoNuoc": [
+    "DEFAULT 0"
+   ],
+   "SoLanSuaPhanLoai": [
+    "DEFAULT 0"
+   ]
+  }
+ },
+ "PhieuBaoGia": {
+  "cols": [
+   [
+    "MaBaoGia",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaPhieuKT",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaKTVLap",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayLapBaoGia",
+    "DATETIME2(0)"
+   ],
+   [
+    "HanHieuLuc",
+    "DATE"
+   ],
+   [
+    "MaDichVu",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TongTienLinhKien",
+    "DECIMAL(18,2)"
+   ],
+   [
+    "TongTienCong",
+    "DECIMAL(18,2)"
+   ],
+   [
+    "ThueVAT",
+    "DECIMAL(5,2)"
+   ],
+   [
+    "TongTienThanhToan",
+    "DECIMAL(18,2)"
+   ],
+   [
+    "TrangThaiDuyetNoiBo",
+    "NVARCHAR(10)"
+   ],
+   [
+    "MaNVQuanLyDuyet",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayDuyetNoiBo",
+    "DATETIME2(0)"
+   ],
+   [
+    "GhiChuDuyet",
+    "NVARCHAR(500)"
+   ],
+   [
+    "KhachXacNhan",
+    "NVARCHAR(10)"
+   ],
+   [
+    "NgayKhachXacNhan",
+    "DATETIME2(0)"
+   ],
+   [
+    "LyDoKhachTuChoi",
+    "NVARCHAR(255)"
+   ],
+   [
+    "KenhXacNhan",
+    "NVARCHAR(10)"
+   ],
+   [
+    "NguoiGhiNhanXacNhan",
+    "NVARCHAR(30)"
+   ]
+  ],
+  "pk": [
+   "MaBaoGia"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuTN"
+    ],
+    "PhieuTiepNhan",
+    [
+     "MaPhieuTN"
+    ]
+   ],
+   [
+    [
+     "MaPhieuKT"
+    ],
+    "PhieuKiemTra",
+    [
+     "MaPhieuKT"
+    ]
+   ],
+   [
+    [
+     "MaKTVLap"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ],
+   [
+    [
+     "MaNVQuanLyDuyet"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ],
+   [
+    [
+     "MaDichVu"
+    ],
+    "BangGiaDichVu",
+    [
+     "MaDichVu"
+    ]
+   ]
+  ],
+  "nullable": [
+   "HanHieuLuc",
+   "MaDichVu",
+   "MaNVQuanLyDuyet",
+   "NgayDuyetNoiBo",
+   "GhiChuDuyet",
+   "NgayKhachXacNhan",
+   "LyDoKhachTuChoi",
+   "KenhXacNhan",
+   "NguoiGhiNhanXacNhan"
+  ],
+  "unique": [
+   [
+    "MaBaoGia"
+   ]
+  ],
+  "notes": {
+   "TongTienLinhKien": [
+    "DEFAULT 0"
+   ],
+   "TongTienCong": [
+    "DEFAULT 0"
+   ],
+   "ThueVAT": [
+    "DEFAULT 8.00"
+   ],
+   "TongTienThanhToan": [
+    "DEFAULT 0"
+   ],
+   "TrangThaiDuyetNoiBo": [
+    "DEFAULT 'PENDING'"
+   ],
+   "KhachXacNhan": [
+    "DEFAULT 'PENDING'"
+   ]
+  }
+ },
+ "NhaCungCap": {
+  "cols": [
+   [
+    "MaNCC",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TenNCC",
+    "NVARCHAR(150)"
+   ],
+   [
+    "SDT",
+    "NVARCHAR(15)"
+   ],
+   [
+    "DiaChi",
+    "NVARCHAR(255)"
+   ],
+   [
+    "Email",
+    "NVARCHAR(100)"
+   ],
+   [
+    "HoatDong",
+    "BIT"
+   ]
+  ],
+  "pk": [
+   "MaNCC"
+  ],
+  "fks": [],
+  "nullable": [
+   "SDT",
+   "DiaChi",
+   "Email"
+  ],
+  "unique": [
+   [
+    "MaNCC"
+   ]
+  ],
+  "notes": {
+   "HoatDong": [
+    "DEFAULT 1"
+   ]
+  }
+ },
+ "LinhKien": {
+  "cols": [
+   [
+    "MaLK",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TenLK",
+    "NVARCHAR(150)"
+   ],
+   [
+    "DonViTinh",
+    "NVARCHAR(20)"
+   ],
+   [
+    "MaNhom",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TenHang",
+    "NVARCHAR(100)"
+   ],
+   [
+    "DonGiaVon",
+    "DECIMAL(18,2)"
+   ],
+   [
+    "DonGiaDichVu",
+    "DECIMAL(18,2)"
+   ],
+   [
+    "SoLuongTon",
+    "INT"
+   ],
+   [
+    "SoLuongDaGiu",
+    "INT"
+   ],
+   [
+    "DinhMucTonToiThieu",
+    "INT"
+   ],
+   [
+    "KeChinh",
+    "NVARCHAR(20)"
+   ],
+   [
+    "ThoiHanBaoHanhThang",
+    "INT"
+   ],
+   [
+    "MaNCC",
+    "NVARCHAR(30)"
+   ],
+   [
+    "HoatDong",
+    "BIT"
+   ],
+   [
+    "PhienBan",
+    "INT"
+   ]
+  ],
+  "pk": [
+   "MaLK"
+  ],
+  "fks": [
+   [
+    [
+     "MaNCC"
+    ],
+    "NhaCungCap",
+    [
+     "MaNCC"
+    ]
+   ],
+   [
+    [
+     "MaNhom"
+    ],
+    "NhomThietBi",
+    [
+     "MaNhom"
+    ]
+   ]
+  ],
+  "nullable": [
+   "MaNhom",
+   "TenHang",
+   "MaNCC"
+  ],
+  "unique": [
+   [
+    "MaLK"
+   ]
+  ],
+  "notes": {
+   "DonViTinh": [
+    "DEFAULT N'Cái'"
+   ],
+   "SoLuongTon": [
+    "DEFAULT 0"
+   ],
+   "SoLuongDaGiu": [
+    "DEFAULT 0"
+   ],
+   "DinhMucTonToiThieu": [
+    "DEFAULT 5"
+   ],
+   "ThoiHanBaoHanhThang": [
+    "DEFAULT 3"
+   ],
+   "HoatDong": [
+    "DEFAULT 1"
+   ],
+   "PhienBan": [
+    "DEFAULT 0"
+   ]
+  }
+ },
+ "TonKhoTheoKe": {
+  "cols": [
+   [
+    "MaLK",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaKe",
+    "NVARCHAR(20)"
+   ],
+   [
+    "SoLuong",
+    "INT"
+   ]
+  ],
+  "pk": [
+   "MaLK",
+   "MaKe"
+  ],
+  "fks": [
+   [
+    [
+     "MaLK"
+    ],
+    "LinhKien",
+    [
+     "MaLK"
+    ]
+   ]
+  ],
+  "nullable": [],
+  "unique": [
+   [
+    "MaLK",
+    "MaKe"
+   ]
+  ],
+  "notes": {
+   "SoLuong": [
+    "DEFAULT 0"
+   ]
+  }
+ },
+ "ChiTietBaoGia": {
+  "cols": [
+   [
+    "MaChiTietBG",
+    "BIGINT"
+   ],
+   [
+    "MaBaoGia",
+    "NVARCHAR(30)"
+   ],
+   [
+    "SoThuTu",
+    "INT"
+   ],
+   [
+    "MaLK",
+    "NVARCHAR(30)"
+   ],
+   [
+    "NoiDungMuc",
+    "NVARCHAR(255)"
+   ],
+   [
+    "SoLuong",
+    "INT"
+   ],
+   [
+    "DonGia",
+    "DECIMAL(18,2)"
+   ],
+   [
+    "TienCongSuaChua",
+    "DECIMAL(18,2)"
+   ],
+   [
+    "ThanhTien",
+    "DECIMAL(18,2)"
+   ]
+  ],
+  "pk": [
+   "MaChiTietBG"
+  ],
+  "fks": [
+   [
+    [
+     "MaBaoGia"
+    ],
+    "PhieuBaoGia",
+    [
+     "MaBaoGia"
+    ]
+   ],
+   [
+    [
+     "MaLK"
+    ],
+    "LinhKien",
+    [
+     "MaLK"
+    ]
+   ]
+  ],
+  "nullable": [
+   "MaLK"
+  ],
+  "unique": [
+   [
+    "MaBaoGia",
+    "SoThuTu"
+   ],
+   [
+    "MaChiTietBG"
+   ]
+  ],
+  "notes": {
+   "MaChiTietBG": [
+    "IDENTITY"
+   ],
+   "SoLuong": [
+    "DEFAULT 1"
+   ],
+   "TienCongSuaChua": [
+    "DEFAULT 0"
+   ]
+  }
+ },
+ "PhieuNhapKho": {
+  "cols": [
+   [
+    "MaPhieuNhap",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaNCC",
+    "NVARCHAR(30)"
+   ],
+   [
+    "SoLo",
+    "NVARCHAR(50)"
+   ],
+   [
+    "NgayNhap",
+    "DATE"
+   ],
+   [
+    "MaNguoiLap",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayLap",
+    "DATETIME2(0)"
+   ],
+   [
+    "TrangThai",
+    "NVARCHAR(10)"
+   ],
+   [
+    "MaNguoiDuyet",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayDuyet",
+    "DATETIME2(0)"
+   ],
+   [
+    "LyDoTuChoi",
+    "NVARCHAR(255)"
+   ],
+   [
+    "TongTienNhap",
+    "DECIMAL(18,2)"
+   ],
+   [
+    "GhiChu",
+    "NVARCHAR(255)"
+   ]
+  ],
+  "pk": [
+   "MaPhieuNhap"
+  ],
+  "fks": [
+   [
+    [
+     "MaNCC"
+    ],
+    "NhaCungCap",
+    [
+     "MaNCC"
+    ]
+   ],
+   [
+    [
+     "MaNguoiLap"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ],
+   [
+    [
+     "MaNguoiDuyet"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ]
+  ],
+  "nullable": [
+   "SoLo",
+   "MaNguoiDuyet",
+   "NgayDuyet",
+   "LyDoTuChoi",
+   "GhiChu"
+  ],
+  "unique": [
+   [
+    "MaPhieuNhap"
+   ]
+  ],
+  "notes": {
+   "TrangThai": [
+    "DEFAULT 'PENDING'"
+   ],
+   "TongTienNhap": [
+    "DEFAULT 0"
+   ]
+  }
+ },
+ "ChiTietNhapKho": {
+  "cols": [
+   [
+    "MaChiTietNhap",
+    "BIGINT"
+   ],
+   [
+    "MaPhieuNhap",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaLK",
+    "NVARCHAR(30)"
+   ],
+   [
+    "SoLuongNhap",
+    "INT"
+   ],
+   [
+    "DonGiaNhap",
+    "DECIMAL(18,2)"
+   ],
+   [
+    "SerialLo",
+    "NVARCHAR(60)"
+   ],
+   [
+    "MaKe",
+    "NVARCHAR(20)"
+   ]
+  ],
+  "pk": [
+   "MaChiTietNhap"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuNhap"
+    ],
+    "PhieuNhapKho",
+    [
+     "MaPhieuNhap"
+    ]
+   ],
+   [
+    [
+     "MaLK"
+    ],
+    "LinhKien",
+    [
+     "MaLK"
+    ]
+   ]
+  ],
+  "nullable": [
+   "SerialLo",
+   "MaKe"
+  ],
+  "unique": [
+   [
+    "MaChiTietNhap"
+   ]
+  ],
+  "notes": {
+   "MaChiTietNhap": [
+    "IDENTITY"
+   ]
+  }
+ },
+ "PhieuXuatKho": {
+  "cols": [
+   [
+    "MaPhieuXuat",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "NguonXuat",
+    "NVARCHAR(20)"
+   ],
+   [
+    "MaBaoGia",
+    "NVARCHAR(30)"
+   ],
+   [
+    "LyDoXuat",
+    "NVARCHAR(255)"
+   ],
+   [
+    "MaKTVNhan",
+    "NVARCHAR(20)"
+   ],
+   [
+    "MaNguoiYeuCau",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayYeuCau",
+    "DATETIME2(0)"
+   ],
+   [
+    "TrangThai",
+    "NVARCHAR(10)"
+   ],
+   [
+    "MaThuKhoXuLy",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayXuLy",
+    "DATETIME2(0)"
+   ],
+   [
+    "LyDoTuChoi",
+    "NVARCHAR(255)"
+   ],
+   [
+    "TongTienXuat",
+    "DECIMAL(18,2)"
+   ]
+  ],
+  "pk": [
+   "MaPhieuXuat"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuTN"
+    ],
+    "PhieuTiepNhan",
+    [
+     "MaPhieuTN"
+    ]
+   ],
+   [
+    [
+     "MaBaoGia"
+    ],
+    "PhieuBaoGia",
+    [
+     "MaBaoGia"
+    ]
+   ],
+   [
+    [
+     "MaKTVNhan"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ],
+   [
+    [
+     "MaNguoiYeuCau"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ],
+   [
+    [
+     "MaThuKhoXuLy"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ]
+  ],
+  "nullable": [
+   "MaBaoGia",
+   "MaThuKhoXuLy",
+   "NgayXuLy",
+   "LyDoTuChoi"
+  ],
+  "unique": [
+   [
+    "MaPhieuXuat"
+   ]
+  ],
+  "notes": {
+   "TrangThai": [
+    "DEFAULT 'PENDING'"
+   ],
+   "TongTienXuat": [
+    "DEFAULT 0"
+   ]
+  }
+ },
+ "ChiTietXuatKho": {
+  "cols": [
+   [
+    "MaChiTietXuat",
+    "BIGINT"
+   ],
+   [
+    "MaPhieuXuat",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaLK",
+    "NVARCHAR(30)"
+   ],
+   [
+    "SoLuongXuat",
+    "INT"
+   ],
+   [
+    "DonGiaXuat",
+    "DECIMAL(18,2)"
+   ],
+   [
+    "MaKe",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayHetHanBaoHanhLK",
+    "DATE"
+   ]
+  ],
+  "pk": [
+   "MaChiTietXuat"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuXuat"
+    ],
+    "PhieuXuatKho",
+    [
+     "MaPhieuXuat"
+    ]
+   ],
+   [
+    [
+     "MaLK"
+    ],
+    "LinhKien",
+    [
+     "MaLK"
+    ]
+   ]
+  ],
+  "nullable": [
+   "MaKe",
+   "NgayHetHanBaoHanhLK"
+  ],
+  "unique": [
+   [
+    "MaPhieuXuat",
+    "MaLK"
+   ],
+   [
+    "MaChiTietXuat"
+   ]
+  ],
+  "notes": {
+   "MaChiTietXuat": [
+    "IDENTITY"
+   ]
+  }
+ },
+ "PhieuDieuChuyen": {
+  "cols": [
+   [
+    "MaPhieuDC",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaLK",
+    "NVARCHAR(30)"
+   ],
+   [
+    "SoLuong",
+    "INT"
+   ],
+   [
+    "TuKe",
+    "NVARCHAR(20)"
+   ],
+   [
+    "DenKe",
+    "NVARCHAR(20)"
+   ],
+   [
+    "LyDo",
+    "NVARCHAR(255)"
+   ],
+   [
+    "TrangThai",
+    "NVARCHAR(10)"
+   ],
+   [
+    "MaNguoiLap",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayLap",
+    "DATETIME2(0)"
+   ],
+   [
+    "MaNguoiDuyet",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayDuyet",
+    "DATETIME2(0)"
+   ],
+   [
+    "LyDoTuChoi",
+    "NVARCHAR(255)"
+   ]
+  ],
+  "pk": [
+   "MaPhieuDC"
+  ],
+  "fks": [
+   [
+    [
+     "MaLK"
+    ],
+    "LinhKien",
+    [
+     "MaLK"
+    ]
+   ],
+   [
+    [
+     "MaNguoiLap"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ],
+   [
+    [
+     "MaNguoiDuyet"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ]
+  ],
+  "nullable": [
+   "MaNguoiDuyet",
+   "NgayDuyet",
+   "LyDoTuChoi"
+  ],
+  "unique": [
+   [
+    "MaPhieuDC"
+   ]
+  ],
+  "notes": {
+   "TrangThai": [
+    "DEFAULT 'PENDING'"
+   ]
+  }
+ },
+ "PhieuKiemKe": {
+  "cols": [
+   [
+    "MaPhieuKK",
+    "NVARCHAR(30)"
+   ],
+   [
+    "PhamVi",
+    "NVARCHAR(100)"
+   ],
+   [
+    "GhiChu",
+    "NVARCHAR(255)"
+   ],
+   [
+    "TrangThai",
+    "NVARCHAR(10)"
+   ],
+   [
+    "MaNguoiLap",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayLap",
+    "DATETIME2(0)"
+   ],
+   [
+    "MaNguoiDuyet",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayDuyet",
+    "DATETIME2(0)"
+   ],
+   [
+    "LyDoTuChoi",
+    "NVARCHAR(255)"
+   ]
+  ],
+  "pk": [
+   "MaPhieuKK"
+  ],
+  "fks": [
+   [
+    [
+     "MaNguoiLap"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ],
+   [
+    [
+     "MaNguoiDuyet"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ]
+  ],
+  "nullable": [
+   "GhiChu",
+   "MaNguoiDuyet",
+   "NgayDuyet",
+   "LyDoTuChoi"
+  ],
+  "unique": [
+   [
+    "MaPhieuKK"
+   ]
+  ],
+  "notes": {
+   "TrangThai": [
+    "DEFAULT 'PENDING'"
+   ]
+  }
+ },
+ "ChiTietKiemKe": {
+  "cols": [
+   [
+    "MaChiTietKK",
+    "BIGINT"
+   ],
+   [
+    "MaPhieuKK",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaLK",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaKe",
+    "NVARCHAR(20)"
+   ],
+   [
+    "SoLuongHeThong",
+    "INT"
+   ],
+   [
+    "SoLuongThucTe",
+    "INT"
+   ],
+   [
+    "GhiChu",
+    "NVARCHAR(255)"
+   ]
+  ],
+  "pk": [
+   "MaChiTietKK"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuKK"
+    ],
+    "PhieuKiemKe",
+    [
+     "MaPhieuKK"
+    ]
+   ],
+   [
+    [
+     "MaLK"
+    ],
+    "LinhKien",
+    [
+     "MaLK"
+    ]
+   ]
+  ],
+  "nullable": [
+   "GhiChu"
+  ],
+  "unique": [
+   [
+    "MaPhieuKK",
+    "MaLK",
+    "MaKe"
+   ],
+   [
+    "MaChiTietKK"
+   ]
+  ],
+  "notes": {
+   "MaChiTietKK": [
+    "IDENTITY"
+   ]
+  }
+ },
+ "PhieuSuaChua": {
+  "cols": [
+   [
+    "MaPhieuSC",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaPhanCong",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaKTV",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayTao",
+    "DATETIME2(0)"
+   ],
+   [
+    "NgayBatDau",
+    "DATETIME2(0)"
+   ],
+   [
+    "TrangThaiSuaChua",
+    "NVARCHAR(12)"
+   ]
+  ],
+  "pk": [
+   "MaPhieuSC"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuTN"
+    ],
+    "PhieuTiepNhan",
+    [
+     "MaPhieuTN"
+    ]
+   ],
+   [
+    [
+     "MaPhanCong"
+    ],
+    "PhanCong",
+    [
+     "MaPhanCong"
+    ]
+   ],
+   [
+    [
+     "MaKTV"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ]
+  ],
+  "nullable": [
+   "NgayBatDau"
+  ],
+  "unique": [
+   [
+    "MaPhieuTN"
+   ],
+   [
+    "MaPhanCong"
+   ],
+   [
+    "MaPhieuSC"
+   ]
+  ],
+  "notes": {
+   "TrangThaiSuaChua": [
+    "DEFAULT 'PENDING'"
+   ]
+  }
+ },
+ "KetQuaSuaChua": {
+  "cols": [
+   [
+    "MaKetQua",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaPhieuSC",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaKTV",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NoiDungSuaChua",
+    "NVARCHAR(MAX)"
+   ],
+   [
+    "KetQuaQCTungBuoc",
+    "NVARCHAR(MAX)"
+   ],
+   [
+    "KetQuaKCS",
+    "NVARCHAR(10)"
+   ],
+   [
+    "ChiTietTestKCS",
+    "NVARCHAR(MAX)"
+   ],
+   [
+    "NgayGhiNhan",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaKetQua"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuSC"
+    ],
+    "PhieuSuaChua",
+    [
+     "MaPhieuSC"
+    ]
+   ],
+   [
+    [
+     "MaKTV"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ]
+  ],
+  "nullable": [
+   "KetQuaQCTungBuoc",
+   "ChiTietTestKCS"
+  ],
+  "unique": [
+   [
+    "MaKetQua"
+   ]
+  ],
+  "notes": {}
+ },
+ "HoaDon_PhieuThu": {
+  "cols": [
+   [
+    "MaPhieuThu",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaBaoGia",
+    "NVARCHAR(30)"
+   ],
+   [
+    "LoaiThu",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayThu",
+    "DATETIME2(0)"
+   ],
+   [
+    "NguoiNopTien",
+    "NVARCHAR(100)"
+   ],
+   [
+    "SoTienThu",
+    "DECIMAL(18,2)"
+   ],
+   [
+    "HinhThucThanhToan",
+    "NVARCHAR(20)"
+   ],
+   [
+    "MaThuNgan",
+    "NVARCHAR(20)"
+   ],
+   [
+    "GhiChu",
+    "NVARCHAR(255)"
+   ]
+  ],
+  "pk": [
+   "MaPhieuThu"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuTN"
+    ],
+    "PhieuTiepNhan",
+    [
+     "MaPhieuTN"
+    ]
+   ],
+   [
+    [
+     "MaBaoGia"
+    ],
+    "PhieuBaoGia",
+    [
+     "MaBaoGia"
+    ]
+   ],
+   [
+    [
+     "MaThuNgan"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ]
+  ],
+  "nullable": [
+   "MaBaoGia",
+   "GhiChu"
+  ],
+  "unique": [
+   [
+    "MaPhieuTN"
+   ],
+   [
+    "MaPhieuThu"
+   ]
+  ],
+  "notes": {}
+ },
+ "PhieuBanGiao": {
+  "cols": [
+   [
+    "MaBanGiao",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "LoaiBanGiao",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NgayBanGiao",
+    "DATETIME2(0)"
+   ],
+   [
+    "MaNVBanGiao",
+    "NVARCHAR(20)"
+   ],
+   [
+    "NguoiNhanMay",
+    "NVARCHAR(100)"
+   ],
+   [
+    "HienTrangKhiTra",
+    "NVARCHAR(255)"
+   ],
+   [
+    "TraLaiLinhKienCu",
+    "BIT"
+   ],
+   [
+    "ThoiHanBaoHanhMoi",
+    "NVARCHAR(100)"
+   ],
+   [
+    "DanhGiaHaiLong",
+    "INT"
+   ],
+   [
+    "NhanXetDanhGia",
+    "NVARCHAR(1000)"
+   ],
+   [
+    "NgayDanhGia",
+    "DATETIME2(0)"
+   ],
+   [
+    "KT_NgoaiQuanDungBienBan",
+    "BIT"
+   ],
+   [
+    "KT_KhoiDongBinhThuong",
+    "BIT"
+   ],
+   [
+    "KT_ChucNangChinhOK",
+    "BIT"
+   ],
+   [
+    "KT_PhuKienDayDu",
+    "BIT"
+   ],
+   [
+    "KT_KhongLoiPhatSinh",
+    "BIT"
+   ],
+   [
+    "MaTepChuKy",
+    "BIGINT"
+   ],
+   [
+    "KhachXacNhanNhanMay",
+    "BIT"
+   ]
+  ],
+  "pk": [
+   "MaBanGiao"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuTN"
+    ],
+    "PhieuTiepNhan",
+    [
+     "MaPhieuTN"
+    ]
+   ],
+   [
+    [
+     "MaNVBanGiao"
+    ],
+    "NhanVien",
+    [
+     "MaNV"
+    ]
+   ],
+   [
+    [
+     "MaTepChuKy"
+    ],
+    "TepDinhKem",
+    [
+     "MaTep"
+    ]
+   ]
+  ],
+  "nullable": [
+   "ThoiHanBaoHanhMoi",
+   "DanhGiaHaiLong",
+   "NhanXetDanhGia",
+   "NgayDanhGia",
+   "KT_NgoaiQuanDungBienBan",
+   "KT_KhoiDongBinhThuong",
+   "KT_ChucNangChinhOK",
+   "KT_PhuKienDayDu",
+   "KT_KhongLoiPhatSinh",
+   "MaTepChuKy"
+  ],
+  "unique": [
+   [
+    "MaPhieuTN"
+   ],
+   [
+    "MaBanGiao"
+   ]
+  ],
+  "notes": {
+   "TraLaiLinhKienCu": [
+    "DEFAULT 0"
+   ],
+   "KhachXacNhanNhanMay": [
+    "DEFAULT 0"
+   ]
+  }
+ },
+ "NhatKyThaoTac": {
+  "cols": [
+   [
+    "MaNhatKy",
+    "BIGINT"
+   ],
+   [
+    "ThoiGian",
+    "DATETIME2(0)"
+   ],
+   [
+    "MaNguoiThaoTac",
+    "NVARCHAR(30)"
+   ],
+   [
+    "TenNguoiThaoTac",
+    "NVARCHAR(100)"
+   ],
+   [
+    "VaiTro",
+    "NVARCHAR(200)"
+   ],
+   [
+    "HanhDong",
+    "NVARCHAR(50)"
+   ],
+   [
+    "NhanHanhDong",
+    "NVARCHAR(100)"
+   ],
+   [
+    "LoaiDoiTuong",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaDoiTuong",
+    "NVARCHAR(30)"
+   ],
+   [
+    "GiaTriTruoc",
+    "NVARCHAR(500)"
+   ],
+   [
+    "GiaTriSau",
+    "NVARCHAR(500)"
+   ]
+  ],
+  "pk": [
+   "MaNhatKy"
+  ],
+  "fks": [],
+  "nullable": [
+   "TenNguoiThaoTac",
+   "VaiTro",
+   "GiaTriTruoc",
+   "GiaTriSau"
+  ],
+  "unique": [
+   [
+    "MaNhatKy"
+   ]
+  ],
+  "notes": {
+   "MaNhatKy": [
+    "IDENTITY"
+   ]
+  }
+ },
+ "ThongBao": {
+  "cols": [
+   [
+    "MaThongBao",
+    "BIGINT"
+   ],
+   [
+    "MaVaiTroNhan",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaTaiKhoanNhan",
+    "BIGINT"
+   ],
+   [
+    "Loai",
+    "NVARCHAR(40)"
+   ],
+   [
+    "NoiDung",
+    "NVARCHAR(255)"
+   ],
+   [
+    "DuongDan",
+    "NVARCHAR(255)"
+   ],
+   [
+    "MaDoiTuong",
+    "NVARCHAR(30)"
+   ],
+   [
+    "NgayTao",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaThongBao"
+  ],
+  "fks": [
+   [
+    [
+     "MaVaiTroNhan"
+    ],
+    "VaiTro",
+    [
+     "MaVaiTro"
+    ]
+   ],
+   [
+    [
+     "MaTaiKhoanNhan"
+    ],
+    "TaiKhoan",
+    [
+     "MaTaiKhoan"
+    ]
+   ]
+  ],
+  "nullable": [
+   "MaVaiTroNhan",
+   "MaTaiKhoanNhan",
+   "DuongDan",
+   "MaDoiTuong"
+  ],
+  "unique": [
+   [
+    "MaThongBao"
+   ]
+  ],
+  "notes": {
+   "MaThongBao": [
+    "IDENTITY"
+   ]
+  }
+ },
+ "ThongBao_DaDoc": {
+  "cols": [
+   [
+    "MaThongBao",
+    "BIGINT"
+   ],
+   [
+    "MaTaiKhoan",
+    "BIGINT"
+   ],
+   [
+    "DocLuc",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaThongBao",
+   "MaTaiKhoan"
+  ],
+  "fks": [
+   [
+    [
+     "MaThongBao"
+    ],
+    "ThongBao",
+    [
+     "MaThongBao"
+    ]
+   ],
+   [
+    [
+     "MaTaiKhoan"
+    ],
+    "TaiKhoan",
+    [
+     "MaTaiKhoan"
+    ]
+   ]
+  ],
+  "nullable": [],
+  "unique": [
+   [
+    "MaThongBao",
+    "MaTaiKhoan"
+   ]
+  ],
+  "notes": {}
+ },
+ "MaXacThucOTP": {
+  "cols": [
+   [
+    "MaOTP",
+    "BIGINT"
+   ],
+   [
+    "Email",
+    "NVARCHAR(100)"
+   ],
+   [
+    "MucDich",
+    "NVARCHAR(20)"
+   ],
+   [
+    "MaHash",
+    "NCHAR(64)"
+   ],
+   [
+    "NgayTao",
+    "DATETIME2(0)"
+   ],
+   [
+    "HetHan",
+    "DATETIME2(0)"
+   ],
+   [
+    "SoLanNhapSai",
+    "INT"
+   ],
+   [
+    "DaDungLuc",
+    "DATETIME2(0)"
+   ],
+   [
+    "DiaChiIP",
+    "NVARCHAR(45)"
+   ]
+  ],
+  "pk": [
+   "MaOTP"
+  ],
+  "fks": [],
+  "nullable": [
+   "DaDungLuc",
+   "DiaChiIP"
+  ],
+  "unique": [
+   [
+    "MaOTP"
+   ]
+  ],
+  "notes": {
+   "MaOTP": [
+    "IDENTITY"
+   ],
+   "SoLanNhapSai": [
+    "DEFAULT 0"
+   ]
+  }
+ },
+ "ThietBiNhanThongBao": {
+  "cols": [
+   [
+    "MaCaiDat",
+    "NVARCHAR(64)"
+   ],
+   [
+    "MaTaiKhoan",
+    "BIGINT"
+   ],
+   [
+    "NenTang",
+    "NVARCHAR(10)"
+   ],
+   [
+    "PushToken",
+    "NVARCHAR(512)"
+   ],
+   [
+    "PhienBanApp",
+    "NVARCHAR(30)"
+   ],
+   [
+    "NgayDangKy",
+    "DATETIME2(0)"
+   ],
+   [
+    "NgayCapNhat",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaCaiDat"
+  ],
+  "fks": [
+   [
+    [
+     "MaTaiKhoan"
+    ],
+    "TaiKhoan",
+    [
+     "MaTaiKhoan"
+    ]
+   ]
+  ],
+  "nullable": [
+   "PhienBanApp"
+  ],
+  "unique": [
+   [
+    "PushToken"
+   ],
+   [
+    "MaCaiDat"
+   ]
+  ],
+  "notes": {}
+ },
+ "HoiThoai": {
+  "cols": [
+   [
+    "MaHoiThoai",
+    "BIGINT"
+   ],
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaTaiKhoanKhach",
+    "BIGINT"
+   ],
+   [
+    "MaTaiKhoanNV",
+    "BIGINT"
+   ],
+   [
+    "KhachDaDocDen",
+    "BIGINT"
+   ],
+   [
+    "NVDaDocDen",
+    "BIGINT"
+   ],
+   [
+    "NgayCapNhat",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaHoiThoai"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuTN"
+    ],
+    "PhieuTiepNhan",
+    [
+     "MaPhieuTN"
+    ]
+   ],
+   [
+    [
+     "MaTaiKhoanKhach"
+    ],
+    "TaiKhoan",
+    [
+     "MaTaiKhoan"
+    ]
+   ],
+   [
+    [
+     "MaTaiKhoanNV"
+    ],
+    "TaiKhoan",
+    [
+     "MaTaiKhoan"
+    ]
+   ]
+  ],
+  "nullable": [],
+  "unique": [
+   [
+    "MaPhieuTN",
+    "MaTaiKhoanKhach",
+    "MaTaiKhoanNV"
+   ],
+   [
+    "MaHoiThoai"
+   ]
+  ],
+  "notes": {
+   "MaHoiThoai": [
+    "IDENTITY"
+   ],
+   "KhachDaDocDen": [
+    "DEFAULT 0"
+   ],
+   "NVDaDocDen": [
+    "DEFAULT 0"
+   ]
+  }
+ },
+ "TinNhan": {
+  "cols": [
+   [
+    "MaTinNhan",
+    "BIGINT"
+   ],
+   [
+    "MaHoiThoai",
+    "BIGINT"
+   ],
+   [
+    "MaNguoiGui",
+    "BIGINT"
+   ],
+   [
+    "MaYeuCau",
+    "UNIQUEIDENTIFIER"
+   ],
+   [
+    "NoiDung",
+    "NVARCHAR(2000)"
+   ],
+   [
+    "NgayTao",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaTinNhan"
+  ],
+  "fks": [
+   [
+    [
+     "MaHoiThoai"
+    ],
+    "HoiThoai",
+    [
+     "MaHoiThoai"
+    ]
+   ],
+   [
+    [
+     "MaNguoiGui"
+    ],
+    "TaiKhoan",
+    [
+     "MaTaiKhoan"
+    ]
+   ]
+  ],
+  "nullable": [],
+  "unique": [
+   [
+    "MaHoiThoai",
+    "MaYeuCau"
+   ],
+   [
+    "MaTinNhan"
+   ]
+  ],
+  "notes": {
+   "MaTinNhan": [
+    "IDENTITY"
+   ]
+  }
+ },
+ "MocThongKeTruyCap": {
+  "cols": [
+   [
+    "Id",
+    "INT"
+   ],
+   [
+    "NgayBatDau",
+    "DATE"
+   ]
+  ],
+  "pk": [
+   "Id"
+  ],
+  "fks": [],
+  "nullable": [],
+  "unique": [
+   [
+    "Id"
+   ]
+  ],
+  "notes": {}
+ },
+ "LuotTruyCap": {
+  "cols": [
+   [
+    "MaLuot",
+    "BIGINT"
+   ],
+   [
+    "MaTaiKhoan",
+    "BIGINT"
+   ],
+   [
+    "MaPhien",
+    "NCHAR(36)"
+   ],
+   [
+    "BatDau",
+    "DATETIME2(0)"
+   ],
+   [
+    "HoatDongCuoi",
+    "DATETIME2(0)"
+   ],
+   [
+    "KetThuc",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaLuot"
+  ],
+  "fks": [
+   [
+    [
+     "MaTaiKhoan"
+    ],
+    "TaiKhoan",
+    [
+     "MaTaiKhoan"
+    ]
+   ]
+  ],
+  "nullable": [
+   "KetThuc"
+  ],
+  "unique": [
+   [
+    "MaLuot"
+   ]
+  ],
+  "notes": {
+   "MaLuot": [
+    "IDENTITY"
+   ]
+  }
+ },
+ "TruyCapTheoNgay": {
+  "cols": [
+   [
+    "Ngay",
+    "DATE"
+   ],
+   [
+    "MaTaiKhoan",
+    "BIGINT"
+   ]
+  ],
+  "pk": [
+   "Ngay",
+   "MaTaiKhoan"
+  ],
+  "fks": [
+   [
+    [
+     "MaTaiKhoan"
+    ],
+    "TaiKhoan",
+    [
+     "MaTaiKhoan"
+    ]
+   ]
+  ],
+  "nullable": [],
+  "unique": [
+   [
+    "Ngay",
+    "MaTaiKhoan"
+   ]
+  ],
+  "notes": {}
+ },
+ "DanhGiaCongKhai": {
+  "cols": [
+   [
+    "MaPhieuTN",
+    "NVARCHAR(30)"
+   ],
+   [
+    "MaCongKhai",
+    "UNIQUEIDENTIFIER"
+   ],
+   [
+    "SoSao",
+    "INT"
+   ],
+   [
+    "NoiDung",
+    "NVARCHAR(1000)"
+   ],
+   [
+    "NgayDanhGia",
+    "DATETIME2(0)"
+   ],
+   [
+    "MaNguoiDuyet",
+    "BIGINT"
+   ],
+   [
+    "NgayDuyet",
+    "DATETIME2(0)"
+   ]
+  ],
+  "pk": [
+   "MaPhieuTN"
+  ],
+  "fks": [
+   [
+    [
+     "MaPhieuTN"
+    ],
+    "PhieuBanGiao",
+    [
+     "MaPhieuTN"
+    ]
+   ],
+   [
+    [
+     "MaNguoiDuyet"
+    ],
+    "TaiKhoan",
+    [
+     "MaTaiKhoan"
+    ]
+   ]
+  ],
+  "nullable": [
+   "NoiDung",
+   "NgayDanhGia"
+  ],
+  "unique": [
+   [
+    "MaCongKhai"
+   ],
+   [
+    "MaPhieuTN"
+   ]
+  ],
+  "notes": {}
+ }
+}
