@@ -396,6 +396,19 @@ export default function initialize() {
     });
   }
 
+  /** Cùng luật với Imei.Require ở server: 15 chữ số (bỏ khoảng trắng, gạch) và đúng tổng kiểm Luhn. */
+  function imeiError(raw) {
+    const imei = raw.replace(/[\s-]/g, "");
+    if (!/^\d{15}$/.test(imei)) return `IMEI phải gồm đúng 15 chữ số (đang có ${imei.length} ký tự).`;
+    let sum = 0;
+    for (let i = 0; i < 15; i++) {
+      let digit = Number(imei[14 - i]);
+      if (i % 2 === 1) digit = digit * 2 > 9 ? digit * 2 - 9 : digit * 2;
+      sum += digit;
+    }
+    return sum % 10 === 0 ? null : "IMEI sai chữ số kiểm tra, có thể gõ nhầm một chữ số. Đối chiếu lại với *#06# hoặc tem hộp máy.";
+  }
+
   function validate() {
     const errors = [];
     const need = (condition, field, message) => {
@@ -403,12 +416,21 @@ export default function initialize() {
     };
     need(normalizePhone(el.phone.value).length >= 9, "customer.newCustomer.phone", "Vui lòng nhập số điện thoại.");
     if (!state.customerCode) need(el.name.value.trim(), "customer.newCustomer.fullName", "Vui lòng nhập họ tên khách hàng.");
+    // Server từ chối (DEVICE_NOT_OWNED) khi máy đã có chủ khác khách trên phiếu — báo ngay thay vì gửi request.
+    const owner = state.device && state.device.customerCode;
+    need(!owner || owner === state.customerCode, "customer.newCustomer.phone",
+      `Thiết bị này đang thuộc khách hàng ${owner}. Kiểm tra lại serial hoặc chọn đúng chủ máy.`);
     if (!state.device) {
       need(el.category.value, "category", "Vui lòng chọn nhóm thiết bị.");
       need(el.deviceType.value, "deviceType", "Vui lòng chọn loại thiết bị.");
       need(el.product.value, "device.newDevice.productId", "Vui lòng chọn hãng/model.");
     }
     need(el.identifier.value.trim(), "device.newDevice.serialOrImei", "Vui lòng nhập Serial Number.");
+    const type = selectedDeviceType();
+    if (!state.device && type && type.identifierType === "IMEI" && el.identifier.value.trim()) {
+      const error = imeiError(el.identifier.value);
+      need(!error, "device.newDevice.serialOrImei", error);
+    }
     need(el.symptom.value.trim(), "reportedIssue", "Vui lòng nhập mô tả lỗi của khách hàng.");
     const pickedDate = document.querySelector("#promisedReturnAt-date");
     need(!pickedDate.value || (!!el.promised.value && !businessTimeError(el.promised.value)), "promisedReturnAt", "Vui lòng chọn giờ hẹn hợp lệ trong giờ làm việc.");

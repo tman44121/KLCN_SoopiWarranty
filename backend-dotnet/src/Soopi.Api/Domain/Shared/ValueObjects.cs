@@ -61,7 +61,18 @@ public static partial class EmailAddress
 
 public static partial class SerialNumber
 {
-    public static string Normalize(string? raw) => raw is null ? "" : Whitespace().Replace(raw, "").ToUpperInvariant();
+    /// <summary>
+    /// Bỏ khoảng trắng, viết hoa. IMEI hay được chép kèm gạch (35-481210-987654-0) nên chuỗi chỉ gồm 15 số và gạch thì bỏ gạch,
+    /// để tra cứu, đăng ký và cổng khách hàng đều khớp với bản đã lưu.
+    /// </summary>
+    public static string Normalize(string? raw)
+    {
+        if (raw is null) return "";
+        var value = Whitespace().Replace(raw, "").ToUpperInvariant();
+        // ponytail: serial thật dạng "15 số chia gạch" sẽ bị gộp như IMEI — chưa gặp; tách theo loại định danh nếu xảy ra.
+        var undashed = value.Replace("-", "");
+        return undashed.Length != value.Length && Imei.IsDigits15(undashed) ? undashed : value;
+    }
 
     public static string Require(string? raw)
     {
@@ -83,9 +94,14 @@ public static partial class Imei
     public static string Require(string? raw)
     {
         var value = SerialNumber.Normalize(raw);
-        if (!Digits15().IsMatch(value) || !ValidLuhn(value)) throw new DomainException(ErrorCode.IMEI_INVALID);
+        if (!Digits15().IsMatch(value))
+            throw new DomainException(ErrorCode.IMEI_INVALID, $"phải gồm đúng 15 chữ số (đang có {value.Length} ký tự)");
+        if (!ValidLuhn(value))
+            throw new DomainException(ErrorCode.IMEI_INVALID, "sai chữ số kiểm tra, có thể gõ nhầm một chữ số");
         return value;
     }
+
+    internal static bool IsDigits15(string value) => Digits15().IsMatch(value);
 
     private static bool ValidLuhn(string value)
     {

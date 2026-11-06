@@ -97,6 +97,10 @@ public class SharedTests
     {
         Assert.Equal("354812109876540", Imei.Require("3548 1210 9876 540"));
         Assert.Equal(ErrorCode.IMEI_INVALID, Assert.Throws<DomainException>(() => Imei.Require("354812109876541")).Code);
+        Assert.Equal(ErrorCode.IMEI_INVALID, Assert.Throws<DomainException>(() => Imei.Require("35481210987654")).Code);
+        Assert.Equal("354812109876540", Imei.Require("35-481210-987654-0"));
+        Assert.Equal("354812109876540", SerialNumber.Normalize("35-481210-987654-0"));
+        Assert.Equal("SN-ABC1", SerialNumber.Normalize("sn-abc1"));
         Assert.Equal(ErrorCode.SERIAL_REQUIRED, Assert.Throws<DomainException>(() => SerialNumber.Require("ab")).Code);
         Assert.Equal("SN-ABC1", SerialNumber.Require(" sn-abc1 "));
     }

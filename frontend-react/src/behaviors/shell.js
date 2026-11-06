@@ -350,6 +350,10 @@ export default function initialize() {
     }
 
     window.showToast = function showToast(message, type = "success") {
+      // Bấm lại nhiều lần cùng một lỗi: thay toast cũ thay vì xếp chồng.
+      stack.querySelectorAll(`.toast--${type}`).forEach((old) => {
+        if (old.textContent === String(message)) old.remove();
+      });
       const toast = document.createElement("div");
       toast.className = `toast toast--${type}`;
       const icon =
