@@ -4,6 +4,12 @@ export const businessSlots = Array.from({ length: 37 }, (_, i) => {
   const value = `${String(hour).padStart(2, '0')}:${minute}`;
   return { value, label: value };
 });
+/** Chỉ giữ số và ":"; "0830" → "08:30", "8:30" → "08:30", "31231" → "31:23". */
+export function normalizeTime(raw) {
+  const [h = '', m] = String(raw || '').replace(/[^\d:]/g, '').split(':');
+  const t = m === undefined ? (h.length > 2 ? `${h.slice(0, 2)}:${h.slice(2, 4)}` : h) : `${h.slice(0, 2)}:${m.slice(0, 2)}`;
+  return /^\d:\d\d$/.test(t) ? `0${t}` : t;
+}
 export const businessInstant = value => new Date(`${value}+07:00`);
 export const vietnamToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date());
 export function businessTimeError(value) {

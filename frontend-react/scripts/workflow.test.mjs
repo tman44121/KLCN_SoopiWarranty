@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { businessTimeError, appointmentEnd, businessSlots } from '../src/business-hours.js';
+import { businessTimeError, appointmentEnd, businessSlots, normalizeTime } from '../src/business-hours.js';
 import { filterItems, allPages } from '../src/behaviors/list-filters.js';
 
 test('Vietnam business hours, Saturday, Sunday and closing boundary', () => {
@@ -11,6 +11,11 @@ test('Vietnam business hours, Saturday, Sunday and closing boundary', () => {
   assert.equal(businessSlots.find(s => s.value === '12:00').label, '12:00');
   assert.equal(businessSlots.at(-1).label, '17:00');
   assert.equal(businessTimeError('2026-11-02T14:37'), '');
+});
+
+test('appointment time input keeps only HH:mm digits', () => {
+  const cases = { '0830': '08:30', '8:30': '08:30', '31231': '31:23', 'ab1x2': '12', '083': '08:3', '08:': '08:', '': '' };
+  for (const [raw, want] of Object.entries(cases)) assert.equal(normalizeTime(raw), want, raw);
 });
 
 test('cashier reads every server page instead of silently truncating at 100', async () => {
