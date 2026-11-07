@@ -90,34 +90,17 @@ public static partial class SerialNumber
 
 public static partial class Imei
 {
-    /// <summary>15 chữ số và đúng tổng kiểm Luhn; sai → IMEI_INVALID.</summary>
+    /// <summary>IMEI dùng cùng giới hạn 4–50 ký tự chữ, số, dấu gạch ngang như Serial.</summary>
     public static string Require(string? raw)
     {
-        var value = SerialNumber.Normalize(raw);
-        if (!Digits15().IsMatch(value))
-            throw new DomainException(ErrorCode.IMEI_INVALID, $"phải gồm đúng 15 chữ số (đang có {value.Length} ký tự)");
-        if (!ValidLuhn(value))
-            throw new DomainException(ErrorCode.IMEI_INVALID, "sai chữ số kiểm tra, có thể gõ nhầm một chữ số");
-        return value;
+        try { return SerialNumber.Require(raw); }
+        catch (DomainException)
+        {
+            throw new DomainException(ErrorCode.IMEI_INVALID, "cần 4–50 ký tự chữ, số hoặc dấu gạch ngang");
+        }
     }
 
     internal static bool IsDigits15(string value) => Digits15().IsMatch(value);
-
-    private static bool ValidLuhn(string value)
-    {
-        var sum = 0;
-        for (var index = 0; index < value.Length; index++)
-        {
-            var digit = value[value.Length - 1 - index] - '0';
-            if (index % 2 == 1)
-            {
-                digit *= 2;
-                if (digit > 9) digit -= 9;
-            }
-            sum += digit;
-        }
-        return sum % 10 == 0;
-    }
 
     [GeneratedRegex("^[0-9]{15}$")]
     private static partial Regex Digits15();

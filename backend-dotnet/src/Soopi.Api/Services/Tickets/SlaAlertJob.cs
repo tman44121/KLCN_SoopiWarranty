@@ -1,15 +1,13 @@
-using Soopi.Api.Data.Stores;
+using Soopi.Api.Data;
 using Soopi.Api.Services.Shared;
 
 namespace Soopi.Api.Services.Tickets;
 
-/// <summary>
-/// Mục 11.10: định kỳ (mặc định 5 phút) báo Điều phối và KTV phụ trách các phiếu sắp trễ SLA — mỗi phiếu chỉ báo một lần.
-/// Tắt bằng <c>Sla:Alerts:Enabled = false</c>.
-/// </summary>
+/// <summary>Báo Điều phối và KTV khi sắp trễ hoặc đã quá SLA; mỗi loại chỉ gửi một lần mỗi phiếu.</summary>
 public sealed class SlaAlertJob(IServiceScopeFactory scopes, TimeProvider clock, IConfiguration configuration, ILogger<SlaAlertJob> logger) : BackgroundService
 {
     public const string Type = "SLA_AT_RISK";
+    public const string BreachedType = "SLA_BREACHED";
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -21,8 +19,9 @@ public sealed class SlaAlertJob(IServiceScopeFactory scopes, TimeProvider clock,
             try
             {
                 await using var scope = scopes.CreateAsyncScope();
-                await NotifyAtRiskAsync(scope.ServiceProvider.GetRequiredService<TicketStore>(),
-                    scope.ServiceProvider.GetRequiredService<NotificationService>());
+                await NotifyAsync(scope.ServiceProvider.GetRequiredService<Sql>(),
+                    scope.ServiceProvider.GetRequiredService<NotificationService>(),
+                    scope.ServiceProvider.GetRequiredService<TransactionRunner>());
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -31,18 +30,33 @@ public sealed class SlaAlertJob(IServiceScopeFactory scopes, TimeProvider clock,
         }
     }
 
-    public async Task<int> NotifyAtRiskAsync(TicketStore tickets, NotificationService notifications)
+    public async Task<int> NotifyAsync(Sql sql, NotificationService notifications, TransactionRunner transactions)
     {
         var now = clock.GetUtcNow();
+        var until = now + configuration.GetValue("Sla:AtRiskThreshold", TimeSpan.FromHours(2));
+        const string active = "ConMo = 1 AND TrangThaiXuLy NOT IN ('COMPLETED', 'AWAITING_RETURN') AND HanSLA <= ?";
+        var codes = await sql.QueryAsync("SELECT MaPhieuTN FROM PhieuTiepNhan WHERE " + active,
+            row => row.Str("MaPhieuTN")!, until);
         var sent = 0;
-        foreach (var ticket in await tickets.FindSlaDueBetweenAsync(now, now + configuration.GetValue("Sla:AtRiskThreshold", TimeSpan.FromHours(2))))
+        foreach (var code in codes)
         {
-            if (await notifications.ExistsAsync(Type, ticket.Id)) continue;
-            var message = $"Phiếu {ticket.Id} sắp trễ hẹn SLA.";
-            await notifications.ForRoleAsync("DISPATCHER", Type, message, "/dispatch#" + ticket.Id, ticket.Id);
-            if (ticket.Assignment is { } assignment)
-                await notifications.ForEmployeeAsync(assignment.TechnicianId, Type, message, "/technician#" + ticket.Id, ticket.Id);
-            sent++;
+            if (await transactions.InTransactionAsync(async () =>
+            {
+                // Khóa phiếu trong lúc kiểm tra/gửi để hai tiến trình không tạo cảnh báo trùng.
+                var candidates = await sql.QueryAsync($"SELECT p.HanSLA, pc.MaKTV FROM PhieuTiepNhan p{sql.LockHint} "
+                    + "LEFT JOIN PhanCong pc ON pc.MaPhieuTN = p.MaPhieuTN WHERE p.MaPhieuTN = ? AND " + active,
+                    row => (DueAt: row.Time("HanSLA")!.Value, TechnicianId: row.Str("MaKTV")), code, until);
+                if (candidates.Count == 0) return false;
+                var candidate = candidates[0];
+                var breached = candidate.DueAt < now;
+                var type = breached ? BreachedType : Type;
+                if (await notifications.ExistsAsync(type, code)) return false;
+                var message = $"Phiếu {code} {(breached ? "đã quá hạn" : "sắp trễ hẹn")} SLA.";
+                await notifications.ForRoleAsync("DISPATCHER", type, message, "/dispatch#" + code, code);
+                if (candidate.TechnicianId is { } technician)
+                    await notifications.ForEmployeeAsync(technician, type, message, "/technician#" + code, code);
+                return true;
+            })) sent++;
         }
         return sent;
     }

@@ -47,6 +47,39 @@ public class QuotationInventoryTests
     }
 
     [Fact]
+    public void Quotation_ExpiresAfterLocalValidityDay_OrExactlyThreeDaysAfterApproval()
+    {
+        var quotation = NewQuotation(validUntil: Today);
+        quotation.Approve("NV-001", null, Now);
+        var midnight = new DateTimeOffset(2026, 9, 27, 0, 0, 0, TimeSpan.FromHours(7));
+        Assert.False(quotation.Expire(midnight.AddTicks(-1)));
+        Assert.True(quotation.Expire(midnight));
+        Assert.False(quotation.Expire(midnight.AddMinutes(1)));
+        Assert.Equal("DECLINED", quotation.CustomerDecision.Status);
+        Assert.Equal("SYSTEM", quotation.CustomerDecision.RecordedBy);
+        Assert.Null(quotation.CustomerDecision.Channel);
+
+        var withoutDate = NewQuotation();
+        Assert.False(withoutDate.Expire(Now.AddDays(10)));
+        withoutDate.Approve("NV-001", null, Now.AddHours(2));
+        var deadline = Now.AddHours(2).AddDays(3);
+        Assert.False(withoutDate.Expire(deadline.AddTicks(-1)));
+        Assert.Equal(ErrorCode.QUOTE_EXPIRED,
+            Assert.Throws<DomainException>(() => withoutDate.Accept("KH:1", "PORTAL", Today.AddDays(3), deadline)).Code);
+        Assert.True(withoutDate.Expire(deadline));
+    }
+
+    [Fact]
+    public void Quotation_ExpirationDoesNotOverrideCustomerDecision()
+    {
+        var quotation = NewQuotation();
+        quotation.Approve("NV-001", null, Now);
+        quotation.Accept("KH:1", "PORTAL", Today, Now);
+        Assert.False(quotation.Expire(Now.AddDays(10)));
+        Assert.Equal("ACCEPTED", quotation.CustomerDecision.Status);
+    }
+
+    [Fact]
     public void StockDocuments_FollowJavaRules()
     {
         var issue = new StockIssue("PX-1", "TN-1", "FREE_WARRANTY", null, "Xuất bảo hành miễn phí", "NV-002", "NV-002", Now,

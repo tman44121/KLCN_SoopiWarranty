@@ -141,6 +141,9 @@ class _RealHistoryState extends State<_RealHistory> {
     final rows = [...tickets.tickets]
       ..sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
     final shown = rows.where((t) => ticketInGroup(_group, t.status)).toList();
+    final totalPaid = rows.fold<num>(0, (sum, ticket) => sum + ticket.paidAmount);
+    final paidLabel = totalPaid.toStringAsFixed(0).replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.');
     final requestRows = requests.requests;
     int count(String group) =>
         rows.where((t) => ticketInGroup(group, t.status)).length;
@@ -165,6 +168,10 @@ class _RealHistoryState extends State<_RealHistory> {
                     style: AppText.cardDesc,
                   ),
                   const SizedBox(height: 14),
+                  if (tickets.loaded && tickets.error == null) ...[
+                    Text('Tổng tiền đã chi: $paidLabel đ', style: AppText.cardTitle),
+                    const SizedBox(height: 14),
+                  ],
 
                   // ── Phiếu tiếp nhận ───────────────────────────────────────
                   if (tickets.loading && !tickets.loaded)

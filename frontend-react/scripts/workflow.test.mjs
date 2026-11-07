@@ -5,11 +5,12 @@ import { filterItems, allPages } from '../src/behaviors/list-filters.js';
 
 test('Vietnam business hours, Saturday, Sunday and closing boundary', () => {
   for (const time of ['2026-11-02T08:00', '2026-11-02T12:00', '2026-11-07T17:00']) assert.equal(businessTimeError(time), '');
-  for (const time of ['2026-11-02T07:59', '2026-11-02T17:01', '2026-11-08T10:00', 'bad']) assert.ok(businessTimeError(time));
+  for (const time of ['2026-11-02T07:59', '2026-11-02T17:01', '2026-11-08T10:00', '2026-11-02T09:99', '2026-11-02T08:0', 'bad']) assert.ok(businessTimeError(time));
   assert.equal(appointmentEnd('2026-11-02T16:30'), '2026-11-02T17:00');
   assert.equal(appointmentEnd('2026-11-02T17:00'), '2026-11-02T17:00');
-  assert.equal(businessSlots.find(s => s.value === '12:00').label, '12:00 PM');
-  assert.equal(businessSlots.at(-1).label, '05:00 PM');
+  assert.equal(businessSlots.find(s => s.value === '12:00').label, '12:00');
+  assert.equal(businessSlots.at(-1).label, '17:00');
+  assert.equal(businessTimeError('2026-11-02T14:37'), '');
 });
 
 test('cashier reads every server page instead of silently truncating at 100', async () => {

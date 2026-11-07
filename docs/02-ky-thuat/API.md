@@ -80,6 +80,11 @@ OTP được khóa trong lúc kiểm tra/cập nhật: tối đa 5 lượt sai k
 `POST /api/v1/portal/lookup` nhận `{code,phone}` để cấp token phạm vi cho một ticket/request.
 Portal token có `typ=portal`, không dùng refresh của nhân viên và không được quyền truy cập các phiếu khác.
 Nhóm `/portal/my/*` và scope từng endpoint phải theo controller/service, không suy mọi token portal là tài khoản khách.
+
+`GET /portal/my/tickets` bổ sung `paidAmount` trên từng phiếu: số tiền thực thu của phiếu thuộc chính tài khoản khách, 0 nếu chưa thu/miễn phí; cộng trường này để hiện tổng tiền khách đã chi, không dùng tổng báo giá.
+`pendingQuotation` của `GET /portal/tickets/{code}` bổ sung `respondBy` (thời điểm): hết ngày `validUntil` theo giờ Việt Nam, hoặc 72 giờ từ lúc duyệt nếu không có ngày hiệu lực. Hết hạn không thể đồng ý; job tự từ chối và chuyển chờ trả máy, gửi thông báo web/app. Mã bước `QC` giữ nguyên, nhãn hiển thị là “Kiểm tra chất lượng”.
+IMEI được nhập 4–50 ký tự chữ ASCII, số hoặc dấu `-`, không kiểm Luhn; chuẩn hóa như Serial và giữ ràng buộc duy nhất. Database hiện có cần cập nhật CHECK theo [13_relax_imei.sql](../../database/13_relax_imei.sql) trước khi nhận định dạng mới.
+
 Yêu cầu đã có `MaKH` được xem theo mã khách, kể cả sau khi khách đổi SĐT; chỉ yêu cầu vãng lai chưa gắn mã khách mới
 đối chiếu SĐT. Quy tắc này áp dụng cả danh sách, chi tiết và tệp. Tra cứu công khai yêu cầu đã gắn khách dùng SĐT
 hiện tại của hồ sơ đang hoạt động; số cũ không cấp token mới. Khi gộp khách, chuyển cả các yêu cầu đã gắn mã sang hồ sơ đích.

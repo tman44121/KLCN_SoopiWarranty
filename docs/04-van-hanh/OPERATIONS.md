@@ -159,12 +159,14 @@ tài liệu này không thực hiện backup, restore hoặc copy dữ liệu.
 
 | Thành phần | Mặc định | Tác động |
 |---|---|---|
-| SLA alerts | Bật, mỗi 5 phút; ngưỡng sắp trễ 2 giờ | Đọc phiếu và ghi thông báo/audit liên quan theo use case |
+| SLA alerts | Bật, mỗi 5 phút; ngưỡng sắp trễ 2 giờ | Báo sắp trễ và đã quá SLA cho điều phối/KTV, mỗi loại một lần mỗi phiếu |
+| QuotationExpirationJob | Bật, mỗi phút | Tự từ chối báo giá hết hạn còn chờ, chuyển chờ trả máy, ghi lịch sử/audit và thông báo web/app; bao gồm báo giá cũ |
 | RefreshTokenCleanup | 02:00 giờ Việt Nam mỗi ngày | Xóa refresh token hết hạn quá 7 ngày |
 | Email OTP | `smtp` (Gmail) | Gửi mã đăng ký/quên mật khẩu; chế độ `log` (chỉ ngoài Production) ghi mã vào log |
 | Push | `log` | Không gửi FCM thật; log có thể chứa nội dung thông báo |
 
 Tắt SLA bằng `--Sla:Alerts:Enabled=false` hoặc `Sla__Alerts__Enabled=false`.
+Tắt hết hạn báo giá bằng `--Quotations:Expiration:Enabled=false` hoặc `Quotations__Expiration__Enabled=false`; phiên kiểm chỉ đọc phải tắt cả hai job này.
 Cleanup hiện không có cấu hình bật/tắt: phiên kiểm chỉ đọc không được giữ API chạy qua 02:00.
 Mỗi instance API đăng ký job nền; chạy nhiều instance cần nghiệm thu behavior/concurrency và job trước,
 không suy từ unit test hiện tại rằng đã có điều phối job phân tán.

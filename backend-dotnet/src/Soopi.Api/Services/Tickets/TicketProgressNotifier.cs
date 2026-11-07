@@ -49,7 +49,9 @@ public static class TicketProgressMessages
                 $"{Capitalize(device)} (phiếu {code}) đã sửa xong, đạt kiểm tra chất lượng. Mời bạn nhận máy{station}, {PickupHours}. "
                 + Amount(pickup.AmountDue)),
             TicketStatus.AWAITING_RETURN => ("TICKET_AWAITING_RETURN",
-                $"Phiếu {code}: {device} sẽ được trả nguyên trạng, không sửa chữa. Mời bạn đến nhận lại máy{station}, {PickupHours}."),
+                ticket.StatusHistory.LastOrDefault()?.Description == Domain.Quotations.Quotation.ExpirationReason
+                    ? $"Báo giá của phiếu {code} đã hết hạn xác nhận và tự động bị từ chối. Mời bạn đến nhận lại máy nguyên trạng{station}, {PickupHours}."
+                    : $"Phiếu {code}: {device} sẽ được trả nguyên trạng, không sửa chữa. Mời bạn đến nhận lại máy{station}, {PickupHours}."),
             _ => null,
         };
     }

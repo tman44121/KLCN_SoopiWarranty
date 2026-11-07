@@ -11,7 +11,7 @@ const List<String> kCustomerStepLabels = [
   'Chẩn đoán',
   'Chờ linh kiện',
   'Đang sửa',
-  'QC',
+  'Kiểm tra chất lượng',
   'Sẵn sàng nhận máy',
 ];
 

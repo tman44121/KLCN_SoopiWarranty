@@ -259,7 +259,10 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(320, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       final api = _FakeApi()
-        ..tickets = [PortalTicketSummary.fromJson(_ticketSummaryJson)];
+        ..tickets = [
+          PortalTicketSummary.fromJson({..._ticketSummaryJson, 'paidAmount': 250000}),
+          PortalTicketSummary.fromJson({..._ticketSummaryJson, 'code': 'TN-SECOND', 'paidAmount': 150000}),
+        ];
       final auth = await _auth(api);
       final requests = RequestViewModel(auth);
       final tickets = TicketViewModel(auth);
@@ -288,6 +291,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(find.text('Tổng tiền đã chi: 400.000 đ'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

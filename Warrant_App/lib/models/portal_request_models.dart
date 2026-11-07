@@ -184,9 +184,8 @@ class OwnWarrantyRequestData {
       errors['serialOrImei'] =
           'Serial cần 4–50 ký tự chữ, số hoặc dấu gạch ngang.';
     } else if (type?.identifierType.toUpperCase() == 'IMEI' &&
-        (!RegExp(r'^\d{15}$').hasMatch(identifier) ||
-            !_validImei(identifier))) {
-      errors['serialOrImei'] = 'IMEI cần 15 chữ số hợp lệ.';
+        !RegExp(r'^[A-Z0-9-]{4,50}$').hasMatch(identifier)) {
+      errors['serialOrImei'] = 'IMEI cần 4–50 ký tự chữ, số hoặc dấu gạch ngang.';
     }
     if (!catalog.stations.any((station) => station.code == stationCode)) {
       errors['preferredStation'] = 'Vui lòng chọn trạm dịch vụ trong danh mục.';
@@ -195,19 +194,6 @@ class OwnWarrantyRequestData {
       errors['symptom'] = 'Vui lòng mô tả lỗi (tối đa 2000 ký tự).';
     }
     return errors;
-  }
-
-  static bool _validImei(String value) {
-    var sum = 0;
-    for (var index = 0; index < value.length; index++) {
-      var digit = value.codeUnitAt(value.length - 1 - index) - 48;
-      if (index.isOdd) {
-        digit *= 2;
-        if (digit > 9) digit -= 9;
-      }
-      sum += digit;
-    }
-    return sum % 10 == 0;
   }
 
   static Map<String, String> validate({

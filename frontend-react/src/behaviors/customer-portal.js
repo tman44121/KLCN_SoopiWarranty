@@ -183,7 +183,7 @@ export default function initialize() {
 
   function quotation(ticket) {
     const quote = ticket.pendingQuotation;
-    return html`<section class="content-panel-card quote-card"><div class="panel-head"><div><h2 class="card-heading-title">Xác nhận báo giá sửa chữa</h2><p class="card-heading-desc">Có hiệu lực đến ${fmt.date(quote.validUntil)}</p></div><span class="badge badge-waiting">Chờ khách xác nhận</span></div>
+    return html`<section class="content-panel-card quote-card"><div class="panel-head"><div><h2 class="card-heading-title">Xác nhận báo giá sửa chữa</h2><p class="card-heading-desc">Có hiệu lực đến ${fmt.date(quote.validUntil)}</p>${quote.respondBy ? html`<p class="card-heading-desc">Vui lòng phản hồi trước ${fmt.dateTime(quote.respondBy)}. Hết hạn, báo giá sẽ tự động bị từ chối và máy chờ trả lại.</p>` : ""}</div><span class="badge badge-waiting">Chờ khách xác nhận</span></div>
       <div class="kv-list">${quote.lines.map((line) => html`<div class="kv-row"><span>${line.description} × ${line.quantity}</span><span>${fmt.money(line.lineTotal)}</span></div>`)}
         <div class="kv-row"><span>Linh kiện thay thế</span><span>${fmt.money(quote.partsTotal)}</span></div>
         <div class="kv-row"><span>Tiền công kỹ thuật</span><span>${fmt.money(quote.laborTotal)}</span></div>
@@ -386,7 +386,7 @@ export default function initialize() {
       const serial = raw.replace(/\s/g, "");
       if (!serial) return "Vui lòng nhập Serial/IMEI.";
       const imei = el.serialLabel.textContent.startsWith("IMEI");
-      if (imei) return /[^0-9]/.test(serial) ? "IMEI chỉ gồm chữ số." : serial.length !== 15 ? `IMEI gồm 15 chữ số — bạn mới nhập ${serial.length}.` : null;
+      if (imei) return /^[A-Za-z0-9-]{4,50}$/.test(serial) ? null : "IMEI cần 4–50 ký tự chữ, số hoặc dấu gạch ngang.";
       if (/[^A-Za-z0-9-]/.test(serial)) return "Serial chỉ gồm chữ, số và dấu gạch ngang.";
       return serial.length < 4 ? "Serial quá ngắn — tối thiểu 4 ký tự." : serial.length > 50 ? "Serial quá dài — tối đa 50 ký tự." : null;
     });

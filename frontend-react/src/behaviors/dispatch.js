@@ -370,6 +370,7 @@ export default function initialize() {
   const quoteFilters = createListFilters(el.quotationApprovalList, () => {
     quotePage = 0; quoteLoad++; clearTimeout(quoteTimer); quoteTimer = setTimeout(loadQuotations, 250);
   }, { statuses: L.QUOTE_APPROVAL, sort: false });
+  quoteFilters.toolbar.querySelector('[data-list-status]').value = 'PENDING';
   quoteFilters.toolbar.querySelector('[data-list-q]').placeholder = 'Mã báo giá, mã phiếu, tên hoặc SĐT khách…';
   const quotePagination = document.createElement('div');
   quotePagination.className = 'pagination';
@@ -564,5 +565,14 @@ export default function initialize() {
     setInterval(tickSlaTimers, 1000);
     // SLA/trạng thái thay đổi theo thao tác của vai trò khác — làm mới định kỳ mỗi phút.
     setInterval(loadTickets, 60 * 1000);
+    setInterval(loadQuotations, 60 * 1000);
+    window.addEventListener('focus', loadQuotations);
+    const openQuotes = () => {
+      if (location.hash !== '#quotes') return;
+      loadQuotations();
+      el.quotationApprovalList.closest('section').scrollIntoView({ block: 'start' });
+    };
+    window.addEventListener('hashchange', openQuotes);
+    if (location.hash === '#quotes') openQuotes();
   });
 }

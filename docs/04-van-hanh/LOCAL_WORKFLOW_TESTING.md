@@ -1,6 +1,28 @@
 # Kiểm thử quy trình trên local
 
-Phạm vi: giờ hẹn AM/PM, thứ Hai–thứ Bảy 08:00–17:00 theo giờ Việt Nam; tên “Số phiếu đang xử lý”; tìm toàn bộ báo giá theo mã báo giá/mã phiếu/tên/SĐT, trạng thái, ngày; danh sách mới nhất trước và bộ lọc theo từng màn. Không triển khai VPS.
+Phạm vi: giờ hẹn 24 giờ, thứ Hai–thứ Bảy 08:00–17:00 theo giờ Việt Nam; tên “Số phiếu đang xử lý”; tìm toàn bộ báo giá theo mã báo giá/mã phiếu/tên/SĐT, trạng thái, ngày; danh sách mới nhất trước và bộ lọc theo từng màn. Không triển khai VPS.
+
+## Cập nhật quy trình ngày 07/11/2026
+
+- Web và Flutter hiển thị “Kiểm tra chất lượng”; mã bước `QC` và hợp đồng kết quả 6 bước giữ nguyên.
+- Web cho chọn gợi ý hoặc nhập giờ/phút dạng `HH:mm`; Flutter dùng bộ chọn 24 giờ, có chế độ nhập. Giữ lịch liên tục 08:00–17:00, thứ Hai–thứ Bảy; giờ nhập tay không bắt buộc bội số 15 phút.
+- Điều phối mặc định xem báo giá `PENDING`; danh sách làm mới mỗi phút, khi quay lại cửa sổ và khi mở liên kết thông báo `#quotes`. Bộ lọc vẫn cho xem mọi trạng thái.
+- Cảnh báo SLA sắp trễ và đã quá hạn là hai loại riêng, mỗi loại một lần mỗi phiếu; gửi điều phối và KTV có tài khoản nhận thông báo. Job quét mặc định mỗi 5 phút.
+- Báo giá hết hạn sau ngày hiệu lực (00:00 ngày kế tiếp, giờ Việt Nam). Nếu không ghi ngày hiệu lực, hạn là đúng 72 giờ từ lúc duyệt, tính cả Chủ nhật. Job quét mỗi phút, áp dụng cả báo giá cũ còn chờ; ghi `DECLINED` bởi `SYSTEM`, hủy lệnh sửa và chuyển phiếu sang `AWAITING_RETURN` trong một transaction. Thông báo web/app mời khách nhận máy nguyên trạng; không tích hợp SMS/FCM mới.
+- Lịch sử khách cộng tiền thực thu từ `HoaDon_PhieuThu` của chính khách; không cộng báo giá chưa trả hoặc giá vốn. Tổng toàn bộ lịch sử không đổi khi lọc phiếu.
+- IMEI dùng 4–50 ký tự chữ ASCII, số hoặc dấu `-`; không kiểm tra Luhn. Giữ chuẩn hóa chữ hoa/khoảng trắng và cách tra IMEI 15 số chia gạch cũ; bắt buộc có, không trùng, kiểm chủ máy và phiếu mở như trước.
+- Nút “Kiểm tra bảo hành” của lễ tân hiện thông báo khi tìm thấy thiết bị hoặc thiết bị chưa đăng ký, ngoài phần chi tiết nằm phía dưới. Lỗi dịch vụ vẫn có thông báo lỗi; tự điền từ yêu cầu online không tạo thêm thông báo tra cứu trùng. `npm run test:ui:staff-selection` kiểm cả tìm thấy/không tìm thấy/lỗi trên desktop, tablet và mobile bằng API giả lập.
+
+Database đã có cần được người vận hành cho phép chạy [13_relax_imei.sql](../../database/13_relax_imei.sql) để nới `CK_ThietBi_IMEI`; file chỉ đổi CHECK, không sửa dữ liệu. Ngày 07/11/2026 đã áp dụng theo yêu cầu chủ dự án trên VPS, database `TrungTamBaoHanhDB`: CHECK bật và trusted, `DBCC CHECKCONSTRAINTS` không báo vi phạm; trước/sau đều 621 thiết bị, gồm 136 IMEI; health nội bộ và HTTPS đều `UP`. Chưa chạy kiểm thử ghi dữ liệu SQL hoặc deploy bộ mã ứng dụng mới trong lượt này.
+
+Kiểm thử trình duyệt riêng bằng API giả lập (chạy Vite trước):
+
+```powershell
+cd frontend-react
+npm run test:ui:workflow
+```
+
+Ca kiểm: nhập giờ từng ký tự và giờ sai, Chủ nhật/giờ đóng cửa; tổng thực trả ở màn 320px và desktop; báo giá mới xuất hiện khi quay lại điều phối; IMEI linh hoạt và dữ liệu ngoài giới hạn. Không ghi DB thật.
 
 ## Kiểm thử ghi và đồng thời trên SQL Server, không reset dữ liệu
 

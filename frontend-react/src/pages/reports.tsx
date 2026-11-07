@@ -258,7 +258,7 @@ export default function ReportsPage() {
                   {"Hiệu suất kỹ thuật viên"}
                 </h2>
                 <div className="card__title-meta">
-                  {"Số phiếu hoàn tất trong tháng, thời gian sửa trung bình, tỷ lệ QC đạt"}
+                  {"Số phiếu hoàn tất trong tháng, thời gian sửa trung bình, tỷ lệ Kiểm tra chất lượng đạt"}
                 </div>
               </div>
             </div>
@@ -282,7 +282,7 @@ export default function ReportsPage() {
                       {"Thời gian sửa TB"}
                     </th>
                     <th>
-                      {"Tỷ lệ QC đạt"}
+                      {"Tỷ lệ Kiểm tra chất lượng đạt"}
                     </th>
                   </tr>
                 </thead>
