@@ -33,6 +33,27 @@ public class TicketTests
         new[] { "VISUAL", "MAIN_FUNCTION", "SECONDARY", "POWER_CHARGING", "DATA", "FINAL" }.Select(step => (QcStep?)new QcStep(step, result)).ToList();
 
     [Fact]
+    public void ExpiredQuotation_CancelsRepair_RecordsSystemAndInvitesCustomerToCollect()
+    {
+        var ticket = Diagnosed(WarrantyClassification.OUT_OF_WARRANTY, "Hết hạn bảo hành", "Lỗi ngoài phạm vi bảo hành");
+        ticket.MarkQuotationPending("BG-1", Now, Technician);
+        ticket.ApproveQuotation("BG-1", Now, Dispatcher);
+        var system = new AuthenticatedActor(null, "system", new HashSet<Role>(), new HashSet<Permission>(), null, null, "Hệ thống");
+        ticket.ExpireQuotation("BG-1", Now.AddDays(3), system);
+        Assert.Equal(TicketStatus.AWAITING_RETURN, ticket.Status);
+        Assert.Equal("CANCELLED", ticket.RepairOrder!.Status);
+        Assert.Equal("SYSTEM", ticket.StatusHistory[^1].Actor);
+        Assert.Equal("SYSTEM", ticket.StatusHistory[^1].ActorRole);
+        var message = Soopi.Api.Services.Tickets.TicketProgressMessages.For(ticket, ticket.Status,
+            new Soopi.Api.Services.Tickets.PickupInfo("Trạm HCM", null, null));
+        Assert.NotNull(message);
+        Assert.Equal("TICKET_AWAITING_RETURN", message.Value.Type);
+        Assert.Contains("tự động bị từ chối", message.Value.Message);
+        Assert.Contains("Mời bạn đến nhận lại máy", message.Value.Message);
+        Assert.Throws<DomainException>(() => ticket.ExpireQuotation("BG-1", Now.AddDays(4), system));
+    }
+
+    [Fact]
     public void NewTicket_StartsReceived_WithSlaAndRoundedCost()
     {
         var ticket = NewTicket();

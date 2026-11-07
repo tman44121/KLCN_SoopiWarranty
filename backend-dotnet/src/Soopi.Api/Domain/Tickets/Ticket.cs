@@ -333,11 +333,11 @@ public sealed class Ticket
         if (actor.EmployeeId != RepairOrder.TechnicianId) throw new DomainException(ErrorCode.NOT_ASSIGNED_TECHNICIAN);
         if (qcResult is not ("PASS" or "FAIL")) throw new DomainException(ErrorCode.REPAIR_QC_RESULT_INVALID);
         if (JavaText.IsBlank(workDone)) throw DomainException.Invalid("Vui lòng nhập công việc đã làm.");
-        if (qcSteps is null || qcSteps.Any(step => step is null)) throw DomainException.Invalid("Vui lòng nhập kết quả cho từng bước KCS.");
+        if (qcSteps is null || qcSteps.Any(step => step is null)) throw DomainException.Invalid("Vui lòng nhập kết quả cho từng bước Kiểm tra chất lượng.");
         var steps = qcSteps.Select(step => step!).ToList();
         if (steps.Count != QcSteps.Count || !steps.Select(step => step.Step).ToHashSet().SetEquals(QcSteps)
             || steps.Any(step => !QcStepResults.Contains(step.Result ?? "null")))
-            throw DomainException.Invalid("Kết quả KCS chưa đủ hoặc không hợp lệ — mỗi bước kiểm tra phải chọn đúng một kết quả.");
+            throw DomainException.Invalid("Kết quả Kiểm tra chất lượng chưa đủ hoặc không hợp lệ — mỗi bước kiểm tra phải chọn đúng một kết quả.");
         var hasFailure = steps.Any(step => step.Result == "FAIL");
         if ((hasFailure && qcResult == "PASS") || (!hasFailure && qcResult == "FAIL")) throw new DomainException(ErrorCode.REPAIR_QC_INCONSISTENT);
         var results = new List<RepairResult>(RepairOrder.Results)
@@ -423,6 +423,13 @@ public sealed class Ticket
 
     public void AddCustomerNote(string? text, DateTimeOffset now, AuthenticatedActor actor) => CustomerNotes.Add(NewNote(text, now, actor));
 
+    public void ExpireQuotation(string quotationCode, DateTimeOffset now, AuthenticatedActor actor)
+    {
+        RequireActiveQuotation(quotationCode, TicketStatus.AWAITING_CUSTOMER_CONFIRMATION);
+        if (RepairOrder is not null) RepairOrder = RepairOrder with { Status = "CANCELLED" };
+        TransitionTo(TicketStatus.AWAITING_RETURN, actor, Domain.Quotations.Quotation.ExpirationReason, now, "SYSTEM");
+    }
+
     public void AddInternalNote(string? text, DateTimeOffset now, AuthenticatedActor actor) => InternalNotes.Add(NewNote(text, now, actor));
 
     public void TransitionTo(TicketStatus target, AuthenticatedActor actor, string? description, DateTimeOffset now) =>
@@ -487,7 +494,7 @@ public sealed class Ticket
     private static string HandoverActorRole(AuthenticatedActor actor) =>
         actor.Roles.Contains(Role.CASHIER) ? "CASHIER" : actor.Roles.Contains(Role.RECEPTIONIST) ? "RECEPTIONIST" : "DISPATCHER";
 
-    private static string ActorCode(AuthenticatedActor actor) => actor.EmployeeId ?? "KH:" + actor.CustomerId;
+    private static string ActorCode(AuthenticatedActor actor) => actor.EmployeeId ?? (actor.CustomerId is { } id ? "KH:" + id : "SYSTEM");
 
     private static Note NewNote(string? text, DateTimeOffset now, AuthenticatedActor actor)
     {

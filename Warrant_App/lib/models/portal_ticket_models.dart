@@ -10,6 +10,7 @@ class PortalTicketSummary {
     this.productName,
     this.serialOrImei,
     this.rating,
+    this.paidAmount = 0,
   });
 
   final String code;
@@ -20,6 +21,7 @@ class PortalTicketSummary {
   final bool stopped;
   final int currentStep;
   final int? rating;
+  final num paidAmount;
 
   factory PortalTicketSummary.fromJson(Map<String, dynamic> json) =>
       PortalTicketSummary(
@@ -31,6 +33,7 @@ class PortalTicketSummary {
         stopped: json['stopped'] as bool,
         currentStep: json['currentStep'] as int,
         rating: json['rating'] as int?,
+        paidAmount: json['paidAmount'] as num? ?? 0,
       );
 }
 
@@ -152,9 +155,11 @@ class PortalPendingQuotation {
     required this.laborTotal,
     required this.grandTotal,
     this.validUntil,
+    this.respondBy,
   });
   final String code;
   final DateTime? validUntil;
+  final DateTime? respondBy;
   final num vatRate;
   final List<PortalQuotationLine> lines;
   final num partsTotal;
@@ -165,6 +170,7 @@ class PortalPendingQuotation {
       PortalPendingQuotation(
         code: json['code'] as String,
         validUntil: DateTime.tryParse(json['validUntil'] as String? ?? ''),
+        respondBy: DateTime.tryParse(json['respondBy'] as String? ?? ''),
         vatRate: json['vatRate'] as num,
         lines: (json['lines'] as List<dynamic>)
             .map(

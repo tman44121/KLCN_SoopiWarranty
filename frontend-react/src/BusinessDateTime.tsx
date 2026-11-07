@@ -6,12 +6,13 @@ export function BusinessDateTime({ id, name, value, onChange, required = false, 
 }) {
   const hidden = useRef<HTMLInputElement>(null);
   const date = useRef<HTMLInputElement>(null);
-  const time = useRef<HTMLSelectElement>(null);
+  const time = useRef<HTMLInputElement>(null);
+  const emitted = useRef(value);
   const [error, setError] = useState('');
   const [dayValue, setDayValue] = useState(value?.slice(0, 10) || '');
   const [timeValue, setTimeValue] = useState(value?.slice(11) || '');
   useEffect(() => {
-    if (value !== undefined) { setDayValue(value.slice(0, 10)); setTimeValue(value.slice(11)); }
+    if (value !== undefined && value !== emitted.current) { setDayValue(value.slice(0, 10)); setTimeValue(value.slice(11)); }
   }, [value]);
   const update = () => {
     const day = date.current!.value, hour = time.current!.value;
@@ -21,19 +22,22 @@ export function BusinessDateTime({ id, name, value, onChange, required = false, 
     setError(problem);
     date.current!.setCustomValidity(problem);
     if (hidden.current) hidden.current.value = problem ? '' : next;
+    emitted.current = problem ? '' : next;
     onChange?.(problem ? '' : next);
   };
   return <div className="business-date-time">
     <input ref={hidden} id={id} name={name} type="text" hidden value={value} readOnly />
     <div className="business-date-time__fields">
       <input ref={date} id={`${id}-date`} type="date" className={className} min={vietnamToday()}
-        value={value === undefined ? undefined : dayValue} onInput={update} onChange={update}
+        value={dayValue} onInput={update} onChange={update}
         aria-label="Ngày hẹn" aria-describedby={`${id}-hours ${id}-error`} aria-required={required || undefined} aria-invalid={!!error || undefined} />
-      <select ref={time} id={`${id}-time`} className={className} aria-label="Giờ hẹn AM/PM" aria-required={required || undefined} aria-describedby={`${id}-hours ${id}-error`}
-        value={value === undefined ? undefined : timeValue} onChange={update} defaultValue={value === undefined ? '' : undefined}>
-        <option value="">Chọn giờ</option>
-        {businessSlots.map(slot => <option key={slot.value} value={slot.value}>{slot.label}</option>)}
-      </select>
+      <input ref={time} id={`${id}-time`} type="text" list={`${id}-times`} className={className}
+        placeholder="HH:mm" maxLength={5} aria-label="Giờ hẹn (HH:mm, 24 giờ)" aria-required={required || undefined}
+        aria-invalid={!!error || undefined} aria-describedby={`${id}-hours ${id}-error`}
+        value={timeValue} onInput={update} onChange={update} />
+      <datalist id={`${id}-times`}>
+        {businessSlots.map(slot => <option key={slot.value} value={slot.value} />)}
+      </datalist>
     </div>
     <p id={`${id}-hours`} className="input-subnote">{BUSINESS_HOURS_NOTE}</p>
     <p id={`${id}-error`} className="form-field__error" role="alert" hidden={!error}>{error}</p>

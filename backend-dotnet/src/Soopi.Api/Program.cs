@@ -134,6 +134,8 @@ builder.Services.AddScoped<QuotationStore>();
 builder.Services.AddScoped<QuotationService>();
 builder.Services.AddScoped<QuotationReviewService>();
 builder.Services.AddScoped<CustomerDecisionService>();
+builder.Services.AddScoped<QuotationExpirationService>();
+builder.Services.AddHostedService<QuotationExpirationJob>();
 builder.Services.AddScoped<InventoryStore>();
 builder.Services.AddScoped<InventoryDocumentStore>();
 builder.Services.AddScoped<PartQueryService>();

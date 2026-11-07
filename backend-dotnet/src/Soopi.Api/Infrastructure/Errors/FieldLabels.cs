@@ -37,7 +37,7 @@ public static class FieldLabels
         ["conditionOnReturn"] = "Tình trạng khi trả",
         ["findings"] = "Kết quả kiểm tra",
         ["workDone"] = "Công việc đã làm",
-        ["qcResult"] = "Kết quả KCS",
+        ["qcResult"] = "Kết quả Kiểm tra chất lượng",
         ["sku"] = "Mã linh kiện",
         ["quantity"] = "Số lượng",
         ["unitPrice"] = "Đơn giá",

@@ -587,7 +587,7 @@ export default function AdminPage() {
                           {"Thời gian sửa TB"}
                         </th>
                         <th>
-                          {"Tỷ lệ QC đạt lần đầu"}
+                          {"Tỷ lệ Kiểm tra chất lượng đạt lần đầu"}
                         </th>
                       </tr>
                     </thead>

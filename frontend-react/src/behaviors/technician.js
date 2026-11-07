@@ -1,7 +1,7 @@
 /* ==========================================================================
    View: Kỹ thuật viên — UI mục 16, 34; CODEX mục 7 (T3, T3b, T4, T5, T8, T9c, T10)
    Mọi chuyển trạng thái đi qua API theo máy trạng thái — KTV không tự đổi
-   trạng thái tùy ý (D-005: không có "Tạm dừng", "Đang kiểm tra QC").
+   trạng thái tùy ý (D-005: không có "Tạm dừng", "Đang Kiểm tra chất lượng").
    API: GET /technicians/me/queue, GET /tickets/{c}, POST|PUT /tickets/{c}/inspection,
         POST /tickets/{c}/repair/start|parts-ready|results, POST /tickets/{c}/quotations,
         GET /quotations/{c}, GET /parts, POST /stock-issues, GET /stock-issues/mine,
@@ -531,7 +531,7 @@ export default function initialize() {
     const toggle = (code, value, label) =>
       html`<button type="button" class="result-toggle__btn ${qc.steps[code] === value ? `is-active--${value}` : ""}" aria-pressed="${qc.steps[code] === value}" data-qc-step="${code}" data-qc-value="${value}">${label}</button>`;
     return card(
-      "Sửa chữa & kiểm tra chất lượng (QC)",
+      "Sửa chữa & Kiểm tra chất lượng",
       "Hoàn tất đủ 6 bước trước khi xác nhận sửa chữa xong",
       html`
         <form data-qc-form novalidate>
@@ -551,9 +551,9 @@ export default function initialize() {
             <label for="qc-details">Chi tiết kiểm tra</label>
             <input type="text" id="qc-details" data-qc-details value="${qc.qcDetails}" placeholder="VD: Test sạc 3 chu kỳ, khởi động 20 lần" />
           </div>
-          ${failed ? banner('Có bước QC "Không đạt" — lần thử sẽ được ghi nhận "Chưa đạt" và phiếu tiếp tục ở trạng thái Đang sửa chữa.', true) : ""}
+          ${failed ? banner('Có bước Kiểm tra chất lượng "Không đạt" — lần thử sẽ được ghi nhận "Chưa đạt" và phiếu tiếp tục ở trạng thái Đang sửa chữa.', true) : ""}
           <div style="margin-top:14px; display:flex; justify-content:flex-end;">
-            <button type="button" class="btn ${failed ? "btn--destructive" : "btn--primary"}" data-submit-qc ${pending ? html`disabled` : ""}>${failed ? "Ghi nhận QC chưa đạt" : "Xác nhận hoàn tất sửa chữa"}</button>
+            <button type="button" class="btn ${failed ? "btn--destructive" : "btn--primary"}" data-submit-qc ${pending ? html`disabled` : ""}>${failed ? "Ghi nhận Kiểm tra chất lượng chưa đạt" : "Xác nhận hoàn tất sửa chữa"}</button>
           </div>
         </form>
         ${resultsList(t)}`
@@ -568,7 +568,7 @@ export default function initialize() {
         <div class="checklist-item" style="flex-direction:column; align-items:flex-start; gap:4px;">
           <span class="cell-muted cell-muted--sm">${fmt.dateTime(r.recordedAt)} — <span class="mono">${r.code}</span></span>
           <span class="checklist-item__label">${r.workDone}</span>
-          ${fmt.badge(r.qcResult === "PASS" ? "success" : "danger", r.qcResult === "PASS" ? "QC đạt" : "Không đạt QC")}
+          ${fmt.badge(r.qcResult === "PASS" ? "success" : "danger", r.qcResult === "PASS" ? "Kiểm tra chất lượng đạt" : "Kiểm tra chất lượng chưa đạt")}
         </div>`)}</div>`;
   }
 
@@ -785,7 +785,7 @@ export default function initialize() {
       act(e.currentTarget, async () => {
         await api.tickets.recordResult(t.code, body);
         delete state.qc[t.code];
-      }, failed ? `Đã ghi nhận lần thử QC chưa đạt cho ${t.code}.` : `Đã xác nhận hoàn tất sửa chữa cho ${t.code}. Phiếu sẵn sàng bàn giao.`);
+      }, failed ? `Đã ghi nhận lần thử Kiểm tra chất lượng chưa đạt cho ${t.code}.` : `Đã xác nhận hoàn tất sửa chữa cho ${t.code}. Phiếu sẵn sàng bàn giao.`);
     });
   }
 

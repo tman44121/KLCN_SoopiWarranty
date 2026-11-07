@@ -269,8 +269,8 @@ public sealed class RepairService(
             ticket.RecordRepairResult(await codes.NextAsync(BusinessCodeType.RepairResult), command.WorkDone, command.QcSteps, command.QcResult,
                 command.QcDetails, clock.GetUtcNow(), actor);
             await tickets.SaveAsync(ticket);
-            await audit.RecordAsync(actor.AuditId, actor.DisplayName, actor.RoleNames, "REPAIR_RESULT_RECORDED", "Ghi kết quả sửa chữa và KCS", "TICKET",
-                ticketCode, ticketCode + " — " + before.SqlLabel(), $"{ticketCode} — {ticket.Status.SqlLabel()} (KCS {command.QcResult})");
+            await audit.RecordAsync(actor.AuditId, actor.DisplayName, actor.RoleNames, "REPAIR_RESULT_RECORDED", "Ghi kết quả sửa chữa và Kiểm tra chất lượng", "TICKET",
+                ticketCode, ticketCode + " — " + before.SqlLabel(), $"{ticketCode} — {ticket.Status.SqlLabel()} (Kiểm tra chất lượng {command.QcResult})");
             if (ticket.Status == TicketStatus.COMPLETED)
             {
                 var message = $"Phiếu {ticketCode} đã hoàn tất sửa chữa, sẵn sàng bàn giao.";

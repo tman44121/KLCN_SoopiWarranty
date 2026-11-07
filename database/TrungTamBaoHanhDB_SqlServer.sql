@@ -321,7 +321,7 @@ CREATE TABLE ThietBi (
     FOREIGN KEY (MaKH) REFERENCES KhachHang(MaKH),
     CONSTRAINT CK_ThietBi_DinhDanh CHECK (LoaiDinhDanh IN ('IMEI', 'SERIAL')),
     CONSTRAINT CK_ThietBi_IMEI CHECK (LoaiDinhDanh <> 'IMEI'
-                                      OR (LEN(SoSerial_IMEI) = 15 AND SoSerial_IMEI NOT LIKE '%[^0-9]%')),
+                                      OR (LEN(SoSerial_IMEI) BETWEEN 4 AND 50 AND SoSerial_IMEI COLLATE Latin1_General_100_BIN2 NOT LIKE '%[^A-Za-z0-9-]%')),
     CONSTRAINT CK_ThietBi_Serial CHECK (LoaiDinhDanh <> 'SERIAL'
                                         OR (LEN(SoSerial_IMEI) BETWEEN 4 AND 50
                                             AND SoSerial_IMEI COLLATE Latin1_General_100_BIN2 NOT LIKE '%[^A-Za-z0-9-]%')),

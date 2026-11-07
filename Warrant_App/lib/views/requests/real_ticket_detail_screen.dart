@@ -268,6 +268,9 @@ class _RealTicketDetailScreenState extends State<RealTicketDetailScreen> {
                   ),
                 ),
                 Text('Mã báo giá: ${quote.code}', style: AppText.mono),
+                if (quote.respondBy != null)
+                  Text('Vui lòng phản hồi trước ${_dateTime(quote.respondBy!)}. '
+                      'Hết hạn, báo giá sẽ tự động bị từ chối và máy chờ trả lại.'),
                 for (final line in quote.lines)
                   Container(
                     margin: const EdgeInsets.only(top: 10),

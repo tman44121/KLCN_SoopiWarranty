@@ -238,7 +238,7 @@ export default function CashierPage() {
                   {"Sẵn sàng bàn giao"}
                 </h2>
                 <div className="card__title-meta">
-                  {"Phiếu đã hoàn tất sửa chữa & QC"}
+                  {"Phiếu đã hoàn tất sửa chữa & Kiểm tra chất lượng"}
                 </div>
               </div>
             </div>

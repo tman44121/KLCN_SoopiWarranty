@@ -15,6 +15,7 @@ internal sealed class RecordingConnection(Func<string, DataTable> rows) : DbConn
     public Func<string, DbDataReader>? Reader { get; init; }
     public Action? BeforeCommit { get; init; }
     public Action? BeforeRollback { get; init; }
+    public Action<DbCommand>? Executing { get; init; }
     [AllowNull] public override string ConnectionString { get; set; } = "Server=unused;Database=unused";
     public override string Database => "unused";
     public override string DataSource => "unused";
@@ -51,7 +52,7 @@ internal sealed class RecordingConnection(Func<string, DataTable> rows) : DbConn
         protected override DbParameter CreateDbParameter() => new SqlParameter();
         public override void Cancel() => throw new NotSupportedException();
         public override void Prepare() { }
-        private void Record() => connection.Commands.Add((CommandText, DbTransaction is not null));
+        private void Record() { connection.Commands.Add((CommandText, DbTransaction is not null)); connection.Executing?.Invoke(this); }
         public override int ExecuteNonQuery() { Record(); return connection.NonQuery?.Invoke(CommandText) ?? 1; }
         public override object? ExecuteScalar() { Record(); var table = connection.Rows(CommandText); return table.Rows.Count == 0 ? null : table.Rows[0][0]; }
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) { Record(); return connection.Reader?.Invoke(CommandText) ?? connection.Rows(CommandText).CreateDataReader(); }
