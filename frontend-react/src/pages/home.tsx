@@ -46,7 +46,7 @@ const EXTEND = [
 const STEPS = [
   { icon: "user", title: "Đăng ký / Gửi yêu cầu", text: "Tạo tài khoản bằng số điện thoại hoặc gửi yêu cầu bảo hành trực tuyến không cần đăng nhập.", tag: "Chỉ cần số điện thoại" },
   { icon: "inbox", title: "Gửi thiết bị bảo hành", text: "Mang máy tới trạm dịch vụ; lễ tân kiểm tra máy và lập phiếu tiếp nhận mã TN-.", tag: "Nhận mã phiếu để tra cứu" },
-  { icon: "clock", title: "Theo dõi tiến độ online", text: "Theo dõi từng bước chẩn đoán, chờ linh kiện, sửa chữa và QC; xác nhận báo giá nếu có.", tag: "Cập nhật theo từng bước" },
+  { icon: "clock", title: "Theo dõi tiến độ online", text: "Theo dõi từng bước chẩn đoán, chờ linh kiện, sửa chữa và Kiểm tra chất lượng; xác nhận báo giá nếu có.", tag: "Cập nhật theo từng bước" },
   { icon: "checkCircle", title: "Nhận lại máy & nghiệm thu", text: "Khi phiếu ở bước Sẵn sàng nhận máy, tới trạm kiểm tra thiết bị và nhận lại máy.", tag: "Kiểm tra máy khi bàn giao" },
 ];
 

@@ -268,6 +268,12 @@ public sealed class TicketStore(Sql sql, Services.Tickets.TicketProgressNotifier
     public async Task<List<Ticket>> FindByCustomerAsync(string customerId) =>
         await LoadAsync(await IdsAsync("SELECT MaPhieuTN FROM PhieuTiepNhan WHERE MaKH = ? ORDER BY NgayTiepNhan DESC, MaPhieuTN DESC", customerId));
 
+    public async Task<Dictionary<string, decimal>> PaidAmountsByCustomerAsync(string customerId) =>
+        (await sql.QueryAsync("SELECT p.MaPhieuTN, thu.SoTienThu FROM PhieuTiepNhan p "
+            + "JOIN HoaDon_PhieuThu thu ON thu.MaPhieuTN = p.MaPhieuTN WHERE p.MaKH = ? AND thu.LoaiThu = 'CHARGED'",
+            row => (Code: row.Str("MaPhieuTN")!, Amount: SqlMoney.Read(row.Dec("SoTienThu"))), customerId))
+            .ToDictionary(row => row.Code, row => row.Amount);
+
     /// <summary>Tải của mọi KTV có phiếu mở: số phiếu đang xử lý (trừ "Hoàn thành", "Đã hủy") và số phiếu mở có hạn SLA trong [from, to].</summary>
     public async Task<Dictionary<string, TechnicianLoad>> TechnicianLoadsAsync(DateTimeOffset from, DateTimeOffset to) =>
         (await sql.QueryAsync(

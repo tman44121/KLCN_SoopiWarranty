@@ -23,7 +23,8 @@ public sealed record PortalCosts(decimal InWarrantyAmount, decimal OutOfWarranty
 public sealed record PortalQuotationLine(int LineNo, string? Description, int Quantity, decimal? UnitPrice, decimal? LaborFee, decimal? LineTotal);
 
 public sealed record PendingQuotation(
-    string Code, DateOnly? ValidUntil, decimal VatRate, IReadOnlyList<PortalQuotationLine> Lines, decimal PartsTotal, decimal LaborTotal, decimal GrandTotal);
+    string Code, DateOnly? ValidUntil, decimal VatRate, IReadOnlyList<PortalQuotationLine> Lines, decimal PartsTotal, decimal LaborTotal, decimal GrandTotal,
+    DateTimeOffset? RespondBy = null);
 
 /// <summary>
 /// Dữ liệu phiếu cho cổng khách. POL-06: không có ghi chú nội bộ, kết quả kiểm tra, phân công, tên nhân viên, SLA nội bộ,
@@ -35,7 +36,7 @@ public sealed record PortalTicketView(
     PendingQuotation? PendingQuotation, DateTimeOffset? HandedOverAt, int? Rating, bool CanRate, string? RatingComment, DateTimeOffset? RatedAt)
 {
     private static readonly string[] StepKeys = ["RECEIVED", "DIAGNOSIS", "AWAITING_PARTS", "REPAIRING", "QC", "READY"];
-    private static readonly string[] StepLabels = ["Tiếp nhận", "Chẩn đoán", "Chờ linh kiện", "Đang sửa", "QC", "Sẵn sàng nhận máy"];
+    private static readonly string[] StepLabels = ["Tiếp nhận", "Chẩn đoán", "Chờ linh kiện", "Đang sửa", "Kiểm tra chất lượng", "Sẵn sàng nhận máy"];
 
     public static PortalTicketView From(Ticket ticket, BillingBreakdown billing, Quotation? pending, PaymentQr? paymentQr = null)
     {
@@ -51,7 +52,7 @@ public sealed record PortalTicketView(
                 ? null
                 : new PendingQuotation(pending.Id, pending.ValidUntil, pending.VatRate,
                     pending.Lines.Select(line => new PortalQuotationLine(line.LineNo, line.Description, line.Quantity, line.UnitPrice, line.LaborFee, line.LineTotal)).ToList(),
-                    pending.PartsTotal, pending.LaborTotal, pending.GrandTotal),
+                    pending.PartsTotal, pending.LaborTotal, pending.GrandTotal, pending.RespondBy),
             ticket.Handover?.HandedOverAt,
             ticket.Handover?.Rating,
             isDelivered && ticket.Handover is not null,
@@ -78,7 +79,8 @@ public sealed record PortalTicketView(
     }
 }
 
-public sealed record PortalTicketSummary(string Code, string? ProductName, string? SerialOrImei, DateTimeOffset ReceivedAt, string Status, bool Stopped, int CurrentStep, int? Rating = null);
+public sealed record PortalTicketSummary(string Code, string? ProductName, string? SerialOrImei, DateTimeOffset ReceivedAt, string Status, bool Stopped, int CurrentStep,
+    int? Rating = null, decimal PaidAmount = 0);
 
 public sealed record DecisionRequest([NotNull] Decision? Decision, string? Reason);
 
@@ -105,11 +107,13 @@ public sealed class PortalTicketService(
     public async Task<List<PortalTicketSummary>> MyTicketsAsync()
     {
         actors.Require(Permission.PORTAL_SELF);
-        return (await tickets.FindByCustomerAsync(policy.RequireCustomerAccount()))
+        var customerId = policy.RequireCustomerAccount();
+        var paid = await tickets.PaidAmountsByCustomerAsync(customerId);
+        return (await tickets.FindByCustomerAsync(customerId))
             .Select(ticket => new PortalTicketSummary(ticket.Id, ticket.DeviceSnapshot.GetValueOrDefault("productName"),
                 ticket.DeviceSnapshot.GetValueOrDefault("serialOrImei"), ticket.ReceivedAt, ticket.Status.ToString(),
                 PortalTicketView.IsStopped(ticket.Status), PortalTicketView.CurrentStep(ticket.Status),
-                ticket.Handover?.Rating))
+                ticket.Handover?.Rating, paid.GetValueOrDefault(ticket.Id)))
             .ToList();
     }
 

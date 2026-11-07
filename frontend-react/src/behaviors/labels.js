@@ -81,7 +81,7 @@ export default function initialize() {
     { code: "SECONDARY", label: "Kiểm tra phụ" },
     { code: "POWER_CHARGING", label: "Kiểm tra nguồn/sạc" },
     { code: "DATA", label: "Xác nhận dữ liệu" },
-    { code: "FINAL", label: "Kết quả QC" },
+    { code: "FINAL", label: "Kết quả Kiểm tra chất lượng" },
   ];
 
   const QUOTE_APPROVAL = {

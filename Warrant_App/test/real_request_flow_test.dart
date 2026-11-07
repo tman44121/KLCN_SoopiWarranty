@@ -209,7 +209,13 @@ void main() {
     expect(validate('TYPE', 'SERIAL-1234'), isEmpty);
     expect(validate('TYPE', 'abc'), contains('serialOrImei'));
     expect(validate('PHONE', '490154203237518'), isEmpty);
-    expect(validate('PHONE', '490154203237519'), contains('serialOrImei'));
+    expect(validate('PHONE', '490154203237519'), isEmpty);
+    expect(validate('PHONE', 'imei-1234'), isEmpty);
+    expect(validate('PHONE', '1234'), isEmpty);
+    expect(validate('PHONE', 'A' * 50), isEmpty);
+    for (final invalid in ['', '123', 'A' * 51, 'IMEI@1234']) {
+      expect(validate('PHONE', invalid), contains('serialOrImei'));
+    }
     expect(
       OwnWarrantyRequestData.validateUnregistered(
         catalog: _catalog,

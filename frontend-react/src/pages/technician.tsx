@@ -249,7 +249,7 @@ export default function TechnicianPage() {
           <div className="stack stack--loose" data-detail-column="">
             <div className="card">
               <div className="card__body empty-selection-hint">
-                {"\n            Chọn một phiếu trong “Phiếu được phân công” để xem chi tiết, chẩn đoán và kiểm tra QC.\n          "}
+                {"\n            Chọn một phiếu trong “Phiếu được phân công” để xem chi tiết, chẩn đoán và Kiểm tra chất lượng.\n          "}
               </div>
             </div>
           </div>

@@ -27,6 +27,8 @@ public enum Decision
 /// <summary>Báo giá (PhieuBaoGia + ChiTietBaoGia): tổng, VAT làm tròn HALF_UP; duyệt nội bộ rồi khách quyết định.</summary>
 public sealed class Quotation
 {
+    public const string ExpirationReason = "Tự động từ chối do hết thời hạn xác nhận báo giá.";
+
     internal Quotation()
     {
     }
@@ -77,6 +79,10 @@ public sealed class Quotation
 
     public CustomerDecision CustomerDecision { get; internal set; } = null!;
 
+    public DateTimeOffset? RespondBy => ValidUntil is { } until
+        ? new DateTimeOffset(until.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.FromHours(7))
+        : Approval.ReviewedAt?.AddDays(3);
+
     public bool Active => Approval.Status != "REJECTED";
 
     /// <summary>Có báo giá đã lưu (để tầng lưu trữ biết thêm mới hay cập nhật).</summary>
@@ -106,7 +112,8 @@ public sealed class Quotation
     public void Accept(string recordedBy, string channel, DateOnly today, DateTimeOffset now)
     {
         RequirePendingDecision();
-        if (ValidUntil is { } until && today > until) throw new DomainException(ErrorCode.QUOTE_EXPIRED);
+        if ((ValidUntil is { } until && today > until) || RespondBy is { } deadline && now >= deadline)
+            throw new DomainException(ErrorCode.QUOTE_EXPIRED);
         CustomerDecision = new CustomerDecision("ACCEPTED", now, null, channel, recordedBy);
     }
 
@@ -115,6 +122,14 @@ public sealed class Quotation
         RequirePendingDecision();
         if (JavaText.IsBlank(reason)) throw new DomainException(ErrorCode.QUOTE_DECLINE_REASON_REQUIRED);
         CustomerDecision = new CustomerDecision("DECLINED", now, JavaText.Trim(reason), channel, recordedBy);
+    }
+
+    public bool Expire(DateTimeOffset now)
+    {
+        if (Approval.Status != "APPROVED" || CustomerDecision.Status != "PENDING" || RespondBy is not { } deadline || now < deadline)
+            return false;
+        CustomerDecision = new CustomerDecision("DECLINED", now, ExpirationReason, null, "SYSTEM");
+        return true;
     }
 
     private void ReplaceLines(IReadOnlyList<QuotationLine?>? value)

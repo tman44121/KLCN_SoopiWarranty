@@ -111,6 +111,7 @@ Trước bản có đánh giá trên trang chủ, chạy thêm `database/08_publ
 admin tự chọn nhận xét sau khi kiểm tra thông tin riêng. Xem [PUBLIC_REVIEWS.md](../02-ky-thuat/PUBLIC_REVIEWS.md).
 Trước bản hỗ trợ duyệt điểm cũ thiếu ngày, chạy `database/10_legacy_review_publication.sql`.
 Trước bản có kiểm kê kho, chạy `database/11_stocktake.sql` (chỉ thêm bảng và quyền, không sửa tồn kho).
+Trước bản nới IMEI thành 4–50 ký tự chữ/số/dấu gạch ngang, chạy `database/13_relax_imei.sql`. Script này đã được áp dụng theo yêu cầu chủ dự án ngày 07/11/2026 trên `TrungTamBaoHanhDB`: CHECK bật/trusted, kiểm tra ràng buộc đạt, dữ liệu vẫn 621 thiết bị (136 IMEI) và health nội bộ/HTTPS đều `UP`. Lượt cập nhật này chỉ đổi CHECK, chưa deploy mã backend/web/app mới.
 Script chỉ cho phép ngày trong bảng duyệt để trống, không điền ngày giả hay tự công khai điểm cũ.
 `database/09_sample_public_reviews.sql` là script dữ liệu mẫu tùy chọn, lưu riêng trong DB;
 API công khai không trả các hàng này và trang chủ không hiển thị chúng. Không chạy tự động trong CI/CD.

@@ -244,7 +244,7 @@ export default function initialize() {
     el.product.value = "";
     const isImei = type && type.identifierType === "IMEI";
     el.identifierLabel.innerHTML = html`${isImei ? "IMEI" : "Serial Number"}<span class="required-mark">*</span>`;
-    el.identifier.placeholder = isImei ? "Nhập 15 số IMEI" : "Nhập số Serial";
+    el.identifier.placeholder = isImei ? "Nhập IMEI (4–50 ký tự)" : "Nhập số Serial";
   }
 
   function selectProduct(productId) {
@@ -358,6 +358,7 @@ export default function initialize() {
       selectProduct(device.productId);
       applyLocks();
       renderWarranty(device);
+      if (button) window.showToast(`Đã tìm thấy thiết bị: ${(L.WARRANTY_STATUS[device.warranty?.status] || {}).label || "Chưa có thông tin bảo hành"}. Xem chi tiết bên dưới.`, "success");
       // Từ yêu cầu khách gửi: không tự đổi sang khách khác; nếu máy thuộc người khác, server sẽ từ chối khi tiếp nhận.
       if (!state.warrantyRequestCode && device.customerCode && device.customerCode !== state.customerCode) {
         try {
@@ -373,6 +374,7 @@ export default function initialize() {
         clearWarranty();
         el.warrantyHint.textContent = "Thiết bị chưa đăng ký trong hệ thống — sẽ được đăng ký mới khi tiếp nhận.";
         el.warrantyBadge.innerHTML = html`${fmt.badge("neutral", "Thiết bị mới")}`;
+        if (button) window.showToast("Thiết bị chưa đăng ký trong hệ thống. Thông tin mới sẽ được lưu khi tiếp nhận.", "success");
       } else {
         ui.showError(error, el.form);
       }
@@ -396,17 +398,9 @@ export default function initialize() {
     });
   }
 
-  /** Cùng luật với Imei.Require ở server: 15 chữ số (bỏ khoảng trắng, gạch) và đúng tổng kiểm Luhn. */
   function imeiError(raw) {
-    const imei = raw.replace(/[\s-]/g, "");
-    if (!/^\d{15}$/.test(imei)) return `IMEI phải gồm đúng 15 chữ số (đang có ${imei.length} ký tự).`;
-    let sum = 0;
-    for (let i = 0; i < 15; i++) {
-      let digit = Number(imei[14 - i]);
-      if (i % 2 === 1) digit = digit * 2 > 9 ? digit * 2 - 9 : digit * 2;
-      sum += digit;
-    }
-    return sum % 10 === 0 ? null : "IMEI sai chữ số kiểm tra, có thể gõ nhầm một chữ số. Đối chiếu lại với *#06# hoặc tem hộp máy.";
+    return /^[A-Za-z0-9-]{4,50}$/.test(raw.replace(/\s/g, ""))
+      ? null : "IMEI cần 4–50 ký tự chữ, số hoặc dấu gạch ngang.";
   }
 
   function validate() {
@@ -543,7 +537,6 @@ export default function initialize() {
       input.value = "";
       input.readOnly = false;
     });
-    el.form.querySelectorAll(".business-date-time select").forEach(select => select.value = "");
     el.form.querySelectorAll(".business-date-time input[type=date]").forEach(input => input.setCustomValidity(""));
     el.ack.checked = false;
     el.ackError.hidden = true;

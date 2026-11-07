@@ -317,6 +317,7 @@ function History({ data, filter }: { data: Data; filter: string }) {
         <div>
           <h1 className="kh-page-title">Lịch sử bảo hành &amp; sửa chữa</h1>
           <p className="kh-page-subtitle">Theo dõi tiến độ xử lý mọi thiết bị của bạn.</p>
+          <p className="kh-page-subtitle">Tổng tiền đã chi cho bảo hành &amp; sửa chữa: <strong>{fmt().money(data.tickets.reduce((sum, ticket) => sum + Number(ticket.paidAmount || 0), 0))}</strong></p>
         </div>
         <a href="#yeu-cau-moi" className="btn-primary-teal"><Icon glyph="plus" />Gửi yêu cầu bảo hành mới</a>
       </div>
@@ -1275,6 +1276,7 @@ function Quotation({ ticket, onDecided }: { ticket: Json; onDecided: (ticket: Js
           <div>
             <h2 className="card-heading-title">Xác nhận báo giá sửa chữa</h2>
             <p className="card-heading-desc">Có hiệu lực đến {fmt().date(quote.validUntil)}. Trung tâm chỉ sửa phần tính phí sau khi bạn đồng ý.</p>
+            {quote.respondBy && <p className="card-heading-desc">Vui lòng phản hồi trước {fmt().dateTime(quote.respondBy)}. Hết hạn, báo giá sẽ tự động bị từ chối và máy chờ trả lại.</p>}
           </div>
           <span className="badge badge-waiting">Chờ bạn xác nhận</span>
         </div>
@@ -1452,7 +1454,7 @@ function QuoteConfirmModal({
               )}
               <li>
                 <span className="quote-commit-icon">💳</span>
-                <span><strong>Thanh toán an tâm:</strong> Bạn chỉ thanh toán khi đã nhận máy, kiểm tra hoạt động ổn định đạt chuẩn QC.</span>
+                <span><strong>Thanh toán an tâm:</strong> Bạn chỉ thanh toán khi đã nhận máy, kiểm tra hoạt động ổn định đạt chuẩn Kiểm tra chất lượng.</span>
               </li>
             </ul>
           </div>

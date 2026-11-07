@@ -195,6 +195,10 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
       context: context,
       initialTime: TimeOfDay.fromDateTime(_preferredFrom ?? now),
       helpText: 'Giờ mong muốn mang máy tới',
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
     );
     if (!mounted || time == null) return;
     setState(() {

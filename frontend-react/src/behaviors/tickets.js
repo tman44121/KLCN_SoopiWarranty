@@ -149,10 +149,10 @@ export default function initialize() {
               <span class="cell-muted">${issue.lines.map((l) => `${l.sku} × ${l.quantity}`).join(", ")}</span></div>`)}`, true) : ""}
           ${order ? kv("Bắt đầu sửa", order.startedAt ? fmt.dateTime(order.startedAt) : "Chưa bắt đầu") : ""}
           ${result ? html`
-            ${kv("Kết quả QC", fmt.badgeOf(L.STEP_RESULT, result.qcResult))}
+            ${kv("Kết quả Kiểm tra chất lượng", fmt.badgeOf(L.STEP_RESULT, result.qcResult))}
             ${kv("Công việc đã làm", result.workDone, true)}
-            ${kv("QC từng bước", result.qcSteps.map((s) => `${qcLabel(s.step)}: ${(L.STEP_RESULT[s.result] || {}).label || s.result}`).join(" · "), true)}
-            ${result.qcDetails ? kv("Ghi chú QC", result.qcDetails, true) : ""}` : ""}
+            ${kv("Kiểm tra chất lượng từng bước", result.qcSteps.map((s) => `${qcLabel(s.step)}: ${(L.STEP_RESULT[s.result] || {}).label || s.result}`).join(" · "), true)}
+            ${result.qcDetails ? kv("Ghi chú Kiểm tra chất lượng", result.qcDetails, true) : ""}` : ""}
         </div>`
     );
   }

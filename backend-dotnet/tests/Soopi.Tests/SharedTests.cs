@@ -93,11 +93,15 @@ public class SharedTests
         Assert.Equal(ErrorCode.VALIDATION_FAILED, Assert.Throws<DomainException>(() => EmailAddress.Require(raw)).Code);
 
     [Fact]
-    public void Imei_ChecksLuhn()
+    public void Imei_AcceptsFourToFiftyLettersDigitsOrHyphens_AndPreservesLookupNormalization()
     {
         Assert.Equal("354812109876540", Imei.Require("3548 1210 9876 540"));
-        Assert.Equal(ErrorCode.IMEI_INVALID, Assert.Throws<DomainException>(() => Imei.Require("354812109876541")).Code);
-        Assert.Equal(ErrorCode.IMEI_INVALID, Assert.Throws<DomainException>(() => Imei.Require("35481210987654")).Code);
+        Assert.Equal("354812109876541", Imei.Require("354812109876541"));
+        Assert.Equal("IMEI-ABC1", Imei.Require(" imei-abc1 "));
+        Assert.Equal("1234", Imei.Require("1234"));
+        Assert.Equal(new string('A', 50), Imei.Require(new string('a', 50)));
+        foreach (var invalid in new[] { "", "123", new string('A', 51), "IMEI@1234", "MÁY-1234" })
+            Assert.Equal(ErrorCode.IMEI_INVALID, Assert.Throws<DomainException>(() => Imei.Require(invalid)).Code);
         Assert.Equal("354812109876540", Imei.Require("35-481210-987654-0"));
         Assert.Equal("354812109876540", SerialNumber.Normalize("35-481210-987654-0"));
         Assert.Equal("SN-ABC1", SerialNumber.Normalize("sn-abc1"));

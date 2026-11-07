@@ -23,6 +23,32 @@ try {
     const r = await session('RECEPTIONIST', '/receptionist', width, { hasTouch: width < 1024 });
     await login(r.page); await r.page.waitForURL(base + '/receptionist');
     await r.page.waitForLoadState('networkidle');
+    let warrantyMode = 'FOUND';
+    const lookupStatuses = [];
+    await r.context.route('**/api/v1/devices/lookup?*', async route => {
+      assert.equal(new URL(route.request().url()).searchParams.get('serial'), '990037568200129');
+      const status = warrantyMode === 'FOUND' ? 200 : warrantyMode === 'MISSING' ? 404 : 503;
+      lookupStatuses.push(status);
+      await route.fulfill({ status, json: status === 200
+        ? { code: 'TB-LOOKUP', productId: 'SP-LOOKUP', product: { brandName: 'Soopi', name: 'Thiết bị thử' }, warranty: { status: 'IN_WARRANTY' }, tickets: [] }
+        : { code: status === 404 ? 'DEVICE_NOT_FOUND' : 'SERVICE_UNAVAILABLE', detail: 'Tra cứu đang gián đoạn. Vui lòng thử lại.' } });
+    });
+    await check(`warranty lookup gives visible feedback for found, missing and failed requests: ${width}px`, async () => {
+      await r.page.locator('#identifier').fill('990037568200129');
+      const button = r.page.locator('[data-warranty-check]');
+      await button.click();
+      await r.page.locator('.toast').filter({ hasText: 'Đã tìm thấy thiết bị: Còn bảo hành' }).waitFor({ timeout: 1500 });
+      assert.equal(await r.page.locator('[data-warranty-result]').isVisible(), true);
+      warrantyMode = 'MISSING';
+      await button.click();
+      await r.page.locator('.toast').filter({ hasText: 'Thiết bị chưa đăng ký trong hệ thống' }).waitFor({ timeout: 1500 });
+      assert.equal(await r.page.locator('[data-warranty-result]').isVisible(), false);
+      warrantyMode = 'ERROR';
+      await button.click();
+      await r.page.locator('.toast--error').filter({ hasText: 'Tra cứu đang gián đoạn' }).waitFor({ timeout: 1500 });
+      assert.equal(await button.isEnabled(), true);
+      assert.deepEqual(lookupStatuses, [200, 404, 503]);
+    });
     await check(`cosmetic selections expose state and reset restores defaults: ${width}px`, async () => {
       for (const group of await r.page.locator('[data-cosmetic]').all()) {
         assert.equal(await group.getAttribute('role'), 'group');
@@ -41,7 +67,8 @@ try {
     });
     await r.page.locator('[data-cosmetic=scratches]').scrollIntoViewIfNeeded();
     await r.page.screenshot({ path: fileURLToPath(new URL(`receptionist-${width}.png`, output)) });
-    assert.deepEqual(r.errors, []); await r.context.close();
+    assert.deepEqual(r.errors.map(message => /^Failed to load resource: the server responded with a status of (404|503) /.exec(message)?.[1] || message), ['404', '503']);
+    await r.context.close();
 
     const t = await session('TECHNICIAN', '/technician', width, { hasTouch: width < 1024 });
     let current = ticket;
