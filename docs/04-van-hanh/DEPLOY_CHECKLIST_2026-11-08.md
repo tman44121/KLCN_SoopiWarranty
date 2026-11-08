@@ -30,10 +30,20 @@ Nếu quên chạy: thiếu file 14 thì hệ thống dùng mặc định nhưng
 vẫn chạy nhưng giá trị bảo hành miễn phí của phiếu cũ đổi theo giá mới khi sửa giá danh mục; thiếu file 16 thì dùng mức bảo vệ cũ
 nhưng lưu cấu hình bảo vệ báo lỗi.
 
-Lệnh mẫu (mật khẩu lấy từ biến trong container `db`, không in ra):
+Cách nhanh: chép 3 file SQL và [database/run_migrations_2026-11-08.sh](../../database/run_migrations_2026-11-08.sh) vào `/tmp`
+của VPS rồi chạy `bash /tmp/run_migrations_2026-11-08.sh` bằng root. Script backup (`COPY_ONLY, CHECKSUM` + `RESTORE VERIFYONLY`),
+chạy 14 → 15 → 16, in các câu kiểm tra, so số hàng trước/sau và gọi health; lỗi ở bước nào thì dừng ở bước đó.
+
+Đã áp dụng trên `TrungTamBaoHanhDB` của VPS ngày 08/11/2026 sau khi deploy `4e98200`: cả 3 kiểm tra `OK`, không còn dòng xuất thiếu giá,
+số hàng không đổi (637 phiếu, 319 dòng xuất, 5122 linh kiện), health `UP`. Backup trước khi chạy:
+`/var/opt/mssql/data/TrungTamBaoHanhDB-pre-20261108-20261108-055416.bak`.
+
+Lệnh thủ công (mật khẩu lấy từ biến trong container `db`, không in ra). `compose.yml` bắt buộc `SOOPI_RELEASE`, lấy theo bản đang chạy;
+health loopback phải gửi `Host: soopiwarranty.id.vn` vì `AllowedHosts`:
 
 ```bash
 cd /etc/soopi
+export SOOPI_RELEASE="$(basename "$(readlink -f /opt/soopi/current)")"
 docker compose --env-file compose.env -f compose.yml cp /tmp/14_time_settings.sql db:/tmp/14_time_settings.sql
 docker compose --env-file compose.env -f compose.yml exec db bash -c \
   'SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -I -b -f 65001 -d TrungTamBaoHanhDB -i /tmp/14_time_settings.sql'
