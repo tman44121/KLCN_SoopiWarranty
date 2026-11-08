@@ -30,7 +30,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
             const WarrantSafeAppBar(),
             WarrantSafeTitleRow(
               title: 'Thông báo',
-              onBackTap: () => context.go(AppRoutes.home),
+              onBackTap: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(AppRoutes.home);
+                }
+              },
             ),
             if (isMock && mockNotifications.isNotEmpty)
               Padding(

@@ -80,6 +80,10 @@ OTP được khóa trong lúc kiểm tra/cập nhật: tối đa 5 lượt sai k
 `POST /api/v1/portal/lookup` nhận `{code,phone}` để cấp token phạm vi cho một ticket/request.
 Portal token có `typ=portal`, không dùng refresh của nhân viên và không được quyền truy cập các phiếu khác.
 Nhóm `/portal/my/*` và scope từng endpoint phải theo controller/service, không suy mọi token portal là tài khoản khách.
+`PATCH /api/v1/portal/my/profile` nhận `{fullName?,email?,address?}` cho tài khoản CUSTOMER và trả hồ sơ đã cập nhật.
+`fullName` cần 2–100 ký tự sau khi bỏ khoảng trắng đầu/cuối, không chứa chữ số; `null` giữ nguyên giá trị.
+SĐT (tên đăng nhập) và mã khách không tự sửa ở endpoint này. Tên trên yêu cầu/phiếu cũ là ảnh chụp tại thời điểm lập,
+không đổi theo hồ sơ mới.
 
 `GET /portal/catalog` bổ sung `products`: mỗi model đang hoạt động có `code`, `name`, `brandName`, `categoryCode`,
 `deviceTypeCode`; chỉ gồm model có hãng, loại và nhóm đang hoạt động. Web/app dùng danh sách này cho ô Hãng / Model,

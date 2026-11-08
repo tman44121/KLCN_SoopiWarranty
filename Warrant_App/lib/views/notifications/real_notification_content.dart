@@ -45,7 +45,7 @@ class _RealNotificationContentState extends State<RealNotificationContent>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final wasActive = _canPoll;
-    _visible = TickerMode.valuesOf(context).enabled;
+    _visible = TickerMode.of(context);
     _syncPolling(wasActive);
   }
 

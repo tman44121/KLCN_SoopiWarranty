@@ -172,6 +172,23 @@ dotnet run --project src/Soopi.Api --launch-profile http -- --Sla:Alerts:Enabled
 API ở `http://localhost:8080`. Chỉ tắt job SLA; job cleanup 02:00 vẫn tồn tại.
 Không gọi login/refresh/logout/OTP hoặc form thật trong phiên chỉ đọc; dừng API trước giờ cleanup.
 
+### API thử riêng trên cổng 8081
+
+`run.bat` có thể dùng lại API Soopi đang mở mà không biên dịch mã mới. Khi kiểm thử App với DB thử,
+hãy dừng **chỉ terminal API 8081 cũ** bằng Ctrl+C, rồi chạy từ gốc repository:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File verification\Start-TestApi.ps1 -SqlServer 'localhost\HOMEPC'
+```
+
+Thay `localhost\HOMEPC` bằng tên SQL Server hiển thị trong SSMS nếu chạy trên máy khác. Script chỉ nhận
+`TrungTamBaoHanhDB_Test_20261015`, kiểm tra kết nối bằng Windows Authentication, từ chối cổng 8081
+đang bị chiếm, và **build lại API từ mã nguồn hiện tại** trước khi chạy. Chuỗi kết nối chỉ tồn tại
+trong tiến trình này; script không chạy migration/seed, không sửa User Secrets và không đụng API 8080.
+Các job nền của API vẫn hoạt động theo cấu hình hiện có trên DB thử.
+Giữ terminal này mở. App Android emulator dùng Real `http://10.0.2.2:8081/api/v1`.
+Có thể kiểm tra trước mà chưa chạy API bằng cách thêm `-CheckOnly` (cổng 8081 phải trống).
+
 Terminal frontend, tại `frontend-react`:
 
 ```powershell
@@ -194,6 +211,32 @@ Không đặt connection string, password hay private key vào biến `VITE_*`.
 CORS Development cho phép `http://localhost:5173,http://localhost:8080`. Nếu đổi hostname/cổng hoặc gọi
 API trực tiếp khác origin, chỉnh `Security:AllowedOrigins` (danh sách phân cách dấu phẩy) cho đúng origin.
 Ví dụ API kiểm tra ở 18080 thì đặt `VITE_PROXY_TARGET=http://127.0.0.1:18080`; trình duyệt vẫn mở Vite qua localhost.
+
+### Chạy đồng thời bản thật và bản thử trên máy phát triển
+
+Khi cần giữ cố định API 8080/8081 và Web 5173/5174, không dùng `run.bat` để mở thêm một
+bản: lệnh đó có thể tự chọn cổng khác hoặc dùng lại tiến trình cũ. Mở bốn terminal
+PowerShell riêng tại gốc repo, sau khi SQL Server đã chạy:
+
+```powershell
+# Terminal API thật: dùng cấu hình User Secrets hiện có; kiểm tra DB đích trước khi ghi.
+Set-Location .\backend-dotnet
+dotnet run --project src/Soopi.Api --launch-profile http -- --Sla:Alerts:Enabled=false
+# Terminal API thử (gốc repo): script từ chối cổng bận và xác minh đúng DB thử.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File verification\Start-TestApi.ps1 -SqlServer '.\HOMEPC'
+# Terminal Web thật:
+Set-Location .\frontend-react
+$env:VITE_PROXY_TARGET='http://127.0.0.1:8080'; npm.cmd run dev -- --host 127.0.0.1 --port 5173 --strictPort
+# Terminal Web thử:
+Set-Location .\frontend-react
+$env:VITE_PROXY_TARGET='http://127.0.0.1:8081'; npm.cmd run dev -- --host 127.0.0.1 --port 5174 --strictPort
+```
+
+Chỉ chạy mỗi lệnh trong terminal/thư mục đã ghi ở chú thích. Vite dùng cache riêng theo
+đích proxy nên hai Web có thể mở cùng lúc. Sau khi khởi động, kiểm tra `/actuator/health`
+qua cả hai Web và xác minh tiến trình API gắn đúng DB trước mọi thao tác ghi; health UP
+một mình chưa chứng minh DB đích. Pixel_6 dùng Real `http://10.0.2.2:8081/api/v1` để
+thử; `10.0.2.2` chỉ áp dụng cho Android emulator, không dùng cho điện thoại qua USB.
 
 ## 4. Chạy bản build cùng origin
 

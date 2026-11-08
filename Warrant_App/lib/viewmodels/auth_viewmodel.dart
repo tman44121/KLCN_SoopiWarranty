@@ -427,6 +427,97 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> updateMyProfile({
+    required String fullName,
+    required String email,
+    required String address,
+  }) async {
+    final user = _currentUser;
+    if (_isMock || user == null) {
+      throw const ApiException('Vui lòng đăng nhập tài khoản Real.');
+    }
+    final generation = _sessionGeneration;
+    final api = _api;
+    final baseUrl = _baseUrl;
+    final updated = await api.updateMyProfile(
+      fullName: fullName,
+      email: email,
+      address: address,
+    );
+    if (!_isCurrentSessionScope(
+      generation: generation,
+      userId: user.id,
+      api: api,
+      isMock: false,
+      baseUrl: baseUrl,
+    )) {
+      throw const ApiException('Phiên đã thay đổi. Vui lòng tải lại hồ sơ.');
+    }
+    _currentUser = user.copyWith(
+      fullName: updated.fullName,
+      phone: updated.phone,
+      email: updated.email,
+      address: updated.address,
+      customerCode: updated.customerCode,
+    );
+    notifyListeners();
+  }
+
+  Future<void> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    final user = _currentUser;
+    if (_isMock || user == null) {
+      throw const ApiException('Vui lòng đăng nhập tài khoản Real.');
+    }
+    final generation = _sessionGeneration;
+    final api = _api;
+    final baseUrl = _baseUrl;
+    final response = await api.changePassword(currentPassword, newPassword);
+    if (!_isCurrentSessionScope(
+          generation: generation,
+          userId: user.id,
+          api: api,
+          isMock: false,
+          baseUrl: baseUrl,
+        ) ||
+        response.user.id != user.id ||
+        response.refreshToken == null) {
+      throw const ApiException(
+        'Phiên mới không hợp lệ. Vui lòng đăng nhập lại.',
+      );
+    }
+    try {
+      await _storage.saveSession(
+        token: response.accessToken,
+        refreshToken: response.refreshToken,
+        userId: user.id,
+        isMock: false,
+      );
+    } catch (_) {
+      await _storage.clearSession(isMock: false);
+      api.clearAuthToken();
+      _sessionGeneration++;
+      _currentUser = null;
+      _clearNotificationState();
+      notifyListeners();
+      throw const ApiException(
+        'Mật khẩu đã đổi nhưng App không lưu được phiên. Vui lòng đăng nhập lại.',
+      );
+    }
+    _sessionGeneration++;
+    api.setAuthToken(response.accessToken);
+    _currentUser = response.user.copyWith(
+      customerCode: user.customerCode,
+      fullName: user.fullName,
+      phone: user.phone,
+      email: user.email,
+      address: user.address,
+    );
+    notifyListeners();
+  }
+
   Future<List<OwnedDevice>> getMyDevices() {
     return _api.getMyDevices();
   }

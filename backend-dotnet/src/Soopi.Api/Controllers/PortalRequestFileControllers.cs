@@ -63,7 +63,7 @@ public sealed class PortalController(
     public Task<Profile> MyProfile() => profiles.ProfileAsync();
 
     [HttpPatch("my/profile")]
-    public Task<Profile> UpdateMyProfile([FromBody] ProfileUpdate body) => profiles.UpdateContactAsync(body);
+    public Task<Profile> UpdateMyProfile([FromBody] ProfileUpdate body) => profiles.UpdateProfileAsync(body);
 
     [HttpGet("my/devices")]
     public Task<List<OwnedDevice>> MyDevices() => profiles.DevicesAsync();

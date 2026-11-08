@@ -1924,7 +1924,7 @@ function NewRequest({ data, serial, onSubmitted }: { data: Data; serial: string;
 
 /* ---------------------------------------------------------------- Hồ sơ & đổi mật khẩu */
 
-function ProfileArea({ data, view, onChanged }: { data: Data; view: "profile" | "password"; onChanged: () => void }) {
+function ProfileArea({ data, view, onChanged }: { data: Data; view: "profile" | "password"; onChanged: () => Promise<void> }) {
   const p = data.profile;
   const nav = [
     ["#ho-so", "user", "Hồ sơ cá nhân", "profile"], ["#doi-mat-khau", "key", "Đổi mật khẩu", "password"],
@@ -1957,21 +1957,33 @@ function ProfileArea({ data, view, onChanged }: { data: Data; view: "profile" | 
   );
 }
 
-function ProfileForm({ data, onChanged }: { data: Data; onChanged: () => void }) {
+function ProfileForm({ data, onChanged }: { data: Data; onChanged: () => Promise<void> }) {
   const p = data.profile;
+  const [fullName, setFullName] = useState(p.fullName);
   const [email, setEmail] = useState(p.email || "");
   const [address, setAddress] = useState(p.address || "");
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, run] = useBusy();
-  const dirty = email !== (p.email || "") || address !== (p.address || "");
+  const dirty = fullName !== p.fullName || email !== (p.email || "") || address !== (p.address || "");
 
   const save = (event: FormEvent) => {
     event.preventDefault();
+    const name = fullName.trim();
+    if (name.length < 2 || name.length > 100 || /[0-9]/.test(name)) {
+      setMessage({ ok: false, text: "Họ và tên cần từ 2 đến 100 ký tự và không chứa chữ số." });
+      return;
+    }
     void run(async () => {
       try {
-        await api().patch("/portal/my/profile", { email: email.trim(), address: address.trim() });
-        setMessage({ ok: true, text: "Đã cập nhật thông tin liên hệ." });
-        onChanged();
+        const updated = await api().patch("/portal/my/profile", { fullName: name, email: email.trim(), address: address.trim() });
+        if (updated.fullName !== name) {
+          await onChanged();
+          setMessage({ ok: false, text: "Máy chủ chưa cập nhật họ tên. Vui lòng kiểm tra lại hồ sơ và phiên bản API đang chạy." });
+          return;
+        }
+        setFullName(updated.fullName);
+        await onChanged();
+        setMessage({ ok: true, text: "Đã cập nhật hồ sơ cá nhân." });
       } catch (e) {
         setMessage({ ok: false, text: errorText(e) });
       }
@@ -1989,7 +2001,8 @@ function ProfileForm({ data, onChanged }: { data: Data; onChanged: () => void })
           <div className="two-inputs-grid form-row-group">
             <div>
               <label htmlFor="pf-name">Họ và tên</label>
-              <input id="pf-name" className="regular-input" value={p.fullName} readOnly={true} />
+              <input id="pf-name" className="regular-input" value={fullName} maxLength={100} autoComplete="name"
+                onChange={(e) => setFullName(e.target.value)} />
             </div>
             <div>
               <label htmlFor="pf-phone">Số điện thoại (tên đăng nhập)</label>
@@ -2012,7 +2025,7 @@ function ProfileForm({ data, onChanged }: { data: Data; onChanged: () => void })
             <input id="pf-address" className="regular-input" value={address} maxLength={255} autoComplete="street-address"
               onChange={(e) => setAddress(e.target.value)} placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố" />
           </div>
-          <div className="input-subnote">Cần đổi họ tên hoặc số điện thoại? Vui lòng liên hệ trạm dịch vụ.</div>
+          <div className="input-subnote">Cần đổi số điện thoại đăng nhập? Vui lòng liên hệ trạm dịch vụ.</div>
           <div className="form-actions">
             <div className="form-actions-end">
               <button type="submit" className="btn-primary-teal" disabled={busy || !dirty}>{busy ? "Đang lưu…" : "Lưu thay đổi"}</button>

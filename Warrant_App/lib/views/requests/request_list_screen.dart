@@ -363,20 +363,21 @@ class _RealHistoryState extends State<_RealHistory> {
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(height: 1),
           ),
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
                 'Tiếp nhận lúc ${soopiDateTime(ticket.receivedAt)}',
                 style: AppText.meta,
               ),
-              SoopiPrimaryButton(
-                compact: true,
-                label: 'Xem chi tiết',
-                onPressed: open,
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: SoopiPrimaryButton(
+                  compact: true,
+                  label: 'Xem chi tiết',
+                  onPressed: open,
+                ),
               ),
             ],
           ),
