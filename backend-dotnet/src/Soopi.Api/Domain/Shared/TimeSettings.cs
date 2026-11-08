@@ -17,6 +17,7 @@ public sealed record TimeSettings(
     TimeOnly CloseAt,
     IReadOnlyList<int> WorkingDays)
 {
+    public ProtectionSettings Protection { get; init; } = new();
     public static readonly TimeSettings Default = new(12, 24, 48, SlaLevel.STANDARD_48H, 120, 72,
         new TimeOnly(8, 0), new TimeOnly(17, 0), [1, 2, 3, 4, 5, 6]);
 

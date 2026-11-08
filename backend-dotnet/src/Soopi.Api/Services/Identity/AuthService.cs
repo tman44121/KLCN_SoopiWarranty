@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Soopi.Api.Data;
 using Soopi.Api.Data.Entities;
 using Soopi.Api.Data.Stores;
@@ -22,14 +21,12 @@ public sealed class AuthService(
     PasswordPolicy passwordPolicy,
     RateLimiter rateLimiter,
     AuditService audit,
-    IOptions<SecurityOptions> options,
+    TimeSettingsService timeSettings,
     SecurityVersionCache securityVersions,
     TransactionRunner transactions,
     TimeProvider clock,
     AccessTrackingService access)
 {
-    private SecurityOptions Settings => options.Value;
-
     /// <summary>Lỗi nghiệp vụ (sai mật khẩu, khóa tạm) vẫn ghi bộ đếm đăng nhập sai và nhật ký trước khi báo lỗi.</summary>
     public async Task<AuthResult> LoginAsync(string username, string password, bool remember, string? ip, string? userAgent)
     {
@@ -119,7 +116,7 @@ public sealed class AuthService(
         await accounts.LockAsync(actor.AccountId!.Value);
         var account = await accounts.FindByIdAsync(actor.AccountId) ?? throw new DomainException(ErrorCode.AUTH_TOKEN_REVOKED);
         // Chặn dò "mật khẩu hiện tại" bằng token/phiên đánh cắp: giới hạn tần suất giống màn đăng nhập.
-        rateLimiter.CheckLogin(ip, actor.Username);
+        rateLimiter.CheckLogin(ip, actor.Username, (await timeSettings.GetAsync()).Protection);
         if (!PasswordHasher.Matches(currentPassword, account.PasswordHash)) throw new DomainException(ErrorCode.AUTH_CURRENT_PASSWORD_WRONG);
         passwordPolicy.Validate(account.Username, newPassword);
         // Giữ nguyên mật khẩu (vd. mật khẩu mặc định sau khi đặt lại, D-076) không được tính là đã đổi.
@@ -177,7 +174,7 @@ public sealed class AuthService(
     private async Task<(Account Account, string DisplayName)> AuthenticateAsync(string username, string password, string? ip, bool customerOnly)
     {
         var normalized = Account.Normalize(username);
-        rateLimiter.CheckLogin(ip, normalized);
+        rateLimiter.CheckLogin(ip, normalized, (await timeSettings.GetAsync()).Protection);
         var account = await accounts.FindForSignInAsync(username);
         var matches = PasswordHasher.Matches(password, account?.PasswordHash ?? PasswordHasher.DummyHash);
         if (account is null || !matches) await FailedLoginAsync(account, normalized, JavaText.Trim(username));
@@ -206,16 +203,17 @@ public sealed class AuthService(
             await audit.RecordAsync(normalized, normalized, ["ANONYMOUS"], "AUTH_LOGIN_FAILED", "Đăng nhập thất bại", "ACCOUNT", normalized);
             throw new DomainException(ErrorCode.AUTH_ACCOUNT_NOT_FOUND, login);
         }
+        var protection = (await timeSettings.GetAsync()).Protection;
         var result = await transactions.InTransactionAsync(async () =>
         {
             await accounts.LockAsync(account.Id);
             var current = await accounts.FindByIdAsync(account.Id) ?? throw new DomainException(ErrorCode.AUTH_TOKEN_REVOKED);
             var now = clock.GetUtcNow();
             if (current.TemporarilyLocked(now)) return (Locked: true, Remaining: 0);
-            var shouldLock = current.RegisterFailedLogin(now, Settings.Login.MaxFailedAttempts, Settings.Login.TemporaryLock);
+            var shouldLock = current.RegisterFailedLogin(now, protection.LoginMaxFailedAttempts, TimeSpan.FromMinutes(protection.LoginLockMinutes));
             await accounts.SaveAsync();
             await AuditAsync(current, "AUTH_LOGIN_FAILED", "Đăng nhập thất bại");
-            return (Locked: shouldLock, Remaining: Settings.Login.MaxFailedAttempts - current.FailedLoginAttempts);
+            return (Locked: shouldLock, Remaining: protection.LoginMaxFailedAttempts - current.FailedLoginAttempts);
         });
         if (result.Locked) throw new DomainException(ErrorCode.AUTH_TEMPORARILY_LOCKED);
         throw new DomainException(ErrorCode.AUTH_INVALID_CREDENTIALS, result.Remaining);
@@ -232,14 +230,16 @@ public sealed class AuthService(
                 throw new DomainException(ErrorCode.AUTH_TOKEN_REVOKED);
             var rawRefresh = RandomToken();
             var now = clock.GetUtcNow();
-            var refreshTtl = remember ? Settings.Jwt.RefreshTokenRememberTtl : Settings.Jwt.RefreshTokenTtl;
+            var protection = (await timeSettings.GetAsync()).Protection;
+            var accessTtl = TimeSpan.FromMinutes(protection.AccessTokenMinutes);
+            var refreshTtl = remember ? TimeSpan.FromDays(protection.RememberTokenDays) : TimeSpan.FromHours(protection.RefreshTokenHours);
             db.RefreshTokens.Add(new RefreshToken(Hash(rawRefresh), current.Id, familyId, now, now + refreshTtl, remember, Safe(ip), Safe(userAgent)));
             await db.SaveChangesAsync();
-            var accessToken = jwt.IssueAccessToken(current, displayName, familyId);
+            var accessToken = jwt.IssueAccessToken(current, displayName, familyId, accessTtl);
             if (login) await AuditAsync(current, "AUTH_LOGIN_SUCCESS", "Đăng nhập thành công");
             return new AuthResult(
                 accessToken,
-                (long)Settings.Jwt.AccessTokenTtl.TotalSeconds,
+                (long)accessTtl.TotalSeconds,
                 rawRefresh,
                 remember,
                 (long)refreshTtl.TotalSeconds,

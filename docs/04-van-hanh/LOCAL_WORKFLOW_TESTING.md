@@ -37,7 +37,8 @@ và quyền xem/xác nhận phiếu vẫn theo người gửi từng lần. Flut
 `test:ui:time-settings` kiểm màn `/admin#time-settings` ở 1440px/390px: đọc mặc định 48h, chặn SLA không tăng dần và giờ sai
 `HH:mm`, gửi đúng body khi lưu; lễ tân hiện số giờ SLA đã cấu hình và chọn sẵn mức mặc định; cổng khách chặn ngày nghỉ theo
 cấu hình. API giả lập toàn bộ. `TimeSettingsTests` (backend) kiểm hạn SLA, giờ làm việc, hạn báo giá theo cấu hình và ràng buộc
-dữ liệu. Database local cần chạy [14_time_settings.sql](../../database/14_time_settings.sql) để lưu được cấu hình.
+dữ liệu. Database local cần chạy [14_time_settings.sql](../../database/14_time_settings.sql) và
+[16_protection_settings.sql](../../database/16_protection_settings.sql) để lưu được cấu hình.
 
 `test:ui:catalog-price` kiểm tab Danh mục và sửa giá trên bảng ở 1440px/390px: Esc hủy, chặn số âm, giữ ô nhập khi máy chủ báo lỗi,
 gửi đúng trường (`servicePrice` cho linh kiện, `price` cho dịch vụ). `IssueServicePriceTests` (SQL Server) kiểm phiếu xuất mới lưu giá

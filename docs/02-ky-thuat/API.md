@@ -113,6 +113,23 @@ phút; báo giá 1–720 giờ; giờ `HH:mm` 24 giờ, mở cửa trước đó
 `POST /tickets` không gửi `slaLevel` thì dùng `defaultSlaLevel`; `HanSLA` = giờ nhận + số giờ của mức tại thời điểm lập phiếu.
 `APPOINTMENT_OUTSIDE_BUSINESS_HOURS` ghi giờ làm việc hiện hành trong `detail`.
 
+`GET /settings/time/admin` (chỉ `ADMIN`) trả thêm `protection`; `GET /settings/time` công khai không có trường này. `PUT` có thể
+gửi `protection` (bỏ trống = giữ giá trị đang lưu, cần `16_protection_settings.sql`):
+
+```json
+"protection": { "loginMaxFailedAttempts": 5, "loginLockMinutes": 15, "otpValidityMinutes": 5, "otpResendSeconds": 60,
+  "otpMaxFailedAttempts": 5, "accessTokenMinutes": 15, "refreshTokenHours": 12, "rememberTokenDays": 30, "portalTokenMinutes": 30,
+  "loginIp": { "limit": 10, "windowMinutes": 1 }, "loginAccount": { "limit": 5, "windowMinutes": 1 },
+  "otpIp": { "limit": 20, "windowMinutes": 60 }, "otpEmail": { "limit": 5, "windowMinutes": 60 },
+  "warrantyCheckIp": { "limit": 10, "windowMinutes": 1 }, "lookupIp": { "limit": 5, "windowMinutes": 1 },
+  "lookupCode": { "limit": 10, "windowMinutes": 60 }, "publicRequestsIp": { "limit": 3, "windowMinutes": 60 },
+  "customerRequests": { "limit": 5, "windowMinutes": 60 } }
+```
+
+Giới hạn: sai mật khẩu 1–20, khóa 1–1440 phút, OTP 1–30 phút, chờ gửi lại 1–3600 giây, sai OTP 1–10; phiên truy cập 1–1440 phút,
+đăng nhập thường 1–720 giờ, ghi nhớ 1–90 ngày, tra cứu 1–1440 phút, và truy cập ≤ thường ≤ ghi nhớ; mỗi giới hạn tần suất
+`limit` 1–10000, `windowMinutes` 1–1440. Vượt giới hạn tần suất vẫn trả `429 RATE_LIMITED`.
+
 `GET /reports/technician-performance` bổ sung `lateCompleted` (lệnh sửa xong, đạt kiểm tra chất lượng sau `HanSLA`), `lateOpen`
 (lệnh sửa chưa xong của phiếu còn xử lý đã quá `HanSLA` tại lúc gọi) và `late` = tổng hai số. Lọc kỳ theo ngày tiếp nhận như
 các cột khác; file Excel thêm hai cột tương ứng ở sheet “Hiệu suất kỹ thuật viên”.

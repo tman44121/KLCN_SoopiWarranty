@@ -1,6 +1,7 @@
 // All APIs are mocked; no live business writes.
 import assert from 'node:assert/strict';
 import { browser, session, login } from './smoke.mjs';
+import { DEFAULT_PROTECTION_SETTINGS } from '../src/protection-settings.js';
 
 const base = process.env.E2E_BASE_URL || 'http://localhost:5173';
 const custom = {
@@ -44,9 +45,21 @@ try {
     assert.equal(await panel.getByLabel('Giờ mở cửa (HH:mm)').inputValue(), '07:30');
     await panel.getByLabel('Giờ đóng cửa (HH:mm)').fill('19:00');
     await panel.getByLabel('Chủ nhật').check();
+
+    // Cấu hình bảo vệ: khối thu gọn, chặn hạn phiên đảo thứ tự, lưu cùng body.
+    await panel.getByText('Thời hạn phiên đăng nhập', { exact: true }).click();
+    await panel.getByLabel('Hạn phiên truy cập (phút)').fill('800');
     await panel.getByRole('button', { name: 'Lưu cấu hình' }).click();
-    await panel.getByText('Đã lưu. Cấu hình áp dụng ngay', { exact: false }).waitFor();
-    assert.deepEqual(saved, custom);
+    await panel.getByText('Hạn phiên truy cập ≤ hạn đăng nhập thường ≤ hạn ghi nhớ đăng nhập.').waitFor();
+    assert.equal(saved, null);
+    await panel.getByLabel('Hạn phiên truy cập (phút)').fill('15');
+    await panel.getByText('Mã OTP qua email', { exact: true }).click();
+    await panel.getByLabel('Hạn mã OTP (phút)').fill('10');
+    const otpIp = panel.getByRole('group', { name: 'Yêu cầu OTP theo địa chỉ IP' });
+    await otpIp.getByLabel('Tối đa (lượt)').fill('30');
+    await panel.getByRole('button', { name: 'Lưu cấu hình' }).click();
+    await panel.getByText('Đã lưu. Cấu hình áp dụng cho các lượt xử lý tiếp theo', { exact: false }).waitFor();
+    assert.deepEqual(saved, { ...custom, protection: { ...DEFAULT_PROTECTION_SETTINGS, otpValidityMinutes: 10, otpIp: { limit: 30, windowMinutes: 60 } } });
     assert.deepEqual(a.errors, []);
     assert.equal(await a.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await a.context.close();

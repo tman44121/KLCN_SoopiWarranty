@@ -2,7 +2,8 @@
 
 Bản này gồm: cấu hình thời gian cho quản trị viên (SLA mặc định Tiêu chuẩn 48h), cột “Trễ hẹn SLA” trong báo cáo
 kỹ thuật viên, trang Báo cáo & thống kê dạng tab, Danh mục hệ thống dạng tab và sửa giá ngay trên bảng, giữ giá
-“Miễn phí trong bảo hành” theo lúc xuất kho, dropdown model từ danh mục và người gửi theo từng lần tiếp nhận.
+“Miễn phí trong bảo hành” theo lúc xuất kho, dropdown model từ danh mục và người gửi theo từng lần tiếp nhận, cấu hình bảo vệ
+(khóa đăng nhập, OTP, chống spam, hạn phiên) cho quản trị viên.
 Quy trình chung, quyền và rollback xem [DEPLOY_VPS](DEPLOY_VPS.md); tài liệu này chỉ liệt kê việc riêng của bản này.
 
 ## 1. Điều kiện
@@ -14,18 +15,20 @@ Quy trình chung, quyền và rollback xem [DEPLOY_VPS](DEPLOY_VPS.md); tài li�
 ## 2. File SQL phải chạy — đúng thứ tự, TRƯỚC khi kích hoạt release
 
 Chạy trên database `TrungTamBaoHanhDB` của VPS, sau khi backup (`COPY_ONLY, CHECKSUM` + `RESTORE VERIFYONLY`).
-Cả hai file chạy lại nhiều lần được, chỉ thêm bảng/cột, không xóa hay sửa dữ liệu nghiệp vụ.
+Cả ba file chạy lại nhiều lần được, chỉ thêm bảng/cột, không xóa hay sửa dữ liệu nghiệp vụ.
 
 | Thứ tự | File | Tác dụng | Kiểm tra sau khi chạy |
 | --- | --- | --- | --- |
 | 1 | [database/14_time_settings.sql](../../database/14_time_settings.sql) | Tạo bảng `CauHinhThoiGian` (SLA, ngưỡng sắp trễ, hạn báo giá, giờ làm việc). Bảng trống = dùng mặc định SLA 48h. | `SELECT OBJECT_ID('dbo.CauHinhThoiGian')` khác `NULL` |
 | 2 | [database/15_issue_service_price.sql](../../database/15_issue_service_price.sql) | Thêm cột `ChiTietXuatKho.DonGiaDichVuXuat`, điền giá tính khách hiện tại cho các dòng xuất cũ. | `SELECT COL_LENGTH('dbo.ChiTietXuatKho','DonGiaDichVuXuat')` khác `NULL`; `SELECT COUNT(*) FROM ChiTietXuatKho WHERE DonGiaDichVuXuat IS NULL` = 0 |
+| 3 | [database/16_protection_settings.sql](../../database/16_protection_settings.sql) | Thêm cột JSON `CauHinhThoiGian.CauHinhBaoVe` (khóa đăng nhập, OTP, chống spam, hạn phiên). Cột trống = giữ giá trị cũ. Cần file 14 chạy trước. | `SELECT COL_LENGTH('dbo.CauHinhThoiGian','CauHinhBaoVe')` khác `NULL` |
 
 Không chạy lại: `13_relax_imei.sql` (đã áp dụng 07/11/2026). Không chạy: `12_demo_catalog.sql`, `09_sample_public_reviews.sql`,
 script trong `database/test-data/` (dữ liệu mẫu/reset). CI/CD không tự chạy migration.
 
 Nếu quên chạy: thiếu file 14 thì hệ thống dùng mặc định nhưng không lưu được cấu hình thời gian; thiếu file 15 thì xuất kho
-vẫn chạy nhưng giá trị bảo hành miễn phí của phiếu cũ đổi theo giá mới khi sửa giá danh mục.
+vẫn chạy nhưng giá trị bảo hành miễn phí của phiếu cũ đổi theo giá mới khi sửa giá danh mục; thiếu file 16 thì dùng mức bảo vệ cũ
+nhưng lưu cấu hình bảo vệ báo lỗi.
 
 Lệnh mẫu (mật khẩu lấy từ biến trong container `db`, không in ra):
 
@@ -36,7 +39,7 @@ docker compose --env-file compose.env -f compose.yml exec db bash -c \
   'SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -I -b -f 65001 -d TrungTamBaoHanhDB -i /tmp/14_time_settings.sql'
 ```
 
-Lặp lại với `15_issue_service_price.sql`.
+Lặp lại với `15_issue_service_price.sql` rồi `16_protection_settings.sql`.
 
 ## 3. Cấu hình
 
@@ -56,10 +59,11 @@ Sau khi kích hoạt:
 
 - `curl -fsS https://soopiwarranty.id.vn/actuator/health` trả `{"status":"UP"}`.
 - `curl -fsS https://soopiwarranty.id.vn/api/v1/settings/time` có `"standardSlaHours":48` và `"defaultSlaLevel":"STANDARD_48H"`.
-- Đăng nhập admin: Cấu hình thời gian lưu được; Báo cáo có 3 tab và ô “Đang trễ hạn SLA”; Danh mục có 5 tab và nút “Sửa giá”.
+- `curl -fsS https://soopiwarranty.id.vn/api/v1/settings/time` không chứa `protection` (ngưỡng chống spam không công khai).
+- Đăng nhập admin: Cấu hình thời gian lưu được và có 4 khối bảo vệ (Đăng nhập, OTP, Gửi phiếu và tra cứu, Thời hạn phiên); Báo cáo có 3 tab và ô “Đang trễ hạn SLA”; Danh mục có 5 tab và nút “Sửa giá”.
 - Lễ tân lập phiếu: mức “Tiêu chuẩn (48h)” được chọn sẵn.
 
-Rollback code: chạy lại `activate.py` với `RELEASE_ID` cũ. Hai migration chỉ thêm bảng/cột nên bản cũ vẫn chạy; không xóa chúng.
+Rollback code: chạy lại `activate.py` với `RELEASE_ID` cũ. Ba migration chỉ thêm bảng/cột nên bản cũ vẫn chạy; không xóa chúng.
 
 ## 5. Prompt cho ChatGPT
 
@@ -87,7 +91,8 @@ Các bước:
 1. Kiểm tra hiện trạng (chỉ đọc): docker ps, df -h /, free -h, health loopback + HTTPS, readlink /opt/soopi/current
    (ghi lại release cũ để rollback). Ổ trống < 3 GB thì dừng hỏi mình.
 2. Backup TrungTamBaoHanhDB (COPY_ONLY, CHECKSUM) rồi RESTORE VERIFYONLY; ghi số hàng PhieuTiepNhan, ChiTietXuatKho, LinhKien.
-3. Chạy đúng thứ tự database/14_time_settings.sql rồi database/15_issue_service_price.sql (theo mục 2 của
+3. Chạy đúng thứ tự database/14_time_settings.sql, database/15_issue_service_price.sql rồi
+   database/16_protection_settings.sql (theo mục 2 của
    DEPLOY_CHECKLIST_2026-11-08.md), chạy các câu kiểm tra trong bảng đó, đối chiếu số hàng không đổi.
    Không chạy 13_relax_imei.sql, 12_demo_catalog.sql, 09_sample_public_reviews.sql hay database/test-data/.
 4. Upload soopi-image.tar.gz vào /opt/soopi/releases/<RELEASE_ID>/, kiểm tra kích thước, rồi chạy activate.py.

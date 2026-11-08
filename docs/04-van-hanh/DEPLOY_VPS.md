@@ -115,6 +115,7 @@ Danh sách file cần chạy cho bản 08/11/2026 và prompt cho ChatGPT: [DEPLO
 Trước bản có cấu hình thời gian, chạy `database/14_time_settings.sql` (chỉ thêm bảng `CauHinhThoiGian`, không sửa dữ liệu).
 Trước bản sửa giá trên Danh mục, chạy `database/15_issue_service_price.sql`: thêm cột giá tính khách lúc xuất và điền giá hiện tại cho
 các dòng xuất cũ (chỉ cột mới). Chưa chạy thì xuất kho vẫn hoạt động nhưng giá trị bảo hành miễn phí của phiếu cũ đổi theo giá mới.
+Trước bản có cấu hình bảo vệ, chạy `database/16_protection_settings.sql` sau file 14 (chỉ thêm cột `CauHinhBaoVe`, không đổi tài khoản/phiên).
 Trước bản nới IMEI thành 4–50 ký tự chữ/số/dấu gạch ngang, chạy `database/13_relax_imei.sql`. Script này đã được áp dụng theo yêu cầu chủ dự án ngày 07/11/2026 trên `TrungTamBaoHanhDB`: CHECK bật/trusted, kiểm tra ràng buộc đạt, dữ liệu vẫn 621 thiết bị (136 IMEI) và health nội bộ/HTTPS đều `UP`. Lượt cập nhật này chỉ đổi CHECK, chưa deploy mã backend/web/app mới.
 Script chỉ cho phép ngày trong bảng duyệt để trống, không điền ngày giả hay tự công khai điểm cũ.
 `database/09_sample_public_reviews.sql` là script dữ liệu mẫu tùy chọn, lưu riêng trong DB;

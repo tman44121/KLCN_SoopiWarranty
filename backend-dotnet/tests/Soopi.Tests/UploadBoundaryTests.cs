@@ -51,7 +51,7 @@ public class UploadBoundaryTests
         using var body = new ProbeStream(Encoding.UTF8.GetBytes("--test\r\nContent-Disposition: form-data; name=\"data\"\r\n\r\n{}\r\n--test--\r\n"));
         context.Request.ContentType = "multipart/form-data; boundary=test";
         context.Request.ContentLength = body.Length; context.Request.Body = body;
-        var service = new PortalWarrantyRequestService(new PortalPolicy(db, actors), null!, null!, limiter, actors);
+        var service = new PortalWarrantyRequestService(new PortalPolicy(db, actors), null!, null!, limiter, actors, TestTimeSettings.Create());
         var controller = new PortalController(null!, service, null!, null!, actors) { ControllerContext = new() { HttpContext = context } };
 
         var error = await Record.ExceptionAsync(() => signedIn ? controller.SubmitMine() : controller.Submit());

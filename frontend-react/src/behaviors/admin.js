@@ -457,25 +457,38 @@ export default function initialize() {
       <button type="button" class="btn btn--secondary btn--sm" data-price-cancel>Hủy</button></div>`;
     const input = row.querySelector(".price-input");
     const save = row.querySelector("[data-price-save]");
+    const cancel = row.querySelector("[data-price-cancel]");
+    let saving = false;
     input.focus();
     input.select();
     const submit = async () => {
+      if (saving) return;
       const value = input.valueAsNumber;
       input.setCustomValidity(Number.isFinite(value) && value >= 0 ? "" : "Nhập số tiền từ 0 đ trở lên.");
       if (!input.reportValidity()) return;
       const amount = Math.round(value);
       if (amount === Number(item[config.field] ?? 0)) return restore();
+      saving = true;
+      input.disabled = true;
+      cancel.disabled = true;
       try {
         const saved = await ui.busy(save, () => api.catalog.update(config.type, id, { [config.field]: amount }));
         item[config.field] = saved[config.field];
         window.showToast(`Đã cập nhật ${config.label} ${item.name}: ${fmt.money(item[config.field])}.`, "success");
         restore();
-      } catch (error) { ui.showError(error); input.focus(); }
+      } catch (error) { ui.showError(error); }
+      finally {
+        saving = false;
+        input.disabled = false;
+        cancel.disabled = false;
+        if (input.isConnected) input.focus();
+      }
     };
     save.addEventListener("click", submit);
-    row.querySelector("[data-price-cancel]").addEventListener("click", restore);
+    cancel.addEventListener("click", () => { if (!saving) restore(); });
     input.addEventListener("input", () => input.setCustomValidity(""));
     input.addEventListener("keydown", (event) => {
+      if (saving) { event.preventDefault(); return; }
       if (event.key === "Enter") { event.preventDefault(); void submit(); }
       if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); restore(); }
     });

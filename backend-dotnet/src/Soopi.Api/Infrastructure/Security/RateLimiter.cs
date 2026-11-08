@@ -28,11 +28,13 @@ public sealed class RateLimiter(IMemoryCache cache, TimeProvider clock)
         if (denied) throw new DomainException(ErrorCode.RATE_LIMITED);
     }
 
+    public void Acquire(string key, RateLimitSetting policy) => Acquire(key, policy.Limit, policy.Window);
+
     /// <summary>Đăng nhập / đổi mật khẩu: tối đa 10 lần/IP/phút và 5 lần/tài khoản/phút.</summary>
-    public void CheckLogin(string? ip, string username)
+    public void CheckLogin(string? ip, string username, ProtectionSettings settings)
     {
-        Acquire("login-ip:" + ip, 10, TimeSpan.FromMinutes(1));
-        Acquire("login-user:" + username, 5, TimeSpan.FromMinutes(1));
+        Acquire("login-ip:" + ip, settings.LoginIp);
+        Acquire("login-user:" + username, settings.LoginAccount);
     }
 
     private sealed record Window(DateTimeOffset StartedAt, int Count);

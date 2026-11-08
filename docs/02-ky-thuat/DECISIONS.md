@@ -325,6 +325,20 @@ phiếu thu và báo cáo đã dùng số tiền lưu lúc lập nên không đ�
 dòng còn trống hoặc database chưa nâng cấp vẫn dùng giá hiện tại như trước, và xuất kho không bị chặn khi thiếu cột.
 Nhật ký `CATALOG_UPDATED` ghi giá trước/sau (không ghi giá vốn).
 
+## D-065 — Quản trị viên chỉnh mức bảo vệ đăng nhập, OTP và chống spam (2026-11-08)
+
+Các giá trị trước đây viết cứng trong code hoặc appsettings chuyển vào cột JSON `CauHinhThoiGian.CauHinhBaoVe`
+(`16_protection_settings.sql`) và sửa ở `/admin#time-settings`: số lần sai mật khẩu trước khi khóa và thời gian khóa; hạn mã OTP,
+thời gian chờ gửi lại, số lần nhập sai OTP; hạn phiên truy cập, đăng nhập thường, ghi nhớ đăng nhập và phiên tra cứu công khai;
+9 giới hạn tần suất (số lượt trong một khoảng phút) cho đăng nhập theo IP/tài khoản, OTP theo IP/email, kiểm tra bảo hành, tra cứu
+theo IP/mã, gửi phiếu vãng lai và gửi phiếu của khách. Giá trị khởi tạo giữ đúng như cũ (5 lần/15 phút, OTP 5 phút/60 giây/5 lần,
+phiên 15 phút/12 giờ/30 ngày/30 phút…); cột trống thì lấy hạn phiên và khóa đăng nhập từ `Security:*` trong appsettings.
+
+Phần bảo vệ chỉ trả qua `GET /settings/time/admin` (ADMIN); `GET /settings/time` công khai không lộ ngưỡng chống spam. Giá trị mới
+áp dụng cho lượt xử lý sau khi lưu (cache tối đa 1 phút ở tiến trình khác); không thu hồi phiên đã cấp, không đổi thời điểm hết khóa
+đã lưu. JSON trong DB hỏng hoặc ngoài giới hạn (sửa tay) thì dùng mặc định thay vì báo lỗi, để lỗi cấu hình không chặn đăng nhập,
+OTP và tra cứu. Ràng buộc: hạn phiên truy cập ≤ hạn đăng nhập thường ≤ hạn ghi nhớ.
+
 ## Giai đoạn 3 — cách triển khai theo yêu cầu Ponytail
 
 - React Router + 10 trang TSX giữ markup và CSS cũ; module JavaScript giữ xử lý bảng/form động.

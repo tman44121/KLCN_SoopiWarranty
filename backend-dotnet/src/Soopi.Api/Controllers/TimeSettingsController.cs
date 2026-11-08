@@ -19,5 +19,13 @@ public sealed class TimeSettingsController(TimeSettingsService settings) : Contr
 
     [HttpPut]
     [Authorize(Roles = "ADMIN")]
-    public async Task<TimeSettingsBody> Update([FromBody] TimeSettingsBody body) => TimeSettingsBody.From(await settings.UpdateAsync(body));
+    public async Task<TimeSettingsBody> Update([FromBody] TimeSettingsBody body) => TimeSettingsBody.From(await settings.UpdateAsync(body), admin: true);
+
+    [HttpGet("admin")]
+    [Authorize(Roles = "ADMIN")]
+    public async Task<TimeSettingsBody> Admin()
+    {
+        Response.Headers.CacheControl = "no-store";
+        return TimeSettingsBody.From(await settings.GetAsync(), admin: true);
+    }
 }

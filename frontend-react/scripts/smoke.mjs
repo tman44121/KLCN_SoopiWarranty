@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_TIME_SETTINGS } from '../src/time-settings.js';
+import { DEFAULT_PROTECTION_SETTINGS } from '../src/protection-settings.js';
 const require = createRequire(process.env.PLAYWRIGHT_PACKAGE || import.meta.url);
 const { chromium } = require('playwright-core');
 const base = process.env.E2E_BASE_URL || 'http://localhost:5173';
@@ -67,6 +68,7 @@ export async function session(role, landing, width = 1440, { hasTouch = false } 
     else if (path === '/portal/catalog') data = catalog;
     else if (path === '/public/reviews') data = { reviewCount: 0, averageRating: null, items: [] };
     else if (path === '/settings/time' && request.method() === 'GET') data = DEFAULT_TIME_SETTINGS;
+    else if (path === '/settings/time/admin') data = { ...DEFAULT_TIME_SETTINGS, protection: DEFAULT_PROTECTION_SETTINGS };
     else if (path === '/notifications') data = { unreadCount: 0, items: [] };
     else if (path === '/chat/contacts') data = { items: [], hasMore: false, unreadCount: 0 };
     else if (path === '/access/heartbeat') data = { tracked: true };

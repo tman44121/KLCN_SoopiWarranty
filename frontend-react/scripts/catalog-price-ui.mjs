@@ -12,13 +12,15 @@ try {
     const parts = [{ _id: 'LK-1', name: 'Màn hình thử', categoryCode: 'PHONE', servicePrice: 1200000, active: true }];
     const services = [{ _id: 'DV-1', name: 'Công sửa thử', categoryCode: 'PHONE', price: 150000, active: true }];
     const puts = [];
-    await s.context.route('**/api/v1/catalog/**', route => {
+    let finishPriceSave;
+    await s.context.route('**/api/v1/catalog/**', async route => {
       const request = route.request();
       const path = new URL(request.url()).pathname.replace('/api/v1/catalog/', '');
       if (request.method() === 'PUT') {
         const body = request.postDataJSON();
         puts.push({ path, body });
         if (body.servicePrice === 999) return json(route, { code: 'VALIDATION_FAILED', detail: 'Dữ liệu không hợp lệ.' }, 400);
+        if (body.servicePrice === 1350000) await new Promise(resolve => { finishPriceSave = resolve; });
         const list = path.startsWith('parts/') ? parts : services;
         const item = list.find(entry => path.endsWith('/' + entry._id));
         Object.assign(item, body);
@@ -59,7 +61,16 @@ try {
 
     // Enter lưu đúng trường, bảng hiện giá mới.
     await input.fill('1350000');
+    const pendingSave = s.page.waitForRequest(request => request.method() === 'PUT' && request.postDataJSON().servicePrice === 1350000);
     await input.press('Enter');
+    await pendingSave;
+    await input.dispatchEvent('keydown', { key: 'Enter' });
+    await s.page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+    assert.equal(await input.isDisabled(), true);
+    assert.equal(await panel.getByRole('button', { name: 'Hủy', exact: true }).isDisabled(), true);
+    assert.equal(await s.page.locator('.toast--error').filter({ hasText: 'Đã xảy ra lỗi hệ thống' }).count(), 0);
+    assert.equal(puts.filter(item => item.body.servicePrice === 1350000).length, 1);
+    finishPriceSave();
     await panel.locator('[data-price-cell]').filter({ hasText: '1.350.000' }).waitFor();
     assert.deepEqual(puts.at(-1), { path: 'parts/LK-1', body: { servicePrice: 1350000 } });
 

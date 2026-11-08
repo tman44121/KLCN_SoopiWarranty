@@ -48,7 +48,7 @@ public class ServiceVisitCatalogTests
         using var connection = new RecordingConnection(command => command.Contains("FROM SanPham sp") ? ProductRows() : new DataTable());
         using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlServer(connection).Options);
         var sql = new Sql(db);
-        var service = new PortalAccessService(sql, db, new ProductCatalog(sql), new CatalogStore(sql), null!, null!, TimeProvider.System);
+        var service = new PortalAccessService(sql, db, new ProductCatalog(sql), new CatalogStore(sql), null!, null!, TimeProvider.System, TestTimeSettings.Create());
         var json = JsonSerializer.SerializeToElement(await service.CatalogAsync(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
         var product = Assert.Single(json.GetProperty("products").EnumerateArray());
         Assert.Equal("SP-1", product.GetProperty("code").GetString());

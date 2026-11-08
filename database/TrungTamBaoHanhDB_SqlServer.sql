@@ -1090,6 +1090,7 @@ BEGIN
         PhutMoCua        INT           NOT NULL,
         PhutDongCua      INT           NOT NULL,
         NgayLamViec      NVARCHAR(20)  NOT NULL,
+        CauHinhBaoVe     NVARCHAR(MAX) NULL CONSTRAINT CK_CHTG_BaoVe CHECK (CauHinhBaoVe IS NULL OR ISJSON(CauHinhBaoVe) = 1),
         NguoiCapNhat     NVARCHAR(30)  NULL,
         NgayCapNhat      DATETIME2(0)  NULL,
         CONSTRAINT CK_CHTG_Sla CHECK (SlaNhanhGio BETWEEN 1 AND 720 AND SlaUuTienGio BETWEEN 1 AND 720 AND SlaTieuChuanGio BETWEEN 1 AND 720
