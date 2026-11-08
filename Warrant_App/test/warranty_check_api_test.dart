@@ -97,4 +97,24 @@ void main() {
       },
     );
   }
+
+  test('errors without a problem body show Vietnamese text, not Dio internals', () async {
+    for (final (status, text) in [
+      (404, 'Không tìm thấy dịch vụ hoặc dữ liệu yêu cầu.'),
+      (503, 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.'),
+    ]) {
+      final api = RealApiService(
+        baseUrl: 'http://test/api/v1',
+        adapter: _Adapter((_) => ResponseBody.fromString('Not Found', status)),
+      );
+      await expectLater(
+        api.checkWarranty('SERIAL-1'),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.message, 'message', text)
+              .having((e) => e.statusCode, 'statusCode', status),
+        ),
+      );
+    }
+  });
 }
