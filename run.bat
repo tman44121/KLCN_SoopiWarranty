@@ -69,7 +69,7 @@ echo Đang chờ API khởi động ^(lần đầu trên máy mới có thể m�
 call :wait http://localhost:%API_PORT%/actuator/health || goto fail
 curl -s -m 5 http://localhost:%API_PORT%/actuator/health | findstr /c:"UP" >nul || echo [Cảnh báo] API chạy nhưng chưa kết nối được database - chạy "run.bat initdb" hoặc kiểm tra SQL Server.
 start "" "%WEB%"
-echo Đã mở %WEB%. Tài khoản demo: docs\04-van-hanh\TAI_KHOAN_DEMO.md. Đóng các cửa sổ "Soopi API"/"Soopi Web" để dừng.
+echo Đã mở %WEB%. Tài khoản đăng nhập trên máy local: docs\04-van-hanh\TAI_KHOAN_DEMO.md. Đóng các cửa sổ "Soopi API"/"Soopi Web" để dừng.
 exit /b 0
 
 :initdb_mode

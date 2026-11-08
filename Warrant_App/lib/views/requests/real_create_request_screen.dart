@@ -12,7 +12,7 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/request_viewmodel.dart';
 import '../../widgets/app_bar_widget.dart';
 
-/// Real customer submission. An owned device can be selected, or a new
+/// Customer warranty request submission. An owned device can be selected, or a new
 /// device's identity can be included in the request for staff to verify.
 class RealCreateRequestScreen extends StatefulWidget {
   const RealCreateRequestScreen({super.key, this.prefilledDevice});

@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/portal_ticket_models.dart';
 import 'auth_viewmodel.dart';
 
-/// Real customer tickets only. The Mock ticket screens keep their demo source.
+/// The signed-in customer's repair tickets.
 class TicketViewModel extends ChangeNotifier {
   TicketViewModel(this._auth) {
     _auth.addListener(_onAuthChanged);
@@ -12,7 +12,7 @@ class TicketViewModel extends ChangeNotifier {
   final AuthViewModel _auth;
   String? _identity;
   String? get _currentIdentity =>
-      _auth.isMock || !_auth.isAuthenticated ? null : _auth.currentUser!.id;
+      !_auth.isAuthenticated ? null : _auth.currentUser!.id;
 
   List<PortalTicketSummary> _tickets = [];
   List<PortalTicketSummary> get tickets => List.unmodifiable(_tickets);

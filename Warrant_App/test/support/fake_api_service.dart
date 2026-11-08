@@ -1,13 +1,11 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import '../models/user_model.dart';
-import 'i_api_service.dart';
+import 'package:warrant_safe/models/user_model.dart';
+import 'package:warrant_safe/services/i_api_service.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Mock credentials
-// ─────────────────────────────────────────────────────────────────────────────
+// Test accounts known to [FakeApiService].
 
-final Map<String, Map<String, dynamic>> _mockUsers = {
+final Map<String, Map<String, dynamic>> _testUsers = {
   'admin@gmail.com': {
     'password': '123456',
     'user': {
@@ -32,22 +30,13 @@ final Map<String, Map<String, dynamic>> _mockUsers = {
 
 final Set<String> _revokedTokens = {};
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MockApiService
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// In-memory mock implementation of [IApiService].
-///
-/// Mock tokens are stateless base64-encoded JSON, allowing mock sessions and
-/// newly registered mock users to survive a cold app restart.
-///
-/// No real HTTP calls are made. AuthViewModel selects this or RealApiService
-/// according to the saved mode.
-class MockApiService extends IApiService {
+/// In-memory [IApiService] for widget and view-model tests: stateless base64
+/// tokens, a fixed latency and two known accounts. Tests subclass it and
+/// override the calls they exercise.
+class FakeApiService extends IApiService {
   static const Duration _latency = Duration(milliseconds: 1500);
 
-  // Dio is kept here so we can inject the Bearer header even in mock mode,
-  // giving the same API surface as [RealApiService].
+  // Keeps the Bearer header like [RealApiService] does.
   final _dio = Dio(
     BaseOptions(
       baseUrl: 'https://api.warrantsafe.com/v1',
@@ -58,42 +47,41 @@ class MockApiService extends IApiService {
     ),
   );
 
-  String? _currentMockToken;
+  String? _currentToken;
 
-  String _encodeMockToken(UserModel user) {
+  String _encodeToken(UserModel user) {
     final payload = base64Encode(utf8.encode(jsonEncode(user.toJson())));
-    return 'mock_$payload';
+    return 'test_$payload';
   }
 
-  UserModel _decodeMockToken(String token) {
-    if (!token.startsWith('mock_')) throw const ApiException('Invalid mock token format', statusCode: 401);
+  UserModel _decodeToken(String token) {
+    if (!token.startsWith('test_')) throw const ApiException('Invalid test token format', statusCode: 401);
     try {
       final payload = token.substring(5);
       final jsonStr = utf8.decode(base64Decode(payload));
       return UserModel.fromJson(jsonDecode(jsonStr));
     } catch (_) {
-      throw const ApiException('Invalid mock token', statusCode: 401);
+      throw const ApiException('Invalid test token', statusCode: 401);
     }
   }
 
   @override
   void setAuthToken(String token) {
     _dio.options.headers['Authorization'] = 'Bearer $token';
-    _currentMockToken = token;
+    _currentToken = token;
   }
 
   @override
   void clearAuthToken() {
     _dio.options.headers.remove('Authorization');
-    _currentMockToken = null;
+    _currentToken = null;
   }
 
   @override
   Future<AuthResponse> login(String username, String password) async {
     await Future.delayed(_latency);
 
-    // Mock supports username as email
-    final entry = _mockUsers[username.trim().toLowerCase()];
+    final entry = _testUsers[username.trim().toLowerCase()];
     if (entry == null || entry['password'] != password) {
       throw const ApiException('Sai tài khoản hoặc mật khẩu.', statusCode: 401);
     }
@@ -102,43 +90,7 @@ class MockApiService extends IApiService {
       Map<String, dynamic>.from(entry['user'] as Map<String, dynamic>),
     );
 
-    final token = _encodeMockToken(user);
-
-    return AuthResponse(
-      accessToken: token,
-      expiresIn: 3600,
-      refreshToken: token,
-      refreshExpiresIn: 86400,
-      user: user,
-    );
-  }
-
-  @override
-  Future<AuthResponse> register({
-    required String fullName,
-    required String phone,
-    required String email,
-    required String password,
-  }) async {
-    await Future.delayed(_latency);
-
-    if (_mockUsers.containsKey(email.trim().toLowerCase())) {
-      throw const ApiException(
-        'Email này đã được đăng ký. Vui lòng sử dụng email khác.',
-        statusCode: 409,
-      );
-    }
-
-    final user = UserModel(
-      id: 'usr_${DateTime.now().millisecondsSinceEpoch}',
-      fullName: fullName,
-      username: email.trim().toLowerCase(),
-      email: email.trim().toLowerCase(),
-      phone: phone,
-      role: 'customer',
-    );
-
-    final token = _encodeMockToken(user);
+    final token = _encodeToken(user);
 
     return AuthResponse(
       accessToken: token,
@@ -152,10 +104,10 @@ class MockApiService extends IApiService {
   @override
   Future<UserModel> getProfile() async {
     await Future.delayed(_latency);
-    if (_currentMockToken == null || _revokedTokens.contains(_currentMockToken)) {
+    if (_currentToken == null || _revokedTokens.contains(_currentToken)) {
       throw const ApiException('Unauthorized', statusCode: 401);
     }
-    return _decodeMockToken(_currentMockToken!);
+    return _decodeToken(_currentToken!);
   }
 
   @override
@@ -165,8 +117,8 @@ class MockApiService extends IApiService {
       throw const ApiException('Refresh token revoked', statusCode: 401);
     }
 
-    final user = _decodeMockToken(refreshToken);
-    final token = _encodeMockToken(user);
+    final user = _decodeToken(refreshToken);
+    final token = _encodeToken(user);
 
     return AuthResponse(
       accessToken: token,
@@ -183,8 +135,8 @@ class MockApiService extends IApiService {
     if (refreshToken != null) {
       _revokedTokens.add(refreshToken);
     }
-    if (_currentMockToken != null) {
-      _revokedTokens.add(_currentMockToken!);
+    if (_currentToken != null) {
+      _revokedTokens.add(_currentToken!);
     }
   }
 

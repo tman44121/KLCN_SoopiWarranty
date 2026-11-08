@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:warrant_safe/data/mock_data.dart';
+import 'package:warrant_safe/models/portal_request_models.dart';
 import 'package:warrant_safe/theme/app_theme.dart';
 import 'package:warrant_safe/viewmodels/auth_viewmodel.dart';
-import 'package:warrant_safe/views/auth/register_screen.dart';
+import 'package:warrant_safe/views/auth/real_register_screen.dart';
 import 'package:warrant_safe/views/notifications/notification_screen.dart';
 import 'package:warrant_safe/views/profile/profile_screen.dart';
 import 'package:warrant_safe/widgets/app_bar_widget.dart';
 import 'package:warrant_safe/widgets/custom_text_field.dart';
-import 'package:warrant_safe/widgets/request_card.dart';
+import 'package:warrant_safe/widgets/real_request_card.dart';
 
 void main() {
   testWidgets(
@@ -83,12 +83,18 @@ void main() {
     },
   );
 
-  testWidgets('mock request cards open with the keyboard', (tester) async {
+  testWidgets('request cards open with the keyboard', (tester) async {
     var opens = 0;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: RequestCard(request: mockRequests.first, onTap: () => opens++),
+          body: RealRequestCard(
+            request: const PortalRequestSummary(
+              code: 'YC-TEST',
+              status: 'PENDING_INTAKE',
+            ),
+            onTap: () => opens++,
+          ),
         ),
       ),
     );
@@ -138,7 +144,7 @@ void main() {
                     child: child!,
                   ),
                   home: register
-                      ? const RegisterScreen()
+                      ? const RealRegisterScreen()
                       : const NotificationScreen(),
                 ),
               ),

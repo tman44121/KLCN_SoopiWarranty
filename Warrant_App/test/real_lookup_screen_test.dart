@@ -4,12 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:warrant_safe/models/portal_lookup_models.dart';
 import 'package:warrant_safe/models/portal_request_models.dart';
 import 'package:warrant_safe/models/portal_ticket_models.dart';
-import 'package:warrant_safe/services/api_service.dart';
+import 'support/fake_api_service.dart';
 import 'package:warrant_safe/services/i_api_service.dart';
 import 'package:warrant_safe/viewmodels/auth_viewmodel.dart';
 import 'package:warrant_safe/views/devices/real_lookup_screen.dart';
 
-class _LookupApi extends MockApiService {
+class _LookupApi extends FakeApiService {
   final requestCodes = <String>[];
   final ticketCodes = <String>[];
   final requestResponses = <Object>[];

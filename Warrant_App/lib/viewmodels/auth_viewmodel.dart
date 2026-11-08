@@ -5,7 +5,6 @@ import '../models/user_model.dart';
 import '../models/portal_request_models.dart';
 import '../models/portal_ticket_models.dart';
 import '../services/i_api_service.dart';
-import '../services/api_service.dart';
 import '../services/real_api_service.dart';
 import '../models/portal_lookup_models.dart';
 import '../models/portal_notification_models.dart';
@@ -15,7 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AuthViewModel extends ChangeNotifier {
   AuthViewModel({TokenStorage? tokenStorage, IApiService? apiService})
     : _storage = tokenStorage ?? SecureTokenStorage(),
-      _api = apiService ?? MockApiService(),
+      _api = apiService ?? RealApiService(baseUrl: debugDefaultBaseUrl),
       _hasInjectedApi = apiService != null {
     _attachRealRefresh();
   }
@@ -38,8 +37,6 @@ class AuthViewModel extends ChangeNotifier {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    // Release has no test-mode control on the sign-in screen.
-    _isMock = kDebugMode && (prefs.getBool('isMock') ?? true);
 
     // Explicit build config for production, fallback to local for debug
     const String envUrl = String.fromEnvironment('API_URL', defaultValue: '');
@@ -47,7 +44,7 @@ class AuthViewModel extends ChangeNotifier {
         ? envUrl
         : (kDebugMode ? debugDefaultBaseUrl : '');
 
-    if (!kDebugMode && !_isMock) {
+    if (!kDebugMode) {
       if (defaultUrl.isEmpty) {
         throw Exception('Release build must specify a valid API_URL.');
       }
@@ -68,13 +65,7 @@ class AuthViewModel extends ChangeNotifier {
       _baseUrl = defaultUrl; // Do not allow editing in release
     }
 
-    if (!_hasInjectedApi) {
-      if (_isMock) {
-        _api = MockApiService();
-      } else {
-        _api = RealApiService(baseUrl: _baseUrl);
-      }
-    }
+    if (!_hasInjectedApi) _api = RealApiService(baseUrl: _baseUrl);
     _attachRealRefresh();
   }
 
@@ -93,7 +84,7 @@ class AuthViewModel extends ChangeNotifier {
   bool _notificationCountLoading = false;
   bool _notificationCountError = false;
 
-  /// Server-reported unread count for the current authenticated Real session.
+  /// Server-reported unread count for the current authenticated session.
   int? get notificationUnreadCount => _notificationUnreadCount;
   bool get notificationCountLoading => _notificationCountLoading;
   bool get notificationCountError => _notificationCountError;
@@ -108,14 +99,12 @@ class AuthViewModel extends ChangeNotifier {
     required int generation,
     required String? userId,
     required IApiService api,
-    required bool isMock,
     required String baseUrl,
   }) =>
       generation == _sessionGeneration &&
       userId != null &&
       userId == _currentUser?.id &&
       identical(api, _api) &&
-      isMock == _isMock &&
       baseUrl == _baseUrl;
 
   void _attachRealRefresh() {
@@ -126,17 +115,16 @@ class AuthViewModel extends ChangeNotifier {
 
   Future<String?> _refreshForRead() async {
     final userId = _currentUser?.id;
-    if (_isMock || userId == null) return null;
+    if (userId == null) return null;
     final generation = _sessionGeneration;
     final api = _api;
-    final session = await _storage.readSession(isMock: false);
+    final session = await _storage.readSession();
     final refreshToken = session['refreshToken'];
     if (refreshToken == null) return null;
 
     try {
       final response = await api.refresh(refreshToken);
       if (generation != _sessionGeneration ||
-          _isMock ||
           _currentUser?.id != userId ||
           !identical(api, _api)) {
         return null;
@@ -148,7 +136,6 @@ class AuthViewModel extends ChangeNotifier {
         token: response.accessToken,
         refreshToken: response.refreshToken,
         userId: userId,
-        isMock: false,
       );
       api.setAuthToken(response.accessToken);
       return response.accessToken;
@@ -158,7 +145,7 @@ class AuthViewModel extends ChangeNotifier {
       if (error.statusCode == 401 &&
           generation == _sessionGeneration &&
           identical(api, _api)) {
-        await _storage.clearSession(isMock: false);
+        await _storage.clearSession();
         api.clearAuthToken();
         _sessionGeneration++;
         _currentUser = null;
@@ -169,9 +156,6 @@ class AuthViewModel extends ChangeNotifier {
       rethrow;
     }
   }
-
-  bool _isMock = true;
-  bool get isMock => _isMock;
 
   /// API Soopi khi debug: bản Web gọi /api/v1 cùng origin (web_dev_config.yaml
   /// chuyển tiếp sang localhost:8080, không vướng CORS); Android emulator gọi máy
@@ -199,32 +183,6 @@ class AuthViewModel extends ChangeNotifier {
 
   bool get isAuthenticated => _currentUser != null;
 
-  Future<void> toggleMockMode(bool value) async {
-    if (_isMock == value) return;
-    if (_isLoading) return;
-
-    _setLoading(true);
-    try {
-      // Clear session when switching modes (using original API)
-      await logout(keepLoading: true);
-
-      _isMock = value;
-      if (!_hasInjectedApi) {
-        if (_isMock) {
-          _api = MockApiService();
-        } else {
-          _api = RealApiService(baseUrl: _baseUrl);
-        }
-      }
-      _attachRealRefresh();
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isMock', _isMock);
-    } finally {
-      _setLoading(false);
-    }
-  }
-
   Future<void> setBaseUrl(String url) async {
     if (!kDebugMode) return; // Allow editable local URLs only in debug mode
 
@@ -242,7 +200,7 @@ class AuthViewModel extends ChangeNotifier {
 
     final urlChanged = _baseUrl != url;
     _baseUrl = url;
-    if (!_isMock && _api is RealApiService) {
+    if (_api is RealApiService) {
       (_api as RealApiService).setBaseUrl(url);
     }
 
@@ -286,7 +244,6 @@ class AuthViewModel extends ChangeNotifier {
         token: response.accessToken,
         refreshToken: response.refreshToken,
         userId: response.user.id,
-        isMock: _isMock,
       );
       _api.setAuthToken(response.accessToken);
       _currentUser = response.user;
@@ -323,33 +280,25 @@ class AuthViewModel extends ChangeNotifier {
     _lastRegistrationError = null;
     _begin();
     try {
-      if (!_isMock && (emailOtp == null || emailOtp.trim().isEmpty)) {
+      if (emailOtp == null || emailOtp.trim().isEmpty) {
         throw const ApiException('Vui lòng nhập mã OTP gửi qua email.');
       }
-      final response = _isMock
-          ? await _api.register(
-              fullName: fullName.trim(),
-              phone: phone.trim(),
-              email: email.trim(),
-              password: password,
-            )
-          : await _api.registerWithEmailOtp(
-              fullName: fullName.trim(),
-              phone: phone.trim(),
-              email: email.trim(),
-              otp: emailOtp!,
-              password: password,
-            );
+      final response = await _api.registerWithEmailOtp(
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        otp: emailOtp,
+        password: password,
+      );
       await _storage.saveSession(
         token: response.accessToken,
         refreshToken: response.refreshToken,
         userId: response.user.id,
-        isMock: _isMock,
       );
       _api.setAuthToken(response.accessToken);
       _currentUser = response.user;
       final generation = _sessionGeneration;
-      if (!_isMock) await refreshProfile();
+      await refreshProfile();
       if (generation != _sessionGeneration) return false;
       unawaited(_primeNotificationCount());
       _end();
@@ -396,13 +345,11 @@ class AuthViewModel extends ChangeNotifier {
     final generation = _sessionGeneration;
     final userId = _currentUser!.id;
     final api = _api;
-    final isMock = _isMock;
     final baseUrl = _baseUrl;
     bool isCurrent() => _isCurrentSessionScope(
       generation: generation,
       userId: userId,
       api: api,
-      isMock: isMock,
       baseUrl: baseUrl,
     );
     _begin();
@@ -433,8 +380,8 @@ class AuthViewModel extends ChangeNotifier {
     required String address,
   }) async {
     final user = _currentUser;
-    if (_isMock || user == null) {
-      throw const ApiException('Vui lòng đăng nhập tài khoản Real.');
+    if (user == null) {
+      throw const ApiException('Vui lòng đăng nhập để tiếp tục.');
     }
     final generation = _sessionGeneration;
     final api = _api;
@@ -448,7 +395,6 @@ class AuthViewModel extends ChangeNotifier {
       generation: generation,
       userId: user.id,
       api: api,
-      isMock: false,
       baseUrl: baseUrl,
     )) {
       throw const ApiException('Phiên đã thay đổi. Vui lòng tải lại hồ sơ.');
@@ -468,8 +414,8 @@ class AuthViewModel extends ChangeNotifier {
     String newPassword,
   ) async {
     final user = _currentUser;
-    if (_isMock || user == null) {
-      throw const ApiException('Vui lòng đăng nhập tài khoản Real.');
+    if (user == null) {
+      throw const ApiException('Vui lòng đăng nhập để tiếp tục.');
     }
     final generation = _sessionGeneration;
     final api = _api;
@@ -479,7 +425,6 @@ class AuthViewModel extends ChangeNotifier {
           generation: generation,
           userId: user.id,
           api: api,
-          isMock: false,
           baseUrl: baseUrl,
         ) ||
         response.user.id != user.id ||
@@ -493,10 +438,9 @@ class AuthViewModel extends ChangeNotifier {
         token: response.accessToken,
         refreshToken: response.refreshToken,
         userId: user.id,
-        isMock: false,
       );
     } catch (_) {
-      await _storage.clearSession(isMock: false);
+      await _storage.clearSession();
       api.clearAuthToken();
       _sessionGeneration++;
       _currentUser = null;
@@ -541,8 +485,7 @@ class AuthViewModel extends ChangeNotifier {
   Future<PortalNotificationInbox> getNotifications() async {
     final api = _api;
     final userId = _currentUser?.id;
-    final isMock = _isMock;
-    if (isMock || userId == null) return api.getNotifications();
+    if (userId == null) return api.getNotifications();
 
     final generation = _sessionGeneration;
     final baseUrl = _baseUrl;
@@ -556,7 +499,6 @@ class AuthViewModel extends ChangeNotifier {
         generation: generation,
         userId: userId,
         api: api,
-        isMock: isMock,
         baseUrl: baseUrl,
       )) {
         _notificationUnreadCount = inbox.unreadCount;
@@ -570,7 +512,6 @@ class AuthViewModel extends ChangeNotifier {
         generation: generation,
         userId: userId,
         api: api,
-        isMock: isMock,
         baseUrl: baseUrl,
       )) {
         // An unavailable response cannot be treated as the server's current
@@ -610,7 +551,7 @@ class AuthViewModel extends ChangeNotifier {
     _clearNotificationState();
     _setLoading(true);
     try {
-      final session = await _storage.readSession(isMock: _isMock);
+      final session = await _storage.readSession();
       final refreshToken = session['refreshToken'];
 
       if (refreshToken != null) {
@@ -620,7 +561,6 @@ class AuthViewModel extends ChangeNotifier {
             token: response.accessToken,
             refreshToken: response.refreshToken,
             userId: response.user.id,
-            isMock: _isMock,
           );
           _api.setAuthToken(response.accessToken);
           _sessionGeneration++;
@@ -633,7 +573,7 @@ class AuthViewModel extends ChangeNotifier {
           rethrow;
         } on ApiException catch (e) {
           if (e.statusCode == 401) {
-            await _storage.clearSession(isMock: _isMock);
+            await _storage.clearSession();
             _clearNotificationState();
             _hasSessionPendingRetry = false;
             return;
@@ -644,14 +584,14 @@ class AuthViewModel extends ChangeNotifier {
         }
       }
 
-      await _storage.clearSession(isMock: _isMock);
+      await _storage.clearSession();
       _hasSessionPendingRetry = false;
     } on NetworkException catch (e) {
       _setError(e.message);
       _hasSessionPendingRetry = true;
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
-        await _storage.clearSession(isMock: _isMock);
+        await _storage.clearSession();
         _clearNotificationState();
         _hasSessionPendingRetry = false;
       } else {
@@ -671,12 +611,12 @@ class AuthViewModel extends ChangeNotifier {
     _clearNotificationState();
     _setLoading(true);
     try {
-      final session = await _storage.readSession(isMock: _isMock);
+      final session = await _storage.readSession();
       await _api.logout(session['refreshToken']);
     } catch (_) {
       // Ignore errors during logout
     }
-    await _storage.clearSession(isMock: _isMock);
+    await _storage.clearSession();
     _api.clearAuthToken();
     _currentUser = null;
     _errorMessage = null;

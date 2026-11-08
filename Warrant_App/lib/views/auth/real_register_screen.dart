@@ -11,7 +11,7 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../../widgets/custom_text_field.dart';
 import 'auth_form_validators.dart';
 
-/// Real customer registration: phone is the login/contact, email receives OTP.
+/// Customer registration: phone is the login/contact, email receives OTP.
 class RealRegisterScreen extends StatefulWidget {
   const RealRegisterScreen({super.key});
 

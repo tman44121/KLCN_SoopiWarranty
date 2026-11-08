@@ -5,28 +5,27 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:warrant_safe/models/portal_notification_models.dart';
 import 'package:warrant_safe/models/user_model.dart';
-import 'package:warrant_safe/services/api_service.dart';
+import 'support/fake_api_service.dart';
 import 'package:warrant_safe/services/token_storage.dart';
 import 'package:warrant_safe/viewmodels/auth_viewmodel.dart';
 import 'package:warrant_safe/views/notifications/real_notification_content.dart';
 
 class _MemoryStorage implements TokenStorage {
   @override
-  Future<void> clearSession({bool isMock = false}) async {}
+  Future<void> clearSession() async {}
 
   @override
-  Future<Map<String, String?>> readSession({bool isMock = false}) async => {};
+  Future<Map<String, String?>> readSession() async => {};
 
   @override
   Future<void> saveSession({
     required String token,
     String? refreshToken,
     required String userId,
-    bool isMock = false,
   }) async {}
 }
 
-class _InboxApi extends MockApiService {
+class _InboxApi extends FakeApiService {
   bool read = false;
   int markCalls = 0;
   int inboxCalls = 0;
@@ -77,7 +76,7 @@ void main() {
   testWidgets(
     'inbox polling pauses offstage and in the background, then refreshes on return',
     (tester) async {
-      SharedPreferences.setMockInitialValues({'isMock': false});
+      SharedPreferences.setMockInitialValues({});
       final api = _InboxApi();
       final auth = AuthViewModel(
         tokenStorage: _MemoryStorage(),
@@ -129,7 +128,7 @@ void main() {
   testWidgets('opening a quotation leaves no spinner beside notification', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({'isMock': false});
+    SharedPreferences.setMockInitialValues({});
     final api = _InboxApi();
     final auth = AuthViewModel(tokenStorage: _MemoryStorage(), apiService: api);
     addTearDown(auth.dispose);

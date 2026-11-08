@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/mock_data.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_bar_widget.dart';
-import '../../widgets/request_card.dart';
 import '../../router/app_router.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/auth_viewmodel.dart';
@@ -17,13 +15,7 @@ class RequestListScreen extends StatelessWidget {
   const RequestListScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: mockDataRevision,
-    builder: (context, _) => _buildBody(context),
-  );
-
-  Widget _buildBody(BuildContext context) {
-    final isMock = context.select<AuthViewModel, bool>((vm) => vm.isMock);
+  Widget build(BuildContext context) {
     final unreadCount = context.select<AuthViewModel, int?>(
       (vm) => vm.notificationUnreadCount,
     );
@@ -41,20 +33,14 @@ class RequestListScreen extends StatelessWidget {
         child: Column(
           children: [
             WarrantSafeAppBar(
-              unreadCount: isMock ? unreadNotificationCount : unreadCount,
-              notificationCountLoading: !isMock && notificationCountLoading,
-              notificationCountError: !isMock && notificationCountError,
+              unreadCount: unreadCount,
+              notificationCountLoading: notificationCountLoading,
+              notificationCountError: notificationCountError,
               onNotificationTap: () => context.go(AppRoutes.notifications),
             ),
             const Divider(height: 1),
 
-            Expanded(
-              child: !isMock
-                  ? _realContent(context)
-                  : (mockRequests.isEmpty
-                        ? _buildEmptyState(context)
-                        : _buildContent()),
-            ),
+            Expanded(child: _realContent(context)),
           ],
         ),
       ),
@@ -81,36 +67,9 @@ class RequestListScreen extends StatelessWidget {
     }
     return _RealHistory(requests: requests, tickets: tickets);
   }
-
-  Widget _buildContent() {
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-      itemCount: mockRequests.length,
-      itemBuilder: (context, index) {
-        final request = mockRequests[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: RequestCard(
-            request: request,
-            onTap: () => context.push('${AppRoutes.requests}/${request.id}'),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context) {
-    return const Center(
-      child: SoopiEmpty(
-        icon: Icons.assignment_outlined,
-        title: 'Chưa có yêu cầu nào',
-        text: 'Bấm dấu + góc dưới để tạo yêu cầu bảo hành/sửa chữa mới.',
-      ),
-    );
-  }
 }
 
-/// Lịch sử bảo hành & sửa chữa (Real), cùng bố cục trang "Lịch sử" của web:
+/// Lịch sử bảo hành & sửa chữa, cùng bố cục trang "Lịch sử" của web:
 /// tiêu đề, bộ lọc theo nhóm trạng thái có đếm số, thẻ phiếu có tiến độ 6 bước,
 /// rồi danh sách yêu cầu bảo hành trực tuyến.
 class _RealHistory extends StatefulWidget {
@@ -141,9 +100,16 @@ class _RealHistoryState extends State<_RealHistory> {
     final rows = [...tickets.tickets]
       ..sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
     final shown = rows.where((t) => ticketInGroup(_group, t.status)).toList();
-    final totalPaid = rows.fold<num>(0, (sum, ticket) => sum + ticket.paidAmount);
-    final paidLabel = totalPaid.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.');
+    final totalPaid = rows.fold<num>(
+      0,
+      (sum, ticket) => sum + ticket.paidAmount,
+    );
+    final paidLabel = totalPaid
+        .toStringAsFixed(0)
+        .replaceAllMapped(
+          RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+          (match) => '${match[1]}.',
+        );
     final requestRows = requests.requests;
     int count(String group) =>
         rows.where((t) => ticketInGroup(group, t.status)).length;
@@ -169,7 +135,10 @@ class _RealHistoryState extends State<_RealHistory> {
                   ),
                   const SizedBox(height: 14),
                   if (tickets.loaded && tickets.error == null) ...[
-                    Text('Tổng tiền đã chi: $paidLabel đ', style: AppText.cardTitle),
+                    Text(
+                      'Tổng tiền đã chi: $paidLabel đ',
+                      style: AppText.cardTitle,
+                    ),
                     const SizedBox(height: 14),
                   ],
 

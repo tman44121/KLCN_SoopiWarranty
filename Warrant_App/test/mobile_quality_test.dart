@@ -17,15 +17,14 @@ import 'package:warrant_safe/widgets/notification_count_badge.dart';
 
 class _Storage implements TokenStorage {
   @override
-  Future<Map<String, String?>> readSession({bool isMock = false}) async => {};
+  Future<Map<String, String?>> readSession() async => {};
   @override
-  Future<void> clearSession({bool isMock = false}) async {}
+  Future<void> clearSession() async {}
   @override
   Future<void> saveSession({
     required String token,
     String? refreshToken,
     required String userId,
-    bool isMock = false,
   }) async {}
 }
 
@@ -110,7 +109,7 @@ void main() {
       tester.getSize(find.byType(SoopiLink)).height,
       greaterThanOrEqualTo(48),
     );
-    SharedPreferences.setMockInitialValues({'isMock': false});
+    SharedPreferences.setMockInitialValues({});
     final auth = AuthViewModel(tokenStorage: _Storage());
     await auth.initialize();
     await tester.pumpWidget(

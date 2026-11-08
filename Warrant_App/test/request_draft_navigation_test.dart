@@ -4,13 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:warrant_safe/models/portal_request_models.dart';
 import 'package:warrant_safe/models/user_model.dart';
-import 'package:warrant_safe/services/api_service.dart';
+import 'support/fake_api_service.dart';
 import 'package:warrant_safe/theme/app_theme.dart';
 import 'package:warrant_safe/viewmodels/auth_viewmodel.dart';
 import 'package:warrant_safe/viewmodels/request_viewmodel.dart';
 import 'package:warrant_safe/views/requests/real_create_request_screen.dart';
 
-class _CatalogApi extends MockApiService {
+class _CatalogApi extends FakeApiService {
   @override
   Future<PortalCatalog> getPortalCatalog() async => const PortalCatalog([], []);
   @override

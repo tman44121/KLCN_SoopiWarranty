@@ -2,8 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/portal_request_models.dart';
 import 'auth_viewmodel.dart';
 
-/// Keeps the Real request list shared by Home and the Requests tab.
-/// The Mock screens continue to use mock_data.dart only.
+/// Keeps the customer's request list shared by Home and the Requests tab.
 class RequestViewModel extends ChangeNotifier {
   RequestViewModel(this._auth) {
     _auth.addListener(_onAuthChanged);
@@ -13,7 +12,7 @@ class RequestViewModel extends ChangeNotifier {
   final AuthViewModel _auth;
   String? _identity;
   String? get _currentIdentity =>
-      _auth.isMock || !_auth.isAuthenticated ? null : _auth.currentUser!.id;
+      !_auth.isAuthenticated ? null : _auth.currentUser!.id;
 
   List<PortalRequestSummary> _requests = [];
   List<PortalRequestSummary> get requests => List.unmodifiable(_requests);

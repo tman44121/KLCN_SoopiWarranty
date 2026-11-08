@@ -2,15 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../router/app_router.dart';
-import '../../data/mock_data.dart';
 import '../../models/portal_ticket_models.dart';
 import '../../theme/app_theme.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/request_viewmodel.dart';
 import '../../viewmodels/ticket_viewmodel.dart';
 import '../../widgets/app_bar_widget.dart';
-import '../../widgets/app_status_chip.dart';
-import '../../widgets/request_card.dart';
 import '../../widgets/real_request_card.dart';
 import '../../widgets/soopi_ui.dart';
 
@@ -24,25 +21,18 @@ import '../../widgets/soopi_ui.dart';
 ///   3. Cảnh báo báo giá đang chờ khách xác nhận
 ///   4. Thẻ "Yêu cầu bảo hành trực tuyến" (tối đa 3 yêu cầu)
 ///
-/// Mock cards come from mock_data.dart; Real data comes from the customer
-/// portal API through RequestViewModel / TicketViewModel.
+/// Dữ liệu lấy từ API cổng khách qua RequestViewModel / TicketViewModel.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: mockDataRevision,
-    builder: (context, _) => _buildBody(context),
-  );
-
-  Widget _buildBody(BuildContext context) {
+  Widget build(BuildContext context) {
     final user = context.select<AuthViewModel, dynamic>((vm) => vm.currentUser);
     final String? fullName = user?.fullName;
     final name = fullName == null || fullName.trim().isEmpty
         ? 'bạn'
         : fullName.trim();
 
-    final isMock = context.select<AuthViewModel, bool>((vm) => vm.isMock);
     final unreadCount = context.select<AuthViewModel, int?>(
       (vm) => vm.notificationUnreadCount,
     );
@@ -53,7 +43,7 @@ class HomeScreen extends StatelessWidget {
       (vm) => vm.notificationCountError,
     );
 
-    final tickets = isMock ? _mockTickets() : _realTickets(context);
+    final tickets = _realTickets(context);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -63,9 +53,9 @@ class HomeScreen extends StatelessWidget {
           children: [
             // ── App bar ─────────────────────────────────────────────
             WarrantSafeAppBar(
-              unreadCount: isMock ? unreadNotificationCount : unreadCount,
-              notificationCountLoading: !isMock && notificationCountLoading,
-              notificationCountError: !isMock && notificationCountError,
+              unreadCount: unreadCount,
+              notificationCountLoading: notificationCountLoading,
+              notificationCountError: notificationCountError,
               onNotificationTap: () => context.go(AppRoutes.notifications),
             ),
             const Divider(height: 1),
@@ -100,15 +90,6 @@ class HomeScreen extends StatelessWidget {
                               child: _buildQuoteAlert(t),
                             ),
 
-                          // ── Mock: Cần bạn xử lý ───────────────────────
-                          if (isMock && actionRequiredRequests.isNotEmpty) ...[
-                            _buildActionRequired(
-                              context,
-                              actionRequiredRequests,
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-
                           // ── Yêu cầu bảo hành trực tuyến ───────────────
                           SoopiPanel(
                             child: Column(
@@ -123,10 +104,7 @@ class HomeScreen extends StatelessWidget {
                                     onTap: () => context.go(AppRoutes.requests),
                                   ),
                                 ),
-                                if (!isMock)
-                                  _buildRealRecent(context)
-                                else
-                                  _buildMockRecent(context),
+                                _buildRealRecent(context),
                               ],
                             ),
                           ),
@@ -299,7 +277,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  /// Chỉ hiện vòng quay khi danh sách phiếu Real đang tải lần đầu.
+  /// Chỉ hiện vòng quay khi danh sách phiếu đang tải lần đầu.
   bool _isLoaded(BuildContext context) {
     final vm = Provider.of<TicketViewModel?>(context, listen: false);
     if (vm == null) return true;
@@ -349,11 +327,6 @@ class HomeScreen extends StatelessWidget {
     return rows.map(_HomeTicket.fromPortal).toList();
   }
 
-  List<_HomeTicket> _mockTickets() => mockRequests
-      .where((r) => r.ticketStatus != null)
-      .map(_HomeTicket.fromMock)
-      .toList();
-
   // ── Yêu cầu trực tuyến ───────────────────────────────────────────
 
   Widget _buildRealRecent(BuildContext context) {
@@ -391,82 +364,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMockRecent(BuildContext context) {
-    final recent = mockRequests.take(3).toList();
-    if (recent.isEmpty) return _buildEmptyState(context);
-    return Column(
-      children: recent
-          .map(
-            (r) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: RequestCard(
-                request: r,
-                onTap: () => context.push('${AppRoutes.requests}/${r.id}'),
-              ),
-            ),
-          )
-          .toList(),
-    );
-  }
-
-  // ── Mock: Cần bạn xử lý ──────────────────────────────────────────
-
-  Widget _buildActionRequired(BuildContext context, List<MockRequest> actions) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Cần bạn xử lý', style: AppText.cardTitle),
-        const SizedBox(height: 12),
-        ...actions
-            .take(2)
-            .map(
-              (r) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildActionCard(context, r),
-              ),
-            ),
-      ],
-    );
-  }
-
-  Widget _buildActionCard(BuildContext context, MockRequest r) {
-    final isPickup = r.ticketStatus == TicketStatus.completed;
-
-    if (isPickup) {
-      return ActionCard(
-        icon: Icons.inventory_2_outlined,
-        iconColor: StatusTone.success.foreground,
-        backgroundColor: StatusTone.success.background,
-        borderColor: StatusTone.success.border,
-        title: 'Thiết bị sẵn sàng để nhận',
-        subtitle: '${r.deviceName} · Mã phiếu ${r.ticketId ?? r.id}',
-        buttonLabel: 'Xem cách nhận máy',
-        buttonBackgroundColor: AppColors.white,
-        buttonTextColor: AppColors.textPrimary,
-        buttonIsOutlined: true,
-        onButtonTap: () => context.push('${AppRoutes.requests}/${r.id}/ticket'),
-      );
-    }
-
-    // Quote confirmation card
-    final formattedTotal = r.quoteTotal != null
-        ? _formatCurrency(r.quoteTotal!)
-        : 'Xem chi tiết';
-
-    return ActionCard(
-      icon: Icons.warning_amber_rounded,
-      iconColor: StatusTone.warning.foreground,
-      backgroundColor: StatusTone.warning.background,
-      borderColor: StatusTone.warning.border,
-      title: 'Chờ xác nhận báo giá',
-      subtitle:
-          '${r.deviceName} · ${r.ticketId ?? r.id}. Tổng chi phí dự kiến $formattedTotal.',
-      buttonLabel: 'Xem báo giá',
-      onButtonTap: () =>
-          context.push('${AppRoutes.requests}/${r.id}/ticket/quote'),
-    );
-  }
-
   // ── Empty state ───────────────────────────────────────────────────
 
   Widget _buildEmptyState(BuildContext context) {
@@ -482,21 +379,9 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-
-  // ── Helpers ───────────────────────────────────────────────────────
-
-  String _formatCurrency(double amount) {
-    final parts = amount.toStringAsFixed(0).split('');
-    final formatted = StringBuffer();
-    for (var i = 0; i < parts.length; i++) {
-      if (i > 0 && (parts.length - i) % 3 == 0) formatted.write('.');
-      formatted.write(parts[i]);
-    }
-    return '$formatted VNĐ';
-  }
 }
 
-/// Một phiếu hiển thị trên Trang chủ, chung cho dữ liệu Real và Mock.
+/// Một phiếu hiển thị trên Trang chủ.
 class _HomeTicket {
   const _HomeTicket({
     required this.code,
@@ -520,28 +405,6 @@ class _HomeTicket {
     ),
     path: AppRoutes.realTicket(t.code),
   );
-
-  factory _HomeTicket.fromMock(MockRequest r) {
-    final status = r.ticketStatus!;
-    return _HomeTicket(
-      code: r.ticketId ?? r.id,
-      title: r.deviceName,
-      status: status.dbValue,
-      receivedAt: r.submittedAt,
-      currentStep: switch (status) {
-        TicketStatus.received => 0,
-        TicketStatus.awaitingParts => 2,
-        TicketStatus.repairing => 3,
-        TicketStatus.completed || TicketStatus.awaitingReturn => 5,
-        TicketStatus.delivered || TicketStatus.returnedUnrepaired => 6,
-        _ => 1,
-      },
-      badge: AppStatusChip.forTicket(status),
-      path: status == TicketStatus.awaitingCustomerConfirmation
-          ? '${AppRoutes.requests}/${r.id}/ticket/quote'
-          : '${AppRoutes.requests}/${r.id}/ticket',
-    );
-  }
 
   final String code;
   final String title;

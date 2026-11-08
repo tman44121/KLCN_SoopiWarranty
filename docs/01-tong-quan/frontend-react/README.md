@@ -50,14 +50,15 @@ Playwright đã cài trong `warranty-system-mysql/e2e` và Edge có sẵn, chặ
 bằng dữ liệu giả; không cài package mới và không ghi DB. Có thể chọn host build thật bằng
 `$env:E2E_BASE_URL='http://127.0.0.1:18080'`. Cần chạy server trước.
 
-`test:ui` chạy smoke và `scripts/customer-ui.mjs`: kiểm demo của 5 phương thức thanh toán,
-trạng thái thanh toán từ server, bàn phím/Escape, phiếu in mô phỏng và badge chat ở 1440/768/390px.
+`test:ui` chạy smoke và `scripts/customer-ui.mjs`: kiểm khối chuyển khoản VietQR, trạng thái
+thanh toán từ server và badge chat ở 1440/768/390px.
 Nếu Playwright nằm trong runtime có sẵn khác, đặt `NODE_PATH` tới thư mục `node_modules` đó trước khi chạy.
 Các API đều được giả lập; không cần khởi động backend để chạy với Vite.
 
-Thanh toán phía khách hiện là **mô phỏng**: không thu tiền, không cập nhật trạng thái thật.
-Phiếu in và QR đều ghi rõ minh họa; trạng thái đã thanh toán chỉ lấy từ `costs.paymentStatus` của server.
-Chat cũng phản hồi bằng dữ liệu mẫu, có nhãn mô phỏng.
+Khi phiếu hoàn tất và còn nợ, trang khách hiện mã VietQR do backend sinh (`costs.paymentQr`, cấu hình
+`VietQR__BankId`, `VietQR__AccountNo`, `VietQR__AccountName`) kèm số tài khoản và nội dung chuyển khoản.
+Thu ngân xác nhận khi tiền đã vào tài khoản; trạng thái đã thanh toán chỉ lấy từ `costs.paymentStatus`.
+Thiếu cấu hình VietQR thì trang chỉ hướng dẫn thanh toán tại quầy khi nhận máy.
 
 Tại `/admin#reports`, chọn khoảng thời gian/trạm rồi bấm **Xuất Excel** để tải báo cáo `.xlsx` gồm 6 sheet.
 Nút chỉ bật sau khi báo cáo tải thành công; thao tác tải dùng phiên nhân viên và tự làm mới token như các API khác.
@@ -113,7 +114,7 @@ Kiểm thử hồi quy cho lượt harden/adapt/animate/extract/polish ngày 202
 
 Lỗi inline dùng chung: `LML_UI.fieldError(wrapper, message)` đặt thông báo, `aria-invalid` và nối ID lỗi vào `aria-describedby`; `LML_UI.clearFieldErrors(root)` chỉ gỡ lỗi do helper này quản lý, giữ hướng dẫn có sẵn và validation của `BusinessDateTime`. `LML_UI.showError(error, form)` áp dụng cùng pattern cho `fieldErrors` từ API. Ảnh kiểm chứng lưu trong `test-results/impeccable/`.
 
-`npm run test:ui:quotation-payment` kiểm tra hộp thoại báo giá và thanh toán ở 1440/768/360px: tên truy cập, giữ/trả focus, Escape, nội dung bảo hành, nhãn/lỗi của bốn ô thẻ mẫu, vùng chạm, tương phản, token và in phiếu mô phỏng. Tất cả API được mock; ảnh nằm trong `test-results/quotation-payment/`. Bộ kiểm tra này cũng thuộc `npm run test:ui`.
+`npm run test:ui:quotation-payment` kiểm tra hộp thoại báo giá và khối chuyển khoản VietQR ở 1440/768/360px: tên truy cập, giữ/trả focus, Escape, nội dung bảo hành, thông tin tài khoản/nội dung chuyển khoản, vùng chạm và không tràn ngang. Tất cả API được mock; ảnh nằm trong `test-results/quotation-payment/`. Bộ kiểm tra này cũng thuộc `npm run test:ui`.
 
 `npm run test:ui:staff-selection` kiểm trạng thái lựa chọn ngoại quan, đặt lại biểu mẫu, sáu bước QC và phân loại chẩn đoán ở 1440/768/360px. Các lựa chọn công bố `aria-pressed` và giữ focus sau Enter/Space; nội dung đang nhập được giữ qua mỗi lần dựng lại chi tiết. Script dùng API mock, không gửi kết quả QC hay ghi phiếu thật. Ảnh nằm trong `test-results/staff-selection/`; bộ kiểm tra thuộc `npm run test:ui`. Kiểm thử báo giá/thanh toán cũng đo cả hai chiều của bốn ô thẻ trên thiết bị cảm ứng.
 

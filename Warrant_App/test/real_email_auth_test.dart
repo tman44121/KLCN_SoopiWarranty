@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:warrant_safe/models/user_model.dart';
-import 'package:warrant_safe/services/api_service.dart';
+import 'support/fake_api_service.dart';
 import 'package:warrant_safe/services/i_api_service.dart';
 import 'package:warrant_safe/services/real_api_service.dart';
 import 'package:warrant_safe/services/token_storage.dart';
@@ -61,28 +61,25 @@ const _auth = AuthResponse(
 class _Storage implements TokenStorage {
   String? access;
   String? refresh;
-  bool? mock;
 
   @override
   Future<void> saveSession({
     required String token,
     String? refreshToken,
     required String userId,
-    bool isMock = false,
   }) async {
     access = token;
     refresh = refreshToken;
-    mock = isMock;
   }
 
   @override
-  Future<Map<String, String?>> readSession({bool isMock = false}) async => {};
+  Future<Map<String, String?>> readSession() async => {};
 
   @override
-  Future<void> clearSession({bool isMock = false}) async {}
+  Future<void> clearSession() async {}
 }
 
-class _RegisterApi extends MockApiService {
+class _RegisterApi extends FakeApiService {
   int registerCalls = 0;
   String? lastBearer;
 
@@ -227,7 +224,6 @@ void main() {
 
   test('Real registration stores its own session and loads profile', () async {
     SharedPreferences.setMockInitialValues({
-      'isMock': false,
       'baseUrl': 'http://10.0.2.2:8081/api/v1',
     });
     final storage = _Storage();
@@ -245,7 +241,6 @@ void main() {
       true,
     );
     expect(api.registerCalls, 1);
-    expect(storage.mock, false);
     expect(storage.refresh, 'refresh-fixture');
     expect(api.lastBearer, 'access-fixture');
     expect(auth.currentUser?.customerCode, 'KH-fixture');

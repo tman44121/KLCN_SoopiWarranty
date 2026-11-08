@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:warrant_safe/models/user_model.dart';
-import 'package:warrant_safe/services/api_service.dart';
+import 'support/fake_api_service.dart';
 import 'package:warrant_safe/services/i_api_service.dart';
 import 'package:warrant_safe/services/real_api_service.dart';
 import 'package:warrant_safe/services/token_storage.dart';
@@ -77,7 +77,6 @@ class _Storage implements TokenStorage {
     required String token,
     String? refreshToken,
     required String userId,
-    bool isMock = false,
   }) async {
     access = token;
     this.refreshToken = refreshToken;
@@ -85,21 +84,21 @@ class _Storage implements TokenStorage {
   }
 
   @override
-  Future<Map<String, String?>> readSession({bool isMock = false}) async => {
+  Future<Map<String, String?>> readSession() async => {
     'token': access,
     'refreshToken': refreshToken,
     'userId': userId,
   };
 
   @override
-  Future<void> clearSession({bool isMock = false}) async {
+  Future<void> clearSession() async {
     access = null;
     refreshToken = null;
     userId = null;
   }
 }
 
-class _FakeApi extends MockApiService {
+class _FakeApi extends FakeApiService {
   String? bearer;
   int passwordCalls = 0;
   bool rejectPassword = false;
@@ -290,7 +289,7 @@ void main() {
   });
 
   test('profile save updates only the current Real session', () async {
-    SharedPreferences.setMockInitialValues({'isMock': false});
+    SharedPreferences.setMockInitialValues({});
     final api = _FakeApi();
     final storage = _Storage();
     final vm = AuthViewModel(apiService: api, tokenStorage: storage);
@@ -313,7 +312,7 @@ void main() {
   });
 
   test('confirmed password change persists both rotated credentials', () async {
-    SharedPreferences.setMockInitialValues({'isMock': false});
+    SharedPreferences.setMockInitialValues({});
     final api = _FakeApi();
     final storage = _Storage();
     final vm = AuthViewModel(apiService: api, tokenStorage: storage);
@@ -331,7 +330,7 @@ void main() {
   });
 
   test('rejected password change keeps the existing session', () async {
-    SharedPreferences.setMockInitialValues({'isMock': false});
+    SharedPreferences.setMockInitialValues({});
     final api = _FakeApi()..rejectPassword = true;
     final storage = _Storage();
     final vm = AuthViewModel(apiService: api, tokenStorage: storage);
@@ -351,7 +350,7 @@ void main() {
   testWidgets(
     'name form validates locally and the account page shows the saved name',
     (tester) async {
-      SharedPreferences.setMockInitialValues({'isMock': false});
+      SharedPreferences.setMockInitialValues({});
       final api = _FakeApi();
       final vm = AuthViewModel(apiService: api, tokenStorage: _Storage());
       await vm.initialize();
@@ -391,7 +390,7 @@ void main() {
   testWidgets('password form blocks incomplete input without an API write', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({'isMock': false});
+    SharedPreferences.setMockInitialValues({});
     final api = _FakeApi();
     final vm = AuthViewModel(apiService: api, tokenStorage: _Storage());
     await vm.initialize();

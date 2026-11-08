@@ -285,7 +285,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await c.page.goto(base + '/account#ho-so');
     await c.page.fill('#pf-email', 'khach@example.com');
     await c.page.getByRole('button', { name: 'Lưu thay đổi' }).click();
-    await c.page.getByText('Đã cập nhật thông tin liên hệ.').waitFor(); assertions++;
+    await c.page.getByText('Đã cập nhật hồ sơ cá nhân.').waitFor(); assertions++;
     await c.page.screenshot({ path: fileURLToPath(new URL(`profile-${width}.png`, output)), fullPage: true });
     await c.page.goto(base + '/account#doi-mat-khau');
     await c.page.fill('#pw-current', 'Khach-mat-khau-1');

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:warrant_safe/models/user_model.dart';
-import 'package:warrant_safe/services/api_service.dart';
+import 'support/fake_api_service.dart';
 import 'package:warrant_safe/services/i_api_service.dart';
 import 'package:warrant_safe/services/token_storage.dart';
 import 'package:warrant_safe/viewmodels/auth_viewmodel.dart';
@@ -23,19 +23,18 @@ class _Storage implements TokenStorage {
     required String token,
     String? refreshToken,
     required String userId,
-    bool isMock = false,
   }) async {
     values = {'token': token, 'refreshToken': refreshToken, 'userId': userId};
   }
 
   @override
-  Future<Map<String, String?>> readSession({bool isMock = false}) async =>
+  Future<Map<String, String?>> readSession() async =>
       Map.of(values);
   @override
-  Future<void> clearSession({bool isMock = false}) async => values.clear();
+  Future<void> clearSession() async => values.clear();
 }
 
-class _Api extends MockApiService {
+class _Api extends FakeApiService {
   final profiles = Queue<Future<UserModel>>();
   int profileCalls = 0;
   @override

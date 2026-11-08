@@ -254,16 +254,6 @@ class RealApiService implements IApiService {
     }
   }
 
-  @override
-  Future<AuthResponse> register({
-    required String fullName,
-    required String phone,
-    required String email,
-    required String password,
-  }) async {
-    throw UnsupportedError('Real registration requires an email OTP.');
-  }
-
   Future<EmailOtpIssued> _requestEmailOtp(
     String email,
     String purpose, {

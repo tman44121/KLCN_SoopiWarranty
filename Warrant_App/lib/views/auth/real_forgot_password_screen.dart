@@ -155,23 +155,6 @@ class _RealForgotPasswordScreenState extends State<RealForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (context.watch<AuthViewModel>().isMock) {
-      return Scaffold(
-        backgroundColor: AppColors.milkCream,
-        appBar: AppBar(
-          title: Text(
-            'Quên mật khẩu',
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
-          ),
-        ),
-        body: Center(
-          child: Text(
-            'Chức năng này dùng với tài khoản Real.',
-            style: GoogleFonts.inter(color: AppColors.sageMuted),
-          ),
-        ),
-      );
-    }
     return Scaffold(
       backgroundColor: AppColors.milkCream,
       appBar: AppBar(
