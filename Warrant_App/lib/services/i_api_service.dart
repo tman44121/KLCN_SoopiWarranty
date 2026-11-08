@@ -87,6 +87,19 @@ abstract class IApiService {
   /// Throws [ApiException] if not found.
   Future<UserModel> getProfile();
 
+  /// The customer may edit name, email, and address; phone is read-only.
+  Future<UserModel> updateMyProfile({
+    required String fullName,
+    required String email,
+    required String address,
+  }) =>
+      throw UnsupportedError('Profile editing is not available in Mock mode.');
+
+  Future<AuthResponse> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) => throw UnsupportedError('Password change is not available in Mock mode.');
+
   /// Refreshes the session.
   Future<AuthResponse> refresh(String refreshToken);
 

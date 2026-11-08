@@ -252,6 +252,61 @@ Future<AuthViewModel> _auth(_FakeApi api) async {
 }
 
 void main() {
+  testWidgets('history detail buttons stay below the intake time', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(700, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final api = _FakeApi()
+      ..tickets = [
+        PortalTicketSummary.fromJson({
+          ..._ticketSummaryJson,
+          'code': 'TN-PROCESSING',
+          'status': 'REPAIRING',
+        }),
+        PortalTicketSummary.fromJson({
+          ..._ticketSummaryJson,
+          'code': 'TN-WAITING',
+          'status': 'AWAITING_PARTS',
+        }),
+      ];
+    final auth = await _auth(api);
+    final requests = RequestViewModel(auth);
+    final tickets = TicketViewModel(auth);
+    addTearDown(() {
+      requests.dispose();
+      tickets.dispose();
+      auth.dispose();
+    });
+    await Future.wait([requests.refresh(), tickets.refresh()]);
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: auth),
+          ChangeNotifierProvider.value(value: requests),
+          ChangeNotifierProvider.value(value: tickets),
+        ],
+        child: const MaterialApp(home: RequestListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Chờ linh kiện / xác nhận (1)'), findsOneWidget);
+    expect(find.text('Đang xử lý (1)'), findsOneWidget);
+    expect(find.text('Mã phiếu TN-PROCESSING'), findsOneWidget);
+    expect(find.text('Mã phiếu TN-WAITING'), findsOneWidget);
+    final dates = find.textContaining('Tiếp nhận lúc');
+    final buttons = find.text('Xem chi tiết');
+    expect(dates, findsNWidgets(2));
+    expect(buttons, findsNWidgets(2));
+    for (var i = 0; i < 2; i++) {
+      expect(
+        tester.getTopLeft(buttons.at(i)).dy,
+        greaterThan(tester.getBottomLeft(dates.at(i)).dy),
+      );
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   for (final scale in [1.5, 2.0]) {
     testWidgets('history fits a 320px viewport at text scale $scale', (
       tester,

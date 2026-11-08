@@ -90,7 +90,7 @@ public sealed record OwnWarrantyRequestData(
     DateTimeOffset? PreferredFrom,
     DateTimeOffset? PreferredTo);
 
-public sealed record ProfileUpdate([Email, Size(0, 100)] string? Email, [Size(0, 255)] string? Address);
+public sealed record ProfileUpdate([Email, Size(0, 100)] string? Email, [Size(0, 255)] string? Address, [Size(2, 100)] string? FullName = null);
 
 /// <summary>
 /// Khách chỉ thấy phiếu/yêu cầu của mình; portal token chỉ thấy đúng mã đã tra cứu. Ngoài phạm vi → 404 (POL-03).
@@ -276,8 +276,8 @@ public sealed class PortalWarrantyRequestService(
 }
 
 /// <summary>
-/// Hồ sơ và thiết bị của khách đang đăng nhập (app di động). Khách chỉ tự sửa email/địa chỉ; họ tên và SĐT (định danh đăng
-/// nhập, đối chiếu phiếu) do quầy cập nhật.
+/// Hồ sơ và thiết bị của khách đang đăng nhập. Khách tự sửa họ tên, email, địa chỉ; SĐT định danh đăng nhập
+/// và đối chiếu phiếu do quầy cập nhật.
 /// </summary>
 public sealed class PortalProfileService(
     AppDbContext db, PortalPolicy policy, DeviceService devices, TransactionRunner transactions, AuditService audit, CurrentActor actors, CustomerProfileStore profiles)
@@ -289,19 +289,24 @@ public sealed class PortalProfileService(
     }
 
     /// <summary>null giữ nguyên, chuỗi rỗng xóa giá trị.</summary>
-    public Task<Profile> UpdateContactAsync(ProfileUpdate body)
+    public Task<Profile> UpdateProfileAsync(ProfileUpdate body)
     {
         var actor = actors.Require(Permission.PORTAL_SELF);
         return transactions.InTransactionAsync(async () =>
         {
             var customer = await policy.RequireCustomerAsync();
-            var before = Contact(customer);
+            var before = Summary(customer);
+            var oldName = customer.FullName;
+            if (body.FullName is not null) customer.Rename(body.FullName);
             customer.UpdateContact(null, body.Email, body.Address);
             await profiles.RequireAvailableEmailAsync(customer.Email, customer.Id);
             await db.SaveChangesAsync();
-            if (before != Contact(customer))
-                await audit.RecordAsync("KH:" + customer.Id, customer.FullName, ["CUSTOMER"], "CUSTOMER_CONTACT_UPDATED",
-                    "Khách tự cập nhật liên hệ", "CUSTOMER", customer.Id, before, Contact(customer));
+            var after = Summary(customer);
+            if (before != after)
+                await audit.RecordAsync("KH:" + customer.Id, customer.FullName, ["CUSTOMER"],
+                    oldName == customer.FullName ? "CUSTOMER_CONTACT_UPDATED" : "CUSTOMER_PROFILE_UPDATED",
+                    oldName == customer.FullName ? "Khách tự cập nhật liên hệ" : "Khách tự cập nhật hồ sơ",
+                    "CUSTOMER", customer.Id, before, after);
             return From(customer, actor.Username);
         });
     }
@@ -315,7 +320,7 @@ public sealed class PortalProfileService(
             .ToList();
     }
 
-    private static string Contact(Customer customer) => $"Email: {customer.Email ?? "—"} — Địa chỉ: {customer.Address ?? "—"}";
+    private static string Summary(Customer customer) => $"Họ tên: {customer.FullName} — Email: {customer.Email ?? "—"} — Địa chỉ: {customer.Address ?? "—"}";
 
     private static Profile From(Customer customer, string username) =>
         new(customer.Id, customer.FullName, customer.Phone, customer.Email, customer.Address, username);

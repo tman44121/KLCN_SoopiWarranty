@@ -8,6 +8,7 @@ import '../views/splash/splash_screen.dart';
 import '../views/shell/main_shell.dart';
 import '../views/home/home_screen.dart';
 import '../views/profile/profile_screen.dart';
+import '../views/profile/account_settings_screens.dart';
 import '../views/devices/device_list_screen.dart';
 import '../views/devices/device_detail_screen.dart';
 import '../views/devices/lookup_screen.dart';
@@ -43,6 +44,8 @@ class AppRoutes {
 
   static const String notifications = '/notifications';
   static const String profile = '/profile';
+  static const String editProfile = '/profile/edit';
+  static const String changePassword = '/profile/password';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -210,6 +213,16 @@ class AppRouter {
             GoRoute(
               path: AppRoutes.profile,
               builder: (context, state) => const ProfileScreen(),
+              routes: [
+                GoRoute(
+                  path: 'edit',
+                  builder: (context, state) => const EditProfileScreen(),
+                ),
+                GoRoute(
+                  path: 'password',
+                  builder: (context, state) => const ChangePasswordScreen(),
+                ),
+              ],
             ),
           ],
         ),

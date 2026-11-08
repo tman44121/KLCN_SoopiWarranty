@@ -109,13 +109,36 @@ public class SecurityRegressionTests
         {
             if (portal)
                 await new PortalProfileService(db, new PortalPolicy(db, actors), null!, transactions, null!, actors, new CustomerProfileStore(sql))
-                    .UpdateContactAsync(new ProfileUpdate("shared@example.com", null));
+                    .UpdateProfileAsync(new ProfileUpdate("shared@example.com", null));
             else
                 await new CustomerService(db, sql, null!, actors, null!, TimeProvider.System, transactions, null!, null!, new CustomerProfileStore(sql))
                     .UpdateContactAsync("KH-1", new UpdateContactRequest(null, "shared@example.com", null));
         });
         Assert.Equal(ErrorCode.CUSTOMER_EMAIL_DUPLICATE, error.Code);
         Assert.DoesNotContain(connection.Commands, command => command.Sql.Contains("UPDATE [KhachHang]"));
+    }
+
+    [Fact]
+    public async Task PortalProfile_RenamePersistsAndReturnsTheNewName()
+    {
+        using var connection = new RecordingConnection(sql =>
+            sql.Contains("FROM KhachHang WITH") ? new DataTable() : sql.Contains("UPDATE [KhachHang]")
+                ? Table(("Result", 1)) : sql.Contains("[KhachHang]")
+                ? Table(("MaKH", "KH-1"), ("MaTaiKhoan", 1L), ("DiaChi", "Q1"), ("NgayTao", DateTime.Now),
+                    ("Email", "old@example.com"), ("HoTen", "Tên cũ"), ("GopVaoMaKH", null),
+                    ("SDT", "0901234567"), ("TrangThai", "ACTIVE"))
+                : Table(("Result", 1)));
+        using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlServer(connection).Options);
+        var sql = new Sql(db);
+        var actors = Actors(Role.CUSTOMER);
+        var service = new PortalProfileService(db, new PortalPolicy(db, actors), null!, new TransactionRunner(db),
+            new AuditService(sql, TimeProvider.System), actors, new CustomerProfileStore(sql));
+        var updated = await service.UpdateProfileAsync(new ProfileUpdate(null, null, "Tên mới"));
+        Assert.Equal("Tên mới", updated.FullName);
+        Assert.Equal("0901234567", updated.Phone);
+        Assert.Equal("KH-1", updated.CustomerCode);
+        Assert.Contains(connection.Commands, command => command.Sql.Contains("UPDATE [KhachHang]") && command.InTransaction);
+        Assert.Contains(connection.Commands, command => command.Sql.Contains("INSERT INTO NhatKyThaoTac") && command.InTransaction);
     }
 
     [Fact]

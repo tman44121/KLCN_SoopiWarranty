@@ -29,6 +29,20 @@ public class CustomerPortalTests
     }
 
     [Fact]
+    public void CustomerRename_ChangesProfileNameOnlyAndRejectsInvalidValues()
+    {
+        var customer = new Customer("KH-000001", "Tên cũ", "0912345678", "a@b.vn", "Q1", Now);
+        customer.Rename("  Tên mới  ");
+        Assert.Equal("Tên mới", customer.FullName);
+        Assert.Equal("0912345678", customer.Phone);
+        Assert.Equal("KH-000001", customer.Id);
+        Assert.Throws<DomainException>(() => customer.Rename(" "));
+        Assert.Throws<DomainException>(() => customer.Rename("A"));
+        Assert.Throws<DomainException>(() => customer.Rename("Tên 2"));
+        Assert.Equal("Tên mới", customer.FullName);
+    }
+
+    [Fact]
     public void Uploads_DetectedByMagicBytes()
     {
         var png = new byte[] { 0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0 };

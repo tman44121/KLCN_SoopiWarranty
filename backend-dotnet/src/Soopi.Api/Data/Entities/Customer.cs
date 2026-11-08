@@ -46,6 +46,14 @@ public class Customer
 
     public DateTimeOffset CreatedAt { get; private set; }
 
+    public void Rename(string fullName)
+    {
+        var normalized = RequireText(fullName);
+        if (normalized.Length is < 2 or > 100 || normalized.Any(char.IsDigit))
+            throw DomainException.Invalid("Họ và tên cần từ 2 đến 100 ký tự và không chứa chữ số.");
+        FullName = normalized;
+    }
+
     public void UpdateContact(string? phone, string? email, string? address)
     {
         if (phone is not null) Phone = PhoneNumber.Require(phone);

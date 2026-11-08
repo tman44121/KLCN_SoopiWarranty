@@ -31,7 +31,7 @@ const ticketView = (quoted) => ({ code: 'TN-2026-1002-00001', productName: 'Gala
   costs: { inWarrantyAmount: 0, outOfWarrantyParts: 2500000, serviceFee: 200000, vat: 216000, total: 2916000, paymentStatus: 'UNPAID' },
   pendingQuotation: quoted ? { code: 'BG-1', validUntil: '2026-10-09', vatRate: 8, partsTotal: 2500000, laborTotal: 200000, grandTotal: 2916000,
     lines: [{ lineNo: 1, description: 'Màn hình AMOLED', quantity: 1, lineTotal: 2500000 }, { lineNo: 2, description: 'Công thay', quantity: 1, lineTotal: 200000 }] } : null });
-export const browser = await chromium.launch({ channel: 'msedge', headless: true });
+export const browser = await chromium.launch({ channel: process.env.E2E_BROWSER_CHANNEL || 'msedge', headless: true });
 let assertions = 0;
 let mockedWrites = 0;
 export async function session(role, landing, width = 1440, { hasTouch = false } = {}) {

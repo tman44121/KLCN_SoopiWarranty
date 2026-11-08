@@ -348,6 +348,55 @@ class RealApiService implements IApiService {
   }
 
   @override
+  Future<UserModel> updateMyProfile({
+    required String fullName,
+    required String email,
+    required String address,
+  }) async {
+    // Refresh an expired access token with a GET before the write. Never
+    // replay a profile mutation after an uncertain response.
+    await _get('/auth/me');
+    try {
+      final response = await _dio.patch<dynamic>(
+        '/portal/my/profile',
+        data: {
+          'fullName': fullName.trim(),
+          'email': email.trim(),
+          'address': address.trim(),
+        },
+      );
+      final updated = UserModel.fromJson(response.data as Map<String, dynamic>);
+      if (updated.fullName != fullName.trim()) {
+        throw ApiException(
+          'Máy chủ chưa cập nhật họ tên. Vui lòng kiểm tra lại hồ sơ và phiên bản API đang chạy.',
+          statusCode: response.statusCode,
+        );
+      }
+      return updated;
+    } on DioException catch (error) {
+      _handleDioError(error);
+    }
+  }
+
+  @override
+  Future<AuthResponse> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    // This write is sent once. A timeout might follow a committed change.
+    await _get('/auth/me');
+    try {
+      final response = await _dio.post<dynamic>(
+        '/auth/mobile/change-password',
+        data: {'currentPassword': currentPassword, 'newPassword': newPassword},
+      );
+      return AuthResponse.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (error) {
+      _handleDioError(error);
+    }
+  }
+
+  @override
   Future<List<OwnedDevice>> getMyDevices() async {
     final response = await _get('/portal/my/devices');
     final list = response.data as List<dynamic>;

@@ -47,157 +47,153 @@ class _ProfileScreenState extends State<ProfileScreen> {
               notificationCountLoading:
                   !vm.isMock && vm.notificationCountLoading,
               notificationCountError: !vm.isMock && vm.notificationCountError,
-              onNotificationTap: () => context.go(AppRoutes.notifications),
+              onNotificationTap: () => context.push(AppRoutes.notifications),
             ),
             const Divider(height: 1),
 
             // ── Scrollable content ───────────────────────────────────
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 32),
-                child: Column(
-                  children: [
-                    // ── Profile header ──────────────────────────────
-                    if (isLoading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 40),
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                    else if (vm.errorMessage != null &&
-                        user?.customerCode == null)
+              child: RefreshIndicator(
+                onRefresh: vm.refreshProfile,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 32),
+                  child: Column(
+                    children: [
+                      // ── Profile header ──────────────────────────────
+                      if (isLoading)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 40),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if (vm.errorMessage != null &&
+                          user?.customerCode == null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 40,
+                            horizontal: 20,
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                vm.errorMessage!,
+                                style: const TextStyle(color: AppColors.error),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: () => vm.refreshProfile(),
+                                child: const Text('Thử lại'),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        _buildProfileHeader(
+                          fullName: fullName,
+                          phone: phone,
+                          email: email,
+                        ),
+                      const SizedBox(height: 20),
+
+                      // ── CÁ NHÂN ────────────────────────────────────
+                      _buildSectionLabel('CÁ NHÂN'),
+                      _buildGroupCard([
+                        _buildMenuTile(
+                          icon: Icons.person_outline_rounded,
+                          iconBgColor: AppColors.primaryLight,
+                          iconColor: AppColors.primaryBlue,
+                          title: 'Chỉnh sửa thông tin cá nhân',
+                          subtitle: 'Họ tên, email, địa chỉ · SĐT qua trạm',
+                          onTap: () => vm.isMock
+                              ? _showUnavailable(context, 'chỉnh sửa thông tin')
+                              : context.go(AppRoutes.editProfile),
+                        ),
+                      ]),
+                      const SizedBox(height: 12),
+
+                      // ── BẢO MẬT ────────────────────────────────────
+                      _buildSectionLabel('BẢO MẬT'),
+                      _buildGroupCard([
+                        _buildMenuTile(
+                          icon: Icons.lock_outline_rounded,
+                          iconBgColor: AppColors.honeyTint,
+                          iconColor: AppColors.honeyText,
+                          title: 'Đổi mật khẩu',
+                          subtitle: vm.isMock
+                              ? 'Chỉ dùng với tài khoản Real'
+                              : 'Cập nhật mật khẩu đăng nhập',
+                          onTap: () => vm.isMock
+                              ? _showUnavailable(context, 'đổi mật khẩu')
+                              : context.go(AppRoutes.changePassword),
+                        ),
+                        _divider(),
+                        _buildMenuTile(
+                          icon: Icons.security_rounded,
+                          iconBgColor: AppColors.honeyTint,
+                          iconColor: AppColors.honeyText,
+                          title: 'Xác thực hai yếu tố',
+                          subtitle: '(Chưa hỗ trợ trong bản thử nghiệm)',
+                          onTap: () =>
+                              _showUnavailable(context, 'xác thực hai yếu tố'),
+                        ),
+                      ]),
+                      const SizedBox(height: 12),
+
+                      // ── TUỲ CHỈNH ──────────────────────────────────
+                      _buildSectionLabel('TUỲ CHỈNH'),
+                      _buildGroupCard([
+                        _buildMenuTile(
+                          icon: Icons.notifications_none_rounded,
+                          iconBgColor: AppColors.primaryLight,
+                          iconColor: AppColors.primaryBlue,
+                          title: 'Thông báo trong ứng dụng',
+                          subtitle: 'Xem thông báo và trạng thái chưa đọc',
+                          onTap: () => context.push(AppRoutes.notifications),
+                        ),
+                        _divider(),
+                        _buildMenuTile(
+                          icon: Icons.language_rounded,
+                          iconBgColor: AppColors.primaryLight,
+                          iconColor: AppColors.primaryBlue,
+                          title: 'Ngôn ngữ & khu vực',
+                          subtitle: 'Tiếng Việt (VN) · UTC+7',
+                          onTap: () =>
+                              _showUnavailable(context, 'cài đặt ngôn ngữ'),
+                        ),
+                      ]),
+                      const SizedBox(height: 28),
+
+                      // ── ĐĂNG XUẤT ──────────────────────────────────
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 40,
-                          horizontal: 20,
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              vm.errorMessage!,
-                              style: const TextStyle(color: AppColors.error),
-                              textAlign: TextAlign.center,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: OutlinedButton.icon(
+                          onPressed: () => _confirmLogout(context),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.expiredWine,
+                            side: const BorderSide(color: AppColors.peach),
+                            minimumSize: const Size(double.infinity, 46),
+                          ),
+                          icon: const Icon(Icons.logout_rounded, size: 20),
+                          label: const Text(
+                            'Đăng xuất',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
                             ),
-                            const SizedBox(height: 12),
-                            ElevatedButton(
-                              onPressed: () => vm.refreshProfile(),
-                              child: const Text('Thử lại'),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      _buildProfileHeader(
-                        fullName: fullName,
-                        phone: phone,
-                        email: email,
-                      ),
-                    const SizedBox(height: 20),
-
-                    // ── CÁ NHÂN ────────────────────────────────────
-                    _buildSectionLabel('CÁ NHÂN'),
-                    _buildGroupCard([
-                      _buildMenuTile(
-                        icon: Icons.person_outline_rounded,
-                        iconBgColor: AppColors.primaryLight,
-                        iconColor: AppColors.primaryBlue,
-                        title: 'Chỉnh sửa thông tin cá nhân',
-                        subtitle: 'Tên, email, địa chỉ',
-                        onTap: () =>
-                            _showUnavailable(context, 'chỉnh sửa thông tin'),
-                      ),
-                      _divider(),
-                      _buildMenuTile(
-                        icon: Icons.phone_outlined,
-                        iconBgColor: AppColors.primaryLight,
-                        iconColor: AppColors.primaryBlue,
-                        title: 'Chi tiết liên hệ',
-                        subtitle: phone != null && phone.isNotEmpty
-                            ? phone
-                            : 'Chưa có số điện thoại',
-                        onTap: () =>
-                            _showUnavailable(context, 'chi tiết liên hệ'),
-                      ),
-                    ]),
-                    const SizedBox(height: 12),
-
-                    // ── BẢO MẬT ────────────────────────────────────
-                    _buildSectionLabel('BẢO MẬT'),
-                    _buildGroupCard([
-                      _buildMenuTile(
-                        icon: Icons.lock_outline_rounded,
-                        iconBgColor: AppColors.honeyTint,
-                        iconColor: AppColors.honeyText,
-                        title: 'Đổi mật khẩu',
-                        subtitle: '(Chưa hỗ trợ trong bản thử nghiệm)',
-                        onTap: () => _showUnavailable(context, 'đổi mật khẩu'),
-                      ),
-                      _divider(),
-                      _buildMenuTile(
-                        icon: Icons.security_rounded,
-                        iconBgColor: AppColors.honeyTint,
-                        iconColor: AppColors.honeyText,
-                        title: 'Xác thực hai yếu tố',
-                        subtitle: '(Chưa hỗ trợ trong bản thử nghiệm)',
-                        onTap: () =>
-                            _showUnavailable(context, 'xác thực hai yếu tố'),
-                      ),
-                    ]),
-                    const SizedBox(height: 12),
-
-                    // ── TUỲ CHỈNH ──────────────────────────────────
-                    _buildSectionLabel('TUỲ CHỈNH'),
-                    _buildGroupCard([
-                      _buildMenuTile(
-                        icon: Icons.notifications_none_rounded,
-                        iconBgColor: AppColors.primaryLight,
-                        iconColor: AppColors.primaryBlue,
-                        title: 'Cài đặt thông báo',
-                        subtitle: 'Chưa hỗ trợ thay đổi cài đặt trong ứng dụng',
-                        onTap: () =>
-                            _showUnavailable(context, 'cài đặt thông báo'),
-                      ),
-                      _divider(),
-                      _buildMenuTile(
-                        icon: Icons.language_rounded,
-                        iconBgColor: AppColors.primaryLight,
-                        iconColor: AppColors.primaryBlue,
-                        title: 'Ngôn ngữ & khu vực',
-                        subtitle: 'Tiếng Việt (VN) · UTC+7',
-                        onTap: () =>
-                            _showUnavailable(context, 'cài đặt ngôn ngữ'),
-                      ),
-                    ]),
-                    const SizedBox(height: 28),
-
-                    // ── ĐĂNG XUẤT ──────────────────────────────────
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: OutlinedButton.icon(
-                        onPressed: () => _confirmLogout(context),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.expiredWine,
-                          side: const BorderSide(color: AppColors.peach),
-                          minimumSize: const Size(double.infinity, 46),
-                        ),
-                        icon: const Icon(Icons.logout_rounded, size: 20),
-                        label: const Text(
-                          'Đăng xuất',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // ── Footer ─────────────────────────────────────
-                    Text(
-                      'Soopi · Bảo hành & sửa chữa (bản thử nghiệm)',
-                      style: AppText.meta.copyWith(fontSize: 11),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                      // ── Footer ─────────────────────────────────────
+                      Text(
+                        'Soopi · Bảo hành & sửa chữa (bản thử nghiệm)',
+                        style: AppText.meta.copyWith(fontSize: 11),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
             ),
