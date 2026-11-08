@@ -1,4 +1,5 @@
 import importlib.util
+import os
 from io import BytesIO
 from pathlib import Path
 import tempfile
@@ -142,6 +143,42 @@ class ActivationTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "stopped"):
                 deploy.activate(self.release_id, "https://example.com")
         self.assertEqual(service.call_args.args, ("stop",))
+
+    def make_releases(self, names):
+        for age, name in enumerate(names):  # names newest first
+            path = self.root / "releases" / name
+            path.mkdir(exist_ok=True)
+            os.utime(path, (1_000_000 - age, 1_000_000 - age))
+
+    def test_prune_keeps_newest_current_previous_and_tagged_releases(self):
+        names = [c * 40 + "-%d-1" % n for n, c in enumerate("bcdefg")]
+        tagged = "v1.0.0-" + "f" * 40 + "-3-1"
+        self.make_releases(names + [tagged, self.release_id])  # setUp release is the oldest
+        current, previous = names[4], names[5]
+        with patch.object(deploy.subprocess, "run") as run:
+            deploy.prune_releases(2, self.root / "releases" / current, self.root / "releases" / previous)
+        left = {path.name for path in (self.root / "releases").iterdir()}
+        self.assertEqual(left, {names[0], names[1], current, previous, tagged})
+        removed = sorted(call.args[0][-1] for call in run.call_args_list)
+        self.assertEqual(removed, sorted("soopi:" + name for name in names[2:4] + [self.release_id]))
+
+    def test_prune_ignores_folders_that_are_not_releases(self):
+        self.make_releases(["b" * 40 + "-1-1"])
+        (self.root / "releases" / "notes").mkdir()
+        with patch.object(deploy.subprocess, "run"):
+            deploy.prune_releases(0, self.release)
+        self.assertTrue((self.root / "releases" / "notes").is_dir())
+        self.assertFalse((self.root / "releases" / ("b" * 40 + "-1-1")).exists())
+
+    def test_prune_failure_does_not_fail_a_healthy_deploy(self):
+        with patch.object(deploy, "previous_release", return_value=None), \
+             patch.object(deploy, "switch_current", side_effect=self.switch), \
+             patch.object(deploy, "service"), \
+             patch.object(deploy, "wait_healthy", return_value=True), \
+             patch.object(deploy, "prune_releases", side_effect=OSError("disk busy")) as prune:
+            deploy.activate(self.release_id, "https://example.com")
+        prune.assert_called_once_with(deploy.KEEP_RELEASES, self.release, None)
+        self.assertEqual(self.active, self.release)
 
 
 if __name__ == "__main__":
