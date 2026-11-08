@@ -160,7 +160,13 @@ public sealed class CatalogService(
         return audit.RecordAsync(actor.AuditId, actor.DisplayName, actor.RoleNames, action, label, "CATALOG:" + type, id, before, after);
     }
 
-    private static string Summary(Dictionary<string, object?> value) => $"{value.GetValueOrDefault("_id")} — {value.GetValueOrDefault("name") ?? ""}";
+    /// <summary>Mã — tên, kèm giá tính khách/giá công (không ghi giá vốn) để nhật ký cho thấy giá trước và sau khi sửa.</summary>
+    private static string Summary(Dictionary<string, object?> value)
+    {
+        var text = $"{value.GetValueOrDefault("_id")} — {value.GetValueOrDefault("name") ?? ""}";
+        var price = value.GetValueOrDefault("servicePrice") ?? value.GetValueOrDefault("price");
+        return price is decimal amount ? $"{text} — {amount.ToString("#,##0", CultureInfo.GetCultureInfo("vi-VN"))} đ" : text;
+    }
 
     private static string? Text(JsonElement value) =>
         value.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(value.GetString()) ? value.GetString()!.Trim() : null;

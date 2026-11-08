@@ -14,7 +14,7 @@ thư mục ứng dụng, tên file, package và định danh nền tảng.
 | Thống kê, chat và đánh giá công khai | [ACCESS_STATISTICS](02-ky-thuat/ACCESS_STATISTICS.md), [CHAT](02-ky-thuat/CHAT.md), [PUBLIC_REVIEWS](02-ky-thuat/PUBLIC_REVIEWS.md) |
 | Phạm vi sản phẩm và kế hoạch đánh giá | [PRODUCT](03-san-pham/PRODUCT.md), [PLAN_CUSTOMER_REVIEWS](03-san-pham/PLAN_CUSTOMER_REVIEWS.md) |
 | Kiểm thử và vận hành | [LOCAL_WORKFLOW_TESTING](04-van-hanh/LOCAL_WORKFLOW_TESTING.md), [OPERATIONS](04-van-hanh/OPERATIONS.md), [Verification README](04-van-hanh/verification/README.md) |
-| Triển khai và tài khoản thử | [DEPLOY_VPS](04-van-hanh/DEPLOY_VPS.md), [TAI_KHOAN_DEMO](04-van-hanh/TAI_KHOAN_DEMO.md) |
+| Triển khai và tài khoản thử | [DEPLOY_VPS](04-van-hanh/DEPLOY_VPS.md), [Deploy 08/11/2026: file SQL cần chạy + prompt ChatGPT](04-van-hanh/DEPLOY_CHECKLIST_2026-11-08.md), [TAI_KHOAN_DEMO](04-van-hanh/TAI_KHOAN_DEMO.md) |
 | Mẫu tài liệu | [README](05-mau/README.md) |
 | Thiết kế, audit giao diện và sơ đồ | [DESIGN](06-design/DESIGN.md), [UI_AUDIT](06-design/UI_AUDIT.md), [ROSE_DIAGRAMS](06-design/ROSE_DIAGRAMS.md), [ERD](06-design/rose/erd/README.md) |
 | Audit giao diện mobile sau gộp | [Impeccable audit Flutter](06-design/Warrant_App/UI_AUDIT.md) |

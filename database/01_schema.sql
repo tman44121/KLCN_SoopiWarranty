@@ -713,11 +713,13 @@ CREATE TABLE ChiTietXuatKho (
     DonGiaXuat           DECIMAL(18,2) NOT NULL,
     MaKe                 NVARCHAR(20)  NULL,
     NgayHetHanBaoHanhLK  DATE          NULL,
+    DonGiaDichVuXuat     DECIMAL(18,2) NULL,
     CONSTRAINT UX_CTXK_LinhKien UNIQUE (MaPhieuXuat, MaLK),
     FOREIGN KEY (MaPhieuXuat) REFERENCES PhieuXuatKho(MaPhieuXuat),
     FOREIGN KEY (MaLK) REFERENCES LinhKien(MaLK),
     CONSTRAINT CK_CTXK_SoLuong CHECK (SoLuongXuat > 0),
-    CONSTRAINT CK_CTXK_DonGia CHECK (DonGiaXuat >= 0)
+    CONSTRAINT CK_CTXK_DonGia CHECK (DonGiaXuat >= 0),
+    CONSTRAINT CK_CTXK_DonGiaDichVu CHECK (DonGiaDichVuXuat IS NULL OR DonGiaDichVuXuat >= 0)
 );
 
 CREATE TABLE PhieuDieuChuyen (

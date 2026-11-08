@@ -298,167 +298,176 @@ export default function AdminPage() {
                 </h2>
               </div>
             </div>
-            <div className="section-divider">
-            </div>
-            <div className="section-head">
-              <h3 className="card__title card__title--sm">
-                {"Nhóm & loại thiết bị"}
-              </h3>
-              <button type="button" className="btn btn--secondary btn--sm" data-open-add-category="">
-                {"+ Thêm nhóm thiết bị"}
+            <div className="section-tabs catalog-tabs" role="tablist" aria-label="Loại danh mục">
+              <button type="button" role="tab" id="catalog-tab-categories" className="section-tabs__tab" aria-controls="catalog-panel-categories" aria-selected="true">
+                Nhóm thiết bị <span className="section-tabs__count" data-catalog-count="categories"></span>
+              </button>
+              <button type="button" role="tab" id="catalog-tab-brands" className="section-tabs__tab" aria-controls="catalog-panel-brands" aria-selected="false" tabIndex={-1}>
+                Hãng & model <span className="section-tabs__count" data-catalog-count="brands"></span>
+              </button>
+              <button type="button" role="tab" id="catalog-tab-parts" className="section-tabs__tab" aria-controls="catalog-panel-parts" aria-selected="false" tabIndex={-1}>
+                Linh kiện <span className="section-tabs__count" data-catalog-count="parts"></span>
+              </button>
+              <button type="button" role="tab" id="catalog-tab-services" className="section-tabs__tab" aria-controls="catalog-panel-services" aria-selected="false" tabIndex={-1}>
+                Giá dịch vụ <span className="section-tabs__count" data-catalog-count="services"></span>
+              </button>
+              <button type="button" role="tab" id="catalog-tab-policies" className="section-tabs__tab" aria-controls="catalog-panel-policies" aria-selected="false" tabIndex={-1}>
+                Bảo hành <span className="section-tabs__count" data-catalog-count="policies"></span>
               </button>
             </div>
-            <div className="table-scroll">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>
-                      {"Nhóm thiết bị"}
-                    </th>
-                    <th>
-                      {"Loại thiết bị"}
-                    </th>
-                    <th>
-                      {"Định danh"}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody data-category-tbody="">
-                </tbody>
-              </table>
-            </div>
-            <div className="section-divider">
-            </div>
-            <div className="section-head">
-              <h3 className="card__title card__title--sm">
-                {"Hãng & model"}
-              </h3>
-              <button type="button" className="btn btn--secondary btn--sm" data-open-add-brand="">
-                {"+ Thêm hãng"}
-              </button>
-            </div>
-            <div className="table-scroll">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>
-                      {"Hãng"}
-                    </th>
-                    <th>
-                      {"Áp dụng nhóm thiết bị"}
-                    </th>
-                    <th>
-                      {"Model"}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody data-brand-tbody="">
-                </tbody>
-              </table>
-            </div>
-            <div className="section-divider">
-            </div>
-            <div className="section-head">
-              <h3 className="card__title card__title--sm">
-                {"Linh kiện (SKU)"}
-              </h3>
-              <button type="button" className="btn btn--secondary btn--sm" data-open-add-sku="">
-                {"+ Thêm linh kiện"}
-              </button>
-            </div>
-            <div className="table-scroll">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>
-                      {"SKU"}
-                    </th>
-                    <th>
-                      {"Tên linh kiện"}
-                    </th>
-                    <th>
-                      {"Nhóm thiết bị"}
-                    </th>
-                    <th>
-                      {"Hãng"}
-                    </th>
-                    <th>
-                      {"Giá tính khách"}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody data-sku-tbody="">
-                </tbody>
-              </table>
-            </div>
-            <div className="section-divider">
-            </div>
-            <div className="section-head">
-              <h3 className="card__title card__title--sm">
-                {"Bảng giá dịch vụ sửa chữa"}
-              </h3>
-              <button type="button" className="btn btn--secondary btn--sm" data-open-add-service="">
-                {"+ Thêm dịch vụ"}
-              </button>
-            </div>
-            <div className="table-scroll">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>
-                      {"Mã dịch vụ"}
-                    </th>
-                    <th>
-                      {"Tên dịch vụ"}
-                    </th>
-                    <th>
-                      {"Áp dụng nhóm thiết bị"}
-                    </th>
-                    <th>
-                      {"Giá công"}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody data-service-tbody="">
-                </tbody>
-              </table>
-            </div>
-            <div className="section-divider">
-            </div>
-            <div className="section-head">
-              <div>
-                <h3 className="card__title card__title--sm">
-                  {"Chính sách bảo hành"}
-                </h3>
-                <div className="card__title-meta">
-                  {"Ưu tiên chính sách theo model, sau đó theo hãng."}
+            <div role="tabpanel" id="catalog-panel-categories" aria-labelledby="catalog-tab-categories" className="catalog-panel">
+              <div className="catalog-head">
+                <div>
+                  <h3 className="catalog-head__title">Nhóm & loại thiết bị</h3>
+                  <p className="catalog-head__meta"><span data-catalog-summary="categories"></span></p>
                 </div>
+                <button type="button" className="btn btn--secondary btn--sm" data-open-add-category="">+ Thêm nhóm thiết bị</button>
               </div>
-              <button type="button" className="btn btn--secondary btn--sm" data-open-add-policy="">
-                {"+ Thêm chính sách theo hãng"}
-              </button>
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>
+                        {"Nhóm thiết bị"}
+                      </th>
+                      <th>
+                        {"Loại thiết bị"}
+                      </th>
+                      <th>
+                        {"Định danh"}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody data-category-tbody="">
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div className="table-scroll">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>
-                      {"Áp dụng cho"}
-                    </th>
-                    <th>
-                      {"Thời hạn"}
-                    </th>
-                    <th>
-                      {"Điều kiện"}
-                    </th>
-                    <th>
-                      {"Nhà phân phối"}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody data-warranty-policy-tbody="">
-                </tbody>
-              </table>
+            <div role="tabpanel" id="catalog-panel-brands" aria-labelledby="catalog-tab-brands" className="catalog-panel" hidden={true}>
+              <div className="catalog-head">
+                <div>
+                  <h3 className="catalog-head__title">Hãng & model</h3>
+                  <p className="catalog-head__meta"><span data-catalog-summary="brands"></span></p>
+                </div>
+                <button type="button" className="btn btn--secondary btn--sm" data-open-add-brand="">+ Thêm hãng</button>
+              </div>
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>
+                        {"Hãng"}
+                      </th>
+                      <th>
+                        {"Áp dụng nhóm thiết bị"}
+                      </th>
+                      <th>
+                        {"Model"}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody data-brand-tbody="">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div role="tabpanel" id="catalog-panel-parts" aria-labelledby="catalog-tab-parts" className="catalog-panel" hidden={true}>
+              <div className="catalog-head">
+                <div>
+                  <h3 className="catalog-head__title">Linh kiện (SKU)</h3>
+                  <p className="catalog-head__meta"><span data-catalog-summary="parts"></span></p>
+                </div>
+                <button type="button" className="btn btn--secondary btn--sm" data-open-add-sku="">+ Thêm linh kiện</button>
+              </div>
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>
+                        {"SKU"}
+                      </th>
+                      <th>
+                        {"Tên linh kiện"}
+                      </th>
+                      <th>
+                        {"Nhóm thiết bị"}
+                      </th>
+                      <th>
+                        {"Hãng"}
+                      </th>
+                      <th className="cell-num">
+                        {"Giá tính khách"}
+                      </th>
+                      <th className="catalog-actions-col"><span className="visually-hidden">Thao tác</span></th>
+                    </tr>
+                  </thead>
+                  <tbody data-sku-tbody="">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div role="tabpanel" id="catalog-panel-services" aria-labelledby="catalog-tab-services" className="catalog-panel" hidden={true}>
+              <div className="catalog-head">
+                <div>
+                  <h3 className="catalog-head__title">Bảng giá dịch vụ sửa chữa</h3>
+                  <p className="catalog-head__meta"><span data-catalog-summary="services"></span></p>
+                </div>
+                <button type="button" className="btn btn--secondary btn--sm" data-open-add-service="">+ Thêm dịch vụ</button>
+              </div>
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>
+                        {"Mã dịch vụ"}
+                      </th>
+                      <th>
+                        {"Tên dịch vụ"}
+                      </th>
+                      <th>
+                        {"Áp dụng nhóm thiết bị"}
+                      </th>
+                      <th className="cell-num">
+                        {"Giá công"}
+                      </th>
+                      <th className="catalog-actions-col"><span className="visually-hidden">Thao tác</span></th>
+                    </tr>
+                  </thead>
+                  <tbody data-service-tbody="">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div role="tabpanel" id="catalog-panel-policies" aria-labelledby="catalog-tab-policies" className="catalog-panel" hidden={true}>
+              <div className="catalog-head">
+                <div>
+                  <h3 className="catalog-head__title">Chính sách bảo hành</h3>
+                  <p className="catalog-head__meta"><span data-catalog-summary="policies"></span> · Ưu tiên chính sách theo model, sau đó theo hãng.</p>
+                </div>
+                <button type="button" className="btn btn--secondary btn--sm" data-open-add-policy="">+ Thêm chính sách theo hãng</button>
+              </div>
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>
+                        {"Áp dụng cho"}
+                      </th>
+                      <th>
+                        {"Thời hạn"}
+                      </th>
+                      <th>
+                        {"Điều kiện"}
+                      </th>
+                      <th>
+                        {"Nhà phân phối"}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody data-warranty-policy-tbody="">
+                  </tbody>
+                </table>
+              </div>
             </div>
           </section>
         </div>
@@ -532,82 +541,76 @@ export default function AdminPage() {
             <div className="report-body" data-report-body="" aria-live="polite" aria-busy="true">
               <div className="stat-row" data-report-stats="">
               </div>
-              <details className="admin-help"><summary>Cách tính báo cáo</summary><ul>
-                <li>Doanh thu theo ngày thu tiền; trạng thái và hiệu suất theo ngày tiếp nhận.</li>
-                <li>Thời gian xử lý: từ tiếp nhận đến bàn giao, lọc theo ngày bàn giao.</li>
-                <li>Bảo hành theo kết quả và ngày phân loại.</li>
-                <li>Điểm cũ thiếu nguồn/ngày không tính vào điểm trung bình của khách.</li>
-              </ul></details>
-              <div className="report-grid">
-                <section className="report-panel report-panel--wide" aria-labelledby="report-revenue-title">
-                  <h3 className="report-panel__title" id="report-revenue-title">
-                    {"Doanh thu theo tháng"}
-                  </h3>
-                  <div data-revenue-chart="">
+              <div className="section-tabs" role="tablist" aria-label="Nhóm báo cáo">
+                <button type="button" role="tab" id="report-tab-overview" className="section-tabs__tab" data-report-tab="overview"
+                  aria-controls="report-panel-overview" aria-selected="true">Tổng quan</button>
+                <button type="button" role="tab" id="report-tab-technicians" className="section-tabs__tab" data-report-tab="technicians"
+                  aria-controls="report-panel-technicians" aria-selected="false" tabIndex={-1}>Kỹ thuật viên</button>
+                <button type="button" role="tab" id="report-tab-reviews" className="section-tabs__tab" data-report-tab="reviews"
+                  aria-controls="report-panel-reviews" aria-selected="false" tabIndex={-1}>Đánh giá</button>
+              </div>
+
+              <div role="tabpanel" id="report-panel-overview" aria-labelledby="report-tab-overview" className="report-tabpanel" data-report-panel="overview">
+                <div className="report-grid report-grid--overview">
+                  <section className="report-panel report-panel--wide" aria-labelledby="report-revenue-title">
+                    <h3 className="report-panel__title" id="report-revenue-title">Doanh thu theo tháng</h3>
+                    <div data-revenue-chart=""></div>
+                  </section>
+                  <section className="report-panel" aria-labelledby="report-status-title">
+                    <h3 className="report-panel__title" id="report-status-title">Số phiếu theo trạng thái</h3>
+                    <div data-status-chart=""></div>
+                  </section>
+                  <div className="report-stack">
+                    <section className="report-panel" aria-labelledby="report-turnaround-title">
+                      <h3 className="report-panel__title" id="report-turnaround-title">Thời gian xử lý trung bình</h3>
+                      <div data-turnaround-chart=""></div>
+                    </section>
+                    <section className="report-panel" aria-labelledby="report-warranty-title">
+                      <h3 className="report-panel__title" id="report-warranty-title">Tỷ lệ bảo hành</h3>
+                      <div data-warranty-ratio-chart=""></div>
+                    </section>
                   </div>
-                </section>
-                <section className="report-panel" aria-labelledby="report-status-title">
-                  <h3 className="report-panel__title" id="report-status-title">
-                    {"Số phiếu theo trạng thái"}
-                  </h3>
-                  <div data-status-chart="">
+                </div>
+                <details className="admin-help"><summary>Cách tính báo cáo</summary><ul>
+                  <li>Doanh thu theo ngày thu tiền; trạng thái và hiệu suất theo ngày tiếp nhận.</li>
+                  <li>Thời gian xử lý: từ tiếp nhận đến bàn giao, lọc theo ngày bàn giao.</li>
+                  <li>Bảo hành theo kết quả và ngày phân loại.</li>
+                  <li>Trễ hẹn SLA: sửa xong sau hạn SLA, hoặc chưa xong mà đã quá hạn SLA.</li>
+                  <li>Điểm cũ thiếu nguồn/ngày không tính vào điểm trung bình của khách.</li>
+                </ul></details>
+              </div>
+
+              <div role="tabpanel" id="report-panel-technicians" aria-labelledby="report-tab-technicians" className="report-tabpanel" data-report-panel="technicians" hidden={true}>
+                <section aria-labelledby="report-performance-title">
+                  <div className="report-section-head">
+                    <h3 className="report-section-head__title" id="report-performance-title">Hiệu suất từng kỹ thuật viên</h3>
+                    <p className="report-section-head__meta">Tính trên phiếu tiếp nhận trong khoảng thời gian đã chọn. Trễ hẹn SLA gồm phiếu sửa xong sau hạn và phiếu đang làm đã quá hạn.</p>
                   </div>
-                </section>
-                <section className="report-panel" aria-labelledby="report-turnaround-title">
-                  <h3 className="report-panel__title" id="report-turnaround-title">
-                    {"Thời gian xử lý trung bình"}
-                  </h3>
-                  <div data-turnaround-chart="">
-                  </div>
-                </section>
-                <section className="report-panel" aria-labelledby="report-technician-title">
-                  <h3 className="report-panel__title" id="report-technician-title">
-                    {"Phiếu hoàn tất theo kỹ thuật viên"}
-                  </h3>
-                  <div data-technician-chart="">
-                  </div>
-                </section>
-                <section className="report-panel" aria-labelledby="report-warranty-title">
-                  <h3 className="report-panel__title" id="report-warranty-title">
-                    {"Tỷ lệ bảo hành"}
-                  </h3>
-                  <div data-warranty-ratio-chart="">
+                  <div className="table-scroll">
+                    <table className="data-table report-tech-table">
+                      <thead>
+                        <tr>
+                          <th>Kỹ thuật viên</th>
+                          <th className="cell-num">Được giao</th>
+                          <th className="cell-num">Hoàn tất</th>
+                          <th className="cell-num">Trễ hẹn SLA</th>
+                          <th className="cell-num">Thời gian sửa TB</th>
+                          <th className="cell-num">Kiểm tra chất lượng đạt lần đầu</th>
+                        </tr>
+                      </thead>
+                      <tbody data-techperf-tbody="">
+                      </tbody>
+                    </table>
                   </div>
                 </section>
               </div>
-              <section aria-labelledby="report-performance-title">
-                <h3 className="report-panel__title" id="report-performance-title">
-                  {"Hiệu suất từng kỹ thuật viên"}
-                </h3>
-                <div className="table-scroll">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>
-                          {"Kỹ thuật viên"}
-                        </th>
-                        <th>
-                          {"Được giao"}
-                        </th>
-                        <th>
-                          {"Hoàn tất"}
-                        </th>
-                        <th>
-                          {"Thời gian sửa TB"}
-                        </th>
-                        <th>
-                          {"Tỷ lệ Kiểm tra chất lượng đạt lần đầu"}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody data-techperf-tbody="">
-                    </tbody>
-                  </table>
+
+              <div role="tabpanel" id="report-panel-reviews" aria-labelledby="report-tab-reviews" className="report-tabpanel" data-report-panel="reviews" hidden={true}>
+              <section className="customer-review-report" aria-labelledby="report-reviews-title">
+                <div className="report-section-head">
+                  <h3 className="report-section-head__title" id="report-reviews-title">Đánh giá khách hàng</h3>
+                  <p className="report-section-head__meta">Bao gồm điểm trên phiếu bàn giao và đánh giá gửi qua cổng khách hàng. Điểm chưa lưu ngày vẫn được tính trung bình và có thể duyệt lên trang chủ; bộ lọc thời gian chỉ áp dụng cho điểm có ngày đánh giá.</p>
                 </div>
-              </section>
-              <section className="report-panel customer-review-report" aria-label="Đánh giá khách hàng">
-                <h3 className="report-panel__title">Đánh giá khách hàng</h3>
-                <p className="report-panel__meta">Bao gồm điểm trên phiếu bàn giao và đánh giá gửi qua cổng khách hàng. Điểm chưa lưu ngày vẫn được tính trung bình và có thể duyệt lên trang chủ; bộ lọc thời gian chỉ áp dụng cho điểm có ngày đánh giá.</p>
                 <div className="toolbar">
                   <label className="toolbar__field">Thời gian đánh giá
                     <select className="select-field" aria-label="Thời gian đánh giá" data-review-period="" defaultValue="all">
@@ -645,6 +648,7 @@ export default function AdminPage() {
                   <button type="button" className="btn btn--secondary btn--sm" data-review-next="" disabled>Trang sau</button>
                 </div>
               </section>
+              </div>
             </div>
           </section>
         </div>

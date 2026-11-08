@@ -64,11 +64,11 @@ export default function initialize() {
   }
 
   async function loadPerformance() {
-    ui.skeletonRows(el.performance, 6);
+    ui.skeletonRows(el.performance, 7);
     try {
       const rows = await api.reports.get("technician-performance");
       if (!rows.length) {
-        ui.tableState(el.performance, 6, "empty");
+        ui.tableState(el.performance, 7, "empty");
         return;
       }
       el.performance.innerHTML = html`${rows.map((row) => html`
@@ -77,11 +77,12 @@ export default function initialize() {
           <td class="cell-muted">${row.specialty || "—"}</td>
           <td>${row.assigned}</td>
           <td>${row.completed}</td>
+          <td>${(row.lateCompleted || 0) + (row.lateOpen || 0) ? html`<strong class="late-count">${row.lateCompleted + row.lateOpen}</strong><div class="cell-muted cell-muted--sm">${row.lateCompleted} đã xong trễ · ${row.lateOpen} đang trễ</div>` : html`<span class="cell-muted">0</span>`}</td>
           <td>${row.avgRepairHours == null ? "—" : `${percent(row.avgRepairHours)}h`}</td>
           <td>${row.firstPassQcRate == null ? "—" : `${percent(row.firstPassQcRate)}%`}</td>
         </tr>`)}`;
     } catch (error) {
-      ui.tableState(el.performance, 6, "error", { desc: error.detail }, loadPerformance);
+      ui.tableState(el.performance, 7, "error", { desc: error.detail }, loadPerformance);
     }
   }
 

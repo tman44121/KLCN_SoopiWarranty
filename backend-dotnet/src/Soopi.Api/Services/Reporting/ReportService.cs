@@ -12,7 +12,11 @@ public sealed record MonthlyRevenue(string Month, long Payments, decimal Total);
 
 public sealed record TechnicianPerformance(
     string EmployeeId, string FullName, string? Specialty, long Assigned, long Completed, long Cancelled, decimal? AvgRating, decimal? FirstPassQcRate,
-    decimal? AvgRepairHours);
+    decimal? AvgRepairHours, long LateCompleted = 0, long LateOpen = 0)
+{
+    /// <summary>Phiếu trễ hẹn: đã xong sau hạn SLA cộng phiếu đang làm đã quá hạn SLA.</summary>
+    public long Late => LateCompleted + LateOpen;
+}
 
 public sealed record CategoryTurnaround(string CategoryCode, long Delivered, decimal? AvgHours);
 
@@ -106,13 +110,21 @@ public sealed class ReportService(Sql sql, CurrentActor actors, TimeProvider clo
             row => new MonthlyRevenue(row.Str("Thang")!, row.Long("SoPhieu"), SqlMoney.Read(row.DecOrNull("TongTien") ?? 0)), [.. args]);
     }
 
-    /// <summary>R5 — chỉ nhân viên có vai trò Kỹ thuật viên; điểm hài lòng giảm dần (chưa có điểm xếp cuối).</summary>
+    /// <summary>
+    /// R5 — chỉ nhân viên có vai trò Kỹ thuật viên; điểm hài lòng giảm dần (chưa có điểm xếp cuối). Trễ hẹn theo hạn SLA của phiếu:
+    /// lateCompleted = lệnh sửa xong (đạt kiểm tra chất lượng) sau HanSLA; lateOpen = lệnh sửa chưa xong của phiếu còn xử lý đã quá HanSLA.
+    /// </summary>
     public async Task<List<TechnicianPerformance>> TechnicianPerformanceAsync(DateOnly? from, DateOnly? to, string? station)
     {
         actors.Require(Permission.REPORT_OPERATIONS);
-        var (where, args) = Filter("ptn.NgayTiepNhan", RangeOf(from, to, station));
+        var (where, filterArgs) = Filter("ptn.NgayTiepNhan", RangeOf(from, to, station));
+        var args = new List<object?> { clock.GetUtcNow() };
+        args.AddRange(filterArgs);
         var rows = await sql.QueryAsync(
             "SELECT sc.MaKTV, nv.HoTen, nv.ChuyenMon, COUNT(*) AS assigned, SUM(CASE WHEN sc.TrangThaiSuaChua = 'DONE' THEN 1 ELSE 0 END) AS completed, "
+            + "SUM(CASE WHEN sc.TrangThaiSuaChua = 'DONE' AND pass.PassAt > ptn.HanSLA THEN 1 ELSE 0 END) AS lateCompleted, "
+            + "SUM(CASE WHEN sc.TrangThaiSuaChua IN ('PENDING', 'IN_PROGRESS') AND ptn.ConMo = 1 "
+            + "AND ptn.TrangThaiXuLy NOT IN ('COMPLETED', 'AWAITING_RETURN') AND ptn.HanSLA < ? THEN 1 ELSE 0 END) AS lateOpen, "
             + "SUM(CASE WHEN sc.TrangThaiSuaChua = 'CANCELLED' THEN 1 ELSE 0 END) AS cancelled, "
             + "AVG(CASE WHEN sc.TrangThaiSuaChua = 'DONE' THEN 1.0 * bg.DanhGiaHaiLong END) AS avgRating, "
             + "SUM(CASE WHEN sc.TrangThaiSuaChua = 'DONE' AND fail.MaPhieuSC IS NULL THEN 1 ELSE 0 END) AS firstPass, "
@@ -126,7 +138,7 @@ public sealed class ReportService(Sql sql, CurrentActor actors, TimeProvider clo
             + $"AND tv.MaVaiTro = 'TECHNICIAN'){where} GROUP BY sc.MaKTV, nv.HoTen, nv.ChuyenMon",
             row => new TechnicianPerformance(row.Str("MaKTV")!, row.Str("HoTen")!, row.Str("ChuyenMon"), row.Long("assigned"), row.Long("completed"),
                 row.Long("cancelled"), Scaled(row.DecOrNull("avgRating"), 2), Percent(row.Long("firstPass"), row.Long("completed")),
-                Scaled(row.DecOrNull("avgRepairHours"), 2)),
+                Scaled(row.DecOrNull("avgRepairHours"), 2), row.Long("lateCompleted"), row.Long("lateOpen")),
             [.. args]);
         return rows.OrderBy(row => row.AvgRating is null).ThenByDescending(row => row.AvgRating).ThenByDescending(row => row.Completed)
             .ThenBy(row => row.EmployeeId, StringComparer.Ordinal).ToList();

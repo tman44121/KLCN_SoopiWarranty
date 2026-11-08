@@ -22,6 +22,7 @@ cd frontend-react
 npm run test:ui:workflow
 npm run test:ui:service-visit
 npm run test:ui:time-settings
+npm run test:ui:catalog-price
 ```
 
 Ca kiểm: nhập giờ từng ký tự và giờ sai, Chủ nhật/giờ đóng cửa; tổng thực trả ở màn 320px và desktop; báo giá mới xuất hiện khi quay lại điều phối; IMEI linh hoạt và dữ liệu ngoài giới hạn. Không ghi DB thật.
@@ -37,6 +38,10 @@ và quyền xem/xác nhận phiếu vẫn theo người gửi từng lần. Flut
 `HH:mm`, gửi đúng body khi lưu; lễ tân hiện số giờ SLA đã cấu hình và chọn sẵn mức mặc định; cổng khách chặn ngày nghỉ theo
 cấu hình. API giả lập toàn bộ. `TimeSettingsTests` (backend) kiểm hạn SLA, giờ làm việc, hạn báo giá theo cấu hình và ràng buộc
 dữ liệu. Database local cần chạy [14_time_settings.sql](../../database/14_time_settings.sql) để lưu được cấu hình.
+
+`test:ui:catalog-price` kiểm tab Danh mục và sửa giá trên bảng ở 1440px/390px: Esc hủy, chặn số âm, giữ ô nhập khi máy chủ báo lỗi,
+gửi đúng trường (`servicePrice` cho linh kiện, `price` cho dịch vụ). `IssueServicePriceTests` (SQL Server) kiểm phiếu xuất mới lưu giá
+lúc lập và giữ giá đó sau khi sửa danh mục, dòng cũ chưa lưu giá dùng giá hiện tại.
 
 ## Kiểm thử ghi và đồng thời trên SQL Server, không reset dữ liệu
 

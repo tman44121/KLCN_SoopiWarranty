@@ -113,6 +113,14 @@ phút; báo giá 1–720 giờ; giờ `HH:mm` 24 giờ, mở cửa trước đó
 `POST /tickets` không gửi `slaLevel` thì dùng `defaultSlaLevel`; `HanSLA` = giờ nhận + số giờ của mức tại thời điểm lập phiếu.
 `APPOINTMENT_OUTSIDE_BUSINESS_HOURS` ghi giờ làm việc hiện hành trong `detail`.
 
+`GET /reports/technician-performance` bổ sung `lateCompleted` (lệnh sửa xong, đạt kiểm tra chất lượng sau `HanSLA`), `lateOpen`
+(lệnh sửa chưa xong của phiếu còn xử lý đã quá `HanSLA` tại lúc gọi) và `late` = tổng hai số. Lọc kỳ theo ngày tiếp nhận như
+các cột khác; file Excel thêm hai cột tương ứng ở sheet “Hiệu suất kỹ thuật viên”.
+
+Sửa giá danh mục dùng `PUT /catalog/parts/{sku}` với `{ "servicePrice": số }` hoặc `PUT /catalog/service-prices/{code}` với
+`{ "price": số }` (cập nhật một phần, cần `CATALOG_MANAGE`, số ≥ 0). `freeWarrantyAmount` của `GET /tickets/{code}/billing` và cổng
+khách tính theo giá tính khách lưu lúc lập phiếu xuất, không theo giá danh mục hiện tại.
+
 ## JSON và phân trang
 
 - Tên trường camelCase, tên field/enum phân biệt hoa/thường. Dùng tên enum chuẩn, ví dụ `NORMAL`, `REGISTER`.

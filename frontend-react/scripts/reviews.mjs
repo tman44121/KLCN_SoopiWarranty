@@ -80,6 +80,7 @@ try {
   await login(admin.page);
   await admin.page.waitForURL(base + '/admin');
   await admin.page.locator('[data-page-tab="reports"]').click();
+  await admin.page.getByRole('tab', { name: 'Đánh giá', exact: true }).click();
   const table = admin.page.getByRole('region', { name: 'Đánh giá khách hàng', exact: true });
   await table.getByRole('cell', { name: /Nguyễn An/ }).waitFor({ timeout: 10000 }).catch(async error => {
     console.log({ queries, errors: admin.errors, table: await table.textContent() });

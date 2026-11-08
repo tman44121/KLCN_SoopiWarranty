@@ -380,8 +380,14 @@ public sealed class InventoryDocumentStore(Sql sql, TimeProvider clock)
         foreach (var line in issue.Lines)
         {
             if (!stored.Contains(line.Sku))
-                await sql.ExecuteAsync("INSERT INTO ChiTietXuatKho (MaPhieuXuat, MaLK, SoLuongXuat, DonGiaXuat) VALUES (?, ?, ?, ?)",
-                    issue.Id, line.Sku, line.Quantity, line.UnitCost);
+            {
+                if (await HasIssueServicePriceAsync())
+                    await sql.ExecuteAsync("INSERT INTO ChiTietXuatKho (MaPhieuXuat, MaLK, SoLuongXuat, DonGiaXuat, DonGiaDichVuXuat) VALUES (?, ?, ?, ?, ?)",
+                        issue.Id, line.Sku, line.Quantity, line.UnitCost, line.UnitServicePrice);
+                else
+                    await sql.ExecuteAsync("INSERT INTO ChiTietXuatKho (MaPhieuXuat, MaLK, SoLuongXuat, DonGiaXuat) VALUES (?, ?, ?, ?)",
+                        issue.Id, line.Sku, line.Quantity, line.UnitCost);
+            }
             await sql.ExecuteAsync(
                 "UPDATE ChiTietXuatKho SET MaKe = ?, NgayHetHanBaoHanhLK = COALESCE(?, NgayHetHanBaoHanhLK) WHERE MaPhieuXuat = ? AND MaLK = ?",
                 line.BinCode, line.PartWarrantyExpiresOn, issue.Id, line.Sku);
@@ -425,10 +431,27 @@ public sealed class InventoryDocumentStore(Sql sql, TimeProvider clock)
         var lines = await sql.QueryAsync(
             $"SELECT * FROM ChiTietXuatKho WHERE MaPhieuXuat IN ({string.Join(", ", codes.Select(_ => "?"))}) ORDER BY MaChiTietXuat",
             row => (Issue: row.Str("MaPhieuXuat")!, Line: new IssueLine(row.Str("MaLK")!, row.Int("SoLuongXuat"), SqlMoney.Read(row.Dec("DonGiaXuat")),
-                row.Str("MaKe"), row.Date("NgayHetHanBaoHanhLK"))),
+                row.Str("MaKe"), row.Date("NgayHetHanBaoHanhLK"), SqlMoney.Read(OptionalDecimal(row, "DonGiaDichVuXuat")))),
             codes.Cast<object?>().ToArray());
         issues.ForEach(issue => issue.Lines = lines.Where(item => item.Issue == issue.Id).Select(item => item.Line).ToList());
         return issues;
+    }
+
+    /// <summary>
+    /// Cột DonGiaDichVuXuat có từ 15_issue_service_price.sql. Database chưa nâng cấp vẫn xuất kho được (không lưu giá);
+    /// chỉ ghi nhớ khi đã có cột để lần kiểm tra sau khỏi tốn một lượt tới DB.
+    /// </summary>
+    private static bool issueServicePriceColumn;
+
+    private async Task<bool> HasIssueServicePriceAsync() =>
+        issueServicePriceColumn = issueServicePriceColumn
+            || await sql.ScalarAsync("SELECT COL_LENGTH('dbo.ChiTietXuatKho', 'DonGiaDichVuXuat')") is not null;
+
+    private static decimal? OptionalDecimal(System.Data.Common.DbDataReader row, string column)
+    {
+        for (var index = 0; index < row.FieldCount; index++)
+            if (row.GetName(index) == column) return row.IsDBNull(index) ? null : Convert.ToDecimal(row.GetValue(index));
+        return null;
     }
 
     // ------------------------------------------------------------------ điều chuyển

@@ -316,6 +316,15 @@ giờ cố định, form tiếp nhận ghi số giờ hiện hành. Đổi SLA c
 (kể cả báo giá đang chờ) và giờ làm việc áp dụng ngay. Mỗi lần lưu ghi nhật ký `TIME_SETTINGS_UPDATED`.
 Chu kỳ quét job SLA (`Sla:Alerts:Interval`) vẫn ở appsettings vì cần khởi động lại để đổi.
 
+## D-064 — Sửa giá danh mục không làm đổi phiếu cũ (2026-11-08)
+
+Quản trị viên sửa giá tính khách của linh kiện và giá công dịch vụ ngay trên bảng ở `/admin#catalogs`. Báo giá, hóa đơn,
+phiếu thu và báo cáo đã dùng số tiền lưu lúc lập nên không đổi theo giá mới. Riêng giá trị “Miễn phí trong bảo hành” trước đây
+đọc giá hiện tại của linh kiện; nay lấy `ChiTietXuatKho.DonGiaDichVuXuat`, giá tính khách lưu khi lập phiếu xuất
+(`15_issue_service_price.sql`). Dòng xuất có trước script được điền giá hiện tại lúc chạy vì không còn dữ liệu giá cũ hơn;
+dòng còn trống hoặc database chưa nâng cấp vẫn dùng giá hiện tại như trước, và xuất kho không bị chặn khi thiếu cột.
+Nhật ký `CATALOG_UPDATED` ghi giá trước/sau (không ghi giá vốn).
+
 ## Giai đoạn 3 — cách triển khai theo yêu cầu Ponytail
 
 - React Router + 10 trang TSX giữ markup và CSS cũ; module JavaScript giữ xử lý bảng/form động.

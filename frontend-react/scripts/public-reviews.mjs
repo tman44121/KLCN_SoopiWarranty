@@ -113,6 +113,7 @@ try {
   });
   await login(admin.page); await admin.page.waitForURL(base + '/admin');
   await admin.page.locator('[data-page-tab="reports"]').click();
+  await admin.page.getByRole('tab', { name: 'Đánh giá', exact: true }).click();
   const button = admin.page.locator('[data-review-publish="TN-REVIEW"]');
   await button.waitFor();
   assert(await admin.page.locator('[data-review-publish="TN-LEGACY"]').isEnabled());

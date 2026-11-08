@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type FormEvent } from 'react';
+import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
 import { api, errorText, useBusy } from './customer';
 import { DEFAULT_TIME_SETTINGS, setTimeSettings } from './time-settings.js';
 import { normalizeTime } from './business-hours.js';
@@ -62,67 +62,78 @@ export function TimeSettings() {
     });
   };
 
+  const section = (key: string, title: string, description: string, body: ReactNode) =>
+    <section className="time-settings__section" aria-labelledby={id + key}>
+      <div className="time-settings__intro">
+        <h3 className="time-settings__heading" id={id + key}>{title}</h3>
+        <p className="time-settings__desc">{description}</p>
+      </div>
+      <div className="time-settings__fields">{body}</div>
+    </section>;
+
   return (
     <section className="card time-settings" aria-labelledby="time-settings-title">
       <div className="card__header"><div>
         <h2 className="card__title" id="time-settings-title">Cấu hình thời gian</h2>
       </div></div>
-      <form className="card__body stack" onSubmit={save}>
-        <fieldset className="time-settings__group stack" disabled={busy}>
-          <legend>SLA cam kết</legend>
-          <div className="time-settings__grid">
-            {number('standardSlaHours', 'Tiêu chuẩn', 'giờ', 720)}
-            {number('prioritySlaHours', 'Ưu tiên', 'giờ', 720)}
-            {number('expressSlaHours', 'Nhanh', 'giờ', 720)}
-            <div className="form-field">
-              <label htmlFor={id + 'level'}>Mức mặc định khi lập phiếu</label>
-              <select id={id + 'level'} className="select-field" value={form.defaultSlaLevel} onChange={e => set('defaultSlaLevel', e.target.value)}>
-                {LEVELS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
+      <form className="card__body" onSubmit={save}>
+        <fieldset className="time-settings__all" disabled={busy}>
+          {section('sla', 'SLA cam kết', 'Thời hạn xử lý phiếu theo từng mức. Chỉ áp dụng cho phiếu tạo sau khi lưu; phiếu cũ giữ hạn SLA đã tính.',
+            <div className="time-settings__grid">
+              {number('standardSlaHours', 'Tiêu chuẩn', 'giờ', 720)}
+              {number('prioritySlaHours', 'Ưu tiên', 'giờ', 720)}
+              {number('expressSlaHours', 'Nhanh', 'giờ', 720)}
+              <div className="form-field">
+                <label htmlFor={id + 'level'}>Mức mặc định khi lập phiếu</label>
+                <select id={id + 'level'} className="select-field" value={form.defaultSlaLevel} onChange={e => set('defaultSlaLevel', e.target.value)}>
+                  {LEVELS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </div>
+            </div>)}
+
+          {section('alerts', 'Cảnh báo và báo giá', 'Lúc phiếu được báo “sắp trễ” và thời gian khách có để xác nhận báo giá.',
+            <div className="time-settings__grid">
+              {number('atRiskMinutes', 'Báo “sắp trễ” trước hạn SLA', 'phút', 1440, 'Dùng cho cảnh báo, bộ lọc và báo cáo SLA.')}
+              {number('quotationValidityHours', 'Hạn khách xác nhận báo giá', 'giờ', 720,
+                'Tính từ lúc duyệt khi báo giá không ghi ngày hiệu lực; áp dụng cả báo giá đang chờ.')}
+            </div>)}
+
+          {section('hours', 'Giờ làm việc', 'Áp dụng cho giờ hẹn của khách và giờ nhận máy.', <>
+            <div className="time-settings__grid">
+              <div className="form-field">
+                <label htmlFor={id + 'open'}>Giờ mở cửa (HH:mm)</label>
+                <input id={id + 'open'} className="text-field" type="text" inputMode="numeric" maxLength={5} placeholder="08:00" required
+                  value={form.openAt} onChange={e => set('openAt', normalizeTime(e.target.value))} />
+              </div>
+              <div className="form-field">
+                <label htmlFor={id + 'close'}>Giờ đóng cửa (HH:mm)</label>
+                <input id={id + 'close'} className="text-field" type="text" inputMode="numeric" maxLength={5} placeholder="17:00" required
+                  value={form.closeAt} onChange={e => set('closeAt', normalizeTime(e.target.value))} />
+              </div>
             </div>
-          </div>
-          <p className="form-field__help">Chỉ áp dụng cho phiếu tạo sau khi lưu; phiếu cũ giữ hạn SLA đã tính.</p>
+            <div className="form-field">
+              <span className="time-settings__label" id={id + 'days'}>Ngày làm việc</span>
+              <div className="time-settings__days" role="group" aria-labelledby={id + 'days'}>
+                {DAYS.map(([day, label]) => <label key={day} className="time-settings__day">
+                  <input type="checkbox" checked={form.workingDays.includes(day)} onChange={e => toggleDay(day, e.target.checked)} />
+                  {label}
+                </label>)}
+              </div>
+            </div>
+          </>)}
         </fieldset>
 
-        <fieldset className="time-settings__group stack" disabled={busy}>
-          <legend>Cảnh báo và báo giá</legend>
-          <div className="time-settings__grid">
-            {number('atRiskMinutes', 'Báo “sắp trễ” trước hạn SLA', 'phút', 1440, 'Dùng cho cảnh báo, bộ lọc và báo cáo SLA.')}
-            {number('quotationValidityHours', 'Hạn khách xác nhận báo giá', 'giờ', 720,
-              'Tính từ lúc duyệt khi báo giá không ghi ngày hiệu lực; áp dụng cả báo giá đang chờ.')}
+        <div className="time-settings__footer">
+          <div className="time-settings__actions">
+            <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu cấu hình'}</button>
+            <button type="button" className="btn btn--secondary" disabled={busy}
+              onClick={() => { setForm({ ...DEFAULT_TIME_SETTINGS, workingDays: [...DEFAULT_TIME_SETTINGS.workingDays] }); setSuccess(''); setError(''); }}>
+              Điền giá trị mặc định
+            </button>
           </div>
-        </fieldset>
-
-        <fieldset className="time-settings__group stack" disabled={busy}>
-          <legend>Giờ làm việc (giờ hẹn, giờ nhận máy)</legend>
-          <div className="time-settings__grid">
-            <div className="form-field">
-              <label htmlFor={id + 'open'}>Giờ mở cửa (HH:mm)</label>
-              <input id={id + 'open'} className="text-field" type="text" inputMode="numeric" maxLength={5} placeholder="08:00" required
-                value={form.openAt} onChange={e => set('openAt', normalizeTime(e.target.value))} />
-            </div>
-            <div className="form-field">
-              <label htmlFor={id + 'close'}>Giờ đóng cửa (HH:mm)</label>
-              <input id={id + 'close'} className="text-field" type="text" inputMode="numeric" maxLength={5} placeholder="17:00" required
-                value={form.closeAt} onChange={e => set('closeAt', normalizeTime(e.target.value))} />
-            </div>
-          </div>
-          <div className="time-settings__days" role="group" aria-label="Ngày làm việc">
-            {DAYS.map(([day, label]) => <label key={day} className="checkbox-row">
-              <input type="checkbox" checked={form.workingDays.includes(day)} onChange={e => toggleDay(day, e.target.checked)} /> {label}
-            </label>)}
-          </div>
-        </fieldset>
-
-        <div className="time-settings__actions">
-          <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? 'Đang lưu…' : 'Lưu cấu hình'}</button>
-          <button type="button" className="btn btn--secondary" disabled={busy}
-            onClick={() => { setForm({ ...DEFAULT_TIME_SETTINGS, workingDays: [...DEFAULT_TIME_SETTINGS.workingDays] }); setSuccess(''); setError(''); }}>
-            Điền giá trị mặc định
-          </button>
+          {error && <p className="form-field__error" role="alert">{error}</p>}
+          {success && <p className="time-settings__saved" role="status">{success}</p>}
         </div>
-        {error && <p className="form-field__error" role="alert">{error}</p>}
-        {success && <p role="status">{success}</p>}
       </form>
     </section>
   );

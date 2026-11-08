@@ -35,7 +35,7 @@ try {
         'revenue-monthly': empty ? [] : [{ month: '2026-10', payments: 2, total: 2916000 }],
         'tickets-by-status': empty ? [] : [{ status: 'DELIVERED', count: 3 }],
         turnaround: { delivered: empty ? 0 : 3, avgHours: empty ? null : 12.5, minHours: 2, maxHours: 20, byCategory: empty ? [] : [{ categoryCode: 'PHONE', delivered: 3, avgHours: 12.5 }] },
-        'technician-performance': empty ? [] : [{ employeeId: 'NV-001', fullName: 'Kỹ thuật viên thử', assigned: 4, completed: 3, avgRepairHours: 8.25, firstPassQcRate: 100 }],
+        'technician-performance': empty ? [] : [{ employeeId: 'NV-001', fullName: 'Kỹ thuật viên thử', assigned: 4, completed: 3, avgRepairHours: 8.25, firstPassQcRate: 100, lateCompleted: 1, lateOpen: 2 }],
         'warranty-ratio': { freeWarranty: empty ? 0 : 1, charged: empty ? 0 : 2, freeRatePercent: empty ? null : 33.3 },
         'customer-reviews': { reviews: { items: [], page: 0, totalPages: 1, totalItems: 0 }, customerReviewCount: 0, averageRating: null, legacyCount: 0 },
       }[report];
@@ -59,6 +59,14 @@ try {
     assert.deepEqual(await readFile(await download.path()), payload); checks++;
     await s.page.locator('[data-export-report]:not([disabled])').waitFor();
     const from = s.page.locator('#admin-report-from');
+    await s.page.getByRole('tab', { name: 'Kỹ thuật viên', exact: true }).click();
+    await s.page.keyboard.press('ArrowRight');
+    assert.equal(await s.page.getByRole('tab', { name: 'Đánh giá', exact: true }).getAttribute('aria-selected'), 'true'); checks++;
+    assert.equal(await s.page.locator('[data-report-panel="technicians"]').isHidden(), true); checks++;
+    await s.page.keyboard.press('ArrowLeft');
+    assert.equal(await s.page.locator('[data-report-panel="technicians"]').isVisible(), true); checks++;
+    const techRow = s.page.locator('[data-techperf-tbody] tr').filter({ hasText: 'Kỹ thuật viên thử' });
+    assert.equal(await techRow.locator('td').nth(3).innerText(), '3\n1 đã xong trễ · 2 đang trễ'); checks++;
     const to = s.page.locator('#admin-report-to');
     assert.equal(await from.isVisible(), true); checks++;
     assert.equal(await to.isVisible(), true); checks++;
@@ -77,6 +85,7 @@ try {
       const query = reportQueries.findLast(query => query.report === report);
       assert.deepEqual([query.from, query.to], ['2026-09-05', '2026-10-17']); checks++;
     }
+    await s.page.getByRole('tab', { name: 'Đánh giá', exact: true }).click();
     await s.page.selectOption('[data-review-period]', 'report');
     await s.page.getByText('Không có đánh giá phù hợp', { exact: true }).waitFor();
     const requestsBeforeInvalid = reportQueries.length;

@@ -279,6 +279,9 @@ export default function ReportsPage() {
                       {"Hoàn tất tháng này"}
                     </th>
                     <th>
+                      {"Trễ hẹn SLA"}
+                    </th>
+                    <th>
                       {"Thời gian sửa TB"}
                     </th>
                     <th>
