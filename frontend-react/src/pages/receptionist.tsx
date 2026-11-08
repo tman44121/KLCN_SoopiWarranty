@@ -429,7 +429,7 @@ export default function ReceptionistPage() {
                   <label htmlFor="estimatedCost">
                     {"Chi phí dự kiến (đ)"}
                   </label>
-                  <input type="number" id="estimatedCost" name="estimatedCost" min="0" step="1000" placeholder="0" />
+                  <input type="text" inputMode="numeric" data-money="" id="estimatedCost" name="estimatedCost" placeholder="0" />
                 </div>
                 <div className="form-field">
                   <label htmlFor="sealCondition">

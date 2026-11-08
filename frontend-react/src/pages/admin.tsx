@@ -1081,12 +1081,12 @@ export default function AdminPage() {
           <div className="form-row">
             <div className="form-field">
               <label htmlFor="add-sku-price">
-                {"Giá tính khách (VNĐ)"}
+                {"Giá tính khách (đồng)"}
                 <span className="required-mark">
                   {"*"}
                 </span>
               </label>
-              <input type="number" id="add-sku-price" data-add-sku-price="" min="0" step="1000" />
+              <input type="text" inputMode="numeric" data-money="" id="add-sku-price" data-add-sku-price="" placeholder="0" />
               <span className="form-field__error" data-add-sku-price-error="" hidden={true}>
                 {"Vui lòng nhập đơn giá hợp lệ."}
               </span>
@@ -1213,12 +1213,12 @@ export default function AdminPage() {
           </div>
           <div className="form-field">
             <label htmlFor="add-svc-price">
-              {"Đơn giá (VNĐ)"}
+              {"Đơn giá (đồng)"}
               <span className="required-mark">
                 {"*"}
               </span>
             </label>
-            <input type="number" id="add-svc-price" data-add-svc-price="" min="0" step="1000" />
+            <input type="text" inputMode="numeric" data-money="" id="add-svc-price" data-add-svc-price="" placeholder="0" />
             <span className="form-field__error" data-add-svc-price-error="" hidden={true}>
               {"Vui lòng nhập đơn giá hợp lệ."}
             </span>

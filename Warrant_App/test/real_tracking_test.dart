@@ -592,9 +592,9 @@ void main() {
       300,
     );
     expect(find.text('Báo giá chờ khách quyết định'), findsOneWidget);
-    expect(find.text('VAT (10%): 25000 VNĐ'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Tổng báo giá: 275000 VNĐ'), 300);
-    expect(find.text('Tổng báo giá: 275000 VNĐ'), findsOneWidget);
+    expect(find.text('VAT (10%): 25.000 đ'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Tổng báo giá: 275.000 đ'), 300);
+    expect(find.text('Tổng báo giá: 275.000 đ'), findsOneWidget);
     expect(find.text('ĐỒNG Ý'), findsNothing);
     expect(find.text('TỪ CHỐI'), findsNothing);
   });

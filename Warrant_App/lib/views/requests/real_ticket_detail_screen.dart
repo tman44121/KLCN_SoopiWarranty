@@ -80,7 +80,7 @@ class _RealTicketDetailScreenState extends State<RealTicketDetailScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Mã ${quote.code} · Tổng ${_money(quote.grandTotal)}'),
+                Text('Mã ${quote.code} · Tổng ${soopiMoney(quote.grandTotal)}'),
                 const SizedBox(height: 8),
                 const Text(
                   'Quyết định sẽ được ghi nhận trên hệ thống. Trạng thái tiếp theo do máy chủ trả về.',
@@ -292,17 +292,17 @@ class _RealTicketDetailScreenState extends State<RealTicketDetailScreen> {
                         ),
                         if (line.unitPrice != null)
                           Text(
-                            'Đơn giá: ${_money(line.unitPrice!)}',
+                            'Đơn giá: ${soopiMoney(line.unitPrice!)}',
                             style: AppText.meta,
                           ),
                         if (line.laborFee != null)
                           Text(
-                            'Công: ${_money(line.laborFee!)}',
+                            'Công: ${soopiMoney(line.laborFee!)}',
                             style: AppText.meta,
                           ),
                         if (line.lineTotal != null)
                           Text(
-                            'Thành tiền: ${_money(line.lineTotal!)}',
+                            'Thành tiền: ${soopiMoney(line.lineTotal!)}',
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               color: AppColors.penguinNavy,
@@ -312,13 +312,13 @@ class _RealTicketDetailScreenState extends State<RealTicketDetailScreen> {
                     ),
                   ),
                 const SizedBox(height: 12),
-                _amountLine('Linh kiện: ${_money(quote.partsTotal)}'),
-                _amountLine('Tiền công: ${_money(quote.laborTotal)}'),
+                _amountLine('Linh kiện: ${soopiMoney(quote.partsTotal)}'),
+                _amountLine('Tiền công: ${soopiMoney(quote.laborTotal)}'),
                 _amountLine(
-                  'VAT (${quote.vatRate}%): ${_money(quote.grandTotal - quote.partsTotal - quote.laborTotal)}',
+                  'VAT (${quote.vatRate}%): ${soopiMoney(quote.grandTotal - quote.partsTotal - quote.laborTotal)}',
                 ),
                 _amountLine(
-                  'Tổng báo giá: ${_money(quote.grandTotal)}',
+                  'Tổng báo giá: ${soopiMoney(quote.grandTotal)}',
                   total: true,
                 ),
                 const SizedBox(height: 10),
@@ -461,24 +461,24 @@ class _RealTicketDetailScreenState extends State<RealTicketDetailScreen> {
               const PanelHeading(title: 'Chi phí theo hệ thống'),
               KvRow(
                 label: 'Giá trị bảo hành miễn phí',
-                value: _money(ticket.costs.inWarrantyAmount),
+                value: soopiMoney(ticket.costs.inWarrantyAmount),
               ),
               KvRow(
                 label: 'Linh kiện tính phí',
-                value: _money(ticket.costs.outOfWarrantyParts),
+                value: soopiMoney(ticket.costs.outOfWarrantyParts),
               ),
               KvRow(
                 label: 'Phí dịch vụ',
-                value: _money(ticket.costs.serviceFee),
+                value: soopiMoney(ticket.costs.serviceFee),
               ),
-              KvRow(label: 'VAT', value: _money(ticket.costs.vat)),
+              KvRow(label: 'VAT', value: soopiMoney(ticket.costs.vat)),
               KvRow(
                 label: 'Thanh toán',
                 value: _paymentStatus(ticket.costs.paymentStatus),
               ),
               KvRow(
                 label: 'Tổng đã ghi nhận',
-                value: _money(ticket.costs.total),
+                value: soopiMoney(ticket.costs.total),
                 total: true,
               ),
             ],
@@ -503,7 +503,7 @@ class _RealTicketDetailScreenState extends State<RealTicketDetailScreen> {
                       qr.imageUrl,
                       width: 240,
                       semanticLabel:
-                          'Mã VietQR chuyển khoản ${_money(qr.amount)}, nội dung ${qr.transferNote}',
+                          'Mã VietQR chuyển khoản ${soopiMoney(qr.amount)}, nội dung ${qr.transferNote}',
                       errorBuilder: (_, _, _) => const Padding(
                         padding: EdgeInsets.all(16),
                         child: Text(
@@ -518,7 +518,7 @@ class _RealTicketDetailScreenState extends State<RealTicketDetailScreen> {
                 if (qr.accountName?.isNotEmpty == true)
                   KvRow(label: 'Chủ tài khoản', value: qr.accountName!),
                 KvRow(label: 'Nội dung', value: qr.transferNote),
-                KvRow(label: 'Số tiền', value: _money(qr.amount), total: true),
+                KvRow(label: 'Số tiền', value: soopiMoney(qr.amount), total: true),
               ],
             ),
           ),
@@ -668,7 +668,6 @@ class _RealTicketDetailScreenState extends State<RealTicketDetailScreen> {
     _ => status,
   };
 
-  String _money(num value) => '${value.toString()} VNĐ';
   String _date(DateTime value) =>
       '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
   String _dateTime(DateTime value) {

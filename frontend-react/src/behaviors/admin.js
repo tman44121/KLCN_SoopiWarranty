@@ -450,8 +450,8 @@ export default function initialize() {
       if (again) again.focus();
     };
     row.classList.add("is-editing");
-    row.querySelector("[data-price-cell]").innerHTML = html`<input type="number" class="text-field price-input" min="0" step="1"
-      inputmode="numeric" required value="${Number(item[config.field] ?? 0)}" aria-label="Giá mới cho ${item.name} (đồng)">`;
+    row.querySelector("[data-price-cell]").innerHTML = html`<input type="text" class="text-field price-input" data-money
+      inputmode="numeric" required value="${fmt.moneyText(Number(item[config.field] ?? 0))}" aria-label="Giá mới cho ${item.name} (đồng)">`;
     row.querySelector("[data-price-actions]").innerHTML = html`<div class="price-actions">
       <button type="button" class="btn btn--primary btn--sm" data-price-save>Lưu</button>
       <button type="button" class="btn btn--secondary btn--sm" data-price-cancel>Hủy</button></div>`;
@@ -463,7 +463,7 @@ export default function initialize() {
     input.select();
     const submit = async () => {
       if (saving) return;
-      const value = input.valueAsNumber;
+      const value = fmt.moneyValue(input);
       input.setCustomValidity(Number.isFinite(value) && value >= 0 ? "" : "Nhập số tiền từ 0 đ trở lên.");
       if (!input.reportValidity()) return;
       const amount = Math.round(value);
@@ -862,9 +862,9 @@ export default function initialize() {
     $("[data-open-add-brand]").addEventListener("click", () => { checks($("[data-add-brand-categories]"), state.categories.map((item) => [item._id, item.name]), [], "brand-category"); open("[data-add-brand-drawer]"); });
     $("[data-add-brand-submit]").addEventListener("click", (event) => { const name = $("[data-add-brand-name]").value.trim(); const categoryCodes = checked($("[data-add-brand-categories]")); if (name && categoryCodes.length) createCatalog("brands", { code: slug(name), name, categoryCodes, active: true }, "[data-add-brand-drawer]", event.currentTarget); });
     $("[data-open-add-sku]").addEventListener("click", () => open("[data-add-sku-drawer]"));
-    $("[data-add-sku-submit]").addEventListener("click", (event) => { const code = $("[data-add-sku-code]").value.trim().toUpperCase(); const name = $("[data-add-sku-name]").value.trim(); const price = Number($("[data-add-sku-price]").value); if (code && name && Number.isFinite(price)) createCatalog("parts", { code, name, categoryCode: $("[data-add-sku-category]").value, brandName: $("[data-add-sku-brand]").value.trim(), unit: "Cái", costPrice: 0, servicePrice: price, minLevel: 0, primaryBin: $("[data-add-sku-bin]").value.trim() || "KHO-A-99-99", warrantyMonths: 0, supplierId: "NCC-001", active: true }, "[data-add-sku-drawer]", event.currentTarget); });
+    $("[data-add-sku-submit]").addEventListener("click", (event) => { const code = $("[data-add-sku-code]").value.trim().toUpperCase(); const name = $("[data-add-sku-name]").value.trim(); const price = fmt.moneyValue($("[data-add-sku-price]")) || 0; if (code && name && Number.isFinite(price)) createCatalog("parts", { code, name, categoryCode: $("[data-add-sku-category]").value, brandName: $("[data-add-sku-brand]").value.trim(), unit: "Cái", costPrice: 0, servicePrice: price, minLevel: 0, primaryBin: $("[data-add-sku-bin]").value.trim() || "KHO-A-99-99", warrantyMonths: 0, supplierId: "NCC-001", active: true }, "[data-add-sku-drawer]", event.currentTarget); });
     $("[data-open-add-service]").addEventListener("click", () => open("[data-add-service-drawer]"));
-    $("[data-add-service-submit]").addEventListener("click", (event) => { const name = $("[data-add-svc-name]").value.trim(); const price = Number($("[data-add-svc-price]").value); if (name && Number.isFinite(price)) createCatalog("service-prices", { code: `DV-${slug(name)}`, name, categoryCode: $("[data-add-svc-category]").value, price, active: true }, "[data-add-service-drawer]", event.currentTarget); });
+    $("[data-add-service-submit]").addEventListener("click", (event) => { const name = $("[data-add-svc-name]").value.trim(); const price = fmt.moneyValue($("[data-add-svc-price]")) || 0; if (name && Number.isFinite(price)) createCatalog("service-prices", { code: `DV-${slug(name)}`, name, categoryCode: $("[data-add-svc-category]").value, price, active: true }, "[data-add-service-drawer]", event.currentTarget); });
     $("[data-open-add-policy]").addEventListener("click", () => open("[data-add-policy-drawer]"));
     $("[data-add-policy-submit]").addEventListener("click", (event) => { const brandText = $("[data-add-policy-brand]").value.trim(); const brand = state.brands.find((item) => item._id === brandText.toUpperCase() || item.name.toLowerCase() === brandText.toLowerCase()); const months = Number($("[data-add-policy-months]").value); if (brand && months > 0) createCatalog("warranty-policies", { scope: "BRAND", brandId: brand._id, name: `Bảo hành ${brand.name} ${months} tháng`, warrantyMonths: months, conditions: $("[data-add-policy-note]").value.trim(), rejectionCases: "", distributor: brand.name, active: true }, "[data-add-policy-drawer]", event.currentTarget); else window.showToast("Vui lòng nhập đúng hãng đã có trong danh mục và thời hạn hợp lệ.", "error"); });
   }

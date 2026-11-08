@@ -347,7 +347,7 @@ export default function initialize() {
           ${state.parts.map((p) => html`<option value="${p.sku}" ${p.sku === item.sku ? html`selected` : ""}>${p.sku} — ${p.name}</option>`)}
         </select>
         <input type="number" min="1" placeholder="SL" value="${item.quantity}" data-item="quantity" aria-label="Số lượng" />
-        <input type="number" min="0" step="1000" placeholder="Đơn giá nhập" value="${item.unitCost}" data-item="unitCost" aria-label="Đơn giá nhập" />
+        <input type="text" inputmode="numeric" data-money placeholder="Đơn giá nhập" value="${fmt.moneyText(item.unitCost)}" data-item="unitCost" aria-label="Đơn giá nhập (đồng)" />
         <input type="text" placeholder="Serial/Batch" value="${item.serialBatch}" data-item="serialBatch" aria-label="Serial hoặc số batch" />
         <button type="button" class="item-row__remove" data-remove-item="${i}" aria-label="Xoá dòng">×</button>
       </div>`)}`;
@@ -355,7 +355,7 @@ export default function initialize() {
       const item = state.createItems[Number(row.getAttribute("data-create-item"))];
       row.querySelectorAll("[data-item]").forEach((input) => {
         input.addEventListener("input", () => {
-          item[input.getAttribute("data-item")] = input.value;
+          item[input.getAttribute("data-item")] = input.hasAttribute("data-money") && input.value !== "" ? fmt.moneyValue(input) : input.value;
         });
       });
     });

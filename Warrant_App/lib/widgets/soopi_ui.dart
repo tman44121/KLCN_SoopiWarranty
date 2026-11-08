@@ -726,3 +726,13 @@ String soopiDateTime(DateTime value) {
   return '${soopiDate(local)} ${local.hour.toString().padLeft(2, '0')}:'
       '${local.minute.toString().padLeft(2, '0')}';
 }
+
+/// Tiền kiểu Việt Nam như fmt.money của web: 3337200 → "3.337.200 đ" (làm tròn tới đồng).
+String soopiMoney(num value) {
+  final rounded = value.round();
+  final digits = rounded.abs().toString().replaceAllMapped(
+    RegExp(r'\B(?=(\d{3})+(?!\d))'),
+    (_) => '.',
+  );
+  return '${rounded < 0 ? '-' : ''}$digits đ';
+}

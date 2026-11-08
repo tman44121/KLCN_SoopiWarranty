@@ -4,6 +4,32 @@
    Mọi màn hình so sánh theo mã enum, không so chuỗi tiếng Việt.
    ========================================================================== */
 
+/** Ô nhập tiền (input[data-money]): hiện "2.500.000"; moneyValue đọc lại số, rỗng → NaN. */
+function moneyText(value) {
+  const digits = String(value ?? "").replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+  return digits ? digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".") : "";
+}
+
+function moneyValue(input) {
+  const digits = String(input && typeof input === "object" ? input.value : input ?? "").replace(/\D/g, "");
+  return digits ? Number(digits) : NaN;
+}
+
+/** Pha capture: handler của từng ô đọc giá trị đã định dạng; giữ con trỏ sau cùng số chữ số.
+   Cùng một hàm nên gọi addEventListener lại khi đổi trang không đăng ký trùng. */
+function formatMoneyInput(event) {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement) || !input.hasAttribute("data-money")) return;
+  const caret = input.selectionStart ?? input.value.length;
+  const digitsBefore = input.value.slice(0, caret).replace(/\D/g, "").length;
+  const text = moneyText(input.value);
+  if (text === input.value) return;
+  input.value = text;
+  let position = 0;
+  for (let seen = 0; position < text.length && seen < digitsBefore; position++) if (/\d/.test(text[position])) seen++;
+  input.setSelectionRange(position, position);
+}
+
 export default function initialize() {
 
   /** Bảng 7.1: trạng thái phiếu → nhãn UI (badge) + tone mục 4. */
@@ -218,6 +244,8 @@ export default function initialize() {
     return number.toLocaleString("vi-VN") + " đ";
   }
 
+  document.addEventListener("input", formatMoneyInput, true);
+
   function pad(n) {
     return String(n).padStart(2, "0");
   }
@@ -282,5 +310,5 @@ export default function initialize() {
     ACCESSORIES,
   };
 
-  window.LML_FMT = { dateTime, date, money, countdown, badge, badgeOf };
+  window.LML_FMT = { dateTime, date, money, moneyText, moneyValue, countdown, badge, badgeOf };
 }
