@@ -44,7 +44,8 @@ public sealed class SqlFixture : IAsyncLifetime
             typeof(AuditService), typeof(NotificationService), typeof(PushDispatcher), typeof(PushDeviceStore),
             typeof(StaffDirectory), typeof(CatalogStore), typeof(CatalogService), typeof(InventoryStore), typeof(InventoryDocumentStore),
             typeof(QuotationStore), typeof(TicketStore), typeof(TicketProgressNotifier), typeof(BillingCalculator), typeof(IssuedParts),
-            typeof(WarrantyRequestStore), typeof(TicketQueryService), typeof(LowStockNotifier), typeof(StockIssueService), typeof(PaymentService) })
+            typeof(WarrantyRequestStore), typeof(TicketQueryService), typeof(LowStockNotifier), typeof(StockIssueService), typeof(PaymentService),
+            typeof(TimeSettingsService) })
             builder.Services.AddScoped(type);
         builder.Services.AddSingleton<JwtKeys>();
         builder.Services.AddSingleton<JwtService>();

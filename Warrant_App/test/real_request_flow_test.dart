@@ -734,7 +734,7 @@ void main() {
       of: brand,
       matching: find.byType(TextField, skipOffstage: false),
     );
-    await tester.enterText(modelText, 'nhập');
+    await _typeModel(tester, modelText, 'nhập');
     await tester.pumpAndSettle();
     expect(find.widgetWithText(MenuItemButton, 'Máy khác'), findsNothing);
     expect(find.widgetWithText(MenuItemButton, 'Máy nhập tay'), findsOneWidget);
@@ -761,7 +761,8 @@ void main() {
       isNull,
     );
     await tester.ensureVisible(brand);
-    await tester.enterText(modelText, 'nhập');
+    await tester.pumpAndSettle();
+    await _typeModel(tester, modelText, 'nhập');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Máy nhập tay').last);
     await tester.pumpAndSettle();
@@ -799,7 +800,7 @@ void main() {
     );
     await tester.ensureVisible(brand);
     await tester.pumpAndSettle();
-    await tester.enterText(modelText, 'nhập');
+    await _typeModel(tester, modelText, 'nhập');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Máy nhập tay').last);
     await tester.pumpAndSettle();
@@ -921,4 +922,11 @@ void main() {
       expect(find.text('Kiểm tra danh sách yêu cầu'), findsOneWidget);
     },
   );
+}
+
+/// Chạm vào ô Hãng/model để mở danh sách như người dùng thật, rồi gõ để lọc.
+Future<void> _typeModel(WidgetTester tester, Finder field, String text) async {
+  await tester.tap(field);
+  await tester.pumpAndSettle();
+  await tester.enterText(field, text);
 }
