@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -12,6 +13,8 @@ from urllib.request import Request, urlopen
 from uuid import uuid4
 
 ROOT = Path("/opt/soopi")
+# Newest releases kept on disk (current + rollback targets); v* tagged releases are always kept.
+KEEP_RELEASES = 3
 RELEASE_ID = re.compile(r"(?:[0-9a-f]{40}-[0-9]+-[0-9]+|v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)-[0-9a-f]{40}-[0-9]+-[0-9]+)")
 
 
@@ -69,6 +72,23 @@ def wait_healthy(public_url):
     return False
 
 
+def prune_releases(keep, current, previous=None):
+    """Delete old release folders and their images; current, previous and v* releases stay."""
+    releases = ROOT / "releases"
+    candidates = sorted((path for path in releases.iterdir()
+                         if path.is_dir() and not path.is_symlink() and RELEASE_ID.fullmatch(path.name)),
+                        key=lambda path: path.stat().st_mtime, reverse=True)
+    kept = {path.name for path in candidates[:keep]} | {current.name} | ({previous.name} if previous else set())
+    for path in candidates:
+        if path.name in kept or path.name.startswith("v"):
+            continue
+        shutil.rmtree(path)
+        # An image still used by a container cannot be removed; that is fine.
+        subprocess.run(["/usr/bin/docker", "image", "rm", "soopi:" + path.name],
+                       check=False, timeout=60, capture_output=True)
+        print("Removed old release: " + path.name)
+
+
 def activate(release_id, public_url):
     if not RELEASE_ID.fullmatch(release_id):
         raise ValueError("invalid release ID")
@@ -98,6 +118,10 @@ def activate(release_id, public_url):
             raise RuntimeError("deployment failed; previous release also failed its health checks") from error
         raise RuntimeError("deployment failed; previous release restored") from error
     print("Release is healthy: " + release_id)
+    try:
+        prune_releases(KEEP_RELEASES, release, previous)
+    except (OSError, subprocess.SubprocessError) as error:
+        print("Warning: could not prune old releases: " + str(error))
 
 
 if __name__ == "__main__":

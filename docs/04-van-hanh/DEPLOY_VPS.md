@@ -209,7 +209,7 @@ Kiểm tra từ phiên quản trị:
 ```bash
 docker ps
 docker stats --no-stream
-curl -fsS http://127.0.0.1:5080/actuator/health
+curl -fsS -H 'Host: soopiwarranty.id.vn' http://127.0.0.1:5080/actuator/health  # thiếu Host thì AllowedHosts trả 400
 df -h /
 docker system df
 ```
@@ -217,11 +217,16 @@ docker system df
 Không chia sẻ `docker inspect` hoặc `docker compose config` đầy đủ vì có thể in secret.
 Rollback từ phiên `soopi-deploy`:
 `sudo /usr/bin/python3 -I /usr/local/lib/soopi/activate.py <release-cũ> https://soopiwarranty.id.vn`.
-Giữ archive/image đang chạy và bản trước; chưa tự xóa image/release/backup. SSD 30 GB cần theo dõi
-DB/log/upload và image cũ; không chạy blanket prune có thể xóa dữ liệu hoặc bản cần rollback.
+Sau khi bản mới healthy, `activate.py` tự xóa thư mục release và image `soopi:<release>` cũ: giữ 3 bản mới nhất
+(`KEEP_RELEASES`), bản đang chạy, bản trước đó và mọi bản tag `v*`. Lỗi khi dọn chỉ in cảnh báo, không làm deploy thất bại.
+Không tự xóa volume, file backup DB hay log; SSD 30 GB vẫn cần theo dõi DB/log/upload. Không chạy blanket prune
+(`docker system prune`, `docker volume rm`) vì có thể xóa dữ liệu. Muốn rollback xa hơn 3 bản thì tải lại artifact từ
+GitHub Actions (giữ 14 ngày) vào `/opt/soopi/releases/<release>/`.
+Bản `activate.py` trên VPS cài tay (`/usr/local/lib/soopi/activate.py`, mục 1); CI không tự cập nhật, nên sau khi sửa
+file này phải cài lại bằng `install -o root -g root -m 0644`.
 
 Test local: `python -m unittest discover -s deploy -p 'test_*.py'`.
-10/10 test deploy đạt; workflow qua actionlint. Compose đã được Docker trên VPS kiểm bằng
+16/16 test deploy đạt (gồm dọn release cũ); workflow qua actionlint. Compose đã được Docker trên VPS kiểm bằng
 `config --quiet` với giá trị giả, không tạo container. Chưa build/run image thật trong phiên này;
 test rollback giả lập Docker/health, chưa thay thế nghiệm thu deploy thực tế.
 SLA mặc định tắt trong env mẫu; job dọn refresh token 02:00 vẫn chạy như app hiện có.
