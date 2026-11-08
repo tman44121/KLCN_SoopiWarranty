@@ -39,9 +39,10 @@ export default function initialize() {
   };
 
   const SLA_LEVEL = {
-    EXPRESS_12H: "Nhanh (12h)",
-    PRIORITY_24H: "Ưu tiên (24h)",
-    STANDARD_48H: "Tiêu chuẩn (48h)",
+    // Số giờ của từng mức do quản trị viên cấu hình (time-settings.js), không ghi cứng trong nhãn.
+    EXPRESS_12H: "Nhanh",
+    PRIORITY_24H: "Ưu tiên",
+    STANDARD_48H: "Tiêu chuẩn",
   };
 
   const PRIORITY = { URGENT: "Gấp", NORMAL: "Bình thường", LOW: "Thấp" };

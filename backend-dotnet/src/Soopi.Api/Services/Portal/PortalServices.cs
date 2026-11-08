@@ -21,7 +21,10 @@ public sealed record PortalCategory(string? Code, string? Name, IReadOnlyList<Po
 
 public sealed record PortalStation(string? Code, string? Name, string? Address);
 
-public sealed record PortalCatalog(IReadOnlyList<PortalCategory> Categories, IReadOnlyList<string> IdentifierTypes, IReadOnlyList<PortalStation> Stations);
+public sealed record PortalProduct(string? Code, string? Name, string? BrandName, string? CategoryCode, string? DeviceTypeCode);
+
+public sealed record PortalCatalog(IReadOnlyList<PortalCategory> Categories, IReadOnlyList<string> IdentifierTypes, IReadOnlyList<PortalStation> Stations,
+    IReadOnlyList<PortalProduct> Products);
 
 public sealed record RequestAttachment(string? FileId, string? FileName, string? ContentType, long Size);
 
@@ -176,7 +179,14 @@ public sealed class PortalAccessService(
             .Where(value => value["active"] is true)
             .Select(value => new PortalStation(value["_id"] as string, value["name"] as string, value["address"] as string))
             .ToList();
-        return new PortalCatalog(categories, ["IMEI", "SERIAL"], stations);
+        var models = await sql.QueryAsync(
+            "SELECT sp.MaSP, sp.TenSP, hs.TenHang, lt.MaNhom, lt.MaLoai FROM SanPham sp "
+            + "JOIN HangSanXuat hs ON hs.MaHang = sp.MaHang JOIN LoaiThietBi lt ON lt.MaLoai = sp.MaLoai "
+            + "JOIN NhomThietBi nt ON nt.MaNhom = lt.MaNhom "
+            + "WHERE sp.HoatDong = 1 AND hs.HoatDong = 1 AND lt.HoatDong = 1 AND nt.HoatDong = 1 "
+            + "ORDER BY hs.TenHang, sp.TenSP, sp.MaSP",
+            row => new PortalProduct(row.Str("MaSP"), row.Str("TenSP"), row.Str("TenHang"), row.Str("MaNhom"), row.Str("MaLoai")));
+        return new PortalCatalog(categories, ["IMEI", "SERIAL"], stations, models);
     }
 
     private async Task<PortalGrant?> GrantAsync(string code, string phone)

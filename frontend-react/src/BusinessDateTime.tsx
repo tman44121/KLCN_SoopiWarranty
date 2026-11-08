@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
-import { BUSINESS_HOURS_NOTE, businessSlots, businessTimeError, normalizeTime, vietnamToday } from './business-hours.js';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { businessDayError, businessHoursNote, businessSlots, businessTimeError, normalizeTime, vietnamToday } from './business-hours.js';
+import { loadTimeSettings, subscribeTimeSettings, timeSettings } from './time-settings.js';
 
 const TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
 export function BusinessDateTime({ id, name, value, onChange, required = false, className = 'text-field' }: {
   id: string; name?: string; value?: string; onChange?: (value: string) => void; required?: boolean; className?: string;
 }) {
+  const settings = useSyncExternalStore(subscribeTimeSettings, timeSettings);
+  useEffect(() => { void loadTimeSettings(); }, []);
   const hidden = useRef<HTMLInputElement>(null);
   const date = useRef<HTMLInputElement>(null);
   const time = useRef<HTMLInputElement>(null);
@@ -23,7 +26,7 @@ export function BusinessDateTime({ id, name, value, onChange, required = false, 
     const next = day && hour ? `${day}T${hour}` : '';
     const problem = hour && !TIME.test(hour)
       ? (final || hour.length >= 5 ? 'Giờ không hợp lệ. Nhập theo dạng HH:mm (00–23 giờ), ví dụ 08:30.' : '')
-      : day && new Date(`${day}T00:00:00Z`).getUTCDay() === 0 ? 'Chủ nhật không nhận lịch. Vui lòng chọn thứ Hai–thứ Bảy.' : next ? businessTimeError(next) : '';
+      : businessDayError(day) || (next ? businessTimeError(next) : '');
     const ok = !problem && TIME.test(hour) ? next : '';
     setError(problem);
     date.current!.setCustomValidity(problem);
@@ -43,10 +46,10 @@ export function BusinessDateTime({ id, name, value, onChange, required = false, 
         aria-invalid={!!error || undefined} aria-describedby={`${id}-hours ${id}-error`}
         value={timeValue} onInput={() => update()} onChange={() => update()} onBlur={() => update(true)} />
       <datalist id={`${id}-times`}>
-        {businessSlots.map(slot => <option key={slot.value} value={slot.value} />)}
+        {businessSlots(settings).map(slot => <option key={slot.value} value={slot.value} />)}
       </datalist>
     </div>
-    <p id={`${id}-hours`} className="input-subnote">{BUSINESS_HOURS_NOTE}</p>
+    <p id={`${id}-hours`} className="input-subnote">{businessHoursNote(settings)}</p>
     <p id={`${id}-error`} className="form-field__error" role="alert" hidden={!error}>{error}</p>
   </div>;
 }

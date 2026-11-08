@@ -4,6 +4,7 @@ using Soopi.Api.Domain.Shared;
 using Soopi.Api.Domain.Tickets;
 using Soopi.Api.Infrastructure.Security;
 using Soopi.Api.DTOs.Shared;
+using Soopi.Api.Services.Shared;
 
 namespace Soopi.Api.Services.Reporting;
 
@@ -42,7 +43,7 @@ public sealed record CustomerReviewReport(PageResponse<CustomerReviewRow> Review
 /// Báo cáo mục 14 (R4–R12). Khoảng ngày theo giờ Việt Nam, gồm cả hai đầu; trạm tùy chọn. Số giờ = số giây / 3600 làm tròn
 /// xuống (như TIMESTAMPDIFF(HOUR) của bản MySQL), không dùng DATEDIFF(HOUR) vì hàm đó đếm số lần qua mốc giờ.
 /// </summary>
-public sealed class ReportService(Sql sql, CurrentActor actors, TimeProvider clock, IConfiguration configuration)
+public sealed class ReportService(Sql sql, CurrentActor actors, TimeProvider clock, TimeSettingsService timeSettings)
 {
     private sealed record Range(DateTimeOffset? From, DateTimeOffset? To, string? Station);
 
@@ -223,12 +224,12 @@ public sealed class ReportService(Sql sql, CurrentActor actors, TimeProvider clo
     }
 
     /// <summary>R12 — phân bổ SLA của phiếu đang xử lý (trừ "Hoàn thành" và "Đã hủy").</summary>
-    public Task<List<SlaBucket>> SlaDistributionAsync()
+    public async Task<List<SlaBucket>> SlaDistributionAsync()
     {
         actors.Require(Permission.REPORT_OPERATIONS);
         var now = clock.GetUtcNow();
-        var until = now + configuration.GetValue("Sla:AtRiskThreshold", TimeSpan.FromHours(2));
-        return sql.QueryAsync(
+        var until = now + (await timeSettings.GetAsync()).AtRiskThreshold;
+        return await sql.QueryAsync(
             "SELECT MucSLA, SUM(CASE WHEN HanSLA < ? THEN 1 ELSE 0 END) AS breached, SUM(CASE WHEN HanSLA BETWEEN ? AND ? THEN 1 ELSE 0 END) AS atRisk, "
             + "COUNT(*) AS total FROM PhieuTiepNhan WHERE ConMo = 1 AND TrangThaiXuLy NOT IN ('COMPLETED', 'AWAITING_RETURN') GROUP BY MucSLA ORDER BY MucSLA",
             row => new SlaBucket(row.Str("MucSLA")!, row.Long("breached"), row.Long("atRisk"), row.Long("total") - row.Long("breached") - row.Long("atRisk")),

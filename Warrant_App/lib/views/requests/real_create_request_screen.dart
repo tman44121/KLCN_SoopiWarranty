@@ -32,6 +32,7 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
   OwnedDevice? _device;
   String? _categoryCode;
   String? _deviceTypeCode;
+  String? _productCode;
   String? _stationCode;
   DateTime? _preferredFrom;
   List<RequestAttachment> _attachments = [];
@@ -179,6 +180,19 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
 
   List<PortalDeviceType> get _types => _typesForCategory(_categoryCode);
 
+  List<PortalProduct> get _products => (_catalog?.products ?? [])
+      .where(
+        (p) =>
+            p.categoryCode == _categoryCode &&
+            p.deviceTypeCode == _deviceTypeCode,
+      )
+      .toList();
+
+  void _clearProduct() {
+    _productCode = null;
+    _brandModelController.clear();
+  }
+
   Future<void> _pickPreferredTime() async {
     final now = DateTime.now();
     final day = await showDatePicker(
@@ -265,6 +279,12 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
   Future<void> _submit() async {
     if (_submitting || _uncertain || _catalog == null) return;
     FocusScope.of(context).unfocus();
+    final selectedProduct = _products
+        .where(
+          (p) =>
+              p.code == _productCode && p.label == _brandModelController.text,
+        )
+        .firstOrNull;
     final errors = _manualDevice
         ? OwnWarrantyRequestData.validateUnregistered(
             catalog: _catalog!,
@@ -283,6 +303,9 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
             stationCode: _stationCode,
             symptom: _symptomController.text,
           );
+    if (_manualDevice && selectedProduct == null) {
+      errors['brandModel'] = 'Vui lòng chọn hãng/model có sẵn trong danh sách.';
+    }
     final timeError = OwnWarrantyRequestData.validatePreferredArrival(
       _preferredFrom,
       DateTime.now(),
@@ -302,7 +325,7 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
       categoryCode: _categoryCode!,
       deviceTypeCode: _deviceTypeCode!,
       brandModel: _manualDevice
-          ? _brandModelController.text.trim()
+          ? selectedProduct!.label
           : OwnWarrantyRequestData.brandModelOf(device!),
       identifierType: _manualDevice
           ? selectedType!.identifierType.toUpperCase()
@@ -447,6 +470,7 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
               _device = null;
               _categoryCode = null;
               _deviceTypeCode = null;
+              _clearProduct();
               _errors = {};
             }),
             icon: Icon(
@@ -488,7 +512,7 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
         if (!_manualDevice && device == null && _devices.isEmpty) ...[
           const SizedBox(height: 8),
           const Text(
-            'Tài khoản chưa có thiết bị sở hữu. Bạn có thể nhập thông tin thiết bị mới ở trên.',
+            'Tài khoản chưa có thiết bị sở hữu. Bạn có thể nhập thông tin máy cần gửi ở trên, kể cả máy của người khác.',
           ),
         ],
         const SizedBox(height: 16),
@@ -498,7 +522,7 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
           const SizedBox(height: 16),
           Text(
             _manualDevice
-                ? 'Thông tin thiết bị mới sẽ được lễ tân kiểm tra khi tiếp nhận; gửi yêu cầu không đăng ký hoặc kích hoạt bảo hành.'
+                ? 'Thông tin máy sẽ được lễ tân kiểm tra khi tiếp nhận. Bạn nhận thông báo và xác nhận báo giá của lần gửi này; chủ đăng ký máy được giữ nguyên.'
                 : 'Chọn loại thiết bị trong danh mục của trung tâm. Mã loại không có trong hồ sơ thiết bị nên cần bạn xác nhận.',
             style: const TextStyle(color: AppColors.textSecondary),
           ),
@@ -518,6 +542,7 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
               _categoryCode = code;
               final types = _typesForCategory(code);
               _deviceTypeCode = types.length == 1 ? types.single.code : null;
+              _clearProduct();
               _errors = {};
             }),
             _errors['categoryCode'],
@@ -537,6 +562,7 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
                   .toList(),
               (code) => setState(() {
                 _deviceTypeCode = code;
+                _clearProduct();
                 _errors.remove('deviceTypeCode');
               }),
               _errors['deviceTypeCode'],
@@ -550,15 +576,34 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
           ],
           if (_manualDevice) ...[
             const SizedBox(height: 16),
-            TextFormField(
+            KeyedSubtree(
               key: const ValueKey('manual-brand-model'),
-              controller: _brandModelController,
-              onChanged: (_) => setState(() => _errors.remove('brandModel')),
-              decoration: InputDecoration(
-                labelText: 'Hãng và model *',
+              child: DropdownMenu<String>(
+                key: ValueKey('model:$_categoryCode:$_deviceTypeCode'),
+                controller: _brandModelController,
+                initialSelection: _productCode,
+                expandedInsets: EdgeInsets.zero,
+                menuHeight: 240,
+                enabled: _products.isNotEmpty,
+                enableFilter: true,
+                requestFocusOnTap: true,
+                label: const Text('Hãng và model *'),
+                hintText: 'Gõ hãng hoặc model để tìm',
+                helperText: 'Gõ để tìm rồi chọn model trong danh sách.',
                 errorText: _errors['brandModel'],
+                dropdownMenuEntries: _products
+                    .map(
+                      (p) => DropdownMenuEntry(value: p.code, label: p.label),
+                    )
+                    .toList(),
+                onSelected: (code) => setState(() {
+                  _productCode = code;
+                  _errors.remove('brandModel');
+                }),
               ),
             ),
+            if (_deviceTypeCode != null && _products.isEmpty)
+              const Text('Chưa có model cho loại thiết bị này.'),
             const SizedBox(height: 16),
             TextFormField(
               key: const ValueKey('manual-serial'),
@@ -638,7 +683,7 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
             style: TextStyle(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 24),
-          _ownerSummary(),
+          _senderSummary(),
           const SizedBox(height: 16),
           const Text('Ảnh/video lỗi (tối đa 3 tệp)'),
           const SizedBox(height: 8),
@@ -693,7 +738,7 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
     );
   }
 
-  Widget _ownerSummary() {
+  Widget _senderSummary() {
     final user = context.watch<AuthViewModel>().currentUser;
     String shown(String? value) =>
         value?.trim().isNotEmpty == true ? value!.trim() : 'Chưa có thông tin';
@@ -701,7 +746,7 @@ class _RealCreateRequestScreenState extends State<RealCreateRequestScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Thông tin chủ sở hữu',
+          'Thông tin người gửi',
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         const SizedBox(height: 6),

@@ -5,6 +5,7 @@ import controller from "../behaviors/admin.js";
 import { BrandLogo } from "../customer";
 import { NotificationBroadcast } from "../NotificationBroadcast";
 import { AccessStatistics } from "../AccessStatistics";
+import { TimeSettings } from "../TimeSettings";
 
 export default function AdminPage() {
   usePage("admin", {"data-roles": "ADMIN"}, "Soopi — Quản trị hệ thống", controller);
@@ -47,6 +48,13 @@ export default function AdminPage() {
                 </rect>
               </svg>
               {"\n          Danh mục hệ thống\n        "}
+            </a>
+            <a className="sidebar-nav__item" data-roles="ADMIN" data-page-tab="time-settings" href="#time-settings">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="10" cy="11" r="6" />
+                <path d="M10 8v3l2 1.5M8 3h4" />
+              </svg>
+              Cấu hình thời gian
             </a>
             <a className="sidebar-nav__item" data-roles="ADMIN" data-page-tab="notifications-broadcast" href="#notifications-broadcast">
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -454,6 +462,7 @@ export default function AdminPage() {
             </div>
           </section>
         </div>
+        <div data-page-panel="time-settings" hidden={true}><TimeSettings /></div>
         <div data-page-panel="notifications-broadcast" hidden={true}>
           <NotificationBroadcast />
         </div>

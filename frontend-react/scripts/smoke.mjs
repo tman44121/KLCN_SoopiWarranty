@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
 import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { DEFAULT_TIME_SETTINGS } from '../src/time-settings.js';
 const require = createRequire(process.env.PLAYWRIGHT_PACKAGE || import.meta.url);
 const { chromium } = require('playwright-core');
 const base = process.env.E2E_BASE_URL || 'http://localhost:5173';
@@ -10,7 +11,7 @@ const output = new URL('../test-results/', import.meta.url);
 mkdirSync(output, { recursive: true });
 const permissions = [...new Set(readdirSync(new URL('../src/pages/', import.meta.url)).flatMap(file =>
   [...readFileSync(new URL(`../src/pages/${file}`, import.meta.url), 'utf8').matchAll(/data-perm="([^"]+)"/g)].flatMap(m => m[1].split(','))))];
-const catalog = { categories: [{ code: 'PHONE', name: 'Điện thoại', deviceTypes: [{ code: 'PHONE', identifierType: 'IMEI' }] }], stations: [{ code: 'ST01', name: 'Trạm thử', address: 'Địa chỉ thử' }] };
+const catalog = { products: [{ code: 'SP-S24', name: 'Galaxy S24', brandName: 'Samsung', categoryCode: 'PHONE', deviceTypeCode: 'PHONE' }], categories: [{ code: 'PHONE', name: 'Điện thoại', deviceTypes: [{ code: 'PHONE', identifierType: 'IMEI' }] }], stations: [{ code: 'ST01', name: 'Trạm thử', address: 'Địa chỉ thử' }] };
 const steps = (current) => ['RECEIVED', 'DIAGNOSIS', 'AWAITING_PARTS', 'REPAIRING', 'QC', 'READY'].map((key, i) =>
   ({ key, label: ['Tiếp nhận', 'Chẩn đoán', 'Chờ linh kiện', 'Đang sửa', 'QC', 'Sẵn sàng nhận máy'][i], state: i < current ? 'DONE' : i === current ? 'CURRENT' : 'UPCOMING' }));
 const customer = {
@@ -65,6 +66,7 @@ export async function session(role, landing, width = 1440, { hasTouch = false } 
     else if (path === '/auth/change-password') { user.mustChangePassword = false; data = {}; }
     else if (path === '/portal/catalog') data = catalog;
     else if (path === '/public/reviews') data = { reviewCount: 0, averageRating: null, items: [] };
+    else if (path === '/settings/time' && request.method() === 'GET') data = DEFAULT_TIME_SETTINGS;
     else if (path === '/notifications') data = { unreadCount: 0, items: [] };
     else if (path === '/chat/contacts') data = { items: [], hasMore: false, unreadCount: 0 };
     else if (path === '/access/heartbeat') data = { tracked: true };
@@ -186,16 +188,17 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
   await s.page.click('[data-open-register]');
   await s.page.click('[data-register-submit]');
   assert(await s.page.locator('[data-field="regName"]').evaluate(node => node.classList.contains('has-error'))); assertions++;
-  for (const [selector, value] of Object.entries({ '#reg-name': 'Khách thử', '#reg-phone': '0900000000', '#reg-brand-model': 'Hãng thử', '#reg-serial': 'IMEI-TEST', '#reg-symptom': 'Lỗi thử' })) await s.page.fill(selector, value);
+  for (const [selector, value] of Object.entries({ '#reg-name': 'Khách thử', '#reg-phone': '0900000000', '#reg-serial': 'IMEI-TEST', '#reg-symptom': 'Lỗi thử' })) await s.page.fill(selector, value);
   await s.page.selectOption('#reg-category', 'PHONE');
+  await s.page.fill('#reg-brand-model', 'Samsung Galaxy S24');
   await s.page.selectOption('#reg-station', 'ST01');
   await s.page.fill('#reg-time-date', '2030-10-06');
-  await s.page.selectOption('#reg-time-time', '10:00');
+  await s.page.fill('#reg-time-time', '10:00');
   await s.page.click('[data-register-submit]');
   await s.page.getByText('Chủ nhật không nhận lịch. Vui lòng chọn thứ Hai–thứ Bảy.', { exact: true }).waitFor(); assertions++;
   assert(!s.calls.includes('/portal/warranty-requests')); assertions++;
   await s.page.fill('#reg-time-date', '2030-10-02');
-  await s.page.selectOption('#reg-time-time', '10:00');
+  await s.page.fill('#reg-time-time', '10:00');
   await s.page.click('[data-register-submit]');
   await s.page.getByText('YC-MOCK', { exact: true }).waitFor(); assertions++;
   assert.deepEqual(s.errors, [], 'portal: browser errors'); assertions++;
@@ -273,7 +276,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) { try {
     await c.page.selectOption('#req-station', 'ST01');
     await c.page.fill('#req-symptom', 'Màn hình sọc');
     await c.page.fill('#req-time-date', '2030-10-02');
-    await c.page.selectOption('#req-time-time', '10:00');
+    await c.page.fill('#req-time-time', '10:00');
     await c.page.click('form.form-card-panel button[type="submit"]');
     await c.page.getByText('YC-OWN-MOCK', { exact: true }).waitFor(); assertions++;
     await c.page.screenshot({ path: fileURLToPath(new URL(`request-${width}.png`, output)), fullPage: true });

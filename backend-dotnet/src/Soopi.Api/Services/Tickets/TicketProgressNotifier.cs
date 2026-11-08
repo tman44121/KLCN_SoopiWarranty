@@ -7,7 +7,7 @@ using Soopi.Api.Services.Shared;
 namespace Soopi.Api.Services.Tickets;
 
 /// <summary>Trạm nhận máy và số tiền khách cần trả khi nhận — chỉ dùng để ghép câu thông báo.</summary>
-public sealed record PickupInfo(string? StationName, string? StationAddress, decimal? AmountDue);
+public sealed record PickupInfo(string? StationName, string? StationAddress, decimal? AmountDue, string Hours = TicketProgressMessages.PickupHours);
 
 /// <summary>
 /// Câu thông báo tiến độ gửi khách theo trạng thái mới của phiếu. Báo giá chờ khách xác nhận và bàn giao có thông báo riêng
@@ -46,12 +46,12 @@ public static class TicketProgressMessages
                 $"Phiếu {code}: đang chờ linh kiện thay thế cho {device}. Trung tâm sẽ báo ngay khi bắt đầu sửa.{promised}"),
             TicketStatus.REPAIRING => ("TICKET_REPAIRING", $"Kỹ thuật viên đã bắt đầu sửa {device} (phiếu {code}).{promised}"),
             TicketStatus.COMPLETED => ("TICKET_COMPLETED",
-                $"{Capitalize(device)} (phiếu {code}) đã sửa xong, đạt kiểm tra chất lượng. Mời bạn nhận máy{station}, {PickupHours}. "
+                $"{Capitalize(device)} (phiếu {code}) đã sửa xong, đạt kiểm tra chất lượng. Mời bạn nhận máy{station}, {pickup.Hours}. "
                 + Amount(pickup.AmountDue)),
             TicketStatus.AWAITING_RETURN => ("TICKET_AWAITING_RETURN",
                 ticket.StatusHistory.LastOrDefault()?.Description == Domain.Quotations.Quotation.ExpirationReason
-                    ? $"Báo giá của phiếu {code} đã hết hạn xác nhận và tự động bị từ chối. Mời bạn đến nhận lại máy nguyên trạng{station}, {PickupHours}."
-                    : $"Phiếu {code}: {device} sẽ được trả nguyên trạng, không sửa chữa. Mời bạn đến nhận lại máy{station}, {PickupHours}."),
+                    ? $"Báo giá của phiếu {code} đã hết hạn xác nhận và tự động bị từ chối. Mời bạn đến nhận lại máy nguyên trạng{station}, {pickup.Hours}."
+                    : $"Phiếu {code}: {device} sẽ được trả nguyên trạng, không sửa chữa. Mời bạn đến nhận lại máy{station}, {pickup.Hours}."),
             _ => null,
         };
     }
@@ -97,7 +97,7 @@ public static class TicketProgressMessages
 }
 
 /// <summary>Gửi khách thông báo theo trạng thái mới nhất mỗi lần phiếu được lưu (một thao tác qua nhiều bước chỉ báo bước cuối).</summary>
-public sealed class TicketProgressNotifier(Sql sql, NotificationService notifications, BillingCalculator billing)
+public sealed class TicketProgressNotifier(Sql sql, NotificationService notifications, BillingCalculator billing, TimeSettingsService timeSettings)
 {
     public async Task StatusChangedAsync(Ticket ticket, int previousHistoryCount)
     {
@@ -111,7 +111,8 @@ public sealed class TicketProgressNotifier(Sql sql, NotificationService notifica
                 row => (Name: row.Str("TenTram"), Address: row.Str("DiaChi")), ticket.StationCode)
             : default;
         var amount = status == TicketStatus.COMPLETED ? (await billing.BreakdownAsync(ticket.Id)).Total : (decimal?)null;
-        if (TicketProgressMessages.For(ticket, status, new PickupInfo(station.Name, station.Address, amount)) is { } message)
+        if (TicketProgressMessages.For(ticket, status, new PickupInfo(station.Name, station.Address, amount,
+            needsPickup ? (await timeSettings.GetAsync()).HoursText : TicketProgressMessages.PickupHours)) is { } message)
             await notifications.ForCustomerAsync(ticket.CustomerId, message.Type, message.Message, ticket.Id);
     }
 }

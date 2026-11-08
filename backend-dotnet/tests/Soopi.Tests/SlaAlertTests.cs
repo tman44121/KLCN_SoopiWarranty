@@ -1,5 +1,6 @@
 using System.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Soopi.Api.Data;
@@ -49,8 +50,9 @@ public class SlaAlertTests
         var transactions = new TransactionRunner(db);
         var notifications = new NotificationService(sql, clock, null!, transactions);
         var job = new SlaAlertJob(null!, clock, new ConfigurationBuilder().Build(), NullLogger<SlaAlertJob>.Instance);
-        Assert.Equal(1, await job.NotifyAsync(sql, notifications, transactions));
-        Assert.Equal(0, await job.NotifyAsync(sql, notifications, transactions));
+        var times = new TimeSettingsService(sql, new MemoryCache(new MemoryCacheOptions()), null!, null!, transactions, clock);
+        Assert.Equal(1, await job.NotifyAsync(sql, notifications, transactions, times));
+        Assert.Equal(0, await job.NotifyAsync(sql, notifications, transactions, times));
         Assert.Equal([minutesUntilDue < 0 ? SlaAlertJob.BreachedType : SlaAlertJob.Type], types);
         Assert.Single(connection.Commands, command => command.Sql.Contains("INSERT INTO ThongBao"));
         Assert.All(connection.Commands.Where(command => command.Sql.Contains("INSERT INTO ThongBao")), command => Assert.True(command.InTransaction));

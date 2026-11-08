@@ -79,9 +79,10 @@ public sealed class Quotation
 
     public CustomerDecision CustomerDecision { get; internal set; } = null!;
 
-    public DateTimeOffset? RespondBy => ValidUntil is { } until
+    /// <summary>Hạn khách xác nhận: hết ngày hiệu lực, hoặc <see cref="TimeSettings.QuotationValidity"/> kể từ lúc duyệt.</summary>
+    public DateTimeOffset? RespondBy(TimeSettings? times = null) => ValidUntil is { } until
         ? new DateTimeOffset(until.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.FromHours(7))
-        : Approval.ReviewedAt?.AddDays(3);
+        : Approval.ReviewedAt?.Add((times ?? TimeSettings.Default).QuotationValidity);
 
     public bool Active => Approval.Status != "REJECTED";
 
@@ -109,10 +110,10 @@ public sealed class Quotation
         Approval = new Approval("REJECTED", reviewerId, now, JavaText.Trim(note));
     }
 
-    public void Accept(string recordedBy, string channel, DateOnly today, DateTimeOffset now)
+    public void Accept(string recordedBy, string channel, DateOnly today, DateTimeOffset now, TimeSettings? times = null)
     {
         RequirePendingDecision();
-        if ((ValidUntil is { } until && today > until) || RespondBy is { } deadline && now >= deadline)
+        if ((ValidUntil is { } until && today > until) || RespondBy(times) is { } deadline && now >= deadline)
             throw new DomainException(ErrorCode.QUOTE_EXPIRED);
         CustomerDecision = new CustomerDecision("ACCEPTED", now, null, channel, recordedBy);
     }
@@ -124,9 +125,9 @@ public sealed class Quotation
         CustomerDecision = new CustomerDecision("DECLINED", now, JavaText.Trim(reason), channel, recordedBy);
     }
 
-    public bool Expire(DateTimeOffset now)
+    public bool Expire(DateTimeOffset now, TimeSettings? times = null)
     {
-        if (Approval.Status != "APPROVED" || CustomerDecision.Status != "PENDING" || RespondBy is not { } deadline || now < deadline)
+        if (Approval.Status != "APPROVED" || CustomerDecision.Status != "PENDING" || RespondBy(times) is not { } deadline || now < deadline)
             return false;
         CustomerDecision = new CustomerDecision("DECLINED", now, ExpirationReason, null, "SYSTEM");
         return true;

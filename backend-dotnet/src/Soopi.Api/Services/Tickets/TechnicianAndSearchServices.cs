@@ -51,7 +51,7 @@ public sealed class TechnicianQueryService(StaffDirectory staff, TicketStore tic
     private async Task<(List<StaffMember> Members, Dictionary<string, TechnicianLoad> Loads)> RosterAsync()
     {
         var now = clock.GetUtcNow();
-        return (await staff.ActiveTechniciansAsync(), await tickets.TechnicianLoadsAsync(now, now + views.AtRiskThreshold));
+        return (await staff.ActiveTechniciansAsync(), await tickets.TechnicianLoadsAsync(now, now + await views.AtRiskThresholdAsync()));
     }
 
     private static WorkloadView Workload(StaffMember member, Dictionary<string, TechnicianLoad> loads)

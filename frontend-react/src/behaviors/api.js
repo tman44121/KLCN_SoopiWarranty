@@ -378,6 +378,11 @@ export default function initialize(global = window) {
       }),
     },
 
+    settings: {
+      time: () => request("GET", "/settings/time", { auth: "none" }),
+      saveTime: (body) => put("/settings/time", body),
+    },
+
     access: {
       summary: (query) => get('/admin/access/summary', query),
       online: (query) => get('/admin/access/online', query),

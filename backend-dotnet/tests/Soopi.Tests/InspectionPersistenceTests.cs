@@ -38,7 +38,7 @@ public class InspectionPersistenceTests
         });
         using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlServer(connection).Options);
         var sql = new Sql(db);
-        var store = new TicketStore(sql, new TicketProgressNotifier(sql, null!, null!));
+        var store = new TicketStore(sql, new TicketProgressNotifier(sql, null!, null!, null!));
         await store.SaveAsync(ticket);
         connection.Commands.Clear();
 

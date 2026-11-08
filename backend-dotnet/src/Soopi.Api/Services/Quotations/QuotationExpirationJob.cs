@@ -8,18 +8,19 @@ namespace Soopi.Api.Services.Quotations;
 
 public sealed class QuotationExpirationService(
     QuotationStore quotations, TicketStore tickets, TransactionRunner transactions,
-    AuditService audit, NotificationService notifications, TimeProvider clock)
+    AuditService audit, NotificationService notifications, TimeSettingsService timeSettings, TimeProvider clock)
 {
     private static readonly AuthenticatedActor SystemActor = new(null, "system", new HashSet<Role>(), new HashSet<Permission>(), null, null, "Hệ thống");
 
-    public Task<List<string>> DueCodesAsync() => quotations.FindExpiredPendingCodesAsync(clock.GetUtcNow());
+    public async Task<List<string>> DueCodesAsync() =>
+        await quotations.FindExpiredPendingCodesAsync(clock.GetUtcNow(), (await timeSettings.GetAsync()).QuotationValidity);
 
     public Task<bool> ExpireAsync(string code) => transactions.InTransactionAsync(async () =>
     {
         // Khóa báo giá trước phiếu, cùng thứ tự với thao tác xác nhận của khách.
         var quotation = await quotations.FindAsync(code);
         var now = clock.GetUtcNow();
-        if (quotation is null || !quotation.Expire(now)) return false;
+        if (quotation is null || !quotation.Expire(now, await timeSettings.GetAsync())) return false;
         var ticket = await tickets.FindAsync(quotation.TicketId);
         if (ticket is null || ticket.Status != TicketStatus.AWAITING_CUSTOMER_CONFIRMATION || ticket.ActiveQuotationId != code)
             return false;

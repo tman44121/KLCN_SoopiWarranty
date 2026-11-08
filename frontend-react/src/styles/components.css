@@ -2898,6 +2898,11 @@ video.request-media-frame {
 .broadcast-section { margin-bottom: 20px; }
 .broadcast-section > summary { cursor: pointer; padding: 12px 0; font-weight: 600; }
 .broadcast-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.time-settings__group { border: 0; padding: 0; margin: 0; min-width: 0; }
+.time-settings__group legend { font-weight: 600; margin-bottom: 12px; }
+.time-settings__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.time-settings__days { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.time-settings__actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .broadcast-fields legend { font-weight: 600; margin-bottom: 12px; }
 .broadcast-customers { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
 .broadcast-customers:empty { display: none; }

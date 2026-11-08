@@ -1,4 +1,5 @@
 import { businessTimeError, businessInstant } from "../business-hours.js";
+import { loadTimeSettings, slaHours, timeSettings } from "../time-settings.js";
 import { createListFilters } from './list-filters.js';
 import { attachmentLabel, renderMedia } from './media.js';
 /* ==========================================================================
@@ -361,16 +362,7 @@ export default function initialize() {
       applyLocks();
       renderWarranty(device);
       if (button) window.showToast(`Đã tìm thấy thiết bị: ${(L.WARRANTY_STATUS[device.warranty?.status] || {}).label || "Chưa có thông tin bảo hành"}. Xem chi tiết bên dưới.`, "success");
-      // Từ yêu cầu khách gửi: không tự đổi sang khách khác; nếu máy thuộc người khác, server sẽ từ chối khi tiếp nhận.
-      if (!state.warrantyRequestCode && device.customerCode && device.customerCode !== state.customerCode) {
-        try {
-          const owner = await api.customers.get(device.customerCode);
-          el.phone.value = owner.phone || el.phone.value;
-          setCustomer(owner);
-        } catch (e) {
-          /* Không đọc được hồ sơ chủ máy — lễ tân vẫn nhập tay. */
-        }
-      }
+      // Người gửi của lần này có thể khác chủ đăng ký thiết bị.
     } catch (error) {
       if (error.code === "DEVICE_NOT_FOUND") {
         clearWarranty();
@@ -412,10 +404,6 @@ export default function initialize() {
     };
     need(normalizePhone(el.phone.value).length >= 9, "customer.newCustomer.phone", "Vui lòng nhập số điện thoại.");
     if (!state.customerCode) need(el.name.value.trim(), "customer.newCustomer.fullName", "Vui lòng nhập họ tên khách hàng.");
-    // Server từ chối (DEVICE_NOT_OWNED) khi máy đã có chủ khác khách trên phiếu — báo ngay thay vì gửi request.
-    const owner = state.device && state.device.customerCode;
-    need(!owner || owner === state.customerCode, "customer.newCustomer.phone",
-      `Thiết bị này đang thuộc khách hàng ${owner}. Kiểm tra lại serial hoặc chọn đúng chủ máy.`);
     if (!state.device) {
       need(el.category.value, "category", "Vui lòng chọn nhóm thiết bị.");
       need(el.deviceType.value, "deviceType", "Vui lòng chọn loại thiết bị.");
@@ -531,7 +519,7 @@ export default function initialize() {
   function applyDefaults() {
     el.channel.value = "COUNTER";
     el.requestType.value = "WARRANTY";
-    el.sla.value = "STANDARD_48H";
+    el.sla.value = timeSettings().defaultSlaLevel;
   }
 
   function resetForm() {
@@ -840,7 +828,8 @@ export default function initialize() {
   window.LML_AUTH.ready(async () => {
     el.channel.setOptions(Object.entries(L.CHANNEL).map(([value, label]) => ({ value, label })));
     el.requestType.setOptions(Object.entries(L.REQUEST_TYPE).map(([value, label]) => ({ value, label })));
-    el.sla.setOptions(["STANDARD_48H", "PRIORITY_24H", "EXPRESS_12H"].map((value) => ({ value, label: L.SLA_LEVEL[value] })));
+    const times = await loadTimeSettings();
+    el.sla.setOptions(["STANDARD_48H", "PRIORITY_24H", "EXPRESS_12H"].map((value) => ({ value, label: `${L.SLA_LEVEL[value]} (${slaHours(value, times)}h)` })));
     el.ycStatus.setOptions(Object.entries(L.WARRANTY_REQUEST_STATUS).map(([value, status]) => ({ value, label: status.label })));
     el.ycStatus.value = "PENDING_INTAKE";
     applyDefaults();

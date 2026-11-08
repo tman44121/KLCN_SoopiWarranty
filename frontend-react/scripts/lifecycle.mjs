@@ -97,14 +97,14 @@ stage('request', async () => {
   await page.waitForSelector('#req-category option:nth-child(2)', { state: 'attached' });
   state.serial = 'DLINS15-' + String(Date.now()).slice(-8);
   await page.selectOption('#req-category', 'LAPTOP_TABLET');
-  await page.fill('#req-brand-model', 'Dell Inspiron 15');
+  await page.fill('#req-brand-model', await page.locator('#req-brand-model-options option').evaluateAll(nodes => nodes.find(n => n.value.includes('Inspiron 15')).value));
   await page.fill('#req-serial', state.serial);
   await page.fill('#req-symptom', 'Bàn phím liệt nhiều phím khu vực WASD, máy từng bị đổ nước ngọt tuần trước.');
   await page.selectOption('#req-station', { index: 1 });
   const appointmentDay = new Date(Date.now() + 2 * 86400000);
   if (appointmentDay.getUTCDay() === 0) appointmentDay.setUTCDate(appointmentDay.getUTCDate() + 1);
   await page.fill('#req-time-date', appointmentDay.toISOString().slice(0, 10));
-  await page.selectOption('#req-time-time', '09:30');
+  await page.fill('#req-time-time', '09:30');
   await shot(page, 'khach-dien-yeu-cau');
   await page.click('form.form-card-panel button[type="submit"]');
   await until(page, '.kh-alert--success');

@@ -293,6 +293,29 @@ Web thu ngân hiện QR khi chọn Chuyển khoản; cổng khách web và app F
 CSP `img-src` mở thêm `https://img.vietqr.io`. Không tự đối soát: thu ngân kiểm tra tiền vào rồi bấm xác nhận như cũ;
 tự động xác nhận (webhook ngân hàng/Casso/SePay) là việc riêng khi cần.
 
+## D-062 — Model từ danh mục và người gửi theo lần tiếp nhận (2026-11-08)
+
+Hãng / Model trên web/app chuyển sang danh sách chọn từ danh mục đang hoạt động của trung tâm.
+`/portal/catalog` thêm dữ liệu model phục vụ hiển thị; định dạng gửi yêu cầu cũ được giữ để tương thích ứng dụng cũ.
+
+Một máy có thể do cha, con hoặc người khác mang tới ở các lần bảo hành khác nhau. Theo lựa chọn của người dùng,
+phiếu, thông báo và quyền xác nhận báo giá thuộc người đứng tên gửi ở lần đó. Giữ nguyên chủ đăng ký trong `ThietBi`;
+dùng khách trên `PhieuTiepNhan` đã có sẵn, không thêm bảng/cột hay chuyển chủ. Tra serial tại quầy không thay người gửi.
+Quyền xem của khách vẫn theo từng phiếu; lịch sử thiết bị của nhân viên và giới hạn một phiếu mở mỗi máy giữ nguyên.
+
+## D-063 — Quản trị viên chỉnh các mốc thời gian (2026-11-08)
+
+Số giờ SLA từng mức, mức SLA mặc định khi lập phiếu, ngưỡng “sắp trễ”, hạn xác nhận báo giá (khi không ghi ngày hiệu lực)
+và giờ làm việc (ngày, giờ mở/đóng cửa) chuyển từ hằng số/appsettings sang bảng một dòng `CauHinhThoiGian`, sửa tại
+`/admin#time-settings`. Giá trị khởi tạo giữ như cũ: SLA Tiêu chuẩn **48h** và là mức mặc định, Ưu tiên 24h, Nhanh 12h,
+sắp trễ 120 phút, báo giá 72 giờ, thứ Hai–thứ Bảy 08:00–17:00. Bảng trống hoặc chưa chạy `14_time_settings.sql` thì dùng
+giá trị này. Bỏ khóa `Sla:AtRiskThreshold` trong appsettings.
+
+Mã enum `EXPRESS_12H`/`PRIORITY_24H`/`STANDARD_48H` giữ nguyên để tương thích hợp đồng API và dữ liệu; nhãn hiển thị bỏ số
+giờ cố định, form tiếp nhận ghi số giờ hiện hành. Đổi SLA chỉ áp cho phiếu mới vì `HanSLA` đã lưu; ngưỡng sắp trễ, hạn báo giá
+(kể cả báo giá đang chờ) và giờ làm việc áp dụng ngay. Mỗi lần lưu ghi nhật ký `TIME_SETTINGS_UPDATED`.
+Chu kỳ quét job SLA (`Sla:Alerts:Interval`) vẫn ở appsettings vì cần khởi động lại để đổi.
+
 ## Giai đoạn 3 — cách triển khai theo yêu cầu Ponytail
 
 - React Router + 10 trang TSX giữ markup và CSS cũ; module JavaScript giữ xử lý bảng/form động.

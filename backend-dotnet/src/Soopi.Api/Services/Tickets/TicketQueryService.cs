@@ -4,6 +4,7 @@ using Soopi.Api.Domain.Identity;
 using Soopi.Api.Domain.Shared;
 using Soopi.Api.Domain.Tickets;
 using Soopi.Api.DTOs.Shared;
+using Soopi.Api.Services.Shared;
 using Soopi.Api.Infrastructure.Security;
 using Soopi.Api.Services.Customers;
 using Soopi.Api.Services.Files;
@@ -73,11 +74,11 @@ public sealed record HistoryView(IReadOnlyList<StatusHistory> StatusHistory, IRe
 public sealed record ReceiptView(TicketView Ticket, string Title);
 
 public sealed class TicketQueryService(
-    TicketStore tickets, WarrantyRequestStore requests, Sql sql, CurrentActor actors, StaffDirectory staff, TimeProvider clock, IConfiguration configuration)
+    TicketStore tickets, WarrantyRequestStore requests, Sql sql, CurrentActor actors, StaffDirectory staff, TimeProvider clock, TimeSettingsService timeSettings)
 {
     private static readonly HashSet<string> SlaFilters = ["BREACHED", "AT_RISK", "ON_TRACK"];
 
-    public TimeSpan AtRiskThreshold => configuration.GetValue("Sla:AtRiskThreshold", TimeSpan.FromHours(2));
+    public async Task<TimeSpan> AtRiskThresholdAsync() => (await timeSettings.GetAsync()).AtRiskThreshold;
 
     public async Task<PageResponse<TicketView>> SearchAsync(
         string? status, string? category, string? technician, string? sla, string? query, DateTimeOffset? from, DateTimeOffset? to, int page, int size)
@@ -86,7 +87,7 @@ public sealed class TicketQueryService(
         new PageRequestParams(page, size, null).Validate();
         if (sla is not null && !SlaFilters.Contains(sla)) throw new DomainException(ErrorCode.VALIDATION_FAILED);
         var effectiveTechnician = actor.Permissions.Contains(Permission.TICKET_READ_ALL) ? technician : actor.EmployeeId;
-        var filter = Filter(status, category, effectiveTechnician, sla, query, from, to);
+        var filter = await FilterAsync(status, category, effectiveTechnician, sla, query, from, to);
         var total = await tickets.CountAsync(filter);
         var items = await ViewsAsync(await tickets.SearchAsync(filter, page * size, size), actor);
         return PageResponse<TicketView>.Of(items, page, size, total);
@@ -151,10 +152,10 @@ public sealed class TicketQueryService(
         return await ViewsAsync(await tickets.FindByCustomerAsync(customerCode), actor);
     }
 
-    public TicketFilter Filter(string? status, string? category, string? technician, string? sla, string? query, DateTimeOffset? from, DateTimeOffset? to)
+    public async Task<TicketFilter> FilterAsync(string? status, string? category, string? technician, string? sla, string? query, DateTimeOffset? from, DateTimeOffset? to)
     {
         var now = clock.GetUtcNow();
-        return new TicketFilter(status, category, technician, sla, query, from, to, now, now + AtRiskThreshold);
+        return new TicketFilter(status, category, technician, sla, query, from, to, now, now + await AtRiskThresholdAsync());
     }
 
     public async Task<TicketView> ViewAsync(Ticket ticket, AuthenticatedActor actor) => (await ViewsAsync([ticket], actor))[0];
@@ -164,7 +165,8 @@ public sealed class TicketQueryService(
         var names = await staff.EmployeeNamesAsync();
         var projection = CustomerView.ProjectionFor(actor);
         var now = clock.GetUtcNow();
-        return list.Select(ticket => TicketView.From(ticket, projection, now, AtRiskThreshold, names)).ToList();
+        var atRisk = await AtRiskThresholdAsync();
+        return list.Select(ticket => TicketView.From(ticket, projection, now, atRisk, names)).ToList();
     }
 
     public async Task<Ticket> RequireAsync(string code) => await tickets.FindAsync(code) ?? throw new DomainException(ErrorCode.TICKET_NOT_FOUND);

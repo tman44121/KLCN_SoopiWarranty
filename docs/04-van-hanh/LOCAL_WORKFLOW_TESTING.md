@@ -8,9 +8,9 @@ Phạm vi: giờ hẹn 24 giờ, thứ Hai–thứ Bảy 08:00–17:00 theo gi�
 - Web cho chọn gợi ý hoặc nhập giờ/phút dạng `HH:mm`; Flutter dùng bộ chọn 24 giờ, có chế độ nhập. Giữ lịch liên tục 08:00–17:00, thứ Hai–thứ Bảy; giờ nhập tay không bắt buộc bội số 15 phút.
 - Điều phối mặc định xem báo giá `PENDING`; danh sách làm mới mỗi phút, khi quay lại cửa sổ và khi mở liên kết thông báo `#quotes`. Bộ lọc vẫn cho xem mọi trạng thái.
 - Cảnh báo SLA sắp trễ và đã quá hạn là hai loại riêng, mỗi loại một lần mỗi phiếu; gửi điều phối và KTV có tài khoản nhận thông báo. Job quét mặc định mỗi 5 phút.
-- Báo giá hết hạn sau ngày hiệu lực (00:00 ngày kế tiếp, giờ Việt Nam). Nếu không ghi ngày hiệu lực, hạn là đúng 72 giờ từ lúc duyệt, tính cả Chủ nhật. Job quét mỗi phút, áp dụng cả báo giá cũ còn chờ; ghi `DECLINED` bởi `SYSTEM`, hủy lệnh sửa và chuyển phiếu sang `AWAITING_RETURN` trong một transaction. Thông báo web/app mời khách nhận máy nguyên trạng; không tích hợp SMS/FCM mới.
+- Báo giá hết hạn sau ngày hiệu lực (00:00 ngày kế tiếp, giờ Việt Nam). Nếu không ghi ngày hiệu lực, hạn là đúng số giờ trong cấu hình thời gian (mặc định 72) từ lúc duyệt, tính cả Chủ nhật. Job quét mỗi phút, áp dụng cả báo giá cũ còn chờ; ghi `DECLINED` bởi `SYSTEM`, hủy lệnh sửa và chuyển phiếu sang `AWAITING_RETURN` trong một transaction. Thông báo web/app mời khách nhận máy nguyên trạng; không tích hợp SMS/FCM mới.
 - Lịch sử khách cộng tiền thực thu từ `HoaDon_PhieuThu` của chính khách; không cộng báo giá chưa trả hoặc giá vốn. Tổng toàn bộ lịch sử không đổi khi lọc phiếu.
-- IMEI dùng 4–50 ký tự chữ ASCII, số hoặc dấu `-`; không kiểm tra Luhn. Giữ chuẩn hóa chữ hoa/khoảng trắng và cách tra IMEI 15 số chia gạch cũ; bắt buộc có, không trùng, kiểm chủ máy và phiếu mở như trước.
+- IMEI dùng 4–50 ký tự chữ ASCII, số hoặc dấu `-`; không kiểm tra Luhn. Giữ chuẩn hóa chữ hoa/khoảng trắng và cách tra IMEI 15 số chia gạch cũ; bắt buộc có, không trùng, chặn phiếu mở như trước. Người gửi mỗi lần có thể khác chủ đăng ký máy; không chuyển chủ thiết bị.
 - Nút “Kiểm tra bảo hành” của lễ tân hiện thông báo khi tìm thấy thiết bị hoặc thiết bị chưa đăng ký, ngoài phần chi tiết nằm phía dưới. Lỗi dịch vụ vẫn có thông báo lỗi; tự điền từ yêu cầu online không tạo thêm thông báo tra cứu trùng. `npm run test:ui:staff-selection` kiểm cả tìm thấy/không tìm thấy/lỗi trên desktop, tablet và mobile bằng API giả lập.
 
 Database đã có cần được người vận hành cho phép chạy [13_relax_imei.sql](../../database/13_relax_imei.sql) để nới `CK_ThietBi_IMEI`; file chỉ đổi CHECK, không sửa dữ liệu. Ngày 07/11/2026 đã áp dụng theo yêu cầu chủ dự án trên VPS, database `TrungTamBaoHanhDB`: CHECK bật và trusted, `DBCC CHECKCONSTRAINTS` không báo vi phạm; trước/sau đều 621 thiết bị, gồm 136 IMEI; health nội bộ và HTTPS đều `UP`. Chưa chạy kiểm thử ghi dữ liệu SQL hoặc deploy bộ mã ứng dụng mới trong lượt này.
@@ -20,9 +20,23 @@ Kiểm thử trình duyệt riêng bằng API giả lập (chạy Vite trước)
 ```powershell
 cd frontend-react
 npm run test:ui:workflow
+npm run test:ui:service-visit
+npm run test:ui:time-settings
 ```
 
 Ca kiểm: nhập giờ từng ký tự và giờ sai, Chủ nhật/giờ đóng cửa; tổng thực trả ở màn 320px và desktop; báo giá mới xuất hiện khi quay lại điều phối; IMEI linh hoạt và dữ liệu ngoài giới hạn. Không ghi DB thật.
+
+`test:ui:service-visit` kiểm dropdown model ở cổng công khai và tài khoản: lọc theo nhóm, xóa model cũ khi đổi nhóm,
+nhóm chưa có model và gửi đúng loại/định danh của model. Ca cha/con kiểm tra tra serial không đổi người gửi,
+phiếu mới gửi mã khách người con và mã thiết bị cũ, trên màn 1440px/390px. API được giả lập toàn bộ.
+`ServiceVisitCatalogTests` kiểm danh mục công khai không lộ trường nội bộ, tiếp nhận khác chủ không chuyển chủ,
+và quyền xem/xác nhận phiếu vẫn theo người gửi từng lần. Flutter kiểm chọn model, đổi loại xóa model cũ,
+đọc danh mục mới/cũ và gửi yêu cầu với tên model đã chọn.
+
+`test:ui:time-settings` kiểm màn `/admin#time-settings` ở 1440px/390px: đọc mặc định 48h, chặn SLA không tăng dần và giờ sai
+`HH:mm`, gửi đúng body khi lưu; lễ tân hiện số giờ SLA đã cấu hình và chọn sẵn mức mặc định; cổng khách chặn ngày nghỉ theo
+cấu hình. API giả lập toàn bộ. `TimeSettingsTests` (backend) kiểm hạn SLA, giờ làm việc, hạn báo giá theo cấu hình và ràng buộc
+dữ liệu. Database local cần chạy [14_time_settings.sql](../../database/14_time_settings.sql) để lưu được cấu hình.
 
 ## Kiểm thử ghi và đồng thời trên SQL Server, không reset dữ liệu
 
