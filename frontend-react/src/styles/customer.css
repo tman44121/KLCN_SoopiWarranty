@@ -80,8 +80,6 @@
 .home-review-more:hover { border-color: var(--kh-forest); }
 .home-review-more:focus-visible, .home-review-expand:focus-visible { outline: 2px solid var(--kh-forest); outline-offset: 2px; }
 .home-reviews-note { margin: 0; font-size: 12px; color: var(--kh-muted); }
-.home-review-preview { margin: 0 0 20px; padding: 12px; border: 1px solid var(--status-warning-border); border-radius: var(--radius-button); background: var(--status-warning-bg); color: var(--status-warning-text); font-size: 13px; }
-.home-review-preview a { color: inherit; font-weight: 700; }
 .home-reviews-error { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 260px; padding: 32px 24px; border: 1px dashed var(--kh-border); border-radius: var(--radius-card); background: var(--kh-cream); text-align: center; }
 .home-reviews-error-icon { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 4px; border-radius: 50%; background: var(--kh-info-bg); color: var(--kh-info-text); }
 .home-reviews-error-icon .kh-icon { width: 24px; height: 24px; }
@@ -245,7 +243,6 @@
   height: 26px;
   width: auto;
 }
-
 
 .banner-home-link {
   display: flex;
@@ -1427,7 +1424,6 @@
   .notif-bell-wrap { position: static; }
   .notif-dropdown { top: calc(100% + 8px); right: 12px; width: calc(100vw - 24px); max-height: min(480px, 60dvh); }
 }
-
 
 .kh-main {
   flex: 1;
@@ -2809,7 +2805,6 @@ a.method-card:hover {
   margin-bottom: 14px;
 }
 
-
 .footer-desc {
   font-size: 13px;
   max-width: 340px;
@@ -3179,7 +3174,6 @@ a.method-card:hover {
 .ticket-meta .dispatch-link {
   white-space: nowrap;
 }
-
 
 /* ==========================================================================
    TRANG CHỦ / GIỚI THIỆU (/) — bố cục home.css của web khách KLCN theo DESIGN.md:
@@ -4581,40 +4575,6 @@ a.method-card:hover {
   border-top: 1px dashed var(--border-universal);
 }
 
-.payment-cta-box {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.pay-cta-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px 18px;
-  border-radius: var(--radius-card);
-  border: none;
-  font-weight: 600;
-  font-size: 14.5px;
-  color: var(--surface-card);
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 50%, var(--color-primary-hover) 100%);
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--surface-inverse) 35%, transparent);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.pay-cta-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px color-mix(in srgb, var(--surface-inverse) 45%, transparent);
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
-}
-
-.pay-cta-btn:active {
-  transform: translateY(0);
-}
-
 .paid-badge-box {
   display: flex;
   align-items: center;
@@ -4633,27 +4593,6 @@ a.method-card:hover {
   color: var(--status-success-text);
   font-weight: 600;
   font-size: 13.5px;
-}
-
-.paid-receipt-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border-radius: var(--radius-button);
-  border: 1px solid var(--border-universal);
-  background: var(--surface-card);
-  color: var(--text-default);
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.paid-receipt-btn:hover {
-  background: var(--surface-utility);
-  border-color: var(--text-muted);
-  color: var(--text-strong);
 }
 
 /* Modal Overlay & Container */
@@ -4694,26 +4633,6 @@ a.method-card:hover {
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-.payment-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 20px;
-  border-bottom: 1px solid var(--kh-divider);
-  flex-shrink: 0;
-}
-
-.payment-modal-title {
-  font-size: 16.5px;
-  font-weight: 700;
-  color: var(--kh-navy);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
 .payment-modal-close {
   background: var(--kh-cream);
   border: none;
@@ -4732,196 +4651,6 @@ a.method-card:hover {
 .payment-modal-close:hover {
   background: var(--kh-border);
   color: var(--kh-navy);
-}
-
-.payment-modal-body {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-/* Payment Summary Header Card */
-.payment-summary-card {
-  background: var(--kh-cream);
-  border: 1px solid var(--kh-border);
-  border-radius: var(--radius-card);
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.payment-summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13.5px;
-  color: var(--kh-muted);
-}
-
-.payment-summary-row strong {
-  color: var(--kh-navy);
-}
-
-.payment-summary-row.is-total {
-  border-top: 1px dashed var(--border-control);
-  padding-top: 8px;
-  margin-top: 4px;
-  font-size: 15px;
-  color: var(--kh-navy);
-  font-weight: 700;
-}
-
-.payment-summary-row.is-total .amount {
-  color: var(--kh-forest);
-  font-size: 18px;
-  font-weight: 800;
-}
-
-/* Method Selection Grid */
-.payment-section-subtitle {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--kh-quiet);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: -6px;
-}
-
-.payment-method-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.payment-method-card {
-  font: inherit;
-  color: var(--kh-navy);
-  border: 1.5px solid var(--kh-border);
-  border-radius: var(--radius-card);
-  padding: 14px 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 8px;
-  cursor: pointer;
-  background: var(--surface-card);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  user-select: none;
-}
-
-.payment-demo-notice {
-  margin: 0;
-  padding: 12px;
-  border: 1px solid var(--kh-border);
-  border-radius: var(--radius-input);
-  background: var(--kh-cream);
-  color: var(--kh-navy);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.payment-method-card:hover {
-  border-color: var(--color-primary-border);
-  background: var(--kh-cream);
-  transform: translateY(-2px);
-  box-shadow: none;
-}
-
-.payment-method-card.is-selected {
-  border-color: var(--kh-forest);
-  background: var(--kh-mint-soft);
-  box-shadow: none;
-}
-
-.payment-method-card.full-width {
-  grid-column: span 2;
-  flex-direction: row;
-  justify-content: flex-start;
-  text-align: left;
-  padding: 12px 16px;
-  gap: 14px;
-}
-
-.payment-method-icon-box {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-button);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  background: var(--kh-cream);
-  flex-shrink: 0;
-}
-
-.payment-method-card.is-selected .payment-method-icon-box {
-  background: var(--kh-mint-soft);
-}
-
-.payment-method-name {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--kh-navy);
-}
-
-.payment-method-desc {
-  font-size: 12px;
-  color: var(--kh-quiet);
-}
-
-/* Confirm & Form Screens */
-.payment-view-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.payment-qr-wrap {
-  --payment-qr-ink: var(--text-strong);
-  --payment-qr-paper: var(--surface-card);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: var(--kh-cream);
-  border: 1px solid var(--kh-border);
-  border-radius: var(--radius-card);
-  text-align: center;
-}
-
-.payment-qr-canvas-box {
-  background: var(--surface-card);
-  padding: 12px;
-  border-radius: var(--radius-button);
-  box-shadow: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.payment-qr-canvas-box canvas {
-  width: 170px !important;
-  height: 170px !important;
-  display: block;
-}
-
-.payment-countdown-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--kh-warn-bg);
-  color: var(--kh-warn-text);
-  font-size: 12.5px;
-  font-weight: 600;
-  padding: 5px 12px;
-  border-radius: var(--radius-card);
 }
 
 .payment-bank-details {
@@ -4954,115 +4683,14 @@ a.method-card:hover {
   color: var(--kh-forest);
   cursor: pointer;
   font-size: 11.5px;
-  margin-left: 6px;
+  margin-left: 2px;
+  min-height: 24px;
+  padding: 4px 6px;
   text-decoration: underline;
-}
-
-/* Card Payment Form */
-.payment-card-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.payment-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.payment-form-label {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-default);
-}
-
-.payment-form-input {
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-input);
-  padding: 10px 12px;
-  font-size: 14px;
-  outline: none;
-  font-family: inherit;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-  width: 100%;
-  min-width: 0;
-}
-
-.payment-form-input:focus {
-  border-color: var(--kh-forest);
-  outline: 2px solid var(--kh-forest);
-  outline-offset: 2px;
-}
-
-.payment-form-input[aria-invalid="true"] { border-color: var(--kh-bad-text); }
-
-.payment-card-grid-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.payment-security-notice {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 11.5px;
-  color: var(--kh-muted);
-  margin-top: 4px;
-}
-
-/* Processing State */
-.payment-processing-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  text-align: center;
-  gap: 16px;
-}
-
-.payment-spinner {
-  width: 52px;
-  height: 52px;
-  border: 4px solid var(--kh-border);
-  border-top-color: var(--kh-forest);
-  border-radius: 50%;
-  animation: paymentSpin 0.8s linear infinite;
 }
 
 @keyframes paymentSpin {
   to { transform: rotate(360deg); }
-}
-
-.payment-processing-title {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--kh-navy);
-}
-
-.payment-processing-desc {
-  font-size: 13px;
-  color: var(--kh-muted);
-  max-width: 320px;
-}
-
-/* Progress bar for Wallet */
-.payment-progress-bar-bg {
-  width: 100%;
-  height: 6px;
-  background: var(--kh-border);
-  border-radius: var(--radius-button);
-  overflow: hidden;
-  margin-top: 8px;
-}
-
-.payment-progress-bar-fill {
-  height: 100%;
-  background: var(--kh-forest);
-  animation: paymentProgress 6s linear forwards;
 }
 
 @keyframes paymentProgress {
@@ -5070,123 +4698,9 @@ a.method-card:hover {
   to { width: 100%; }
 }
 
-/* Success & Receipt Styles */
-.payment-success-badge-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--kh-mint-soft);
-  color: var(--kh-forest);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
-  font-size: 32px;
-  box-shadow: none;
-  animation: paymentPopIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 @keyframes paymentPopIn {
   from { transform: scale(0.5); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
-}
-
-.payment-receipt-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.payment-receipt {
-  background: var(--surface-card);
-  border: 1.5px dashed var(--border-control);
-  border-radius: var(--radius-card);
-  padding: 18px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  position: relative;
-  box-shadow: none;
-}
-
-.payment-receipt-header {
-  text-align: center;
-  border-bottom: 1px dashed var(--border-control);
-  padding-bottom: 12px;
-}
-
-.payment-receipt-logo {
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--kh-forest, var(--kh-forest));
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.payment-receipt-title {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--kh-navy);
-  margin-top: 2px;
-}
-
-.payment-receipt-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12.5px;
-  color: var(--kh-muted);
-}
-
-.payment-receipt-meta-row {
-  display: flex;
-  justify-content: space-between;
-}
-
-.payment-receipt-meta-row strong {
-  color: var(--kh-navy);
-}
-
-.payment-receipt-divider {
-  border-top: 1px dashed var(--border-control);
-  margin: 4px 0;
-}
-
-.payment-receipt-items {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12.5px;
-}
-
-.payment-receipt-item-row {
-  display: flex;
-  justify-content: space-between;
-  color: var(--kh-quiet);
-}
-
-.payment-receipt-total-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--kh-navy);
-  padding-top: 6px;
-  border-top: 2px solid var(--kh-navy);
-}
-
-.payment-receipt-total-row .total-val {
-  color: var(--kh-forest);
-  font-size: 17px;
-}
-
-.payment-receipt-footer-note {
-  text-align: center;
-  font-size: 12px;
-  color: var(--kh-muted);
-  font-style: italic;
-  margin-top: 4px;
 }
 
 /* Modal Action Footer Buttons */
@@ -5255,30 +4769,6 @@ a.method-card:hover {
 
 .payment-modal-footer .btn-print:hover {
   background: var(--text-default);
-}
-
-/* Error State */
-.payment-error-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 30px 16px;
-  text-align: center;
-  gap: 14px;
-}
-
-.payment-error-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--kh-bad-bg);
-  color: var(--kh-bad-text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  box-shadow: none;
 }
 
 /* PRINT STYLES FOR RECEIPT */
@@ -5697,8 +5187,7 @@ a.method-card:hover {
   font-family: var(--kh-font-mono, monospace);
 }
 
-.quote-grand-amount,
-.payment-summary-row .amount {
+.quote-grand-amount {
   white-space: nowrap;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
@@ -5791,10 +5280,10 @@ a.method-card:hover {
 @media (max-width: 600px) {
   .payment-modal-footer { flex-direction: column; }
   .payment-modal-footer button { flex: none; width: 100%; }
-  .payment-modal-body, .quote-modal-body { padding: 16px; }
+  .quote-modal-body { padding: 16px; }
   .quote-modal-header { padding: 16px; }
   .quote-breakdown-card { padding: 12px; }
-  .payment-form-input { font-size: 16px; min-height: 44px; }
+
 }
 
 /* Tag trên Stepper */
@@ -5824,9 +5313,6 @@ a.method-card:hover {
   color: var(--surface-card) !important;
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--surface-inverse) 25%, transparent);
 }
-
-
-
 
 /* Compact chat appears on demand; minimize keeps a small chat head. */
 [data-chat-launcher]:empty { display: none; }
@@ -5861,20 +5347,6 @@ a.method-card:hover {
   .chat-ticket-filter button { min-height: 44px; }
 }
 @media print { .chat-popover, .chat-mini, [data-chat-launcher], .ticket-hero-actions button { display: none !important; } }
-.payment-qr-wrap.payment-qr-wrap--momo {
-  --payment-qr-ink: var(--payment-momo-ink);
-  --payment-wallet-text: var(--payment-momo-text);
-  --payment-wallet-border: var(--payment-momo-border);
-}
-.payment-qr-wrap.payment-qr-wrap--zalopay {
-  --payment-qr-ink: var(--payment-zalopay-ink);
-  --payment-wallet-text: var(--payment-zalopay-text);
-  --payment-wallet-border: var(--payment-zalopay-border);
-}
-.payment-qr-wrap .payment-wallet-open {
-  width: 100%; justify-content: center; font-weight: 600;
-  border-color: var(--payment-wallet-border); color: var(--payment-wallet-text);
-}
 
 @media (max-width: 767px) {
   .kh-app .kh-alert { flex-direction: column; align-items: stretch; }
@@ -5911,11 +5383,11 @@ a.method-card:hover {
 @keyframes kh-state-fade { from { opacity: 0.4; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
   .chat-window, .chat-window.chat-popover, .notif-badge, .chat-fab-badge,
-  .payment-modal, .payment-success-badge-icon, .notif-dropdown {
+  .payment-modal, .notif-dropdown {
     animation: kh-state-fade 0.15s ease-out;
   }
   .chat-typing-dots span, .step-quote-tag, .chat-fab-pulse { animation: none; }
-  .payment-spinner { animation: kh-state-fade 1.2s ease-in-out infinite alternate; }
+
   .chat-typing-dots span:nth-child(2) { opacity: 0.65; }
   .chat-typing-dots span:nth-child(3) { opacity: 0.4; }
 }

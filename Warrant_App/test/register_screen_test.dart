@@ -5,28 +5,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:warrant_safe/models/user_model.dart';
-import 'package:warrant_safe/services/api_service.dart';
+import 'support/fake_api_service.dart';
 import 'package:warrant_safe/services/token_storage.dart';
 import 'package:warrant_safe/viewmodels/auth_viewmodel.dart';
-import 'package:warrant_safe/views/auth/register_screen.dart';
+import 'package:warrant_safe/views/auth/real_register_screen.dart';
 
 class _Storage implements TokenStorage {
   @override
-  Future<void> clearSession({bool isMock = false}) async {}
+  Future<void> clearSession() async {}
 
   @override
-  Future<Map<String, String?>> readSession({bool isMock = false}) async => {};
+  Future<Map<String, String?>> readSession() async => {};
 
   @override
   Future<void> saveSession({
     required String token,
     String? refreshToken,
     required String userId,
-    bool isMock = false,
   }) async {}
 }
 
-class _PendingOtpApi extends MockApiService {
+class _PendingOtpApi extends FakeApiService {
   final issued = Completer<EmailOtpIssued>();
   int requests = 0;
 
@@ -40,46 +39,10 @@ class _PendingOtpApi extends MockApiService {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('Mock registration uses email without a phone field', (
-    tester,
-  ) async {
-    SharedPreferences.setMockInitialValues({'isMock': true});
-    final auth = AuthViewModel(tokenStorage: _Storage());
-    await auth.initialize();
-    await tester.pumpWidget(
-      ChangeNotifierProvider<AuthViewModel>.value(
-        value: auth,
-        child: const MaterialApp(home: RegisterScreen()),
-      ),
-    );
-
-    expect(find.text('Tạo tài khoản'), findsOneWidget);
-    expect(find.textContaining('Chế độ minh họa'), findsOneWidget);
-    expect(find.text('SỐ ĐIỆN THOẠI'), findsNothing);
-    expect(find.byType(TextFormField), findsNWidgets(2));
-
-    await tester.enterText(find.byType(TextFormField).first, 'Khách thử');
-    await tester.enterText(find.byType(TextFormField).last, 'demo@example.com');
-    await tester.tap(find.text('TIẾP TỤC'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).first, 'Password1!');
-    await tester.enterText(find.byType(TextFormField).last, 'Password1!');
-    await tester.tap(find.byType(Checkbox));
-    await tester.ensureVisible(find.text('TẠO TÀI KHOẢN'));
-    await tester.tap(find.text('TẠO TÀI KHOẢN'));
-    await tester.pumpAndSettle();
-
-    expect(auth.isAuthenticated, true);
-    expect(auth.currentUser?.email, 'demo@example.com');
-    expect(auth.currentUser?.phone, isEmpty);
-    auth.dispose();
-  });
-
   testWidgets(
-    'Real registration matches email OTP contract and blocks empty input',
+    'Registration matches email OTP contract and blocks empty input',
     (tester) async {
       SharedPreferences.setMockInitialValues({
-        'isMock': false,
         'baseUrl': 'http://10.0.2.2:8081/api/v1',
       });
       final auth = AuthViewModel(tokenStorage: _Storage());
@@ -87,7 +50,7 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider<AuthViewModel>.value(
           value: auth,
-          child: const MaterialApp(home: RegisterScreen()),
+          child: const MaterialApp(home: RealRegisterScreen()),
         ),
       );
 
@@ -114,14 +77,14 @@ void main() {
   testWidgets(
     'Changing email during OTP request never binds code to new email',
     (tester) async {
-      SharedPreferences.setMockInitialValues({'isMock': false});
+      SharedPreferences.setMockInitialValues({});
       final api = _PendingOtpApi();
       final auth = AuthViewModel(tokenStorage: _Storage(), apiService: api);
       await auth.initialize();
       await tester.pumpWidget(
         ChangeNotifierProvider<AuthViewModel>.value(
           value: auth,
-          child: const MaterialApp(home: RegisterScreen()),
+          child: const MaterialApp(home: RealRegisterScreen()),
         ),
       );
       final fields = find.byType(TextFormField);

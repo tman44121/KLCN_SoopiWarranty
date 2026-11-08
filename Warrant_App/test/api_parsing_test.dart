@@ -10,19 +10,19 @@ class InMemoryTokenStorage implements TokenStorage {
   String? userId;
 
   @override
-  Future<void> saveSession({required String token, String? refreshToken, required String userId, bool isMock = false}) async {
+  Future<void> saveSession({required String token, String? refreshToken, required String userId}) async {
     this.token = token;
     this.refreshToken = refreshToken;
     this.userId = userId;
   }
 
   @override
-  Future<Map<String, String?>> readSession({bool isMock = false}) async {
+  Future<Map<String, String?>> readSession() async {
     return {'token': token, 'refreshToken': refreshToken, 'userId': userId};
   }
 
   @override
-  Future<void> clearSession({bool isMock = false}) async {
+  Future<void> clearSession() async {
     token = null;
     refreshToken = null;
     userId = null;
@@ -118,31 +118,15 @@ void main() {
   });
 
   group('Session Restoration Test', () {
-    test('ViewModel restores same mock/real mode based on SharedPreferences', () async {
-      SharedPreferences.setMockInitialValues({'isMock': false});
+    test('Initialize without a stored session finishes signed out', () async {
+      SharedPreferences.setMockInitialValues({});
 
       final vm = AuthViewModel(tokenStorage: InMemoryTokenStorage());
 
       await vm.initialize();
 
-      expect(vm.isMock, false);
+      expect(vm.isAuthenticated, false);
       expect(vm.isLoading, false);
-    });
-
-    test('Mode switching clears session and toggles API', () async {
-      SharedPreferences.setMockInitialValues({'isMock': true});
-      final storage = InMemoryTokenStorage();
-      await storage.saveSession(token: 'abc', refreshToken: 'def', userId: 'usr1');
-
-      final vm = AuthViewModel(tokenStorage: storage);
-      await vm.initialize();
-
-      expect(vm.isMock, true);
-      // Switching to real
-      await vm.toggleMockMode(false);
-      expect(vm.isMock, false);
-      // Wait, since we can't test actual API clearing easily here without mock,
-      // we just ensure state changed.
     });
 
     test('Profile identity preservation during copyWith', () {

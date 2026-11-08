@@ -51,7 +51,7 @@ class _Storage implements TokenStorage {
   String? userId = 'account-1';
 
   @override
-  Future<Map<String, String?>> readSession({bool isMock = false}) async => {
+  Future<Map<String, String?>> readSession() async => {
     'token': access,
     'refreshToken': refresh,
     'userId': userId,
@@ -62,7 +62,6 @@ class _Storage implements TokenStorage {
     required String token,
     String? refreshToken,
     required String userId,
-    bool isMock = false,
   }) async {
     access = token;
     refresh = refreshToken;
@@ -70,7 +69,7 @@ class _Storage implements TokenStorage {
   }
 
   @override
-  Future<void> clearSession({bool isMock = false}) async {
+  Future<void> clearSession() async {
     access = null;
     refresh = null;
     userId = null;
@@ -84,7 +83,6 @@ void main() {
     'profile refresh losing its session does not leave login loading forever',
     () async {
       SharedPreferences.setMockInitialValues({
-        'isMock': false,
         'baseUrl': 'http://test/api/v1',
       });
       final storage = _Storage();
@@ -510,7 +508,6 @@ void main() {
     'ViewModel rotates stored credentials once for two expired GETs',
     () async {
       SharedPreferences.setMockInitialValues({
-        'isMock': false,
         'baseUrl': 'http://test/api/v1',
       });
       final storage = _Storage();
@@ -683,7 +680,6 @@ void main() {
     'invalid refresh credential clears only the Real local session',
     () async {
       SharedPreferences.setMockInitialValues({
-        'isMock': false,
         'baseUrl': 'http://test/api/v1',
       });
       final storage = _Storage();
@@ -738,7 +734,6 @@ void main() {
 
   test('temporary refresh error keeps the Real local session', () async {
     SharedPreferences.setMockInitialValues({
-      'isMock': false,
       'baseUrl': 'http://test/api/v1',
     });
     final storage = _Storage();

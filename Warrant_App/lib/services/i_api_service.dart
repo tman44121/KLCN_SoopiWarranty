@@ -5,7 +5,7 @@ import '../models/portal_lookup_models.dart';
 import '../models/portal_notification_models.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Custom exception (shared between Mock and Real implementations)
+// Custom exception
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Typed exception that wraps all API-level errors.
@@ -20,7 +20,7 @@ class ApiException implements Exception {
 
   final String message;
 
-  /// HTTP status code when available (null for network / mock errors).
+  /// HTTP status code when available (null for network errors).
   final int? statusCode;
   final Map<String, String> fieldErrors;
   final String? code;
@@ -41,27 +41,16 @@ class NetworkException extends ApiException {
 
 /// Defines the contract for all API operations used by [AuthViewModel].
 ///
-/// Concrete implementations:
-///   • [MockApiService]  — demo data without HTTP
-///   • [RealApiService]  — Dio-backed Soopi API client
+/// [RealApiService] is the Dio-backed Soopi API client; tests provide fakes
+/// that override only the calls they exercise.
 abstract class IApiService {
   /// Authenticates the user and returns a [AuthResponse] containing the JWT.
   /// Throws [ApiException] on invalid credentials.
   Future<AuthResponse> login(String username, String password);
 
-  /// Creates a new account.
-  /// Throws [ApiException] if [email] is already registered.
-  Future<AuthResponse> register({
-    required String fullName,
-    required String phone,
-    required String email,
-    required String password,
-  });
-
-  /// Real customer registration uses an email OTP; Mock registration remains
-  /// the existing local demonstration flow.
+  /// Customer registration is confirmed with an OTP sent by email.
   Future<EmailOtpIssued> requestRegistrationOtp(String email, String phone) =>
-      throw UnsupportedError('Email OTP is not available in Mock mode.');
+      throw UnsupportedError('Email OTP is not supported by this API client.');
 
   Future<AuthResponse> registerWithEmailOtp({
     required String fullName,
@@ -69,19 +58,26 @@ abstract class IApiService {
     required String email,
     required String otp,
     required String password,
-  }) => throw UnsupportedError('Email OTP is not available in Mock mode.');
+  }) =>
+      throw UnsupportedError('Email OTP is not supported by this API client.');
 
   Future<EmailOtpIssued> requestPasswordResetOtp(String email) =>
-      throw UnsupportedError('Password reset is not available in Mock mode.');
+      throw UnsupportedError(
+        'Password reset is not supported by this API client.',
+      );
 
   Future<void> verifyPasswordResetOtp(String email, String otp) =>
-      throw UnsupportedError('Password reset is not available in Mock mode.');
+      throw UnsupportedError(
+        'Password reset is not supported by this API client.',
+      );
 
   Future<void> resetPasswordWithEmailOtp({
     required String email,
     required String otp,
     required String newPassword,
-  }) => throw UnsupportedError('Password reset is not available in Mock mode.');
+  }) => throw UnsupportedError(
+    'Password reset is not supported by this API client.',
+  );
 
   /// Fetches the profile.
   /// Throws [ApiException] if not found.
@@ -92,13 +88,16 @@ abstract class IApiService {
     required String fullName,
     required String email,
     required String address,
-  }) =>
-      throw UnsupportedError('Profile editing is not available in Mock mode.');
+  }) => throw UnsupportedError(
+    'Profile editing is not supported by this API client.',
+  );
 
   Future<AuthResponse> changePassword(
     String currentPassword,
     String newPassword,
-  ) => throw UnsupportedError('Password change is not available in Mock mode.');
+  ) => throw UnsupportedError(
+    'Password change is not supported by this API client.',
+  );
 
   /// Refreshes the session.
   Future<AuthResponse> refresh(String refreshToken);
@@ -109,43 +108,46 @@ abstract class IApiService {
   /// Fetches owned devices.
   Future<List<OwnedDevice>> getMyDevices();
 
-  /// Customer portal requests. Mock screens retain their own demo data source.
-  Future<PortalCatalog> getPortalCatalog() =>
-      throw UnsupportedError('Portal catalog is not available in Mock mode.');
+  /// Customer portal requests and tickets.
+  Future<PortalCatalog> getPortalCatalog() => throw UnsupportedError(
+    'Portal catalog is not supported by this API client.',
+  );
   Future<List<PortalRequestSummary>> getMyWarrantyRequests() =>
-      throw UnsupportedError('Portal requests are not available in Mock mode.');
+      throw UnsupportedError('Portal requests are not supported by this API client.');
   Future<PortalRequestDetail> getMyWarrantyRequest(String code) =>
       throw UnsupportedError(
-        'Portal request detail is not available in Mock mode.',
+        'Portal request detail is not supported by this API client.',
       );
   Future<String> submitMyWarrantyRequest(OwnWarrantyRequestData data) =>
       throw UnsupportedError(
-        'Portal request submission is not available in Mock mode.',
+        'Portal request submission is not supported by this API client.',
       );
   Future<List<PortalTicketSummary>> getMyTickets() =>
-      throw UnsupportedError('Portal tickets are not available in Mock mode.');
+      throw UnsupportedError('Portal tickets are not supported by this API client.');
   Future<PortalTicketDetail> getPortalTicket(String code) =>
       throw UnsupportedError(
-        'Portal ticket detail is not available in Mock mode.',
+        'Portal ticket detail is not supported by this API client.',
       );
   Future<PortalLookupRecord> lookupPortal(String code, String phone) =>
-      throw UnsupportedError('Portal lookup is not available in Mock mode.');
+      throw UnsupportedError(
+        'Portal lookup is not supported by this API client.',
+      );
   Future<PortalWarrantyCheck> checkWarranty(String serial) =>
       throw UnsupportedError(
-        'Public warranty lookup is not available in Mock mode.',
+        'Public warranty lookup is not supported by this API client.',
       );
   Future<PortalTicketDetail> decidePortalQuotation(
     String ticketCode,
     String decision, {
     String? reason,
   }) => throw UnsupportedError(
-    'Portal quotation decision is not available in Mock mode.',
+    'Portal quotation decision is not supported by this API client.',
   );
 
   Future<PortalNotificationInbox> getNotifications() =>
-      throw UnsupportedError('Notifications are not available in Mock mode.');
+      throw UnsupportedError('Notifications are not supported by this API client.');
   Future<void> markNotificationRead(String id) =>
-      throw UnsupportedError('Notifications are not available in Mock mode.');
+      throw UnsupportedError('Notifications are not supported by this API client.');
 
   /// Attaches a Bearer token to all subsequent requests.
   void setAuthToken(String token);

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../data/mock_data.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_bar_widget.dart';
 import 'package:go_router/go_router.dart';
@@ -53,7 +52,6 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthViewModel>();
-    final isMock = auth.isMock;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -61,12 +59,9 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
         child: Column(
           children: [
             WarrantSafeAppBar(
-              unreadCount: isMock
-                  ? unreadNotificationCount
-                  : auth.notificationUnreadCount,
-              notificationCountLoading:
-                  !isMock && auth.notificationCountLoading,
-              notificationCountError: !isMock && auth.notificationCountError,
+              unreadCount: auth.notificationUnreadCount,
+              notificationCountLoading: auth.notificationCountLoading,
+              notificationCountError: auth.notificationCountError,
               onNotificationTap: () => context.go(AppRoutes.notifications),
             ),
             const Divider(height: 1),
@@ -106,9 +101,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          isMock
-                              ? 'Tra cứu thiết bị qua Serial / IMEI…'
-                              : 'Tra cứu Serial / IMEI hoặc mã YC / TN…',
+                          'Tra cứu Serial / IMEI hoặc mã YC / TN…',
                           style: GoogleFonts.inter(
                             color: AppColors.sageMuted,
                             fontSize: 13.5,
@@ -139,45 +132,19 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   }
 
   Widget _buildContent() {
-    final isMock = context.watch<AuthViewModel>().isMock;
-
-    if (isMock) {
-      if (mockDevices.isEmpty) {
-        return _buildEmptyState();
-      }
-      return ListView.builder(
+    if (_error != null) return _buildErrorState();
+    if (_devices.isEmpty) return _buildEmptyState();
+    return RefreshIndicator(
+      onRefresh: _fetchDevices,
+      child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-        itemCount: mockDevices.length,
-        itemBuilder: (context, index) {
-          final device = mockDevices[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _DeviceCard(device: device),
-          );
-        },
-      );
-    } else {
-      if (_error != null) {
-        return _buildErrorState();
-      }
-      if (_devices.isEmpty) {
-        return _buildEmptyState();
-      }
-      return RefreshIndicator(
-        onRefresh: _fetchDevices,
-        child: ListView.builder(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-          itemCount: _devices.length,
-          itemBuilder: (context, index) {
-            final device = _devices[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _RealDeviceCard(device: device),
-            );
-          },
+        itemCount: _devices.length,
+        itemBuilder: (context, index) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _RealDeviceCard(device: _devices[index]),
         ),
-      );
-    }
+      ),
+    );
   }
 
   Widget _buildEmptyState() {
@@ -259,128 +226,6 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
         ],
       ),
     );
-  }
-}
-
-class _DeviceCard extends StatelessWidget {
-  const _DeviceCard({required this.device});
-
-  final MockDevice device;
-
-  @override
-  Widget build(BuildContext context) {
-    final warrantyText = device.warrantyExpiryDate == null
-        ? 'Chưa có ngày bảo hành Mock'
-        : 'Hạn bảo hành mẫu: ${device.warrantyExpiryDate!.toIso8601String().substring(0, 10)}';
-
-    return GestureDetector(
-      onTap: () => context.push('${AppRoutes.devices}/detail', extra: device),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.paperWhite,
-          borderRadius: BorderRadius.circular(AppRadius.container),
-          border: Border.all(color: AppColors.sageBorder, width: 1),
-          boxShadow: AppShadows.card,
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.mintSoft,
-                borderRadius: BorderRadius.circular(AppRadius.control),
-              ),
-              child: Icon(
-                _iconForCategory(device.deviceCategory),
-                size: 24,
-                color: AppColors.forest,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          device.deviceName,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.penguinNavy,
-                            height: 1.25,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 14,
-                        color: AppColors.sageMuted.withValues(alpha: 0.6),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    '${device.identifierType}: ${device.identifierValue}',
-                    style: GoogleFonts.jetBrainsMono(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.slateQuiet,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.mintWash,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                      border: Border.all(color: AppColors.mintBorder),
-                    ),
-                    child: Text(
-                      warrantyText,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.forestDeep,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  IconData _iconForCategory(String category) {
-    switch (category) {
-      case 'phone':
-        return Icons.smartphone_outlined;
-      case 'laptop':
-        return Icons.laptop_outlined;
-      case 'camera':
-        return Icons.camera_alt_outlined;
-      case 'tv':
-        return Icons.tv_outlined;
-      case 'tablet':
-        return Icons.tablet_outlined;
-      case 'earbuds':
-        return Icons.headphones_outlined;
-      default:
-        return Icons.devices_outlined;
-    }
   }
 }
 

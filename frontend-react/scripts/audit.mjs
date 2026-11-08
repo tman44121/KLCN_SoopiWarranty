@@ -41,15 +41,7 @@ try {
           costs: { total: 2916000, inWarrantyAmount: 0, outOfWarrantyParts: 2500000, serviceFee: 200000, vat: 216000, paymentStatus: 'UNPAID' }
         } }));
         await s.page.goto(base + '/account#phieu/TN-QUALITY-PAYMENT');
-        await s.page.locator('.pay-cta-btn').click();
-      } },
-      { state: 'card', action: async () => {
-        await s.page.getByRole('button', { name: /Thẻ Visa/ }).click();
-        await s.page.getByRole('button', { name: 'Tiếp theo →', exact: true }).click();
-      } },
-      { state: 'card-validation', action: async () => {
-        await s.page.getByPlaceholder('4111 1111 1111 1111', { exact: true }).fill('123');
-        await s.page.locator('.payment-modal-footer .btn-submit').click();
+        await s.page.locator('.payment-section-wrapper').waitFor();
       } });
     for (const variant of variants) {
       if (variant.action) await variant.action();
@@ -82,7 +74,7 @@ try {
   await browser.close();
 }
 assert.equal(results.filter(r => r.state === 'default').length, Object.keys(routes).length * 3, 'Audit did not cover every route and viewport');
-assert.equal(results.length, 49, 'Audit did not cover every interactive state');
+assert.equal(results.length, 47, 'Audit did not cover every interactive state');
 const failed = results.filter(r => r.violations.length || r.overflow > 0 || r.errors.length || r.unresolvedReferences.length);
 assert.deepEqual(failed.map(r => ({ path: r.path, width: r.width, state: r.state, rules: r.violations.map(v => v.id), overflow: r.overflow, errors: r.errors, unresolvedReferences: r.unresolvedReferences })), []);
 console.log(results.length + ' rendered accessibility/layout checks passed');

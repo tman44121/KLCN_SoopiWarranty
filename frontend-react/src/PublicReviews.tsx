@@ -3,7 +3,6 @@ import { api, Icon } from './customer';
 
 type Review = { id: string; rating: number; comment: string | null; reviewedOn: string | null };
 type Reviews = { reviewCount: number; averageRating: number | null; items: Review[] };
-export const isReviewPreview = import.meta.env.DEV && new URLSearchParams(location.search).get('reviewPreview') === '1';
 
 const DATE = { month: '2-digit', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh' } as const;
 const score = (value: number) => value.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -25,7 +24,7 @@ function ReviewCard({ review }: { review: Review }) {
     {!review.comment && <p className="home-reviews-note">Chỉ chấm sao, không kèm nhận xét.</p>}
     {text.length > 160 && <button className="home-review-expand" type="button" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? 'Thu gọn' : 'Đọc tiếp'}</button>}
     <div className="home-review-heading"><span className="home-review-avatar" aria-hidden="true">KH</span>
-      <div><strong>{isReviewPreview ? 'Khách hàng demo' : review.reviewedOn ? 'Khách hàng ẩn danh' : 'Phiếu bàn giao ẩn danh'}</strong><span className="home-review-verified"><Icon glyph={review.reviewedOn ? 'checkCircle' : 'file'} /> {isReviewPreview ? 'Dữ liệu mẫu' : review.reviewedOn ? 'Đã nhận thiết bị' : 'Điểm trên phiếu bàn giao'}</span>
+      <div><strong>{review.reviewedOn ? 'Khách hàng ẩn danh' : 'Phiếu bàn giao ẩn danh'}</strong><span className="home-review-verified"><Icon glyph={review.reviewedOn ? 'checkCircle' : 'file'} /> {review.reviewedOn ? 'Đã nhận thiết bị' : 'Điểm trên phiếu bàn giao'}</span>
         {!review.reviewedOn && <span className="home-reviews-note">Chưa lưu ngày đánh giá</span>}</div>
       {review.reviewedOn && <time dateTime={review.reviewedOn}>{new Date(review.reviewedOn + 'T00:00:00+07:00').toLocaleDateString('vi-VN', DATE)}</time>}
     </div>
@@ -40,15 +39,13 @@ export function PublicReviewsPanel() {
   const [reload, setReload] = useState(0);
   useEffect(() => {
     let mounted = true; setLoading(true); setError(false);
-    const load = import.meta.env.DEV && isReviewPreview
-      ? import('./dev/reviewPreview').then(module => module.previewReviews) : api().reviews.public();
-    void load.then((value: Reviews) => { if (mounted) setData(value); })
+    void api().reviews.public().then((value: Reviews) => { if (mounted) setData(value); })
       .catch(() => { if (mounted) setError(true); }).finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
   }, [reload]);
   const hasReviews = Boolean(data?.items.length);
   if (!hasReviews && !error) return null;
-  const shown = data ? data.items.slice(0, showAll ? (isReviewPreview ? data.items.length : 6) : 2) : [];
+  const shown = data ? data.items.slice(0, showAll ? 6 : 2) : [];
 
   return <section className="home-public-reviews" aria-labelledby="home-reviews-title"><div className="section-container">
     <div className="home-reviews-head">
@@ -56,15 +53,14 @@ export function PublicReviewsPanel() {
       <h2 className="section-title" id="home-reviews-title">Khách hàng nói gì về Soopi</h2>
       <p className="section-subtitle">Điểm hài lòng ghi trên phiếu bàn giao. Quản trị viên chọn những đánh giá được công khai và không hiển thị thông tin hồ sơ.</p>
     </div>
-    {isReviewPreview && <p className="home-review-preview" role="status">Đánh giá mẫu — chỉ để xem giao diện. <a href="/">Thoát xem thử</a></p>}
     <div className="home-reviews-card" aria-label="Đánh giá khách hàng" aria-busy={loading}>
       <aside className="home-review-summary">
         {hasReviews && data ? <>
           <span className="home-review-summary-label">Điểm trung bình</span>
           <div className="home-review-score"><strong>{data.averageRating == null ? '—' : score(data.averageRating)}<span>/5</span></strong></div>
           {data.averageRating != null && <StarMeter value={data.averageRating} />}
-          <p><b>{data.reviewCount.toLocaleString('vi-VN')}</b> {isReviewPreview ? 'đánh giá mẫu' : 'lượt chấm điểm'}</p>
-          <span className="home-review-summary-note">{isReviewPreview ? 'Không lưu vào dữ liệu đánh giá thật.' : 'Từ các điểm hài lòng lưu trên phiếu bàn giao.'}</span>
+          <p><b>{data.reviewCount.toLocaleString('vi-VN')}</b> lượt chấm điểm</p>
+          <span className="home-review-summary-note">Từ các điểm hài lòng lưu trên phiếu bàn giao.</span>
         </> : <>
           <span className="home-review-summary-label">Điểm trung bình</span>
           <p className="home-review-summary-empty">Chưa có số liệu</p>

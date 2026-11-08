@@ -2,7 +2,6 @@ import 'dart:ui' show SemanticsRole;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../data/mock_data.dart';
 import '../../theme/app_theme.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../widgets/notification_count_badge.dart';
@@ -26,17 +25,14 @@ class MainShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: mockDataRevision,
-    builder: (context, _) {
+  Widget build(BuildContext context) => Builder(
+    builder: (context) {
       final auth = context.watch<AuthViewModel>();
       // Re-selecting a tab must preserve nested screens and unsaved forms.
       void select(int index) => navigationShell.goBranch(index);
-      final count = auth.isMock
-          ? unreadNotificationCount
-          : auth.notificationUnreadCount;
-      final loading = !auth.isMock && auth.notificationCountLoading;
-      final error = !auth.isMock && auth.notificationCountError;
+      final count = auth.notificationUnreadCount;
+      final loading = auth.notificationCountLoading;
+      final error = auth.notificationCountError;
       return LayoutBuilder(
         builder: (context, constraints) {
           final wide = constraints.maxWidth >= 600;
@@ -114,13 +110,9 @@ class MainShell extends StatelessWidget {
                 ? null
                 : _WarrantSafeBottomNav(
                     currentIndex: navigationShell.currentIndex,
-                    unreadCount: auth.isMock
-                        ? unreadNotificationCount
-                        : auth.notificationUnreadCount,
-                    notificationCountLoading:
-                        !auth.isMock && auth.notificationCountLoading,
-                    notificationCountError:
-                        !auth.isMock && auth.notificationCountError,
+                    unreadCount: count,
+                    notificationCountLoading: loading,
+                    notificationCountError: error,
                     onTap: select,
                   ),
           );

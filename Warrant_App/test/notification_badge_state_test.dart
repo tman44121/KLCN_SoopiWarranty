@@ -5,28 +5,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:warrant_safe/models/portal_notification_models.dart';
 import 'package:warrant_safe/models/user_model.dart';
-import 'package:warrant_safe/services/api_service.dart';
+import 'support/fake_api_service.dart';
 import 'package:warrant_safe/services/token_storage.dart';
 import 'package:warrant_safe/viewmodels/auth_viewmodel.dart';
 import 'package:warrant_safe/widgets/notification_count_badge.dart';
 
 class _Storage implements TokenStorage {
   @override
-  Future<void> clearSession({bool isMock = false}) async {}
+  Future<void> clearSession() async {}
 
   @override
-  Future<Map<String, String?>> readSession({bool isMock = false}) async => {};
+  Future<Map<String, String?>> readSession() async => {};
 
   @override
   Future<void> saveSession({
     required String token,
     String? refreshToken,
     required String userId,
-    bool isMock = false,
   }) async {}
 }
 
-class _NotificationApi extends MockApiService {
+class _NotificationApi extends FakeApiService {
   String accountId = 'account-a';
   int unreadCount = 3;
   Completer<PortalNotificationInbox>? nextInbox;
@@ -132,7 +131,7 @@ void main() {
   test(
     'inbox refresh updates shared count and session changes clear stale data',
     () async {
-      SharedPreferences.setMockInitialValues({'isMock': false});
+      SharedPreferences.setMockInitialValues({});
       final api = _NotificationApi();
       final auth = AuthViewModel(tokenStorage: _Storage(), apiService: api);
       await auth.initialize();
@@ -170,7 +169,7 @@ void main() {
   test(
     'failed inbox read clears displayed count and exposes error state',
     () async {
-      SharedPreferences.setMockInitialValues({'isMock': false});
+      SharedPreferences.setMockInitialValues({});
       final api = _NotificationApi();
       final auth = AuthViewModel(tokenStorage: _Storage(), apiService: api);
       await auth.initialize();

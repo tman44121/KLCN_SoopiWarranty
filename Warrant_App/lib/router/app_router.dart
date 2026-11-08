@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../models/user_model.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../views/auth/login_screen.dart';
-import '../views/auth/register_screen.dart';
+import '../views/auth/real_register_screen.dart';
 import '../views/auth/real_forgot_password_screen.dart';
 import '../views/splash/splash_screen.dart';
 import '../views/shell/main_shell.dart';
@@ -11,12 +12,10 @@ import '../views/profile/profile_screen.dart';
 import '../views/profile/account_settings_screens.dart';
 import '../views/devices/device_list_screen.dart';
 import '../views/devices/device_detail_screen.dart';
-import '../views/devices/lookup_screen.dart';
-import '../views/requests/create_request_screen.dart';
+import '../views/devices/real_lookup_screen.dart';
+import '../views/requests/real_create_request_screen.dart';
 import '../views/requests/request_list_screen.dart';
-import '../views/requests/request_detail_screen.dart';
-import '../views/requests/ticket_detail_screen.dart';
-import '../views/requests/quotation_detail_screen.dart';
+import '../views/requests/real_request_detail_screen.dart';
 import '../views/requests/real_ticket_detail_screen.dart';
 import '../views/notifications/notification_screen.dart';
 
@@ -106,7 +105,7 @@ class AppRouter {
     ),
     GoRoute(
       path: AppRoutes.register,
-      builder: (context, state) => const RegisterScreen(),
+      builder: (context, state) => const RealRegisterScreen(),
     ),
     GoRoute(
       path: AppRoutes.forgotPassword,
@@ -136,7 +135,7 @@ class AppRouter {
               routes: [
                 GoRoute(
                   path: 'lookup',
-                  builder: (context, state) => const LookupScreen(),
+                  builder: (context, state) => const RealLookupScreen(),
                 ),
                 GoRoute(
                   path: 'detail',
@@ -160,7 +159,9 @@ class AppRouter {
                   path: 'create',
                   builder: (context, state) {
                     final device = state.extra;
-                    return CreateRequestScreen(prefilledDevice: device);
+                    return RealCreateRequestScreen(
+                      prefilledDevice: device is OwnedDevice ? device : null,
+                    );
                   },
                 ),
                 GoRoute(
@@ -171,28 +172,9 @@ class AppRouter {
                 ),
                 GoRoute(
                   path: ':id',
-                  builder: (context, state) {
-                    final id = state.pathParameters['id']!;
-                    return RequestDetailScreen(requestId: id);
-                  },
-                  routes: [
-                    GoRoute(
-                      path: 'ticket',
-                      builder: (context, state) {
-                        final id = state.pathParameters['id']!;
-                        return TicketDetailScreen(requestId: id);
-                      },
-                      routes: [
-                        GoRoute(
-                          path: 'quote',
-                          builder: (context, state) {
-                            final id = state.pathParameters['id']!;
-                            return QuotationDetailScreen(requestId: id);
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
+                  builder: (context, state) => RealRequestDetailScreen(
+                    code: state.pathParameters['id']!,
+                  ),
                 ),
               ],
             ),

@@ -69,7 +69,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final errorMessage = context.select<AuthViewModel, String?>(
       (vm) => vm.errorMessage,
     );
-    final isMock = context.select<AuthViewModel, bool>((vm) => vm.isMock);
 
     if (hasSessionPendingRetry) {
       return Scaffold(
@@ -195,44 +194,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      if (isMock)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.mintWash,
-                            borderRadius: BorderRadius.circular(
-                              AppRadius.control,
-                            ),
-                            border: Border.all(
-                              color: AppColors.mintBorder,
-                              width: 1.0,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.info_outline_rounded,
-                                size: 18,
-                                color: AppColors.forest,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'Chế độ Mock: chỉ dùng tài khoản mẫu bên dưới. Nhấn giữ logo để bật/tắt kết nối API thật.',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12.5,
-                                    color: AppColors.forestDeep,
-                                    height: 1.35,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
                       if (errorMessage != null && !hasSessionPendingRetry) ...[
                         const SizedBox(height: 14),
                         Container(
@@ -273,12 +234,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // ── Username field ───────────────────────────────────
                       CustomTextField(
-                        label: isMock
-                            ? 'Tên đăng nhập *'
-                            : 'Số điện thoại / Tên đăng nhập *',
-                        hintText: isMock
-                            ? 'Nhập tên đăng nhập'
-                            : 'Số điện thoại hoặc tên đăng nhập',
+                        label: 'Số điện thoại / Tên đăng nhập *',
+                        hintText: 'Số điện thoại hoặc tên đăng nhập',
                         keyboardType: TextInputType.text,
                         controller: _emailCtrl,
                         prefixIcon: Icons.person_outline_rounded,
@@ -320,32 +277,30 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      if (!isMock) ...[
-                        const SizedBox(height: 6),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: isLoading
-                                ? null
-                                : () => context.push(AppRoutes.forgotPassword),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 4,
-                              ),
-                              minimumSize: const Size(48, 48),
+                      const SizedBox(height: 6),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: isLoading
+                              ? null
+                              : () => context.push(AppRoutes.forgotPassword),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 4,
                             ),
-                            child: Text(
-                              'Quên mật khẩu?',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.forest,
-                              ),
+                            minimumSize: const Size(48, 48),
+                          ),
+                          child: Text(
+                            'Quên mật khẩu?',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.forest,
                             ),
                           ),
                         ),
-                      ],
+                      ),
 
                       const SizedBox(height: 24),
 
@@ -365,20 +320,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── Hint for demo / testing ─────────────────────────
-                      if (isMock) ...[
-                        _buildDemoHint(),
-                        const SizedBox(height: 16),
-                      ],
-
                       TextButton(
                         onPressed: isLoading
                             ? null
                             : () => context.push(AppRoutes.register),
                         child: Text(
-                          isMock
-                              ? 'Đăng ký tài khoản'
-                              : 'Chưa có tài khoản bảo hành? Đăng ký ngay',
+                          'Chưa có tài khoản bảo hành? Đăng ký ngay',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,
@@ -474,7 +421,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Cấu hình thử nghiệm',
+                      'Máy chủ API (bản debug)',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -493,80 +440,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  /// Small card showing demo credentials – visible during development only.
-  Widget _buildDemoHint() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.mintWash,
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        border: Border.all(color: AppColors.mintBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.lightbulb_outline_rounded,
-                size: 15,
-                color: AppColors.forest,
-              ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  'Tài khoản thử nghiệm (Mock Data)',
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.forest,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _hintRow('Admin', 'admin@gmail.com', '123456'),
-          const SizedBox(height: 4),
-          _hintRow('User', 'user@gmail.com', 'password123'),
-        ],
-      ),
-    );
-  }
-
-  Widget _hintRow(String role, String email, String pass) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _emailCtrl.text = email;
-          _passwordCtrl.text = pass;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.paperWhite,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: AppColors.mintBorder.withValues(alpha: 0.6),
-          ),
-        ),
-        child: Text(
-          '[$role] $email / $pass  (nhấn để điền)',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.jetBrainsMono(
-            fontSize: 11.5,
-            color: AppColors.navyBody,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildApiConfig(BuildContext context) {
     final vm = context.watch<AuthViewModel>();
     return Container(
@@ -576,40 +449,7 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Chế độ Mock (Giao diện)',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-              ),
-              Switch(
-                value: vm.isMock,
-                onChanged: (val) =>
-                    context.read<AuthViewModel>().toggleMockMode(val),
-                activeTrackColor: AppColors.primaryBlue.withValues(alpha: 0.5),
-                activeThumbImage: null,
-              ),
-            ],
-          ),
-          if (!vm.isMock) ...[
-            const SizedBox(height: 8),
-            if (kDebugMode)
-              _ApiUrlEditor(initialUrl: vm.baseUrl)
-            else
-              TextFormField(
-                initialValue: vm.baseUrl,
-                decoration: const InputDecoration(
-                  labelText: 'Base URL (Chỉ xem)',
-                  isDense: true,
-                ),
-                enabled: false,
-              ),
-          ],
-        ],
-      ),
+      child: _ApiUrlEditor(initialUrl: vm.baseUrl),
     );
   }
 }

@@ -70,7 +70,7 @@ class UserModel {
       return null;
     }
 
-    // Handle both Mock schema and Real backend UserView/Profile schema
+    // Accept both the auth UserView and the portal Profile payloads
     return UserModel(
       id: json['accountId'] as String? ?? json['id'] as String? ?? '',
       customerCode: json['customerCode'] as String?,

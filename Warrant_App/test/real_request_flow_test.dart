@@ -59,15 +59,14 @@ class _RequestAdapter implements HttpClientAdapter {
 
 class _MemoryStorage implements TokenStorage {
   @override
-  Future<void> clearSession({bool isMock = false}) async {}
+  Future<void> clearSession() async {}
   @override
-  Future<Map<String, String?>> readSession({bool isMock = false}) async => {};
+  Future<Map<String, String?>> readSession() async => {};
   @override
   Future<void> saveSession({
     required String token,
     String? refreshToken,
     required String userId,
-    bool isMock = false,
   }) async {}
 }
 
@@ -125,20 +124,13 @@ class _FakePortalApi extends IApiService {
   @override
   Future<void> logout(String? refreshToken) async {}
   @override
-  Future<AuthResponse> register({
-    required String fullName,
-    required String phone,
-    required String email,
-    required String password,
-  }) => login('', '');
-  @override
   void setAuthToken(String token) {}
   @override
   void clearAuthToken() {}
 }
 
 Future<AuthViewModel> _authenticated(_FakePortalApi api) async {
-  SharedPreferences.setMockInitialValues({'isMock': false});
+  SharedPreferences.setMockInitialValues({});
   final auth = AuthViewModel(apiService: api, tokenStorage: _MemoryStorage());
   await auth.initialize();
   expect(await auth.loginUser('customer', ''), isTrue);

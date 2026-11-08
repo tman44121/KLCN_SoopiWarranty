@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:warrant_safe/models/user_model.dart';
-import 'package:warrant_safe/services/api_service.dart';
+import 'support/fake_api_service.dart';
 import 'package:warrant_safe/services/token_storage.dart';
 import 'package:warrant_safe/viewmodels/auth_viewmodel.dart';
 import 'package:warrant_safe/views/auth/login_screen.dart';
@@ -11,21 +11,20 @@ import 'package:warrant_safe/widgets/custom_text_field.dart';
 
 class _Storage implements TokenStorage {
   @override
-  Future<void> clearSession({bool isMock = false}) async {}
+  Future<void> clearSession() async {}
 
   @override
-  Future<Map<String, String?>> readSession({bool isMock = false}) async => {};
+  Future<Map<String, String?>> readSession() async => {};
 
   @override
   Future<void> saveSession({
     required String token,
     String? refreshToken,
     required String userId,
-    bool isMock = false,
   }) async {}
 }
 
-class _LoginApi extends MockApiService {
+class _LoginApi extends FakeApiService {
   String? baseUrlAtLogin;
 
   @override
@@ -66,7 +65,6 @@ void main() {
     'Debug settings are hidden until long press and saved before login',
     (tester) async {
       SharedPreferences.setMockInitialValues({
-        'isMock': false,
         'baseUrl': 'http://10.0.2.2:8080/api/v1',
       });
       final api = _LoginApi();
@@ -92,7 +90,7 @@ void main() {
         find.byKey(const ValueKey('debug-settings-gesture')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Cấu hình thử nghiệm'), findsOneWidget);
+      expect(find.text('Máy chủ API (bản debug)'), findsOneWidget);
       await tester.enterText(
         find.byType(TextFormField).last,
         'http://10.0.2.2:8081/api/v1',

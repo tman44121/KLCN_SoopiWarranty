@@ -6,15 +6,11 @@ import '../../theme/app_theme.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../widgets/app_bar_widget.dart';
 import '../../widgets/soopi_ui.dart';
-import '../../data/mock_data.dart';
 
 /// Soopi – Tài khoản (Profile & Settings) Screen
 ///
-/// Changes from the previous version:
-///   • Avatar initials and name/phone/email now come from [AuthViewModel.currentUser].
-///   • A sensible placeholder is shown when a field is absent.
-///   • Unavailable features show a tooltip/snackbar explaining they are prototypes.
-///   • AppBar uses the shared [WarrantSafeAppBar] widget.
+/// Thông tin hồ sơ lấy từ [AuthViewModel.currentUser]; chỉnh sửa hồ sơ và đổi
+/// mật khẩu gọi API cổng khách.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -41,12 +37,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             // ── App bar ─────────────────────────────────────────────
             WarrantSafeAppBar(
-              unreadCount: vm.isMock
-                  ? unreadNotificationCount
-                  : vm.notificationUnreadCount,
-              notificationCountLoading:
-                  !vm.isMock && vm.notificationCountLoading,
-              notificationCountError: !vm.isMock && vm.notificationCountError,
+              unreadCount: vm.notificationUnreadCount,
+              notificationCountLoading: vm.notificationCountLoading,
+              notificationCountError: vm.notificationCountError,
               onNotificationTap: () => context.push(AppRoutes.notifications),
             ),
             const Divider(height: 1),
@@ -105,9 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           iconColor: AppColors.primaryBlue,
                           title: 'Chỉnh sửa thông tin cá nhân',
                           subtitle: 'Họ tên, email, địa chỉ · SĐT qua trạm',
-                          onTap: () => vm.isMock
-                              ? _showUnavailable(context, 'chỉnh sửa thông tin')
-                              : context.go(AppRoutes.editProfile),
+                          onTap: () => context.go(AppRoutes.editProfile),
                         ),
                       ]),
                       const SizedBox(height: 12),
@@ -120,22 +111,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           iconBgColor: AppColors.honeyTint,
                           iconColor: AppColors.honeyText,
                           title: 'Đổi mật khẩu',
-                          subtitle: vm.isMock
-                              ? 'Chỉ dùng với tài khoản Real'
-                              : 'Cập nhật mật khẩu đăng nhập',
-                          onTap: () => vm.isMock
-                              ? _showUnavailable(context, 'đổi mật khẩu')
-                              : context.go(AppRoutes.changePassword),
-                        ),
-                        _divider(),
-                        _buildMenuTile(
-                          icon: Icons.security_rounded,
-                          iconBgColor: AppColors.honeyTint,
-                          iconColor: AppColors.honeyText,
-                          title: 'Xác thực hai yếu tố',
-                          subtitle: '(Chưa hỗ trợ trong bản thử nghiệm)',
-                          onTap: () =>
-                              _showUnavailable(context, 'xác thực hai yếu tố'),
+                          subtitle: 'Cập nhật mật khẩu đăng nhập',
+                          onTap: () => context.go(AppRoutes.changePassword),
                         ),
                       ]),
                       const SizedBox(height: 12),
@@ -150,16 +127,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           title: 'Thông báo trong ứng dụng',
                           subtitle: 'Xem thông báo và trạng thái chưa đọc',
                           onTap: () => context.push(AppRoutes.notifications),
-                        ),
-                        _divider(),
-                        _buildMenuTile(
-                          icon: Icons.language_rounded,
-                          iconBgColor: AppColors.primaryLight,
-                          iconColor: AppColors.primaryBlue,
-                          title: 'Ngôn ngữ & khu vực',
-                          subtitle: 'Tiếng Việt (VN) · UTC+7',
-                          onTap: () =>
-                              _showUnavailable(context, 'cài đặt ngôn ngữ'),
                         ),
                       ]),
                       const SizedBox(height: 28),
@@ -188,7 +155,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       // ── Footer ─────────────────────────────────────
                       Text(
-                        'Soopi · Bảo hành & sửa chữa (bản thử nghiệm)',
+                        'Soopi · Trung tâm Dịch vụ & Bảo hành Điện tử',
                         style: AppText.meta.copyWith(fontSize: 11),
                       ),
                       const SizedBox(height: 24),
@@ -344,29 +311,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _divider() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16),
-      child: Divider(height: 1, color: AppColors.divider),
-    );
-  }
-
   // ──────────────────────────────────────────────────────────────────
   //  ACTIONS
   // ──────────────────────────────────────────────────────────────────
-
-  void _showUnavailable(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '"${_capitalize(feature)}" chưa khả dụng trong bản thử nghiệm này.',
-        ),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
 
   Future<void> _confirmLogout(BuildContext context) async {
     final confirmed = await showDialog<bool>(
@@ -408,7 +355,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // First letter of first word + first letter of last word.
     return '${words.first[0]}${words.last[0]}'.toUpperCase();
   }
-
-  String _capitalize(String s) =>
-      s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
 }

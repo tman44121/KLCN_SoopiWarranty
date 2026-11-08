@@ -139,6 +139,36 @@ class _RealNotificationContentState extends State<RealNotificationContent>
   @override
   Widget build(BuildContext context) {
     final inbox = _inbox;
+    final items = inbox?.items ?? const [];
+    final leading = <Widget>[
+      if (_error != null)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: SoopiAlert(
+            tone: StatusTone.danger,
+            message: Text(_error!),
+            action: SoopiSecondaryButton(
+              compact: true,
+              label: 'Thử lại',
+              onPressed: _load,
+            ),
+          ),
+        ),
+      if (inbox == null && _error == null)
+        const Padding(
+          padding: EdgeInsets.only(top: 40),
+          child: Center(child: Text('Chưa tải được thông báo.')),
+        ),
+      if (inbox != null && items.isEmpty)
+        const Padding(
+          padding: EdgeInsets.only(top: 40),
+          child: SoopiEmpty(
+            icon: Icons.notifications_none_rounded,
+            title: 'Chưa có thông báo',
+            text: 'Chưa có thông báo trong tài khoản này.',
+          ),
+        ),
+    ];
     return Column(
       children: [
         Padding(
@@ -161,42 +191,20 @@ class _RealNotificationContentState extends State<RealNotificationContent>
             ],
           ),
         ),
-        if (_error != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: SoopiAlert(
-              tone: StatusTone.danger,
-              message: Text(_error!),
-              action: SoopiSecondaryButton(
-                compact: true,
-                label: 'Thử lại',
-                onPressed: _load,
-              ),
-            ),
-          ),
         Expanded(
           child: _loading && inbox == null
               ? const Center(child: CircularProgressIndicator())
-              : inbox == null
-              ? const Center(child: Text('Chưa tải được thông báo.'))
               : RefreshIndicator(
                   onRefresh: _load,
+                  // Lỗi và trạng thái trống nằm trong danh sách cuộn để không tràn
+                  // khi màn hẹp hoặc chữ phóng to.
                   child: ListView.builder(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    itemCount: inbox.items.isEmpty ? 1 : inbox.items.length,
+                    itemCount: leading.length + items.length,
                     itemBuilder: (context, index) {
-                      if (inbox.items.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.only(top: 40),
-                          child: SoopiEmpty(
-                            icon: Icons.notifications_none_rounded,
-                            title: 'Chưa có thông báo',
-                            text: 'Chưa có thông báo trong tài khoản này.',
-                          ),
-                        );
-                      }
-                      final item = inbox.items[index];
+                      if (index < leading.length) return leading[index];
+                      final item = items[index - leading.length];
                       final quote = item.type == 'QUOTATION_AWAITING_CUSTOMER';
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),

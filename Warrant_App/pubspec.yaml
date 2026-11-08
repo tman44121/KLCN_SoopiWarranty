@@ -41,7 +41,7 @@ dependencies:
   # ── Declarative routing with deep-link & auth redirect support ───
   go_router: ^14.0.0
 
-  # ── HTTP client (used as mock in this sprint) ────────────────────
+  # ── HTTP client for the Soopi API ────────────────────────────────
   dio: ^5.8.0+1
   # Native document picker for optional warranty request evidence.
   file_picker: ^11.0.3

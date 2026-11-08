@@ -6,10 +6,6 @@ Khối đánh giá nằm riêng bên dưới, hiển thị cho cả hai nhóm **
 được admin chọn Hiển thị**. Khi ẩn hết, toàn bộ khối (gồm tổng lượt và điểm trung bình) biến mất,
 kể cả khi DB vẫn có nhiều điểm. Tổng lượt/điểm khi khối xuất hiện vẫn tính từ tất cả điểm đã lưu.
 
-Xem thử 24 đánh giá mẫu khi chạy Vite development: `http://localhost:5173/?reviewPreview=1`.
-Dữ liệu mẫu có nhãn riêng, không gọi API đánh giá hay ghi database, không được đóng gói vào bản production.
-Bấm **Xem thêm đánh giá** để cuộn qua danh sách; **Thoát xem thử** trở về dữ liệu thật.
-
 Khi cần dữ liệu minh họa được lưu trong DB, quản trị chạy riêng `database/09_sample_public_reviews.sql`.
 Script tạo bảng tùy chọn `DanhGiaMinhHoa` và thêm sáu nhận xét giả định, chạy lại không tạo trùng.
 Không sửa phiếu bàn giao, đánh giá khách hàng hay quyết định duyệt. Theo yêu cầu gỡ phần minh họa,
