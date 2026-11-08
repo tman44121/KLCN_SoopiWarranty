@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Soopi.Api.Controllers;
 using Soopi.Api.Domain.Identity;
@@ -44,7 +43,7 @@ public class CustomerReviewTests
     {
         var context = new DefaultHttpContext();
         context.Items["soopi.actor"] = new AuthenticatedActor(1, "test", new HashSet<Role> { role }, RolePermissions.ForRole(role), null, null, "test");
-        return new ReportService(null!, new CurrentActor(new HttpContextAccessor { HttpContext = context }), TimeProvider.System, new ConfigurationBuilder().Build());
+        return new ReportService(null!, new CurrentActor(new HttpContextAccessor { HttpContext = context }), TimeProvider.System, null!);
     }
 
     [Theory]

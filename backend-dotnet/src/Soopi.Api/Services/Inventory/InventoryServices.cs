@@ -277,7 +277,7 @@ public sealed class StockIssueService(
             var part = await inventory.RequirePartAsync(sku);
             if (quantity <= 0) throw new DomainException(ErrorCode.STOCK_ISSUE_PART_INVALID);
             await inventory.ReserveAsync(part.Sku, quantity);
-            result.Add(new IssueLine(part.Sku, quantity, part.CostPrice, null, null));
+            result.Add(new IssueLine(part.Sku, quantity, part.CostPrice, null, null, part.ServicePrice));
         }
         return result;
     }
@@ -527,7 +527,9 @@ public sealed class IssuedParts(InventoryDocumentStore documents, InventoryStore
             foreach (var line in issue.Lines)
             {
                 var part = await inventory.FindPartAsync(line.Sku);
-                result.Add(new IssuedPart(issue.Id, issue.Source, line.Sku, part?.Name ?? line.Sku, line.Quantity, line.BinCode, part?.ServicePrice,
+                // Giá đã lưu lúc xuất để phiếu cũ không đổi khi quản trị sửa giá; dòng cũ chưa lưu mới dùng giá hiện tại.
+                result.Add(new IssuedPart(issue.Id, issue.Source, line.Sku, part?.Name ?? line.Sku, line.Quantity, line.BinCode,
+                    line.UnitServicePrice ?? part?.ServicePrice,
                     part?.WarrantyMonths ?? 0, line.PartWarrantyExpiresOn));
             }
         }

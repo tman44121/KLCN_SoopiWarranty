@@ -283,7 +283,7 @@ export default function ReceptionistPage() {
             <div className="card__header">
               <div>
                 <h2 className="card__title">
-                  {"Thông tin khách hàng"}
+                  {"Người gửi máy lần này"}
                 </h2>
                 <div className="card__title-meta" data-customer-hint="">
                   {"Nhập số điện thoại để tra cứu khách hàng đã có hồ sơ"}
@@ -291,6 +291,7 @@ export default function ReceptionistPage() {
               </div>
             </div>
             <div className="card__body stack">
+              <p className="card__title-meta">Người gửi nhận thông báo và xác nhận báo giá của phiếu này; chủ đăng ký thiết bị được giữ nguyên.</p>
               <div className="form-row">
                 <div className="form-field" data-field="customer.newCustomer.phone">
                   <label htmlFor="phone">

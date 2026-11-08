@@ -41,12 +41,14 @@ public sealed class ReceptionService(
     AuditService audit,
     NotificationService notifications,
     TicketQueryService views,
+    TimeSettingsService timeSettings,
     TimeProvider clock)
 {
-    public Task<TicketView> ReceiveAsync(ReceiveCommand command)
+    public async Task<TicketView> ReceiveAsync(ReceiveCommand command)
     {
         actors.Require(Permission.TICKET_CREATE);
-        return transactions.InTransactionAsync(async () =>
+        var times = await timeSettings.GetAsync();
+        return await transactions.InTransactionAsync(async () =>
         {
             var actor = actors.Current;
             var receptionist = await staff.RequireActiveWithRoleAsync(actor.EmployeeId, Role.RECEPTIONIST);
@@ -61,7 +63,7 @@ public sealed class ReceptionService(
                 await codes.NextAsync(BusinessCodeType.Ticket), receptionist.StationCode, now, channel, command.RequestType ?? RequestType.WARRANTY,
                 command.WarrantyRequestCode, customerCode, intake.Customer, deviceCode, intake.Device, actor.EmployeeId!, intake.Warranty,
                 command.SealCondition, command.Cosmetic, command.ReportedIssue, command.PromisedReturnAt, command.EstimatedCost ?? 0,
-                command.SlaLevel ?? SlaLevel.STANDARD_48H, actor);
+                command.SlaLevel ?? times.DefaultSlaLevel, actor, times);
             await tickets.SaveAsync(ticket);
             if (command.WarrantyRequestCode is not null)
                 await warrantyRequests.ConvertAsync(command.WarrantyRequestCode, ticket.Id, actor.EmployeeId, now);
@@ -89,7 +91,7 @@ public sealed class ReceptionService(
             value.WarrantyActivatedOn, value.WarrantyExpiresOn, value.Distributor))).Code;
     }
 
-    /// <summary>Khách còn hoạt động, thiết bị thuộc khách, tình trạng bảo hành lúc nhận (SqlReceptionDirectory).</summary>
+    /// <summary>Khách gửi của lần tiếp nhận và tình trạng bảo hành; giữ nguyên chủ đăng ký thiết bị.</summary>
     private async Task<(Dictionary<string, string> Customer, Dictionary<string, string> Device, WarrantyAtIntake Warranty)> IntakeAsync(
         string customerCode, string deviceCode, DateTimeOffset receivedAt)
     {
@@ -104,12 +106,11 @@ public sealed class ReceptionService(
             },
             customerCode) ?? throw new DomainException(ErrorCode.CUSTOMER_NOT_FOUND);
         var device = await sql.FirstOrDefaultAsync(
-            "SELECT MaSP, MaKH, LoaiDinhDanh, SoSerial_IMEI, NgayKichHoatBaoHanh, NgayHetHanBaoHanh, NhaPhanPhoi FROM ThietBi WHERE MaThietBi = ?",
-            row => (ProductId: row.Str("MaSP")!, CustomerId: row.Str("MaKH"), IdentifierType: row.Str("LoaiDinhDanh"), Serial: row.Str("SoSerial_IMEI"),
+            "SELECT MaSP, LoaiDinhDanh, SoSerial_IMEI, NgayKichHoatBaoHanh, NgayHetHanBaoHanh, NhaPhanPhoi FROM ThietBi WHERE MaThietBi = ?",
+            row => (ProductId: row.Str("MaSP")!, IdentifierType: row.Str("LoaiDinhDanh"), Serial: row.Str("SoSerial_IMEI"),
                 ActivatedOn: row.Date("NgayKichHoatBaoHanh"), ExpiresOn: row.Date("NgayHetHanBaoHanh"), Distributor: row.Str("NhaPhanPhoi")),
             deviceCode);
         if (device.ProductId is null) throw new DomainException(ErrorCode.DEVICE_NOT_FOUND);
-        if (customerCode != device.CustomerId) throw new DomainException(ErrorCode.DEVICE_NOT_OWNED);
         var product = await catalog.RequireProductAsync(device.ProductId);
         var date = DbTime.Date(receivedAt);
         var status = device.ExpiresOn is not { } expires ? "NOT_ACTIVATED" : expires < date ? "OUT_OF_WARRANTY" : "IN_WARRANTY";

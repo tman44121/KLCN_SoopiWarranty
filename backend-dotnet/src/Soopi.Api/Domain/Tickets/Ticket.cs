@@ -74,12 +74,6 @@ public static class TicketEnums
     /// <summary>Nhãn tiếng Việt dùng trong lịch sử trạng thái và thông điệp lỗi (như dữ liệu cũ).</summary>
     public static string SqlLabel(this TicketStatus status) => Labels[status];
 
-    public static int Hours(this SlaLevel level) => level switch
-    {
-        SlaLevel.EXPRESS_12H => 12,
-        SlaLevel.PRIORITY_24H => 24,
-        _ => 48,
-    };
 }
 
 public sealed record WarrantyAtIntake(string Status, DateOnly? ActivatedOn, DateOnly? ExpiresOn, string? Distributor, string? Conditions, string? PolicyId);
@@ -160,15 +154,16 @@ public sealed class Ticket
         string id, string stationCode, DateTimeOffset receivedAt, Channel? channel, RequestType? requestType, string? warrantyRequestId,
         string customerId, IReadOnlyDictionary<string, string> customerSnapshot, string deviceId, IReadOnlyDictionary<string, string> deviceSnapshot,
         string receivedBy, WarrantyAtIntake warrantyAtIntake, string? sealCondition, Cosmetic? cosmetic, string? reportedIssue,
-        DateTimeOffset? promisedReturnAt, decimal? estimatedCost, SlaLevel slaLevel, AuthenticatedActor actor)
+        DateTimeOffset? promisedReturnAt, decimal? estimatedCost, SlaLevel slaLevel, AuthenticatedActor actor, TimeSettings? times = null)
     {
+        times ??= TimeSettings.Default;
         if (JavaText.IsBlank(reportedIssue)) throw DomainException.Invalid("Vui lòng nhập lỗi khách báo.");
         if (cosmetic is null) throw DomainException.Invalid("Vui lòng ghi nhận tình trạng ngoại quan của thiết bị.");
         if (!cosmetic.CustomerAcknowledged) throw DomainException.Invalid("Khách hàng chưa xác nhận tình trạng ngoại quan khi nhận máy.");
         if (promisedReturnAt is { } promised && promised < receivedAt) throw DomainException.Invalid("Ngày hẹn trả không được trước thời điểm tiếp nhận.");
         if (estimatedCost is null or < 0) throw DomainException.Invalid("Chi phí dự kiến phải là số tiền từ 0 đ trở lên.");
         Id = id;
-        BusinessHours.Require(promisedReturnAt);
+        BusinessHours.Require(promisedReturnAt, times);
         StationCode = stationCode;
         ReceivedAt = receivedAt;
         Channel = channel ?? Tickets.Channel.COUNTER;
@@ -185,7 +180,7 @@ public sealed class Ticket
         ReportedIssue = JavaText.Trim(reportedIssue);
         PromisedReturnAt = promisedReturnAt;
         EstimatedCost = Money.Round(estimatedCost.Value);
-        Sla = new Sla(slaLevel, receivedAt.AddHours(slaLevel.Hours()));
+        Sla = new Sla(slaLevel, receivedAt.AddHours(times.SlaHours(slaLevel)));
         Status = TicketStatus.RECEIVED;
         StatusHistory.Add(new StatusHistory(
             TicketStatus.RECEIVED, receivedAt, "Khách hàng bàn giao thiết bị, lập phiếu tiếp nhận.", actor.EmployeeId, actor.DisplayName, "RECEPTIONIST"));

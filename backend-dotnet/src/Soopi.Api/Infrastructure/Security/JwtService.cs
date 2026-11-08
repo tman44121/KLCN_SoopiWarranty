@@ -50,7 +50,7 @@ public sealed class JwtService(JwtKeys keys, IOptions<SecurityOptions> options, 
 {
     private readonly JsonWebTokenHandler handler = new();
 
-    public string IssueAccessToken(Account account, string displayName, string? sessionId = null)
+    public string IssueAccessToken(Account account, string displayName, string? sessionId = null, TimeSpan? ttl = null)
     {
         var claims = new Dictionary<string, object>
         {
@@ -66,12 +66,12 @@ public sealed class JwtService(JwtKeys keys, IOptions<SecurityOptions> options, 
         if (account.EmployeeId is not null) claims["employeeId"] = account.EmployeeId;
         if (account.CustomerId is not null) claims["customerId"] = account.CustomerId;
         if (sessionId is not null) claims["sid"] = sessionId;
-        return Issue(claims, options.Value.Jwt.AccessTokenTtl);
+        return Issue(claims, ttl ?? options.Value.Jwt.AccessTokenTtl);
     }
 
-    public (string Token, TimeSpan ExpiresIn) IssuePortalToken(PortalGrant grant)
+    public (string Token, TimeSpan ExpiresIn) IssuePortalToken(PortalGrant grant, TimeSpan? lifetime = null)
     {
-        var ttl = options.Value.Jwt.PortalTokenTtl;
+        var ttl = lifetime ?? options.Value.Jwt.PortalTokenTtl;
         var claims = new Dictionary<string, object>
         {
             ["sub"] = "portal:" + grant.Code,

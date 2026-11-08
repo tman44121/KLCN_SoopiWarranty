@@ -51,8 +51,8 @@ public static partial class ReportWorkbook
             new("Thời gian xử lý", ["Mã nhóm thiết bị", "Số thiết bị đã bàn giao", "Thời gian xử lý trung bình (giờ)"],
                 data.Turnaround.ByCategory.Select(x => new object?[] { x.CategoryCode, x.Delivered, x.AvgHours }),
                 Chart: new("Thời gian xử lý theo nhóm thiết bị", 0, [2], "bar")),
-            new("Hiệu suất kỹ thuật viên", ["Mã nhân viên", "Kỹ thuật viên", "Chuyên môn", "Số lệnh sửa được giao", "Số lệnh sửa hoàn tất", "Số lệnh sửa đã hủy", "Điểm đánh giá trung bình (1–5)", "Tỷ lệ đạt kiểm định lần đầu (%)", "Thời gian sửa trung bình (giờ)"],
-                data.Technicians.Select(x => new object?[] { x.EmployeeId, x.FullName, x.Specialty, x.Assigned, x.Completed, x.Cancelled, x.AvgRating, x.FirstPassQcRate, x.AvgRepairHours }),
+            new("Hiệu suất kỹ thuật viên", ["Mã nhân viên", "Kỹ thuật viên", "Chuyên môn", "Số lệnh sửa được giao", "Số lệnh sửa hoàn tất", "Số lệnh sửa đã hủy", "Điểm đánh giá trung bình (1–5)", "Tỷ lệ đạt kiểm định lần đầu (%)", "Thời gian sửa trung bình (giờ)", "Đã xong nhưng trễ hạn SLA", "Đang làm đã quá hạn SLA"],
+                data.Technicians.Select(x => new object?[] { x.EmployeeId, x.FullName, x.Specialty, x.Assigned, x.Completed, x.Cancelled, x.AvgRating, x.FirstPassQcRate, x.AvgRepairHours, x.LateCompleted, x.LateOpen }),
                 Chart: new("Hiệu suất kỹ thuật viên", 1, [3, 4], "bar")),
             new("Tỷ lệ bảo hành", ["Phân loại", "Số phiếu", "Tỷ lệ (%)"], [
                 ["Trong bảo hành", data.Warranty.FreeWarranty, data.Warranty.FreeRatePercent],

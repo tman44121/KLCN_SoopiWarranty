@@ -21,7 +21,10 @@ public sealed record PortalCategory(string? Code, string? Name, IReadOnlyList<Po
 
 public sealed record PortalStation(string? Code, string? Name, string? Address);
 
-public sealed record PortalCatalog(IReadOnlyList<PortalCategory> Categories, IReadOnlyList<string> IdentifierTypes, IReadOnlyList<PortalStation> Stations);
+public sealed record PortalProduct(string? Code, string? Name, string? BrandName, string? CategoryCode, string? DeviceTypeCode);
+
+public sealed record PortalCatalog(IReadOnlyList<PortalCategory> Categories, IReadOnlyList<string> IdentifierTypes, IReadOnlyList<PortalStation> Stations,
+    IReadOnlyList<PortalProduct> Products);
 
 public sealed record RequestAttachment(string? FileId, string? FileName, string? ContentType, long Size);
 
@@ -120,7 +123,7 @@ public sealed class PortalPolicy(AppDbContext db, CurrentActor actors)
 /// <summary>Tra cứu công khai bằng Mã phiếu hoặc số Serial/IMEI + SĐT (mục 9.8, D-014) và danh mục cho form đăng ký yêu cầu.</summary>
 public sealed class PortalAccessService(
     Sql sql, AppDbContext db, ProductCatalog products, CatalogStore catalog, JwtService tokens, RateLimiter limiter,
-    TimeProvider clock)
+    TimeProvider clock, TimeSettingsService timeSettings)
 {
     private const string RequestsByPhone = "FROM YeuCauBaoHanh yc LEFT JOIN KhachHang kh ON kh.MaKH = yc.MaKH AND kh.TrangThai = 'ACTIVE' "
         + "WHERE CASE WHEN yc.MaKH IS NULL THEN yc.SDTKhach ELSE kh.SDT END = ?";
@@ -128,7 +131,7 @@ public sealed class PortalAccessService(
     /// <summary>Tối đa 10 lần/phút/IP để không dò được danh sách Serial.</summary>
     public async Task<WarrantyCheck> WarrantyCheckAsync(string? serial, string? clientIp)
     {
-        limiter.Acquire("portal-warranty-check-ip:" + clientIp, 10, TimeSpan.FromMinutes(1));
+        limiter.Acquire("portal-warranty-check-ip:" + clientIp, (await timeSettings.GetAsync()).Protection.WarrantyCheckIp);
         var normalized = SerialNumber.Normalize(serial);
         var device = normalized.Length == 0 ? null : await db.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.SerialNormalized == normalized);
         if (device is null) throw new DomainException(ErrorCode.WARRANTY_SERIAL_NOT_FOUND);
@@ -151,12 +154,13 @@ public sealed class PortalAccessService(
     public async Task<LookupResult> LookupAsync(string code, string phone, string? clientIp)
     {
         var normalizedCode = code.Trim().ToUpperInvariant();
-        limiter.Acquire("portal-lookup-ip:" + clientIp, 5, TimeSpan.FromMinutes(1));
-        limiter.Acquire("portal-lookup-code:" + normalizedCode, 10, TimeSpan.FromHours(1));
+        var settings = (await timeSettings.GetAsync()).Protection;
+        limiter.Acquire("portal-lookup-ip:" + clientIp, settings.LookupIp);
+        limiter.Acquire("portal-lookup-code:" + normalizedCode, settings.LookupCode);
         var normalizedPhone = PhoneNumber.Normalize(phone);
         var grant = normalizedPhone.Length == 0 ? null : await GrantAsync(normalizedCode, normalizedPhone);
         if (grant is null) throw new DomainException(ErrorCode.PORTAL_NOT_FOUND);
-        var (token, expiresIn) = tokens.IssuePortalToken(grant);
+        var (token, expiresIn) = tokens.IssuePortalToken(grant, TimeSpan.FromMinutes(settings.PortalTokenMinutes));
         return new LookupResult(token, (long)expiresIn.TotalSeconds, grant.Scope.ToString(), grant.Code);
     }
 
@@ -176,7 +180,14 @@ public sealed class PortalAccessService(
             .Where(value => value["active"] is true)
             .Select(value => new PortalStation(value["_id"] as string, value["name"] as string, value["address"] as string))
             .ToList();
-        return new PortalCatalog(categories, ["IMEI", "SERIAL"], stations);
+        var models = await sql.QueryAsync(
+            "SELECT sp.MaSP, sp.TenSP, hs.TenHang, lt.MaNhom, lt.MaLoai FROM SanPham sp "
+            + "JOIN HangSanXuat hs ON hs.MaHang = sp.MaHang JOIN LoaiThietBi lt ON lt.MaLoai = sp.MaLoai "
+            + "JOIN NhomThietBi nt ON nt.MaNhom = lt.MaNhom "
+            + "WHERE sp.HoatDong = 1 AND hs.HoatDong = 1 AND lt.HoatDong = 1 AND nt.HoatDong = 1 "
+            + "ORDER BY hs.TenHang, sp.TenSP, sp.MaSP",
+            row => new PortalProduct(row.Str("MaSP"), row.Str("TenSP"), row.Str("TenHang"), row.Str("MaNhom"), row.Str("MaLoai")));
+        return new PortalCatalog(categories, ["IMEI", "SERIAL"], stations, models);
     }
 
     private async Task<PortalGrant?> GrantAsync(string code, string phone)
@@ -216,12 +227,13 @@ public sealed class PortalAccessService(
 }
 
 public sealed class PortalWarrantyRequestService(
-    PortalPolicy policy, WarrantyRequestStore requests, WarrantyRequestSubmissionService submissions, RateLimiter limiter, CurrentActor actors)
+    PortalPolicy policy, WarrantyRequestStore requests, WarrantyRequestSubmissionService submissions, RateLimiter limiter, CurrentActor actors,
+    TimeSettingsService timeSettings)
 {
     /// <summary>Tối đa 3 yêu cầu/giờ/IP (mục 11.2).</summary>
     public async Task<string> SubmitAsync(Func<Task<(WarrantyRequestData Data, IReadOnlyList<Upload> Uploads)>> readSubmission, string? clientIp)
     {
-        limiter.Acquire("portal-warranty-request-ip:" + clientIp, 3, TimeSpan.FromHours(1));
+        limiter.Acquire("portal-warranty-request-ip:" + clientIp, (await timeSettings.GetAsync()).Protection.PublicRequestsIp);
         var (data, uploads) = await readSubmission();
         var customer = data.Customer!;
         return await submissions.SubmitAsync(
@@ -235,7 +247,7 @@ public sealed class PortalWarrantyRequestService(
     {
         actors.Require(Permission.PORTAL_SELF);
         var customer = await policy.RequireCustomerAsync();
-        limiter.Acquire("portal-warranty-request-customer:" + customer.Id, 5, TimeSpan.FromHours(1));
+        limiter.Acquire("portal-warranty-request-customer:" + customer.Id, (await timeSettings.GetAsync()).Protection.CustomerRequests);
         var (data, uploads) = await readSubmission();
         return await submissions.SubmitAsync(
             new SubmissionCommand(customer.FullName, customer.Phone, customer.Email, customer.Address, data.CategoryCode, data.DeviceTypeCode,

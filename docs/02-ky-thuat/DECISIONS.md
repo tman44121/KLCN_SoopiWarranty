@@ -293,6 +293,52 @@ Web thu ngân hiện QR khi chọn Chuyển khoản; cổng khách web và app F
 CSP `img-src` mở thêm `https://img.vietqr.io`. Không tự đối soát: thu ngân kiểm tra tiền vào rồi bấm xác nhận như cũ;
 tự động xác nhận (webhook ngân hàng/Casso/SePay) là việc riêng khi cần.
 
+## D-062 — Model từ danh mục và người gửi theo lần tiếp nhận (2026-11-08)
+
+Hãng / Model trên web/app chuyển sang danh sách chọn từ danh mục đang hoạt động của trung tâm.
+`/portal/catalog` thêm dữ liệu model phục vụ hiển thị; định dạng gửi yêu cầu cũ được giữ để tương thích ứng dụng cũ.
+
+Một máy có thể do cha, con hoặc người khác mang tới ở các lần bảo hành khác nhau. Theo lựa chọn của người dùng,
+phiếu, thông báo và quyền xác nhận báo giá thuộc người đứng tên gửi ở lần đó. Giữ nguyên chủ đăng ký trong `ThietBi`;
+dùng khách trên `PhieuTiepNhan` đã có sẵn, không thêm bảng/cột hay chuyển chủ. Tra serial tại quầy không thay người gửi.
+Quyền xem của khách vẫn theo từng phiếu; lịch sử thiết bị của nhân viên và giới hạn một phiếu mở mỗi máy giữ nguyên.
+
+## D-063 — Quản trị viên chỉnh các mốc thời gian (2026-11-08)
+
+Số giờ SLA từng mức, mức SLA mặc định khi lập phiếu, ngưỡng “sắp trễ”, hạn xác nhận báo giá (khi không ghi ngày hiệu lực)
+và giờ làm việc (ngày, giờ mở/đóng cửa) chuyển từ hằng số/appsettings sang bảng một dòng `CauHinhThoiGian`, sửa tại
+`/admin#time-settings`. Giá trị khởi tạo giữ như cũ: SLA Tiêu chuẩn **48h** và là mức mặc định, Ưu tiên 24h, Nhanh 12h,
+sắp trễ 120 phút, báo giá 72 giờ, thứ Hai–thứ Bảy 08:00–17:00. Bảng trống hoặc chưa chạy `14_time_settings.sql` thì dùng
+giá trị này. Bỏ khóa `Sla:AtRiskThreshold` trong appsettings.
+
+Mã enum `EXPRESS_12H`/`PRIORITY_24H`/`STANDARD_48H` giữ nguyên để tương thích hợp đồng API và dữ liệu; nhãn hiển thị bỏ số
+giờ cố định, form tiếp nhận ghi số giờ hiện hành. Đổi SLA chỉ áp cho phiếu mới vì `HanSLA` đã lưu; ngưỡng sắp trễ, hạn báo giá
+(kể cả báo giá đang chờ) và giờ làm việc áp dụng ngay. Mỗi lần lưu ghi nhật ký `TIME_SETTINGS_UPDATED`.
+Chu kỳ quét job SLA (`Sla:Alerts:Interval`) vẫn ở appsettings vì cần khởi động lại để đổi.
+
+## D-064 — Sửa giá danh mục không làm đổi phiếu cũ (2026-11-08)
+
+Quản trị viên sửa giá tính khách của linh kiện và giá công dịch vụ ngay trên bảng ở `/admin#catalogs`. Báo giá, hóa đơn,
+phiếu thu và báo cáo đã dùng số tiền lưu lúc lập nên không đổi theo giá mới. Riêng giá trị “Miễn phí trong bảo hành” trước đây
+đọc giá hiện tại của linh kiện; nay lấy `ChiTietXuatKho.DonGiaDichVuXuat`, giá tính khách lưu khi lập phiếu xuất
+(`15_issue_service_price.sql`). Dòng xuất có trước script được điền giá hiện tại lúc chạy vì không còn dữ liệu giá cũ hơn;
+dòng còn trống hoặc database chưa nâng cấp vẫn dùng giá hiện tại như trước, và xuất kho không bị chặn khi thiếu cột.
+Nhật ký `CATALOG_UPDATED` ghi giá trước/sau (không ghi giá vốn).
+
+## D-065 — Quản trị viên chỉnh mức bảo vệ đăng nhập, OTP và chống spam (2026-11-08)
+
+Các giá trị trước đây viết cứng trong code hoặc appsettings chuyển vào cột JSON `CauHinhThoiGian.CauHinhBaoVe`
+(`16_protection_settings.sql`) và sửa ở `/admin#time-settings`: số lần sai mật khẩu trước khi khóa và thời gian khóa; hạn mã OTP,
+thời gian chờ gửi lại, số lần nhập sai OTP; hạn phiên truy cập, đăng nhập thường, ghi nhớ đăng nhập và phiên tra cứu công khai;
+9 giới hạn tần suất (số lượt trong một khoảng phút) cho đăng nhập theo IP/tài khoản, OTP theo IP/email, kiểm tra bảo hành, tra cứu
+theo IP/mã, gửi phiếu vãng lai và gửi phiếu của khách. Giá trị khởi tạo giữ đúng như cũ (5 lần/15 phút, OTP 5 phút/60 giây/5 lần,
+phiên 15 phút/12 giờ/30 ngày/30 phút…); cột trống thì lấy hạn phiên và khóa đăng nhập từ `Security:*` trong appsettings.
+
+Phần bảo vệ chỉ trả qua `GET /settings/time/admin` (ADMIN); `GET /settings/time` công khai không lộ ngưỡng chống spam. Giá trị mới
+áp dụng cho lượt xử lý sau khi lưu (cache tối đa 1 phút ở tiến trình khác); không thu hồi phiên đã cấp, không đổi thời điểm hết khóa
+đã lưu. JSON trong DB hỏng hoặc ngoài giới hạn (sửa tay) thì dùng mặc định thay vì báo lỗi, để lỗi cấu hình không chặn đăng nhập,
+OTP và tra cứu. Ràng buộc: hạn phiên truy cập ≤ hạn đăng nhập thường ≤ hạn ghi nhớ.
+
 ## Giai đoạn 3 — cách triển khai theo yêu cầu Ponytail
 
 - React Router + 10 trang TSX giữ markup và CSS cũ; module JavaScript giữ xử lý bảng/form động.

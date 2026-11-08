@@ -87,5 +87,5 @@ public class OtpAttemptTests
         : service.VerifyAsync("otp@example.invalid", OtpPurpose.RESET_PASSWORD, code);
 
     private static OtpService Service(AppDbContext db) => new(new OtpStore(new Sql(db), new TransactionRunner(db)), null!, null!,
-        TimeProvider.System, new ConfigurationBuilder().Build(), NullLogger<OtpService>.Instance, new TransactionRunner(db));
+        TimeProvider.System, new ConfigurationBuilder().Build(), NullLogger<OtpService>.Instance, new TransactionRunner(db), TestTimeSettings.Create());
 }

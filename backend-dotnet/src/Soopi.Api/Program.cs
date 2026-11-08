@@ -156,6 +156,7 @@ builder.Services.AddScoped<PortalTicketService>();
 builder.Services.AddScoped<PublicReviewService>();
 
 // Báo cáo, nhật ký, thông báo, job SLA.
+builder.Services.AddScoped<TimeSettingsService>();
 builder.Services.AddScoped<ReportService>();
 builder.Services.AddScoped<AccessTrackingService>();
 builder.Services.AddScoped<AccessStatisticsService>();

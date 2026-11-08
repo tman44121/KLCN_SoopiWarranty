@@ -1,7 +1,6 @@
 using System.IO.Compression;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Soopi.Api.Domain.Identity;
 using Soopi.Api.Domain.Shared;
 using Soopi.Api.Infrastructure.Security;
@@ -230,7 +229,7 @@ public class ReportWorkbookTests
     {
         var context = new DefaultHttpContext();
         context.Items["soopi.actor"] = new AuthenticatedActor(1, "test", new HashSet<Role> { role }, RolePermissions.ForRole(role), null, null, null);
-        return new(null!, new CurrentActor(new HttpContextAccessor { HttpContext = context }), TimeProvider.System, new ConfigurationBuilder().Build());
+        return new(null!, new CurrentActor(new HttpContextAccessor { HttpContext = context }), TimeProvider.System, null!);
     }
 
     private static ZipArchive Open(ReportSnapshot data) =>

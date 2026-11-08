@@ -27,7 +27,7 @@ public sealed class CustomerAccountService(
     AuditService audit,
     PushDeviceService pushDevices,
     RateLimiter limiter,
-    TimeProvider clock)
+    TimeProvider clock, TimeSettingsService timeSettings)
 {
     /// <summary>
     /// Báo rõ SĐT/email đã/chưa có tài khoản để app dẫn khách sang đúng luồng (D-070) — đánh đổi quyền riêng tư nhỏ, được hạn
@@ -36,7 +36,7 @@ public sealed class CustomerAccountService(
     public async Task<OtpIssued> RequestOtpAsync(string rawEmail, string? rawPhone, OtpPurpose? purpose, string? clientIp)
     {
         if (purpose is null) throw DomainException.Invalid("Thiếu mục đích gửi mã OTP (đăng ký hoặc đặt lại mật khẩu).");
-        limiter.Acquire("otp-ip:" + clientIp, 20, TimeSpan.FromHours(1));
+        limiter.Acquire("otp-ip:" + clientIp, (await timeSettings.GetAsync()).Protection.OtpIp);
         var email = EmailAddress.Require(rawEmail);
         if (purpose == OtpPurpose.REGISTER)
         {

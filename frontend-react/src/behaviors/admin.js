@@ -368,7 +368,7 @@ export default function initialize() {
       ]);
       renderCatalogs();
     } catch (error) {
-      ["category", "brand", "sku", "service", "warranty-policy"].forEach((name) => ui.tableState($(`[data-${name}-tbody]`), name === "category" || name === "brand" ? 3 : name === "sku" ? 5 : 4, "error", { desc: error.detail }, loadCatalogs));
+      ["category", "brand", "sku", "service", "warranty-policy"].forEach((name) => ui.tableState($(`[data-${name}-tbody]`), name === "category" || name === "brand" ? 3 : name === "sku" ? 6 : name === "service" ? 5 : 4, "error", { desc: error.detail }, loadCatalogs));
     }
   }
 
@@ -397,14 +397,101 @@ export default function initialize() {
       const models = modelsByBrand.get(item._id) || [];
       return html`<tr><td>${named(item, item.name)}</td><td>${(item.categoryCodes || []).map(categoryName).join(", ") || "—"}</td><td>${models.length ? models.join(", ") : html`<span class="cell-muted">Chưa có model</span>`}</td></tr>`;
     })}`;
-    if (!state.parts.length) empty("[data-sku-tbody]", 5, "Chưa có linh kiện nào.");
-    else $("[data-sku-tbody]").innerHTML = html`${state.parts.map((item) => html`<tr><td class="mono">${item._id}</td><td>${named(item, item.name)}</td><td>${categoryName(item.categoryCode)}</td><td>${item.brandName || "—"}</td><td>${fmt.money(item.servicePrice)}</td></tr>`)}`;
-    if (!state.services.length) empty("[data-service-tbody]", 4, "Chưa có dịch vụ nào.");
-    else $("[data-service-tbody]").innerHTML = html`${state.services.map((item) => html`<tr><td class="mono">${item._id}</td><td>${named(item, item.name)}</td><td>${categoryName(item.categoryCode)}</td><td>${fmt.money(item.price)}</td></tr>`)}`;
+    if (!state.parts.length) empty("[data-sku-tbody]", 6, "Chưa có linh kiện nào.");
+    else $("[data-sku-tbody]").innerHTML = html`${state.parts.map((item) => html`<tr><td class="mono">${item._id}</td><td>${named(item, item.name)}</td><td>${categoryName(item.categoryCode)}</td><td>${item.brandName || "—"}</td>${priceCells(item, item.servicePrice)}</tr>`)}`;
+    if (!state.services.length) empty("[data-service-tbody]", 5, "Chưa có dịch vụ nào.");
+    else $("[data-service-tbody]").innerHTML = html`${state.services.map((item) => html`<tr><td class="mono">${item._id}</td><td>${named(item, item.name)}</td><td>${categoryName(item.categoryCode)}</td>${priceCells(item, item.price)}</tr>`)}`;
     renderPolicies();
+    const types = state.categories.reduce((sum, item) => sum + (item.deviceTypes || []).length, 0);
+    const counts = {
+      categories: [state.categories.length, `${state.categories.length} nhóm · ${types} loại thiết bị`],
+      brands: [state.brands.length, `${state.brands.length} hãng · ${state.products.length} model`],
+      parts: [state.parts.length, `${state.parts.length} linh kiện`],
+      services: [state.services.length, `${state.services.length} dịch vụ`],
+      policies: [state.policies.length, `${state.policies.length} chính sách`],
+    };
+    Object.entries(counts).forEach(([key, [count, summary]]) => {
+      $(`[data-catalog-count="${key}"]`).textContent = count;
+      $(`[data-catalog-summary="${key}"]`).textContent = summary;
+    });
     const categoryOptions = state.categories.map((item) => html`<option value="${item._id}">${item.name}</option>`);
     $("[data-add-sku-category]").innerHTML = html`${categoryOptions}`;
     $("[data-add-svc-category]").innerHTML = html`${categoryOptions}`;
+  }
+
+  /* ------------------------------------------------ sửa giá ngay trên bảng */
+  const PRICE_EDIT = {
+    sku: { type: "parts", field: "servicePrice", items: () => state.parts, label: "giá tính khách" },
+    service: { type: "service-prices", field: "price", items: () => state.services, label: "giá công" },
+  };
+
+  function priceCells(item, price) {
+    return html`<td class="cell-num" data-price-cell>${fmt.money(price)}</td>
+      <td class="catalog-actions-col" data-price-actions><button type="button" class="btn btn--secondary btn--sm" data-edit-price="${item._id}"
+        aria-label="Sửa giá ${item.name}">Sửa giá</button></td>`;
+  }
+
+  function bindPriceEditing() {
+    Object.entries(PRICE_EDIT).forEach(([name, config]) => {
+      $(`[data-${name}-tbody]`).addEventListener("click", (event) => {
+        const button = event.target.closest("[data-edit-price]");
+        if (button) editPrice(config, name, button.closest("tr"), button.dataset.editPrice);
+      });
+    });
+  }
+
+  /** Ô giá thành ô nhập ngay trên dòng: Enter lưu, Esc hủy; lưu xong vẽ lại bảng và trả focus về nút Sửa giá. */
+  function editPrice(config, name, row, id) {
+    const item = config.items().find((entry) => entry._id === id);
+    if (!item) return;
+    const restore = () => {
+      renderCatalogs();
+      const again = $(`[data-${name}-tbody] [data-edit-price="${CSS.escape(id)}"]`);
+      if (again) again.focus();
+    };
+    row.classList.add("is-editing");
+    row.querySelector("[data-price-cell]").innerHTML = html`<input type="number" class="text-field price-input" min="0" step="1"
+      inputmode="numeric" required value="${Number(item[config.field] ?? 0)}" aria-label="Giá mới cho ${item.name} (đồng)">`;
+    row.querySelector("[data-price-actions]").innerHTML = html`<div class="price-actions">
+      <button type="button" class="btn btn--primary btn--sm" data-price-save>Lưu</button>
+      <button type="button" class="btn btn--secondary btn--sm" data-price-cancel>Hủy</button></div>`;
+    const input = row.querySelector(".price-input");
+    const save = row.querySelector("[data-price-save]");
+    const cancel = row.querySelector("[data-price-cancel]");
+    let saving = false;
+    input.focus();
+    input.select();
+    const submit = async () => {
+      if (saving) return;
+      const value = input.valueAsNumber;
+      input.setCustomValidity(Number.isFinite(value) && value >= 0 ? "" : "Nhập số tiền từ 0 đ trở lên.");
+      if (!input.reportValidity()) return;
+      const amount = Math.round(value);
+      if (amount === Number(item[config.field] ?? 0)) return restore();
+      saving = true;
+      input.disabled = true;
+      cancel.disabled = true;
+      try {
+        const saved = await ui.busy(save, () => api.catalog.update(config.type, id, { [config.field]: amount }));
+        item[config.field] = saved[config.field];
+        window.showToast(`Đã cập nhật ${config.label} ${item.name}: ${fmt.money(item[config.field])}.`, "success");
+        restore();
+      } catch (error) { ui.showError(error); }
+      finally {
+        saving = false;
+        input.disabled = false;
+        cancel.disabled = false;
+        if (input.isConnected) input.focus();
+      }
+    };
+    save.addEventListener("click", submit);
+    cancel.addEventListener("click", () => { if (!saving) restore(); });
+    input.addEventListener("input", () => input.setCustomValidity(""));
+    input.addEventListener("keydown", (event) => {
+      if (saving) { event.preventDefault(); return; }
+      if (event.key === "Enter") { event.preventDefault(); void submit(); }
+      if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); restore(); }
+    });
   }
 
   /** Theo hãng, chính sách chung của hãng đứng trước các chính sách riêng từng model. */
@@ -530,16 +617,19 @@ export default function initialize() {
     ui.blockState(target, "empty", { desc });
   }
 
-  function renderStats(revenue, statuses, turnaround, warranty) {
+  function renderStats(revenue, statuses, turnaround, warranty, technicians) {
     const revenueTotal = revenue.reduce((sum, row) => sum + Number(row.total || 0), 0);
     const payments = revenue.reduce((sum, row) => sum + Number(row.payments || 0), 0);
     const tickets = statuses.reduce((sum, row) => sum + Number(row.count || 0), 0);
     const delivered = (statuses.find((row) => row.status === "DELIVERED") || {}).count || 0;
     const classified = warranty.freeWarranty + warranty.charged;
+    const lateOpen = technicians.reduce((sum, row) => sum + Number(row.lateOpen || 0), 0);
+    const lateDone = technicians.reduce((sum, row) => sum + Number(row.lateCompleted || 0), 0);
     charts.stats($("[data-report-stats]"), [
       { label: "Doanh thu", value: fmt.money(revenueTotal), meta: `${payments} phiếu thu` },
       { label: "Phiếu tiếp nhận", value: charts.number(tickets, 0), meta: `${delivered} đã hoàn thành` },
       { label: "Thời gian xử lý trung bình", value: hours(turnaround.avgHours), meta: `${turnaround.delivered} máy đã bàn giao` },
+      { label: "Đang trễ hạn SLA", value: charts.number(lateOpen, 0), meta: `${lateDone} phiếu đã xong nhưng trễ`, tone: lateOpen ? "danger" : "" },
       {
         label: "Trong bảo hành",
         value: classified ? `${charts.number(warranty.freeRatePercent)}%` : "—",
@@ -599,19 +689,6 @@ export default function initialize() {
     });
   }
 
-  function renderTechnicians(technicians) {
-    const target = $("[data-technician-chart]");
-    const rows = technicians.filter((row) => row.assigned > 0 || row.completed > 0);
-    if (!rows.length) return empty(target, "Chưa có phiếu sửa chữa nào được giao trong khoảng thời gian này.");
-    charts.bars(target, {
-      title: "Phiếu hoàn tất theo kỹ thuật viên",
-      headers: ["Kỹ thuật viên", "Phiếu hoàn tất"],
-      rows: rows
-        .map((row) => ({ label: row.fullName, value: row.completed, display: `${row.completed}/${row.assigned} phiếu` }))
-        .sort((a, b) => b.value - a.value),
-    });
-  }
-
   function renderWarranty(warranty) {
     const target = $("[data-warranty-ratio-chart]");
     if (!(warranty.freeWarranty + warranty.charged)) {
@@ -627,13 +704,20 @@ export default function initialize() {
     });
   }
 
-  function renderPerformance(technicians) {
-    const tbody = $("[data-techperf-tbody]");
-    if (!technicians.length) return ui.tableState(tbody, 5, "empty", { desc: "Chưa có kỹ thuật viên nào." });
-    tbody.innerHTML = html`${technicians.map((row) => html`<tr><td>${row.fullName}</td><td>${row.assigned}</td><td>${row.completed}</td><td>${hours(row.avgRepairHours)}</td><td>${row.firstPassQcRate == null ? "—" : `${charts.number(row.firstPassQcRate)}%`}</td></tr>`)}`;
+  /** Tổng phiếu trễ hạn SLA, kèm tách đã xong trễ / đang trễ. */
+  function lateCell(row) {
+    const done = row.lateCompleted || 0, open = row.lateOpen || 0;
+    if (!done && !open) return html`<span class="cell-muted">0</span>`;
+    return html`<strong class="late-count">${done + open}</strong><div class="cell-muted cell-muted--sm">${done} đã xong trễ · ${open} đang trễ</div>`;
   }
 
-  const REPORT_TARGETS = ["[data-revenue-chart]", "[data-status-chart]", "[data-turnaround-chart]", "[data-technician-chart]", "[data-warranty-ratio-chart]"];
+  function renderPerformance(technicians) {
+    const tbody = $("[data-techperf-tbody]");
+    if (!technicians.length) return ui.tableState(tbody, 6, "empty", { desc: "Chưa có kỹ thuật viên nào." });
+    tbody.innerHTML = html`${technicians.map((row) => html`<tr><td class="cell-primary">${row.fullName}</td><td class="cell-num">${row.assigned}</td><td class="cell-num">${row.completed}</td><td class="cell-num">${lateCell(row)}</td><td class="cell-num">${hours(row.avgRepairHours)}</td><td class="cell-num">${row.firstPassQcRate == null ? "—" : `${charts.number(row.firstPassQcRate)}%`}</td></tr>`)}`;
+  }
+
+  const REPORT_TARGETS = ["[data-revenue-chart]", "[data-status-chart]", "[data-turnaround-chart]", "[data-warranty-ratio-chart]"];
 
   const reviews = { page: 0, totalPages: 1, load: 0 };
   async function loadReviews() {
@@ -697,6 +781,30 @@ export default function initialize() {
   }
 
   function refreshReviews() { reviews.page = 0; void loadReviews(); }
+
+  /** Nhóm tab theo mẫu ARIA (báo cáo, danh mục): một điểm dừng Tab, mũi tên trái/phải và Home/End đổi tab. */
+  function bindTabs(list) {
+    const tabs = Array.from(list.querySelectorAll('[role="tab"]'));
+    const select = (tab, focus) => {
+      tabs.forEach((item) => {
+        const on = item === tab;
+        item.setAttribute("aria-selected", String(on));
+        item.tabIndex = on ? 0 : -1;
+        document.getElementById(item.getAttribute("aria-controls")).hidden = !on;
+      });
+      tab.scrollIntoView({ block: "nearest", inline: "nearest" });
+      if (focus) tab.focus();
+    };
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => select(tab, false));
+      tab.addEventListener("keydown", (event) => {
+        const next = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: tabs.length - 1 }[event.key];
+        if (next === undefined) return;
+        event.preventDefault();
+        select(tabs[(next + tabs.length) % tabs.length], true);
+      });
+    });
+  }
   function refreshReports() { void loadReports(); refreshReviews(); }
 
   async function loadReports() {
@@ -715,7 +823,7 @@ export default function initialize() {
     $("[data-report-period]").textContent = `${period.from.split("-").reverse().join("/")} – ${period.to.split("-").reverse().join("/")}`;
     if (first) {
       REPORT_TARGETS.forEach((selector) => ui.blockState($(selector), "loading"));
-      ui.skeletonRows($("[data-techperf-tbody]"), 5);
+      ui.skeletonRows($("[data-techperf-tbody]"), 6);
     } else {
       body.classList.add("is-refreshing");
     }
@@ -726,11 +834,10 @@ export default function initialize() {
         api.reports.get("technician-performance", query), api.reports.get("warranty-ratio", query),
       ]);
       if (load !== reportLoad) return; // đã đổi bộ lọc trong lúc chờ: bỏ kết quả cũ
-      renderStats(revenue, statuses, turnaround, warranty);
+      renderStats(revenue, statuses, turnaround, warranty, technicians);
       renderRevenue(revenue, period.months);
       renderStatuses(statuses);
       renderTurnaround(turnaround);
-      renderTechnicians(technicians);
       renderWarranty(warranty);
       renderPerformance(technicians);
       reportQuery = query;
@@ -740,7 +847,7 @@ export default function initialize() {
       if (load !== reportLoad) return;
       $("[data-report-stats]").textContent = "";
       REPORT_TARGETS.forEach((selector) => ui.blockState($(selector), "error", { desc: error.detail }, loadReports));
-      ui.tableState($("[data-techperf-tbody]"), 5, "error", { desc: error.detail }, loadReports);
+      ui.tableState($("[data-techperf-tbody]"), 6, "error", { desc: error.detail }, loadReports);
     } finally {
       if (load === reportLoad) {
         body.classList.remove("is-refreshing");
@@ -782,6 +889,7 @@ export default function initialize() {
     });
     ["category", "brand", "sku", "policy", "service"].forEach((name) => bindClose(`add-${name}`, `[data-add-${name}-drawer]`));
     bindCatalogActions();
+    bindPriceEditing();
     bindCustomers();
     $("[data-admin-station]").addEventListener("change", refreshReports);
     $("[data-admin-range]").addEventListener("change", refreshReports);
@@ -802,6 +910,7 @@ export default function initialize() {
     $("[data-review-prev]").addEventListener("click", () => { if (reviews.page > 0) { reviews.page--; void loadReviews(); } });
     $("[data-review-next]").addEventListener("click", () => { if (reviews.page + 1 < reviews.totalPages) { reviews.page++; void loadReviews(); } });
     $("[data-export-report]").addEventListener("click", exportReport);
+    document.querySelectorAll(".section-tabs").forEach(bindTabs);
   }
 
   window.LML_AUTH.ready(async () => {

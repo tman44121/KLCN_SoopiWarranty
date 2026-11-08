@@ -38,7 +38,7 @@ public sealed record PortalTicketView(
     private static readonly string[] StepKeys = ["RECEIVED", "DIAGNOSIS", "AWAITING_PARTS", "REPAIRING", "QC", "READY"];
     private static readonly string[] StepLabels = ["Tiếp nhận", "Chẩn đoán", "Chờ linh kiện", "Đang sửa", "Kiểm tra chất lượng", "Sẵn sàng nhận máy"];
 
-    public static PortalTicketView From(Ticket ticket, BillingBreakdown billing, Quotation? pending, PaymentQr? paymentQr = null)
+    public static PortalTicketView From(Ticket ticket, BillingBreakdown billing, Quotation? pending, PaymentQr? paymentQr = null, TimeSettings? times = null)
     {
         var device = ticket.DeviceSnapshot;
         var isDelivered = ticket.Status is TicketStatus.DELIVERED or TicketStatus.RETURNED_UNREPAIRED;
@@ -52,7 +52,7 @@ public sealed record PortalTicketView(
                 ? null
                 : new PendingQuotation(pending.Id, pending.ValidUntil, pending.VatRate,
                     pending.Lines.Select(line => new PortalQuotationLine(line.LineNo, line.Description, line.Quantity, line.UnitPrice, line.LaborFee, line.LineTotal)).ToList(),
-                    pending.PartsTotal, pending.LaborTotal, pending.GrandTotal, pending.RespondBy),
+                    pending.PartsTotal, pending.LaborTotal, pending.GrandTotal, pending.RespondBy(times)),
             ticket.Handover?.HandedOverAt,
             ticket.Handover?.Rating,
             isDelivered && ticket.Handover is not null,
@@ -87,6 +87,7 @@ public sealed record DecisionRequest([NotNull] Decision? Decision, string? Reaso
 public sealed record TicketRatingRequest([NotNull, Min(1), Max(5)] int? Rating, [MaxLength(1000)] string? Comment);
 
 public sealed class PortalTicketService(
+    TimeSettingsService timeSettings,
     TicketStore tickets,
     QuotationStore quotations,
     BillingCalculator billing,
@@ -176,6 +177,6 @@ public sealed class PortalTicketService(
             && await quotations.FindAsync(ticket.ActiveQuotationId) is { Approval.Status: "APPROVED", CustomerDecision.Status: "PENDING" } quote)
             pending = quote;
         var costs = await billing.BreakdownAsync(ticket.Id);
-        return PortalTicketView.From(ticket, costs, pending, vietQr.For(ticket, costs));
+        return PortalTicketView.From(ticket, costs, pending, vietQr.For(ticket, costs), await timeSettings.GetAsync());
     }
 }

@@ -93,7 +93,7 @@ try {
   await customer.page.waitForLoadState('networkidle');
   await check('Sunday appointment keeps its actionable error after submission', async () => {
     await customer.page.fill('#reg-time-date', '2030-10-06');
-    await customer.page.selectOption('#reg-time-time', '10:00');
+    await customer.page.fill('#reg-time-time', '10:00');
     await customer.page.locator('[data-register-submit]').click();
     const error = customer.page.locator('#reg-time-error');
     assert.equal(await error.isVisible(), true);

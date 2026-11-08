@@ -65,6 +65,7 @@ public sealed class WarrantyRequestSubmissionService(
     CodeGenerator codes,
     TransactionRunner transactions,
     NotificationService notifications,
+    TimeSettingsService timeSettings,
     TimeProvider clock)
 {
     public Task<string> SubmitAsync(SubmissionCommand command, IReadOnlyList<Upload> uploads) =>
@@ -72,7 +73,7 @@ public sealed class WarrantyRequestSubmissionService(
         {
             await RequireDeviceTypeAsync(command.CategoryCode, command.DeviceTypeCode, command.IdentifierType);
             await RequireStationAsync(command.PreferredStation);
-            var request = Validated(await codes.NextAsync(BusinessCodeType.WarrantyRequest), command, clock.GetUtcNow());
+            var request = Validated(await codes.NextAsync(BusinessCodeType.WarrantyRequest), command, clock.GetUtcNow(), await timeSettings.GetAsync());
             await attachments.StoreWarrantyRequestFilesAsync(request.Code, uploads);
             await store.InsertAsync(request);
             await notifications.ForRoleAsync("RECEPTIONIST", "WARRANTY_REQUEST_NEW", $"Có yêu cầu bảo hành trực tuyến mới {request.Code}.",
@@ -81,9 +82,9 @@ public sealed class WarrantyRequestSubmissionService(
         });
 
     /// <summary>Luật của NewWarrantyRequest (Java): đủ trường, khung giờ hợp lệ, SĐT/IMEI/Serial chuẩn hóa.</summary>
-    public static NewWarrantyRequest Validated(string code, SubmissionCommand c, DateTimeOffset now)
+    public static NewWarrantyRequest Validated(string code, SubmissionCommand c, DateTimeOffset now, TimeSettings? times = null)
     {
-        BusinessHours.RequireRange(c.PreferredFrom, c.PreferredTo);
+        BusinessHours.RequireRange(c.PreferredFrom, c.PreferredTo, times);
         if (c.PreferredFrom is { } appointment && appointment < now) throw new DomainException(ErrorCode.VALIDATION_FAILED);
         if (Blank(c.FullName) || Blank(c.CategoryCode) || Blank(c.DeviceTypeCode) || Blank(c.BrandModel) || Blank(c.Symptom)
             || Blank(c.PreferredStation) || (c.PreferredFrom is { } from && c.PreferredTo is { } to && to < from))

@@ -58,7 +58,7 @@ export default function PortalPage() {
             </div>
             <div data-register-success="" hidden={true}>
             </div>
-            <h3 className="form-section-title"><span className="form-section-num">1</span>Thông tin liên hệ</h3>
+            <h3 className="form-section-title"><span className="form-section-num">1</span>Thông tin người gửi</h3>
             <div className="two-inputs-grid form-row-group">
               <div className="form-row-group" data-field="regName">
                 <label htmlFor="reg-name">Họ và tên *</label>
@@ -87,7 +87,10 @@ export default function PortalPage() {
               </div>
               <div className="form-row-group" data-field="regBrandModel">
                 <label htmlFor="reg-brand-model">Hãng / Model *</label>
-                <input type="text" id="reg-brand-model" className="regular-input" placeholder="VD: Samsung Inverter RT35K5982" />
+                <input id="reg-brand-model" className="regular-input" list="reg-brand-model-options" autoComplete="off"
+                  placeholder="Chọn loại thiết bị trước" aria-describedby="reg-brand-model-hint" disabled />
+                <datalist id="reg-brand-model-options" />
+                <div id="reg-brand-model-hint" className="input-subnote">Gõ để tìm rồi chọn model có sẵn trong danh sách.</div>
                 <span className="form-field__error" hidden={true}>
                 </span>
               </div>

@@ -21,7 +21,8 @@ public sealed class SlaAlertJob(IServiceScopeFactory scopes, TimeProvider clock,
                 await using var scope = scopes.CreateAsyncScope();
                 await NotifyAsync(scope.ServiceProvider.GetRequiredService<Sql>(),
                     scope.ServiceProvider.GetRequiredService<NotificationService>(),
-                    scope.ServiceProvider.GetRequiredService<TransactionRunner>());
+                    scope.ServiceProvider.GetRequiredService<TransactionRunner>(),
+                    scope.ServiceProvider.GetRequiredService<TimeSettingsService>());
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -30,10 +31,10 @@ public sealed class SlaAlertJob(IServiceScopeFactory scopes, TimeProvider clock,
         }
     }
 
-    public async Task<int> NotifyAsync(Sql sql, NotificationService notifications, TransactionRunner transactions)
+    public async Task<int> NotifyAsync(Sql sql, NotificationService notifications, TransactionRunner transactions, TimeSettingsService timeSettings)
     {
         var now = clock.GetUtcNow();
-        var until = now + configuration.GetValue("Sla:AtRiskThreshold", TimeSpan.FromHours(2));
+        var until = now + (await timeSettings.GetAsync()).AtRiskThreshold;
         const string active = "ConMo = 1 AND TrangThaiXuLy NOT IN ('COMPLETED', 'AWAITING_RETURN') AND HanSLA <= ?";
         var codes = await sql.QueryAsync("SELECT MaPhieuTN FROM PhieuTiepNhan WHERE " + active,
             row => row.Str("MaPhieuTN")!, until);

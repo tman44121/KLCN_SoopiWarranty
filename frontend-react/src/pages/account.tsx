@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { BusinessDateTime } from "../BusinessDateTime";
 import { businessTimeError, businessInstant, appointmentEnd } from "../business-hours.js";
 import { itemDay } from "../behaviors/list-filters.js";
+import { modelOptions } from "../model-options.js";
 import { usePage } from "../usePage";
 import { MAX_REVIEW_LENGTH, QUICK_TAGS, joinReviewComment, splitReviewComment } from "../reviews";
 import { passwordError, passwordRules } from "../validation";
@@ -1714,7 +1715,7 @@ function NewRequest({ data, serial, onSubmitted }: { data: Data; serial: string;
   const device = data.devices.find((d) => d.serialOrImei === serial);
   const [catalog, setCatalog] = useState<Json>(null);
   const [form, setForm] = useState({
-    category: "", brandModel: device ? [device.brandName, device.productName].filter(Boolean).join(" ") : "",
+    category: "", brandModel: "",
     serial, symptom: "", station: "", time: "",
   });
   const [files, setFiles] = useState<File[]>([]);
@@ -1724,14 +1725,23 @@ function NewRequest({ data, serial, onSubmitted }: { data: Data; serial: string;
   const [busy, run] = useBusy();
 
   useEffect(() => {
-    api().portal.catalog().then(setCatalog).catch((e: Json) => setSummary(errorText(e)));
+    api().portal.catalog().then((value: Json) => {
+      setCatalog(value);
+      const match = device && value.products?.find((p: Json) => p.name === device.productName && p.brandName === device.brandName);
+      if (match) {
+        const options = modelOptions(value.products.filter((p: Json) => p.categoryCode === match.categoryCode));
+        setForm(current => current.category || current.brandModel ? current : { ...current, category: match.categoryCode, brandModel: options.find((p: Json) => p.code === match.code)!.label });
+      }
+    }).catch((e: Json) => setSummary(errorText(e)));
   }, []);
 
   const category = catalog?.categories.find((c: Json) => c.code === form.category);
-  const type = category?.deviceTypes[0];
+  const models = modelOptions(catalog?.products?.filter((p: Json) => p.categoryCode === form.category) || []);
+  const product = models.find((p: Json) => p.label === form.brandModel);
+  const type = category?.deviceTypes.find((t: Json) => t.code === product?.deviceTypeCode);
   const idLabel = type?.identifierType === "IMEI" ? "IMEI" : "Số Serial";
   const set = (key: keyof typeof form) => (event: { target: { value: string } }) => {
-    setForm({ ...form, [key]: event.target.value });
+    setForm({ ...form, [key]: event.target.value, ...(key === "category" && event.target.value !== form.category ? { brandModel: "" } : {}) });
     setErrors({ ...errors, [key]: "" });
   };
 
@@ -1740,7 +1750,7 @@ function NewRequest({ data, serial, onSubmitted }: { data: Data; serial: string;
     setSummary("");
     const next: Record<string, string> = {};
     if (!form.category) next.category = "Vui lòng chọn loại thiết bị.";
-    if (!form.brandModel.trim()) next.brandModel = "Vui lòng nhập hãng/model.";
+    if (!product) next.brandModel = "Vui lòng chọn hãng/model có sẵn trong danh sách.";
     if (!form.serial.trim()) next.serial = `Vui lòng nhập ${idLabel}.`;
     if (!form.symptom.trim()) next.symptom = "Vui lòng mô tả lỗi.";
     if (!form.station) next.station = "Vui lòng chọn trạm dịch vụ.";
@@ -1754,7 +1764,7 @@ function NewRequest({ data, serial, onSubmitted }: { data: Data; serial: string;
     await run(async () => {
       try {
         const body = {
-          categoryCode: category.code, deviceTypeCode: type.code, brandModel: form.brandModel.trim(),
+          categoryCode: category.code, deviceTypeCode: type.code, brandModel: [product.brandName, product.name].filter(Boolean).join(" "),
           identifierType: type.identifierType, serialOrImei: form.serial.trim(), symptom: form.symptom.trim(),
           preferredStation: form.station, preferredFrom: from.toISOString(),
           preferredTo: businessInstant(appointmentEnd(form.time)).toISOString(),
@@ -1821,7 +1831,13 @@ function NewRequest({ data, serial, onSubmitted }: { data: Data; serial: string;
             <div>
               <label htmlFor="req-brand-model">Hãng / Model *</label>
               <input id="req-brand-model" className="regular-input" value={form.brandModel} onChange={set("brandModel")}
-                placeholder="Ví dụ: Samsung Inverter RT35K5982" aria-invalid={Boolean(errors.brandModel) || undefined} />
+                list="req-brand-model-options" autoComplete="off" disabled={!models.length}
+                placeholder={!catalog ? "Đang tải danh mục…" : !form.category ? "Chọn loại thiết bị trước" : models.length ? "Gõ hãng hoặc model để tìm" : "Chưa có model cho loại thiết bị này"}
+                aria-invalid={Boolean(errors.brandModel) || undefined} aria-describedby="req-brand-model-hint" />
+              <datalist id="req-brand-model-options">
+                {models.map((p: Json) => <option key={p.code} value={p.label} />)}
+              </datalist>
+              <div id="req-brand-model-hint" className="input-subnote">Gõ để tìm rồi chọn model có sẵn trong danh sách.</div>
               {err("brandModel")}
             </div>
           </div>
@@ -1864,7 +1880,7 @@ function NewRequest({ data, serial, onSubmitted }: { data: Data; serial: string;
             {err("files")}
           </div>
 
-          <h2 className="form-section-title"><span className="form-section-num">2</span>Thông tin chủ sở hữu</h2>
+          <h2 className="form-section-title"><span className="form-section-num">2</span>Thông tin người gửi</h2>
           <div className="owner-summary">
             <div><span>Họ và tên: </span>{p.fullName}</div>
             <div><span>Số điện thoại: </span>{p.phone}</div>

@@ -269,14 +269,14 @@ stage('request', async () => {
   await page.goto(base + '/account#yeu-cau-moi');
   await page.waitForSelector('#req-category option:nth-child(2)', { state: 'attached' });
   await page.selectOption('#req-category', 'LAPTOP_TABLET');
-  await page.fill('#req-brand-model', 'Samsung Galaxy Tab S9');
+  await page.fill('#req-brand-model', await page.locator('#req-brand-model-options option').evaluateAll(nodes => nodes.find(n => n.value.includes('Galaxy Tab S9')).value));
   await page.fill('#req-serial', 'R54W' + String(Date.now()).slice(-8));
   await page.fill('#req-symptom', 'Máy sạc không vào pin, cắm sạc báo lỗi nhiệt độ.');
   await page.selectOption('#req-station', { index: 1 });
   const appointmentDay = new Date(Date.now() + 2 * 86400000);
   if (appointmentDay.getUTCDay() === 0) appointmentDay.setUTCDate(appointmentDay.getUTCDate() + 1);
   await page.fill('#req-time-date', appointmentDay.toISOString().slice(0, 10));
-  await page.selectOption('#req-time-time', '09:30');
+  await page.fill('#req-time-time', '09:30');
   await shot(page, '57-khach-gui-yeu-cau');
   await page.click('form.form-card-panel button[type="submit"]');
   await until(page, '.kh-alert--success');

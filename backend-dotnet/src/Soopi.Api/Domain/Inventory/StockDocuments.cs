@@ -2,7 +2,9 @@ using Soopi.Api.Domain.Shared;
 
 namespace Soopi.Api.Domain.Inventory;
 
-public sealed record IssueLine(string Sku, int Quantity, decimal UnitCost, string? BinCode, DateOnly? PartWarrantyExpiresOn);
+/// <param name="UnitServicePrice">Giá tính khách lúc lập phiếu xuất; null với dòng cũ chưa lưu (khi đó dùng giá hiện tại).</param>
+public sealed record IssueLine(string Sku, int Quantity, decimal UnitCost, string? BinCode, DateOnly? PartWarrantyExpiresOn,
+    decimal? UnitServicePrice = null);
 
 /// <summary>Phiếu xuất kho (PhieuXuatKho + ChiTietXuatKho): chờ → đã xuất / từ chối.</summary>
 public sealed class StockIssue

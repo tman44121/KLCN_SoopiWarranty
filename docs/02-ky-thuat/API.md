@@ -81,13 +81,62 @@ OTP được khóa trong lúc kiểm tra/cập nhật: tối đa 5 lượt sai k
 Portal token có `typ=portal`, không dùng refresh của nhân viên và không được quyền truy cập các phiếu khác.
 Nhóm `/portal/my/*` và scope từng endpoint phải theo controller/service, không suy mọi token portal là tài khoản khách.
 
+`GET /portal/catalog` bổ sung `products`: mỗi model đang hoạt động có `code`, `name`, `brandName`, `categoryCode`,
+`deviceTypeCode`; chỉ gồm model có hãng, loại và nhóm đang hoạt động. Web/app dùng danh sách này cho ô Hãng / Model,
+lọc theo loại thiết bị. Payload gửi yêu cầu vẫn dùng `brandModel` là tên hiển thị, cùng mã nhóm/loại tương ứng.
+Endpoint công khai không trả giá vốn, chính sách nội bộ hay thông tin khách hàng.
+
+Khách trên phiếu tiếp nhận là **người gửi của lần đó**, có thể khác chủ đăng ký thiết bị. Với thiết bị đã có,
+tiếp nhận không đổi `ThietBi.MaKH`; `PhieuTiepNhan.MaKH` là người gửi nhận thông báo, xem phiếu và xác nhận báo giá.
+Cha và con gửi cùng máy ở hai lần khác nhau chỉ xem/xác nhận các phiếu đứng tên mình. Vẫn chặn hai phiếu mở đồng thời
+cho cùng thiết bị; nhân viên vẫn tra cứu lịch sử thiết bị theo quyền hiện có. Không cần đổi schema.
+
 `GET /portal/my/tickets` bổ sung `paidAmount` trên từng phiếu: số tiền thực thu của phiếu thuộc chính tài khoản khách, 0 nếu chưa thu/miễn phí; cộng trường này để hiện tổng tiền khách đã chi, không dùng tổng báo giá.
-`pendingQuotation` của `GET /portal/tickets/{code}` bổ sung `respondBy` (thời điểm): hết ngày `validUntil` theo giờ Việt Nam, hoặc 72 giờ từ lúc duyệt nếu không có ngày hiệu lực. Hết hạn không thể đồng ý; job tự từ chối và chuyển chờ trả máy, gửi thông báo web/app. Mã bước `QC` giữ nguyên, nhãn hiển thị là “Kiểm tra chất lượng”.
+`pendingQuotation` của `GET /portal/tickets/{code}` bổ sung `respondBy` (thời điểm): hết ngày `validUntil` theo giờ Việt Nam, hoặc số giờ trong cấu hình thời gian (mặc định 72) từ lúc duyệt nếu không có ngày hiệu lực. Hết hạn không thể đồng ý; job tự từ chối và chuyển chờ trả máy, gửi thông báo web/app. Mã bước `QC` giữ nguyên, nhãn hiển thị là “Kiểm tra chất lượng”.
 IMEI được nhập 4–50 ký tự chữ ASCII, số hoặc dấu `-`, không kiểm Luhn; chuẩn hóa như Serial và giữ ràng buộc duy nhất. Database hiện có cần cập nhật CHECK theo [13_relax_imei.sql](../../database/13_relax_imei.sql) trước khi nhận định dạng mới.
 
 Yêu cầu đã có `MaKH` được xem theo mã khách, kể cả sau khi khách đổi SĐT; chỉ yêu cầu vãng lai chưa gắn mã khách mới
 đối chiếu SĐT. Quy tắc này áp dụng cả danh sách, chi tiết và tệp. Tra cứu công khai yêu cầu đã gắn khách dùng SĐT
 hiện tại của hồ sơ đang hoạt động; số cũ không cấp token mới. Khi gộp khách, chuyển cả các yêu cầu đã gắn mã sang hồ sơ đích.
+
+## Cấu hình thời gian
+
+`GET /settings/time` công khai (không gửi token); `PUT /settings/time` chỉ `ADMIN`, body giống response:
+
+```json
+{ "expressSlaHours": 12, "prioritySlaHours": 24, "standardSlaHours": 48, "defaultSlaLevel": "STANDARD_48H",
+  "atRiskMinutes": 120, "quotationValidityHours": 72, "openAt": "08:00", "closeAt": "17:00", "workingDays": [1, 2, 3, 4, 5, 6] }
+```
+
+`workingDays` theo ISO: 1 = thứ Hai … 7 = Chủ nhật. Ràng buộc: giờ SLA 1–720 và Nhanh ≤ Ưu tiên ≤ Tiêu chuẩn; sắp trễ 1–1440
+phút; báo giá 1–720 giờ; giờ `HH:mm` 24 giờ, mở cửa trước đóng cửa; ít nhất một ngày. Sai trả `400 VALIDATION_FAILED`.
+`POST /tickets` không gửi `slaLevel` thì dùng `defaultSlaLevel`; `HanSLA` = giờ nhận + số giờ của mức tại thời điểm lập phiếu.
+`APPOINTMENT_OUTSIDE_BUSINESS_HOURS` ghi giờ làm việc hiện hành trong `detail`.
+
+`GET /settings/time/admin` (chỉ `ADMIN`) trả thêm `protection`; `GET /settings/time` công khai không có trường này. `PUT` có thể
+gửi `protection` (bỏ trống = giữ giá trị đang lưu, cần `16_protection_settings.sql`):
+
+```json
+"protection": { "loginMaxFailedAttempts": 5, "loginLockMinutes": 15, "otpValidityMinutes": 5, "otpResendSeconds": 60,
+  "otpMaxFailedAttempts": 5, "accessTokenMinutes": 15, "refreshTokenHours": 12, "rememberTokenDays": 30, "portalTokenMinutes": 30,
+  "loginIp": { "limit": 10, "windowMinutes": 1 }, "loginAccount": { "limit": 5, "windowMinutes": 1 },
+  "otpIp": { "limit": 20, "windowMinutes": 60 }, "otpEmail": { "limit": 5, "windowMinutes": 60 },
+  "warrantyCheckIp": { "limit": 10, "windowMinutes": 1 }, "lookupIp": { "limit": 5, "windowMinutes": 1 },
+  "lookupCode": { "limit": 10, "windowMinutes": 60 }, "publicRequestsIp": { "limit": 3, "windowMinutes": 60 },
+  "customerRequests": { "limit": 5, "windowMinutes": 60 } }
+```
+
+Giới hạn: sai mật khẩu 1–20, khóa 1–1440 phút, OTP 1–30 phút, chờ gửi lại 1–3600 giây, sai OTP 1–10; phiên truy cập 1–1440 phút,
+đăng nhập thường 1–720 giờ, ghi nhớ 1–90 ngày, tra cứu 1–1440 phút, và truy cập ≤ thường ≤ ghi nhớ; mỗi giới hạn tần suất
+`limit` 1–10000, `windowMinutes` 1–1440. Vượt giới hạn tần suất vẫn trả `429 RATE_LIMITED`.
+
+`GET /reports/technician-performance` bổ sung `lateCompleted` (lệnh sửa xong, đạt kiểm tra chất lượng sau `HanSLA`), `lateOpen`
+(lệnh sửa chưa xong của phiếu còn xử lý đã quá `HanSLA` tại lúc gọi) và `late` = tổng hai số. Lọc kỳ theo ngày tiếp nhận như
+các cột khác; file Excel thêm hai cột tương ứng ở sheet “Hiệu suất kỹ thuật viên”.
+
+Sửa giá danh mục dùng `PUT /catalog/parts/{sku}` với `{ "servicePrice": số }` hoặc `PUT /catalog/service-prices/{code}` với
+`{ "price": số }` (cập nhật một phần, cần `CATALOG_MANAGE`, số ≥ 0). `freeWarrantyAmount` của `GET /tickets/{code}/billing` và cổng
+khách tính theo giá tính khách lưu lúc lập phiếu xuất, không theo giá danh mục hiện tại.
 
 ## JSON và phân trang
 

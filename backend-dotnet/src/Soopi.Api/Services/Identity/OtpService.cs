@@ -16,12 +16,9 @@ namespace Soopi.Api.Services.Identity;
 /// </summary>
 public sealed partial class OtpService
 {
-    private static readonly TimeSpan Ttl = TimeSpan.FromMinutes(5);
-    private static readonly TimeSpan ResendAfter = TimeSpan.FromSeconds(60);
-    private const int MaxFailedAttempts = 5;
     private const string DefaultSubject = "Mã xác minh Soopi: {code}";
     private const string DefaultTemplate =
-        "Mã xác minh Soopi của bạn là: {code}\n\nMã có hiệu lực trong 5 phút và chỉ dùng được một lần. "
+        "Mã xác minh Soopi của bạn là: {code}\n\nMã có hiệu lực trong {minutes} phút và chỉ dùng được một lần. "
         + "Không chia sẻ mã này cho bất kỳ ai, kể cả nhân viên Soopi.\n\nNếu bạn không yêu cầu mã, hãy bỏ qua email này.";
 
     private readonly OtpStore store;
@@ -30,11 +27,12 @@ public sealed partial class OtpService
     private readonly TimeProvider clock;
     private readonly ILogger<OtpService> logger;
     private readonly TransactionRunner transactions;
+    private readonly TimeSettingsService timeSettings;
     private readonly string subject;
     private readonly string template;
 
     public OtpService(OtpStore store, IEmailSender email, RateLimiter limiter, TimeProvider clock, IConfiguration configuration, ILogger<OtpService> logger,
-        TransactionRunner transactions)
+        TransactionRunner transactions, TimeSettingsService timeSettings)
     {
         this.store = store;
         this.email = email;
@@ -42,6 +40,7 @@ public sealed partial class OtpService
         this.clock = clock;
         this.logger = logger;
         this.transactions = transactions;
+        this.timeSettings = timeSettings;
         var configuredSubject = configuration["Email:OtpSubject"];
         subject = string.IsNullOrWhiteSpace(configuredSubject) ? DefaultSubject : configuredSubject;
         var configured = configuration["Email:OtpTemplate"];
@@ -53,14 +52,18 @@ public sealed partial class OtpService
     /// <summary>Chờ 60 giây mới gửi lại trong cùng một luồng; trần 5 thư/giờ tính chung mọi luồng để không bị coi là spam.</summary>
     public async Task<OtpIssued> IssueAsync(string address, OtpPurpose purpose, string? clientIp)
     {
-        limiter.Acquire("otp-email:" + address + ":" + purpose, 1, ResendAfter);
-        limiter.Acquire("otp-email-hour:" + address, 5, TimeSpan.FromHours(1));
+        var settings = (await timeSettings.GetAsync()).Protection;
+        var ttl = TimeSpan.FromMinutes(settings.OtpValidityMinutes);
+        var resendAfter = TimeSpan.FromSeconds(settings.OtpResendSeconds);
+        limiter.Acquire("otp-email:" + address + ":" + purpose, 1, resendAfter);
+        limiter.Acquire("otp-email-hour:" + address, settings.OtpEmail);
         var code = RandomNumberGenerator.GetInt32(1_000_000).ToString("D6");
         var now = clock.GetUtcNow();
-        var id = await store.ReplaceAsync(address, purpose.ToString(), Hash(code), now, now + Ttl, clientIp);
+        var id = await store.ReplaceAsync(address, purpose.ToString(), Hash(code), now, now + ttl, clientIp);
         try
         {
-            await email.SendAsync(new EmailMessage(address, subject.Replace("{code}", code), template.Replace("{code}", code)));
+            await email.SendAsync(new EmailMessage(address, subject.Replace("{code}", code),
+                template.Replace("{code}", code).Replace("{minutes}", settings.OtpValidityMinutes.ToString())));
         }
         catch (EmailDeliveryException exception)
         {
@@ -68,7 +71,7 @@ public sealed partial class OtpService
             await store.ConsumeAsync(id, now);
             throw new DomainException(ErrorCode.OTP_SEND_FAILED);
         }
-        return new OtpIssued((long)Ttl.TotalSeconds, (long)ResendAfter.TotalSeconds);
+        return new OtpIssued((long)ttl.TotalSeconds, (long)resendAfter.TotalSeconds);
     }
 
     /// <summary>Sai mã, hết hạn, đã dùng hay sai quá số lần đều trả cùng một lỗi.</summary>
@@ -88,8 +91,9 @@ public sealed partial class OtpService
 
     private Task<bool> MatchAsync(string address, OtpPurpose purpose, string? code, bool consume) => transactions.InTransactionAsync(async () =>
     {
+        var settings = (await timeSettings.GetAsync()).Protection;
         var pending = await store.LatestAsync(address, purpose.ToString(), clock.GetUtcNow());
-        if (pending is null || pending.ExpiresAt <= clock.GetUtcNow() || pending.FailedAttempts >= MaxFailedAttempts) return false;
+        if (pending is null || pending.ExpiresAt <= clock.GetUtcNow() || pending.FailedAttempts >= settings.OtpMaxFailedAttempts) return false;
         var matches = code is not null
             && SixDigits().IsMatch(code)
             && CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(Hash(code)), Encoding.ASCII.GetBytes(pending.CodeHash.Trim()));

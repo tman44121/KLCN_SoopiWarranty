@@ -40,7 +40,7 @@ public class SecurityRegressionTests
         db.Accounts.Attach(account);
         var transactions = new TransactionRunner(db);
         var auth = new AuthService(db, new AccountStore(db), null!, null!, null!, null!, new AuditService(new Sql(db), TimeProvider.System),
-            Options.Create(new SecurityOptions()), null!, transactions, TimeProvider.System, null!);
+            TestTimeSettings.Create(), null!, transactions, TimeProvider.System, null!);
         var method = typeof(AuthService).GetMethod("FailedLoginAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
 
         var error = await Assert.ThrowsAsync<DomainException>(async () => await (Task)method.Invoke(auth, [account, "staff", "staff"])!);
@@ -227,7 +227,7 @@ public class SecurityRegressionTests
         var options = Options.Create(new SecurityOptions());
         var jwt = new JwtService(new JwtKeys(options, host.Services.GetRequiredService<IHostEnvironment>()), options, TimeProvider.System);
         var auth = new AuthService(db, new AccountStore(db), new PrincipalDirectory(sql), jwt, null!, null!, new AuditService(sql, TimeProvider.System),
-            options, null!, transactions, TimeProvider.System,
+            TestTimeSettings.Create(), null!, transactions, TimeProvider.System,
             new AccessTrackingService(sql, null!, transactions, TimeProvider.System));
         if (revoked || expired)
         {

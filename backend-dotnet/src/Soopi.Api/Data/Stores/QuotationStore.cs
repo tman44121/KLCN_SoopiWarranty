@@ -48,10 +48,10 @@ public sealed class QuotationStore(Sql sql)
     public async Task<Quotation?> FindAsync(string code) =>
         (await LoadAsync($"SELECT {Columns} FROM PhieuBaoGia{sql.LockHint} WHERE MaBaoGia = ?", code)).FirstOrDefault();
 
-    public Task<List<string>> FindExpiredPendingCodesAsync(DateTimeOffset now) =>
+    public Task<List<string>> FindExpiredPendingCodesAsync(DateTimeOffset now, TimeSpan validity) =>
         sql.QueryAsync("SELECT MaBaoGia FROM PhieuBaoGia WHERE TrangThaiDuyetNoiBo = 'APPROVED' AND KhachXacNhan = 'PENDING' "
             + "AND (HanHieuLuc < ? OR (HanHieuLuc IS NULL AND NgayDuyetNoiBo <= ?)) ORDER BY MaBaoGia",
-            row => row.Str("MaBaoGia")!, DbTime.Date(now), now.AddDays(-3));
+            row => row.Str("MaBaoGia")!, DbTime.Date(now), now - validity);
 
     /// <summary>Báo giá còn hiệu lực = chưa bị từ chối duyệt (tối đa một mỗi phiếu).</summary>
     public async Task<bool> HasActiveForTicketAsync(string ticketCode) =>

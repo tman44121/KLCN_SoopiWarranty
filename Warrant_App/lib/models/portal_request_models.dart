@@ -75,10 +75,40 @@ class PortalStation {
   );
 }
 
+class PortalProduct {
+  const PortalProduct(
+    this.code,
+    this.name,
+    this.brandName,
+    this.categoryCode,
+    this.deviceTypeCode,
+  );
+  final String code;
+  final String name;
+  final String? brandName;
+  final String categoryCode;
+  final String deviceTypeCode;
+  String get label =>
+      [if (brandName?.isNotEmpty == true) brandName!, name].join(' ');
+
+  factory PortalProduct.fromJson(Map<String, dynamic> json) => PortalProduct(
+    json['code'] as String? ?? '',
+    json['name'] as String? ?? '',
+    json['brandName'] as String?,
+    json['categoryCode'] as String? ?? '',
+    json['deviceTypeCode'] as String? ?? '',
+  );
+}
+
 class PortalCatalog {
-  const PortalCatalog(this.categories, this.stations);
+  const PortalCatalog(
+    this.categories,
+    this.stations, {
+    this.products = const [],
+  });
   final List<PortalCategory> categories;
   final List<PortalStation> stations;
+  final List<PortalProduct> products;
 
   factory PortalCatalog.fromJson(Map<String, dynamic> json) => PortalCatalog(
     (json['categories'] as List<dynamic>? ?? [])
@@ -88,6 +118,10 @@ class PortalCatalog {
     (json['stations'] as List<dynamic>? ?? [])
         .map((item) => PortalStation.fromJson(item as Map<String, dynamic>))
         .where((station) => station.code.isNotEmpty)
+        .toList(),
+    products: (json['products'] as List<dynamic>? ?? [])
+        .map((item) => PortalProduct.fromJson(item as Map<String, dynamic>))
+        .where((product) => product.code.isNotEmpty)
         .toList(),
   );
 }
@@ -176,7 +210,7 @@ class OwnWarrantyRequestData {
       errors['deviceTypeCode'] = 'Vui lòng chọn loại thiết bị hợp lệ.';
     }
     if (brandModel.trim().isEmpty) {
-      errors['brandModel'] = 'Vui lòng nhập hãng và model thiết bị.';
+      errors['brandModel'] = 'Vui lòng chọn hãng và model thiết bị.';
     }
     final identifier = serialOrImei.replaceAll(RegExp(r'\s'), '').toUpperCase();
     if (type?.identifierType.toUpperCase() == 'SERIAL' &&
@@ -185,7 +219,8 @@ class OwnWarrantyRequestData {
           'Serial cần 4–50 ký tự chữ, số hoặc dấu gạch ngang.';
     } else if (type?.identifierType.toUpperCase() == 'IMEI' &&
         !RegExp(r'^[A-Z0-9-]{4,50}$').hasMatch(identifier)) {
-      errors['serialOrImei'] = 'IMEI cần 4–50 ký tự chữ, số hoặc dấu gạch ngang.';
+      errors['serialOrImei'] =
+          'IMEI cần 4–50 ký tự chữ, số hoặc dấu gạch ngang.';
     }
     if (!catalog.stations.any((station) => station.code == stationCode)) {
       errors['preferredStation'] = 'Vui lòng chọn trạm dịch vụ trong danh mục.';

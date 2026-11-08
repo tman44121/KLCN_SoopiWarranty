@@ -1,6 +1,6 @@
 -- ============================================================================
 -- LongManLoc Service Center — schema SQL Server / Azure SQL Database (D-077).
--- Chuyển từ TrungTamBaoHanhDB_MySQL_v2.sql: 47 bảng nghiệp vụ, 2 bảng chat, 3 bảng thống kê truy cập và 1 bảng duyệt đánh giá, CHỈ lưu dữ liệu:
+-- Chuyển từ TrungTamBaoHanhDB_MySQL_v2.sql: 47 bảng nghiệp vụ, 2 bảng chat, 3 bảng thống kê truy cập, 1 bảng duyệt đánh giá và 1 bảng cấu hình thời gian, CHỈ lưu dữ liệu:
 -- không stored procedure, không trigger, không view, không event. Nghiệp vụ (máy trạng thái, lịch sử trạng thái,
 -- tổng tiền báo giá, hạn bảo hành linh kiện, đối soát thu tiền, sinh mã) do Spring Boot thực hiện.
 --
@@ -713,11 +713,13 @@ CREATE TABLE ChiTietXuatKho (
     DonGiaXuat           DECIMAL(18,2) NOT NULL,
     MaKe                 NVARCHAR(20)  NULL,
     NgayHetHanBaoHanhLK  DATE          NULL,
+    DonGiaDichVuXuat     DECIMAL(18,2) NULL,
     CONSTRAINT UX_CTXK_LinhKien UNIQUE (MaPhieuXuat, MaLK),
     FOREIGN KEY (MaPhieuXuat) REFERENCES PhieuXuatKho(MaPhieuXuat),
     FOREIGN KEY (MaLK) REFERENCES LinhKien(MaLK),
     CONSTRAINT CK_CTXK_SoLuong CHECK (SoLuongXuat > 0),
-    CONSTRAINT CK_CTXK_DonGia CHECK (DonGiaXuat >= 0)
+    CONSTRAINT CK_CTXK_DonGia CHECK (DonGiaXuat >= 0),
+    CONSTRAINT CK_CTXK_DonGiaDichVu CHECK (DonGiaDichVuXuat IS NULL OR DonGiaDichVuXuat >= 0)
 );
 
 CREATE TABLE PhieuDieuChuyen (
@@ -1042,6 +1044,35 @@ BEGIN
         NgayDanhGia DATETIME2(0) NULL,
         MaNguoiDuyet BIGINT NOT NULL REFERENCES TaiKhoan(MaTaiKhoan),
         NgayDuyet DATETIME2(0) NOT NULL
+    );
+END;
+GO
+
+-- Cấu hình thời gian do quản trị viên chỉnh (một dòng Id = 1). Không có dòng thì ứng dụng dùng mặc định:
+-- SLA 12/24/48 giờ, mặc định Tiêu chuẩn 48h, sắp trễ 120 phút, báo giá 72 giờ, thứ Hai–thứ Bảy 08:00–17:00.
+IF OBJECT_ID(N'dbo.CauHinhThoiGian', N'U') IS NULL
+BEGIN
+    CREATE TABLE CauHinhThoiGian (
+        Id               TINYINT       NOT NULL PRIMARY KEY CONSTRAINT CK_CHTG_MotDong CHECK (Id = 1),
+        SlaNhanhGio      INT           NOT NULL,
+        SlaUuTienGio     INT           NOT NULL,
+        SlaTieuChuanGio  INT           NOT NULL,
+        MucSlaMacDinh    NVARCHAR(20)  NOT NULL,
+        NguongSapTrePhut INT           NOT NULL,
+        HanBaoGiaGio     INT           NOT NULL,
+        PhutMoCua        INT           NOT NULL,
+        PhutDongCua      INT           NOT NULL,
+        NgayLamViec      NVARCHAR(20)  NOT NULL,
+        CauHinhBaoVe     NVARCHAR(MAX) NULL CONSTRAINT CK_CHTG_BaoVe CHECK (CauHinhBaoVe IS NULL OR ISJSON(CauHinhBaoVe) = 1),
+        NguoiCapNhat     NVARCHAR(30)  NULL,
+        NgayCapNhat      DATETIME2(0)  NULL,
+        CONSTRAINT CK_CHTG_Sla CHECK (SlaNhanhGio BETWEEN 1 AND 720 AND SlaUuTienGio BETWEEN 1 AND 720 AND SlaTieuChuanGio BETWEEN 1 AND 720
+            AND SlaNhanhGio <= SlaUuTienGio AND SlaUuTienGio <= SlaTieuChuanGio),
+        CONSTRAINT CK_CHTG_MucSla CHECK (MucSlaMacDinh IN ('EXPRESS_12H', 'PRIORITY_24H', 'STANDARD_48H')),
+        CONSTRAINT CK_CHTG_SapTre CHECK (NguongSapTrePhut BETWEEN 1 AND 1440),
+        CONSTRAINT CK_CHTG_BaoGia CHECK (HanBaoGiaGio BETWEEN 1 AND 720),
+        CONSTRAINT CK_CHTG_Gio CHECK (PhutMoCua BETWEEN 0 AND 1439 AND PhutDongCua BETWEEN 0 AND 1439 AND PhutMoCua < PhutDongCua),
+        CONSTRAINT CK_CHTG_Ngay CHECK (NgayLamViec <> '' AND NgayLamViec NOT LIKE '%[^1-7,]%')
     );
 END;
 GO

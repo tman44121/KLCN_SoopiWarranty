@@ -1,5 +1,6 @@
 import { businessTimeError, businessInstant, appointmentEnd } from "../business-hours.js";
 import { phoneError } from "../validation.ts";
+import { modelOptions } from "../model-options.js";
 /* Public customer portal. Only the deliberately projected /portal API is used. */
 export default function initialize() {
 
@@ -18,6 +19,8 @@ export default function initialize() {
     registerSubmit: document.querySelector("[data-register-submit]"),
     registerSuccess: document.querySelector("[data-register-success]"),
     category: document.querySelector("#reg-category"),
+    model: document.querySelector("#reg-brand-model"),
+    modelOptions: document.querySelector("#reg-brand-model-options"),
     station: document.querySelector("#reg-station"),
     serialLabel: document.querySelector("[data-reg-serial-label]"),
   };
@@ -295,8 +298,27 @@ export default function initialize() {
   }
 
   function updateSerialLabel() {
-    const type = selectedCategory() && selectedCategory().deviceTypes[0];
+    const product = selectedProduct();
+    const type = selectedCategory()?.deviceTypes.find(item => item.code === product?.deviceTypeCode);
     el.serialLabel.innerHTML = html`${type && type.identifierType === "IMEI" ? "IMEI" : "Serial Number"}<span class="required-mark">*</span>`;
+  }
+
+  function selectedProduct() {
+    return modelsForCategory().find(item => item.label === el.model.value);
+  }
+
+  function modelsForCategory() {
+    return modelOptions(catalog?.products?.filter(item => item.categoryCode === el.category.value) || []);
+  }
+
+  function updateModels() {
+    const models = modelsForCategory();
+    el.model.value = "";
+    el.model.placeholder = !el.category.value ? "Chọn loại thiết bị trước" : models.length ? "Gõ hãng hoặc model để tìm" : "Chưa có model cho loại thiết bị này";
+    el.modelOptions.innerHTML = html`${models.map(item => html`<option value="${item.label}"></option>`)}`;
+    el.model.disabled = !models.length;
+    clearField("regBrandModel");
+    updateSerialLabel();
   }
 
   async function loadCatalog() {
@@ -304,6 +326,7 @@ export default function initialize() {
       catalog = await api.portal.catalog();
       el.category.innerHTML = html`<option value="">— Chọn loại thiết bị —</option>${catalog.categories.map((item) => html`<option value="${item.code}">${item.name}</option>`)}`;
       el.station.innerHTML = html`<option value="">— Chọn trạm —</option>${catalog.stations.map((item) => html`<option value="${item.code}">${item.name} — ${item.address}</option>`)}`;
+      updateModels();
     } catch (error) {
       showError(error);
     }
@@ -315,16 +338,18 @@ export default function initialize() {
     const date = document.querySelector('#reg-time-date');
     if (date.validity.customError) { date.focus(); return; }
     const category = selectedCategory();
-    const type = category && category.deviceTypes[0];
+    const product = selectedProduct();
+    const type = category?.deviceTypes.find(item => item.code === product?.deviceTypeCode);
     const value = (id) => document.querySelector(id).value.trim();
     const required = [
       ["regName", "#reg-name", "Vui lòng nhập họ và tên."], ["regPhone", "#reg-phone", "Vui lòng nhập số điện thoại."],
-      ["regCategory", "#reg-category", "Vui lòng chọn loại thiết bị."], ["regBrandModel", "#reg-brand-model", "Vui lòng nhập hãng/model."],
+      ["regCategory", "#reg-category", "Vui lòng chọn loại thiết bị."], ["regBrandModel", "#reg-brand-model", "Vui lòng chọn hãng/model."],
       ["regSerial", "#reg-serial", "Vui lòng nhập Serial/IMEI."], ["regSymptom", "#reg-symptom", "Vui lòng mô tả lỗi."],
       ["regStation", "#reg-station", "Vui lòng chọn trạm."], ["regTime", "#reg-time", "Vui lòng chọn thời gian mong muốn."],
     ];
     let valid = true;
     required.forEach(([name, selector, message]) => { if (!value(selector)) { invalid(name, message); valid = false; } });
+    if (value("#reg-brand-model") && !product) { invalid("regBrandModel", "Vui lòng chọn hãng/model có sẵn trong danh sách."); valid = false; }
     if (value("#reg-phone") && phoneError(value("#reg-phone"))) { invalid("regPhone", phoneError(value("#reg-phone"))); valid = false; }
     if (!valid || !type) {
       el.register.querySelector('[aria-invalid="true"]')?.focus();
@@ -344,7 +369,7 @@ export default function initialize() {
       customer: { fullName: value("#reg-name"), phone: value("#reg-phone"), email: null, address: null },
       categoryCode: category.code,
       deviceTypeCode: type.code,
-      brandModel: value("#reg-brand-model"),
+      brandModel: [product.brandName, product.name].filter(Boolean).join(" "),
       identifierType: type.identifierType,
       serialOrImei: value("#reg-serial"),
       symptom: value("#reg-symptom"),
@@ -375,7 +400,8 @@ export default function initialize() {
       el.register.hidden = true;
       if (location.hash === "#dang-ky") history.replaceState(null, "", location.pathname + location.search);
     });
-    el.category.addEventListener("change", updateSerialLabel);
+    el.category.addEventListener("change", updateModels);
+    el.model.addEventListener("input", () => { clearField("regBrandModel"); updateSerialLabel(); });
     el.registerSubmit.addEventListener("click", register);
     liveCheck("lookupId", el.lookupId, lookupIdError);
     // Tra bằng Serial thì SĐT không bắt buộc: chỉ báo khi đã gõ mà sai; bỏ trống với mã phiếu thì báo lúc bấm Tra cứu.

@@ -31,6 +31,10 @@ const _catalog = PortalCatalog(
     ]),
   ],
   [PortalStation('STATION', 'Trạm mẫu', null)],
+  products: [
+    PortalProduct('SP-1', 'Máy nhập tay', null, 'CAT', 'TYPE'),
+    PortalProduct('SP-2', 'Máy khác', null, 'CAT', 'TYPE'),
+  ],
 );
 
 class _RequestAdapter implements HttpClientAdapter {
@@ -157,6 +161,26 @@ Future<void> _choosePreferredArrival(WidgetTester tester) async {
 }
 
 void main() {
+  test(
+    'catalog accepts product metadata and older responses without products',
+    () {
+      expect(PortalCatalog.fromJson({}).products, isEmpty);
+      final catalog = PortalCatalog.fromJson({
+        'products': [
+          {
+            'code': 'SP-1',
+            'name': 'Galaxy S24',
+            'brandName': 'Samsung',
+            'categoryCode': 'PHONE',
+            'deviceTypeCode': 'SMARTPHONE',
+          },
+        ],
+      });
+      expect(catalog.products.single.label, 'Samsung Galaxy S24');
+      expect(catalog.products.single.deviceTypeCode, 'SMARTPHONE');
+    },
+  );
+
   test(
     'catalog type must match the owned device identifier; no guessed code',
     () {
@@ -641,7 +665,17 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Thiết bị của bạn *'), findsNothing);
-      expect(find.byType(TextFormField, skipOffstage: false), findsNWidgets(3));
+      expect(find.byType(TextFormField, skipOffstage: false), findsNWidgets(2));
+      expect(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey('manual-brand-model'),
+            skipOffstage: false,
+          ),
+          matching: find.byType(DropdownMenu<String>, skipOffstage: false),
+        ),
+        findsOneWidget,
+      );
       await tester.tap(find.text('GỬI YÊU CẦU'));
       await tester.pump();
       expect(find.text('Vui lòng chọn nhóm thiết bị.'), findsOneWidget);
@@ -696,10 +730,42 @@ void main() {
     );
     await tester.ensureVisible(brand);
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const ValueKey('manual-brand-model')),
-      'Máy nhập tay',
+    final modelText = find.descendant(
+      of: brand,
+      matching: find.byType(TextField, skipOffstage: false),
     );
+    await _typeModel(tester, modelText, 'nhập');
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(MenuItemButton, 'Máy khác'), findsNothing);
+    expect(find.widgetWithText(MenuItemButton, 'Máy nhập tay'), findsOneWidget);
+    await tester.tap(find.text('Máy nhập tay').last);
+    await tester.pumpAndSettle();
+    for (final choice in [('TYPE', 'Điện thoại'), ('PHONE', 'Loại mẫu')]) {
+      final typePicker = find.byKey(
+        ValueKey('Loại thiết bị *:${choice.$1}'),
+        skipOffstage: false,
+      );
+      await tester.ensureVisible(typePicker);
+      await tester.pumpAndSettle();
+      await tester.tap(typePicker);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(choice.$2).last);
+      await tester.pumpAndSettle();
+    }
+    final modelDropdown = find.descendant(
+      of: brand,
+      matching: find.byType(DropdownMenu<String>, skipOffstage: false),
+    );
+    expect(
+      tester.widget<DropdownMenu<String>>(modelDropdown).initialSelection,
+      isNull,
+    );
+    await tester.ensureVisible(brand);
+    await tester.pumpAndSettle();
+    await _typeModel(tester, modelText, 'nhập');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Máy nhập tay').last);
+    await tester.pumpAndSettle();
     await tester.ensureVisible(serial);
     await tester.pumpAndSettle();
     await tester.enterText(
@@ -714,7 +780,7 @@ void main() {
     );
     final station = find
         .byType(DropdownButtonFormField<String>, skipOffstage: false)
-        .at(2);
+        .last;
     await tester.ensureVisible(station);
     await tester.pumpAndSettle();
     await tester.tap(find.byType(DropdownButtonFormField<String>).last);
@@ -722,6 +788,22 @@ void main() {
     await tester.tap(find.text('Trạm mẫu').last);
     await tester.pumpAndSettle();
     await _choosePreferredArrival(tester);
+    await tester.ensureVisible(brand);
+    await tester.pumpAndSettle();
+    await tester.enterText(modelText, 'Model không có trong danh mục');
+    await tester.tap(find.text('GỬI YÊU CẦU'));
+    await tester.pumpAndSettle();
+    expect(api.submitCount, 0);
+    expect(
+      find.text('Vui lòng chọn hãng/model có sẵn trong danh sách.'),
+      findsOneWidget,
+    );
+    await tester.ensureVisible(brand);
+    await tester.pumpAndSettle();
+    await _typeModel(tester, modelText, 'nhập');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Máy nhập tay').last);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('GỬI YÊU CẦU'));
     await tester.pump();
     await tester.binding.handlePopRoute();
@@ -840,4 +922,11 @@ void main() {
       expect(find.text('Kiểm tra danh sách yêu cầu'), findsOneWidget);
     },
   );
+}
+
+/// Chạm vào ô Hãng/model để mở danh sách như người dùng thật, rồi gõ để lọc.
+Future<void> _typeModel(WidgetTester tester, Finder field, String text) async {
+  await tester.tap(field);
+  await tester.pumpAndSettle();
+  await tester.enterText(field, text);
 }

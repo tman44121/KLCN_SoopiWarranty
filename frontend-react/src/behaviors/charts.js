@@ -217,7 +217,7 @@ export default function initialize() {
   /** tiles: [{ label, value, meta }] */
   function stats(container, tiles) {
     container.innerHTML = html`${tiles.map((tile) => html`
-      <div class="stat-tile">
+      <div class="stat-tile${tile.tone ? ` stat-tile--${tile.tone}` : ""}">
         <div class="stat-tile__label">${tile.label}</div>
         <div class="stat-tile__value">${tile.value}</div>
         <div class="stat-tile__meta">${tile.meta}</div>

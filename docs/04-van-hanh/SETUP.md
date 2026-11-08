@@ -54,6 +54,9 @@ sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\06_chat.sql
 sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\07_access_statistics.sql
 sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\08_public_reviews.sql
 sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\11_stocktake.sql
+sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\14_time_settings.sql
+sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\15_issue_service_price.sql
+sqlcmd -S <server> -d <database> -E -C -I -b -f 65001 -i database\16_protection_settings.sql
 ```
 
 `06_chat.sql` thêm hai bảng hội thoại/tin nhắn, không tạo tin nhắn mẫu và không xóa dữ liệu. Chạy trước khi dùng chat.
@@ -64,6 +67,12 @@ xem [ACCESS_STATISTICS.md](../02-ky-thuat/ACCESS_STATISTICS.md) để biết cá
 Admin chọn tại `/admin#reports`, cột **Trang chủ**; xem [PUBLIC_REVIEWS.md](../02-ky-thuat/PUBLIC_REVIEWS.md).
 `11_stocktake.sql` thêm phiếu kiểm kê kho (`PhieuKiemKe`, `ChiTietKiemKe`) và quyền `STOCKTAKE_MANAGE` cho thủ kho; thiếu script
 thì màn Kho vật tư → Kiểm kê báo "Cơ sở dữ liệu chưa được nâng cấp". Chạy lại nhiều lần không sao.
+`14_time_settings.sql` thêm bảng `CauHinhThoiGian` cho `/admin#time-settings` (SLA, sắp trễ, hạn báo giá, giờ làm việc). Thiếu
+script thì hệ thống chạy bằng giá trị mặc định (SLA Tiêu chuẩn 48h) nhưng không lưu được cấu hình. Chạy lại nhiều lần không sao.
+`15_issue_service_price.sql` thêm cột `ChiTietXuatKho.DonGiaDichVuXuat` để giá trị “Miễn phí trong bảo hành” của phiếu cũ không đổi khi
+sửa giá danh mục; dòng xuất cũ được điền giá hiện tại lúc chạy. Chạy lại nhiều lần không sao.
+`16_protection_settings.sql` (chạy sau file 14) thêm cột `CauHinhThoiGian.CauHinhBaoVe` cho mức khóa đăng nhập, OTP, chống spam
+và hạn phiên. Thiếu script thì dùng giá trị cũ nhưng không lưu được phần bảo vệ. Chạy lại nhiều lần không sao.
 Chat chỉ dành cho tài khoản đăng nhập: khách và nhân viên tiếp nhận/KTV hiện đang phụ trách phiếu. Khi đổi KTV,
 cuộc trò chuyện cũ chỉ xem lịch sử; người mới không được đọc cuộc trò chuyện riêng của người cũ.
 Danh bạ nội bộ tìm theo tên/mã khách, mã phiếu, sản phẩm hoặc serial; không mở quyền đọc liên hệ khách toàn hệ thống cho KTV.

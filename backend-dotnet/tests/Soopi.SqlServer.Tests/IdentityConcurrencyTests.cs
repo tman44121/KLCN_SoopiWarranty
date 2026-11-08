@@ -110,8 +110,8 @@ public sealed class IdentityConcurrencyTests : IAsyncLifetime
 
         var a = Actor(fixture.Id); var b = Actor(fixture.Id + "B");
         var policyA = new PortalPolicy(db, a); var policyB = new PortalPolicy(db, b);
-        var portalA = new PortalWarrantyRequestService(policyA, requests, null!, null!, a);
-        var portalB = new PortalWarrantyRequestService(policyB, requests, null!, null!, b);
+        var portalA = new PortalWarrantyRequestService(policyA, requests, null!, null!, a, null!);
+        var portalB = new PortalWarrantyRequestService(policyB, requests, null!, null!, b, null!);
         Assert.Equal([owned], (await portalA.MineAsync()).Select(r => r.Code));
         Assert.Equal([guest], (await portalB.MineAsync()).Select(r => r.Code));
         Assert.Equal(owned, (await portalA.GetAsync(owned)).Code);
@@ -119,7 +119,7 @@ public sealed class IdentityConcurrencyTests : IAsyncLifetime
         Assert.Equal(guest, (await portalB.GetAsync(guest)).Code);
 
         var access = new PortalAccessService(sql, db, null!, null!, sp.GetRequiredService<JwtService>(),
-            sp.GetRequiredService<RateLimiter>(), TimeProvider.System);
+            sp.GetRequiredService<RateLimiter>(), TimeProvider.System, sp.GetRequiredService<TimeSettingsService>());
         Assert.Equal(ErrorCode.PORTAL_NOT_FOUND, (await Assert.ThrowsAsync<DomainException>(() => access.LookupAsync(owned, oldPhone, "old-phone"))).Code);
         Assert.Equal(ErrorCode.PORTAL_NOT_FOUND, (await Assert.ThrowsAsync<DomainException>(() => access.LookupAsync(fixture.Id, oldPhone, "old-serial"))).Code);
         Assert.Equal(owned.ToUpperInvariant(), (await access.LookupAsync(owned, newPhone, "new-phone")).Code);
@@ -162,7 +162,7 @@ public sealed class IdentityConcurrencyTests : IAsyncLifetime
     }
 
     private static OtpService Otp(IServiceProvider sp) => new(new OtpStore(sp.GetRequiredService<Sql>(), sp.GetRequiredService<TransactionRunner>()),
-        null!, null!, TimeProvider.System, new ConfigurationBuilder().Build(), NullLogger<OtpService>.Instance, sp.GetRequiredService<TransactionRunner>());
+        null!, null!, TimeProvider.System, new ConfigurationBuilder().Build(), NullLogger<OtpService>.Instance, sp.GetRequiredService<TransactionRunner>(), sp.GetRequiredService<TimeSettingsService>());
 
     private async Task<Exception?[]> Concurrent(int count, Func<IServiceProvider, Task> operation)
     {

@@ -21,6 +21,7 @@ if (existsSync(original)) {
     cashier: 'pages/cashier.html', tickets: 'pages/tickets.html', reports: 'pages/reports.html', admin: 'pages/admin.html' };
   // id của chức năng thêm sau khi chuyển từ bản Java (không có trong trang gốc); mọi id gốc vẫn phải giữ nguyên.
   const added = {
+    portal: ['reg-brand-model-options', 'reg-brand-model-hint'],
     admin: ['customers-title', 'cust-filter-account', 'cust-filter-status', 'cust-drawer-title', 'cust-contact-title',
       'cust-contact-phone', 'cust-contact-email', 'cust-contact-address', 'cust-merge-title', 'cust-merge-target', 'emp-modal-title',
       'admin-report-from', 'admin-report-to', 'admin-report-range-error'],

@@ -182,7 +182,8 @@ public sealed class QuotationReviewService(
 
 public sealed class CustomerDecisionService(
     QuotationStore quotations, QuotationService quotationViews, TicketStore tickets, TicketQueryService ticketViews, StaffDirectory staff,
-    CurrentActor actors, TransactionRunner transactions, AuditService audit, NotificationService notifications, TimeProvider clock)
+    CurrentActor actors, TransactionRunner transactions, AuditService audit, NotificationService notifications, TimeSettingsService timeSettings,
+    TimeProvider clock)
 {
     public Task<QuotationView> DecideAsync(string code, Decision? decision, string? reason)
     {
@@ -218,7 +219,7 @@ public sealed class CustomerDecisionService(
         var channel = onBehalf ? "COUNTER" : "PORTAL";
         if (decision == Decision.ACCEPT)
         {
-            quotation.Accept(recordedBy, channel, DbTime.Date(now), now);
+            quotation.Accept(recordedBy, channel, DbTime.Date(now), now, await timeSettings.GetAsync());
             ticket.AcceptQuotation(code, quotation.Lines.Any(line => line.Sku is not null), now, actor, onBehalf);
         }
         else
