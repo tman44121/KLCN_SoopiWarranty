@@ -1,8 +1,7 @@
 namespace Soopi.Api.Infrastructure.Security;
 
 /// <summary>
-/// BCrypt cost 12, lưu dạng "{bcrypt}$2a$12$…" như DelegatingPasswordEncoder của Spring (CHECK CK_TaiKhoan_Hash đòi tiền tố
-/// "{…}"), nên hash cũ của bản Java vẫn kiểm được.
+/// BCrypt cost 12, lưu dạng "{bcrypt}$2a$12$…" (CHECK CK_TaiKhoan_Hash đòi tiền tố "{…}").
 /// </summary>
 public static class PasswordHasher
 {

@@ -1,4 +1,4 @@
-/* Phần dùng chung của giao diện khách (port từ web khách KLCN): header, footer, icon, badge.
+/* Phần dùng chung của giao diện khách: header, footer, icon, badge.
    API, nhãn và định dạng lấy từ các module behaviors đã gắn lên window (api.js, labels.js). */
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { internalRoute } from './navigation';
@@ -388,7 +388,7 @@ export function CustomerHeader({ name: pageName, active }: { name?: string | nul
   );
 }
 
-/** Footer khách: trạm dịch vụ lấy từ danh mục công khai thay cho địa chỉ/hotline cố định của bản cũ. */
+/** Footer khách: trạm dịch vụ lấy từ danh mục công khai. */
 export function CustomerFooter() {
   const name = useCustomerName();
   const [stations, setStations] = useState<Json[]>([]);

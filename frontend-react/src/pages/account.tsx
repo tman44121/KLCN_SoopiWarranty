@@ -11,7 +11,7 @@ import {
   initial, newest, useBusy,
 } from "../customer";
 
-/* Khu tài khoản khách hàng Soopi (port các trang khách của web KLCN: trang chủ, lịch sử, chi tiết phiếu, đăng ký bảo hành,
+/* Khu tài khoản khách hàng Soopi (trang chủ, lịch sử, chi tiết phiếu, đăng ký bảo hành,
    hồ sơ, đổi mật khẩu). Một route /account, mục con theo hash như các màn khác giữ tab bằng hash.
    Dữ liệu chỉ qua /portal/my/* và /portal/tickets/* với token tài khoản khách (PORTAL_SELF). */
 

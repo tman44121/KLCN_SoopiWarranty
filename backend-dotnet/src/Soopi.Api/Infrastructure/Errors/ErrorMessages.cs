@@ -5,8 +5,8 @@ using Soopi.Api.Domain.Shared;
 namespace Soopi.Api.Infrastructure.Errors;
 
 /// <summary>
-/// Thông điệp lỗi tiếng Việt từ Resources/messages_vi.properties (chép nguyên văn từ bản Java). Định dạng theo
-/// java.text.MessageFormat: <c>{i}</c> không có đối số tương ứng được giữ nguyên, số có dấu phân cách nghìn kiểu Việt Nam.
+/// Thông điệp lỗi tiếng Việt từ Resources/messages_vi.properties. Định dạng kiểu
+/// MessageFormat: <c>{i}</c> không có đối số tương ứng được giữ nguyên, số có dấu phân cách nghìn kiểu Việt Nam.
 /// </summary>
 public static partial class ErrorMessages
 {

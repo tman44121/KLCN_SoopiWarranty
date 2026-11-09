@@ -263,7 +263,7 @@
   background: color-mix(in srgb, var(--surface-card) 22%, transparent);
 }
 
-/* Minh họa đăng nhập: phiếu thật với 6 bước tiến độ của cổng khách (thay mockup quét QR của bản cũ). */
+/* Minh họa đăng nhập: phiếu thật với 6 bước tiến độ của cổng khách. */
 .banner-ticket {
   position: relative;
   align-self: center;

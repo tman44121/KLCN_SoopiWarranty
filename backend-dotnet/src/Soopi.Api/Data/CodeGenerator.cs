@@ -33,8 +33,8 @@ public sealed record BusinessCodeType(string Prefix, CodeScope Scope, int Sequen
 }
 
 /// <summary>
-/// Sinh mã nghiệp vụ trên bảng BoDemMa (TN-2026-0917-00421, PX-2026-00001, KH-000001); khóa và định dạng giữ như bản
-/// Java nên bộ đếm tiếp tục đúng dãy mã cũ. MERGE … WITH (HOLDLOCK) giữ khóa khoảng tới hết transaction: hai yêu cầu cùng
+/// Sinh mã nghiệp vụ trên bảng BoDemMa (TN-2026-0917-00421, PX-2026-00001, KH-000001); bộ đếm
+/// tăng liên tục theo khóa. MERGE … WITH (HOLDLOCK) giữ khóa khoảng tới hết transaction: hai yêu cầu cùng
 /// tạo khóa mới xếp hàng thay vì cùng chèn, không có MAX()+1.
 /// </summary>
 public sealed class CodeGenerator(Sql sql, TimeProvider clock)

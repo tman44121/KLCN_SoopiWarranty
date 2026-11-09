@@ -25,7 +25,7 @@ using Soopi.Api.Services.Notifications;
 using Soopi.Api.Services.Shared;
 using Soopi.Api.Services.Tickets;
 
-// Số trong chuỗi nhật ký/thông báo không phụ thuộc culture của máy chủ (như BigDecimal.toString của Java).
+// Số trong chuỗi nhật ký/thông báo không phụ thuộc culture của máy chủ.
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -198,7 +198,7 @@ var pages = new Dictionary<string, string>
     ["/pages/warehouse.html"] = "/warehouse", ["/pages/cashier.html"] = "/cashier",
     ["/pages/tickets.html"] = "/tickets", ["/pages/reports.html"] = "/reports",
     ["/pages/admin.html"] = "/admin", ["/pages/customer-portal.html"] = "/portal",
-    // URL cũ của web khách KLCN (Thymeleaf).
+    // URL dạng /Account/* chuyển về route React.
     ["/Account/Register"] = "/register", ["/Account/Profile"] = "/account",
     ["/Account/ForgotPassword"] = "/forgot-password",
 };
@@ -206,7 +206,7 @@ var pages = new Dictionary<string, string>
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseExceptionHandler();
-// Lỗi routing/MVC → Problem Details như Java; staticSecurity denyAll vẫn trả 403 không body.
+// Lỗi routing/MVC → Problem Details; 403 ngoài /api vẫn không body.
 app.UseStatusCodePages(async context =>
 {
     var http = context.HttpContext;
@@ -223,7 +223,7 @@ app.UseStatusCodePages(async context =>
 });
 if (app.Environment.IsProduction())
 {
-    // Sau reverse proxy (bản Java: server.forward-headers-strategy=framework): IP thật của client cho rate limit/nhật ký.
+    // Sau reverse proxy: IP thật của client cho rate limit/nhật ký.
     var forwarded = new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto };
     forwarded.KnownIPNetworks.Clear();
     forwarded.KnownProxies.Clear();
@@ -242,7 +242,7 @@ if (app.Environment.IsDevelopment()) app.MapOpenApi();
 app.MapControllers();
 
 // Chỉ các URL giao diện trả index.html; /api sai vẫn trả Problem Details.
-// "/" là trang giới thiệu công khai cho khách (home/index.html của web khách KLCN).
+// "/" là trang giới thiệu công khai cho khách.
 app.MapFallbackToFile("/", "index.html");
 foreach (var (legacy, route) in pages)
 {
@@ -250,7 +250,7 @@ foreach (var (legacy, route) in pages)
     app.MapFallbackToFile(route, "index.html");
 }
 
-// Giữ shape Spring Actuator (probes groups có trong WAR hiện tại), DB lỗi → 503 DOWN.
+// Health check dạng Actuator (status + probes), DB lỗi → 503 DOWN.
 app.MapGet("/actuator/health", async (AppDbContext db) =>
 {
     var up = await db.Database.CanConnectAsync();

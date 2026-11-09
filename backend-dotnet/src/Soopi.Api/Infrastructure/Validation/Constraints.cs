@@ -6,8 +6,8 @@ using Soopi.Api.Domain.Shared;
 
 namespace Soopi.Api.Infrastructure.Validation;
 
-// Ràng buộc mang tên như Jakarta Bean Validation của bản Java, thông điệp tiếng Việt (ProblemWriter ghép thêm tên trường).
-// null hợp lệ với mọi ràng buộc trừ NotNull/NotBlank/NotEmpty, như Java.
+// Ràng buộc kiểm dữ liệu vào, thông điệp tiếng Việt (ProblemWriter ghép thêm tên trường).
+// null hợp lệ với mọi ràng buộc trừ NotNull/NotBlank/NotEmpty.
 
 public sealed class NotBlankAttribute : RequiredAttribute
 {
@@ -107,7 +107,7 @@ public sealed class EmailAttribute() : ValidationAttribute("không đúng địn
         if (!Domain.IsMatch(domain)) return false;
         try
         {
-            // ASCII literals are accepted by Java IDN (including brackets); Unicode labels need punycode.
+            // Nhãn ASCII giữ nguyên (kể cả dấu ngoặc); nhãn Unicode đổi sang punycode.
             var labels = domain.Split('.').Select(label => label.All(character => character < 128) ? label : new IdnMapping().GetAscii(label)).ToArray();
             return labels.All(label => label.Length <= 63) && string.Join('.', labels).Length <= 255;
         }

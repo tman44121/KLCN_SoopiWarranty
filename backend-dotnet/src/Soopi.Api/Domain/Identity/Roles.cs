@@ -2,7 +2,7 @@ using Soopi.Api.Domain.Shared;
 
 namespace Soopi.Api.Domain.Identity;
 
-/// <summary>Thứ tự khai báo là thứ tự sắp xếp (vai trò đầu tiên quyết định trang đích), giữ như enum Java.</summary>
+/// <summary>Thứ tự khai báo là thứ tự sắp xếp (vai trò đầu tiên quyết định trang đích).</summary>
 public enum Role
 {
     ADMIN,
@@ -75,7 +75,7 @@ public static class Roles
 
     public static string Label(this Role role) => Info[role].Label;
 
-    /// <summary>Route React của màn chính (bản Java là pages/*.html).</summary>
+    /// <summary>Route React của màn chính.</summary>
     public static string Landing(this Role role) => Info[role].Landing;
 
     public static Role Parse(string value) =>
@@ -84,7 +84,7 @@ public static class Roles
             : throw new DomainException(ErrorCode.VALIDATION_FAILED);
 }
 
-/// <summary>Ma trận vai trò → quyền (chép nguyên từ RolePermissions của bản Java).</summary>
+/// <summary>Ma trận vai trò → quyền.</summary>
 public static class RolePermissions
 {
     private static readonly Dictionary<Role, HashSet<Permission>> Matrix = new()
@@ -152,7 +152,7 @@ public sealed record AuthenticatedActor(
     public string AuditId =>
         EmployeeId ?? (CustomerId is not null ? "KH:" + CustomerId : AccountId?.ToString() ?? "SYSTEM");
 
-    /// <summary>Danh sách vai trò theo thứ tự khai báo, như actor.roles() trong nhật ký của bản Java.</summary>
+    /// <summary>Danh sách vai trò theo thứ tự khai báo (ghi vào nhật ký).</summary>
     public IReadOnlyList<string> RoleNames => Roles.Order().Select(role => role.ToString()).ToList();
 }
 

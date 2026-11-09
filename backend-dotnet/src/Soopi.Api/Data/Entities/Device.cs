@@ -57,6 +57,6 @@ public class Device
 
     public DateTimeOffset CreatedAt { get; private set; }
 
-    /// <summary>Như bản Java: ngay sau khi đăng ký là chuỗi khách nhập (đã trim), đọc lại từ DB là dạng chuẩn hóa.</summary>
+    /// <summary>Ngay sau khi đăng ký là chuỗi khách nhập (đã trim), đọc lại từ DB là dạng chuẩn hóa.</summary>
     [NotMapped] public string SerialOrImei => displaySerial ?? SerialNormalized;
 }

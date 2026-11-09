@@ -71,7 +71,7 @@ public static class TicketEnums
         [TicketStatus.RETURNED_UNREPAIRED] = "Đã trả máy (không sửa)",
     };
 
-    /// <summary>Nhãn tiếng Việt dùng trong lịch sử trạng thái và thông điệp lỗi (như dữ liệu cũ).</summary>
+    /// <summary>Nhãn tiếng Việt dùng trong lịch sử trạng thái và thông điệp lỗi.</summary>
     public static string SqlLabel(this TicketStatus status) => Labels[status];
 
 }
@@ -122,7 +122,7 @@ public sealed record Note(DateTimeOffset At, string Text, string By, string Role
 public sealed record StatusHistory(TicketStatus Status, DateTimeOffset At, string? Description, string? Actor, string? ActorName, string? ActorRole);
 
 /// <summary>
-/// Phiếu tiếp nhận (PhieuTiepNhan + bảng con) — máy trạng thái và luật nghiệp vụ chép từ Ticket.java. Mỗi lần chuyển trạng
+/// Phiếu tiếp nhận (PhieuTiepNhan + bảng con) — máy trạng thái và luật nghiệp vụ. Mỗi lần chuyển trạng
 /// thái thêm một dòng lịch sử; TicketStore ghi các dòng mới cùng transaction.
 /// </summary>
 public sealed class Ticket

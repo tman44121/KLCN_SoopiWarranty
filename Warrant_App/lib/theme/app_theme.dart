@@ -36,7 +36,7 @@ class AppColors {
   static const Color honeyBorder = Color(0xFFF3D58A);
   static const Color successBorder = Color(0xFFC3E2CF);
 
-  // ── Tên cũ (WarrantSafe) trỏ sang bảng màu Soopi ─────────────────
+  // ── Bí danh màu dùng chung, trỏ sang bảng màu Soopi ─────────────────
   static const Color primaryBlue = forest;
   static const Color primaryDark = forestDeep;
   static const Color primaryLight = mintSoft;

@@ -1,9 +1,9 @@
 namespace Soopi.Api.Infrastructure;
 
-/// <summary>Header bảo mật như Spring Security của bản Java (mặc định + CSP, Referrer-Policy; HSTS chỉ production).</summary>
+/// <summary>Header bảo mật (CSP, Referrer-Policy; HSTS chỉ production).</summary>
 public sealed class SecurityHeadersMiddleware(RequestDelegate next, IHostEnvironment environment)
 {
-    // Font tự host ở /fonts (Inter, Plus Jakarta Sans có subset tiếng Việt); không còn tải từ Google Fonts.
+    // Font tự host ở /fonts (Inter, Plus Jakarta Sans có subset tiếng Việt).
     private const string Csp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
         + "font-src 'self'; img-src 'self' data: blob: https://img.vietqr.io; "
         + "connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";

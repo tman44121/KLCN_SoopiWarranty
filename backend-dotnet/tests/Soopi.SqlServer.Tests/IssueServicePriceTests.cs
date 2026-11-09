@@ -35,7 +35,7 @@ public sealed class IssueServicePriceTests : IAsyncLifetime
 
             var parts = await scope.ServiceProvider.GetRequiredService<IssuedParts>().FindByTicketAsync(fixture.Id);
             Assert.Equal(20m, parts.Single(part => part.IssueCode == code).ServicePrice);
-            // Dòng xuất cũ chưa lưu giá (fixture không ghi cột mới) vẫn dùng giá hiện tại như trước.
+            // Dòng xuất chưa lưu giá (fixture không ghi cột này) dùng giá hiện tại.
             Assert.Equal(99m, parts.Single(part => part.IssueCode == fixture.Id && part.Sku == fixture.PartA).ServicePrice);
         }
         finally

@@ -13,7 +13,7 @@ using Soopi.Api.Services.Tickets;
 
 namespace Soopi.Api.Services.Inventory;
 
-/// <summary>Như @JsonInclude(NON_NULL) của Java: trường null bị bỏ khỏi JSON (giá vốn khi không có quyền xem).</summary>
+/// <summary>Trường null bị bỏ khỏi JSON (giá vốn khi không có quyền xem).</summary>
 public sealed record PartView(
     string Sku, string Name, string? Unit, string? CategoryCode, string? BrandName,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] decimal? CostPrice,
@@ -40,7 +40,7 @@ public sealed record IssueLineView(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? BinCode,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DateOnly? PartWarrantyExpiresOn);
 
-/// <summary>Như @JsonInclude(NON_NULL) của Java.</summary>
+/// <summary>Trường null bị bỏ khỏi JSON.</summary>
 public sealed record IssueView(
     string Code, string TicketCode, string Source,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? QuotationCode,
@@ -132,7 +132,7 @@ public sealed class StockIssueService(
     StaffDirectory staff, CodeGenerator codes, CurrentActor actors, TransactionRunner transactions, AuditService audit,
     NotificationService notifications, LowStockNotifier lowStock, TimeProvider clock)
 {
-    // ponytail: xếp hàng giữ tồn trong một tiến trình như synchronized của Java; nhiều máy chủ thì dựa vào UPDATE có điều kiện.
+    // ponytail: xếp hàng giữ tồn trong một tiến trình; nhiều máy chủ thì dựa vào UPDATE có điều kiện.
     private static readonly SemaphoreSlim ReservationMonitor = new(1, 1);
 
     public async Task<IssueView> RequestAsync(IssueRequest command)

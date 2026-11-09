@@ -7,14 +7,14 @@ using Soopi.Api.Domain.Shared;
 
 namespace Soopi.Api.Infrastructure.Json;
 
-/// <summary>JSON như Jackson của bản Java: camelCase, enum theo tên, thời điểm ISO-8601 UTC "…Z", boolean null = false.</summary>
+/// <summary>JSON: camelCase, enum theo tên, thời điểm ISO-8601 UTC "…Z", boolean null = false.</summary>
 public static class JsonSetup
 {
     public static void Apply(JsonSerializerOptions options)
     {
         options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.PropertyNameCaseInsensitive = false;
-        // Tiếng Việt ghi nguyên UTF-8 như Jackson (không thoát thành ê).
+        // Tiếng Việt ghi nguyên UTF-8 (không thoát thành ê).
         options.Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
         options.Converters.Add(new JavaEnumConverterFactory());
         options.Converters.Add(new JavaNullableConverterFactory());
@@ -134,7 +134,7 @@ public sealed class JavaDateConverter : JsonConverter<DateOnly>
     public override void Write(Utf8JsonWriter writer, DateOnly value, JsonSerializerOptions options) => writer.WriteStringValue(value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 }
 
-/// <summary>Jackson của bản Java tắt fail-on-null-for-primitives: trường boolean gửi null được hiểu là false.</summary>
+/// <summary>Trường boolean gửi null được hiểu là false.</summary>
 public sealed class NullAsFalseConverter : JsonConverter<bool>
 {
     public override bool HandleNull => true;

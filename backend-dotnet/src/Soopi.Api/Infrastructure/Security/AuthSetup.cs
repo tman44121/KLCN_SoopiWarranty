@@ -10,7 +10,7 @@ using Soopi.Api.Infrastructure.Errors;
 namespace Soopi.Api.Infrastructure.Security;
 
 /// <summary>
-/// Xác thực Bearer JWT RS256 như resource server của bản Java: token "access" phải khớp phiên bản bảo mật (`ver`) và trạng
+/// Xác thực Bearer JWT RS256: token "access" phải khớp phiên bản bảo mật (`ver`) và trạng
 /// thái ACTIVE của tài khoản (cache 30 s) — sai thì 401 AUTH_TOKEN_REVOKED; token "portal" chỉ cần phạm vi hợp lệ.
 /// </summary>
 public static class AuthSetup
@@ -37,7 +37,7 @@ public static class AuthSetup
                 {
                     OnMessageReceived = context =>
                     {
-                        // Java chỉ chạy resource-server filter trong security chain /api/**.
+                        // Chỉ xác thực bearer cho /api/**.
                         if (!context.Request.Path.StartsWithSegments("/api", StringComparison.Ordinal)) context.NoResult();
                         return Task.CompletedTask;
                     },
@@ -99,7 +99,7 @@ public static class AuthSetup
     }
 }
 
-/// <summary>Giữ thứ tự kiểm URL của hai SecurityFilterChain Java, kể cả khi không có endpoint hoặc sai method.</summary>
+/// <summary>Phân quyền theo URL: API trước, tài nguyên tĩnh sau, kể cả khi không có endpoint hoặc sai method.</summary>
 public sealed class SpringSecurityBoundaryMiddleware(RequestDelegate next, IReadOnlySet<string> uiPaths, bool development)
 {
     private static readonly HashSet<string> PublicApiPaths = new(StringComparer.Ordinal)
@@ -123,7 +123,7 @@ public sealed class SpringSecurityBoundaryMiddleware(RequestDelegate next, IRead
                     or "/api/v1/settings/time")
                 || (HttpMethods.IsPost(context.Request.Method) && value == "/api/v1/portal/warranty-requests");
             var hasBearer = context.Request.Headers.Authorization.ToString().StartsWith("Bearer", StringComparison.OrdinalIgnoreCase);
-            // Spring từ chối bearer không hợp lệ ngay cả trên URL permitAll.
+            // Bearer không hợp lệ bị từ chối ngay cả trên URL công khai.
             if (context.User.Identity?.IsAuthenticated != true && (!anonymous || hasBearer))
             {
                 await context.ChallengeAsync();
@@ -136,7 +136,7 @@ public sealed class SpringSecurityBoundaryMiddleware(RequestDelegate next, IRead
             && !(value.EndsWith(".html", StringComparison.Ordinal) && value.IndexOf('/', 1) < 0)
             && !PublicStaticPrefixes.Any(prefix => path.StartsWithSegments(prefix, StringComparison.Ordinal)))
         {
-            // staticSecurity Java denyAll, kể cả info/liveness/readiness: 403 không body.
+            // URL không thuộc danh sách cho phép (kể cả info/liveness/readiness): 403 không body.
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             return;
         }

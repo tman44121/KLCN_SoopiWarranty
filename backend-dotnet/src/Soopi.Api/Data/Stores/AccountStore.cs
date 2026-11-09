@@ -6,7 +6,7 @@ using Soopi.Api.Domain.Shared;
 namespace Soopi.Api.Data.Stores;
 
 /// <summary>
-/// Tài khoản kèm vai trò và mã hồ sơ (NV/KH) trong một truy vấn — tương đương @Formula của entity Java. Thực thể được theo
+/// Tài khoản kèm vai trò và mã hồ sơ (NV/KH) trong một truy vấn. Thực thể được theo
 /// dõi; thay đổi được ghi bằng SaveChanges của TransactionRunner (hoặc <see cref="SaveAsync"/> ngoài transaction).
 /// </summary>
 public sealed class AccountStore(AppDbContext db)

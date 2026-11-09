@@ -45,7 +45,7 @@ public sealed record CustomerReviewReport(PageResponse<CustomerReviewRow> Review
 
 /// <summary>
 /// Báo cáo mục 14 (R4–R12). Khoảng ngày theo giờ Việt Nam, gồm cả hai đầu; trạm tùy chọn. Số giờ = số giây / 3600 làm tròn
-/// xuống (như TIMESTAMPDIFF(HOUR) của bản MySQL), không dùng DATEDIFF(HOUR) vì hàm đó đếm số lần qua mốc giờ.
+/// xuống, không dùng DATEDIFF(HOUR) vì hàm đó đếm số lần qua mốc giờ.
 /// </summary>
 public sealed class ReportService(Sql sql, CurrentActor actors, TimeProvider clock, TimeSettingsService timeSettings)
 {

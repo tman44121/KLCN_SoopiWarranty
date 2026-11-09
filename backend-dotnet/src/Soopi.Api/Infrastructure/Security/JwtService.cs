@@ -8,7 +8,7 @@ using Soopi.Api.Domain.Identity;
 namespace Soopi.Api.Infrastructure.Security;
 
 /// <summary>
-/// Cặp khóa RSA ký JWT. Có cấu hình đường dẫn PEM thì đọc file (dùng lại khóa của bản Java thì token cũ vẫn hợp lệ); môi
+/// Cặp khóa RSA ký JWT. Có cấu hình đường dẫn PEM thì đọc file; môi
 /// trường Production bắt buộc có khóa; ngoài Production tự sinh khóa tạm (token mất hiệu lực khi khởi động lại).
 /// </summary>
 public sealed class JwtKeys
@@ -45,7 +45,7 @@ public sealed class JwtKeys
         location.StartsWith("file:", StringComparison.OrdinalIgnoreCase) ? location["file:".Length..] : location;
 }
 
-/// <summary>Phát access token (typ=access) và portal token (typ=portal, một phạm vi, không refresh) — claim như bản Java.</summary>
+/// <summary>Phát access token (typ=access) và portal token (typ=portal, một phạm vi, không refresh).</summary>
 public sealed class JwtService(JwtKeys keys, IOptions<SecurityOptions> options, TimeProvider clock)
 {
     private readonly JsonWebTokenHandler handler = new();

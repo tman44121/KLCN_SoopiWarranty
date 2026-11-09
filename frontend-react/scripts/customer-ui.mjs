@@ -22,7 +22,7 @@ try {
       if (request.url().includes('/api/v1/') && request.method() !== 'GET') writes.push(new URL(request.url()).pathname);
     });
     await s.context.route(`**/api/v1/portal/tickets/${code}`, route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ticket) }));
-    // Exercise the real contact/conversation flow; the former local demo chat no longer exists.
+    // Exercise the real contact/conversation flow.
     const messages = [];
     let unread = 0;
     const contact = { ticketCode: code, staffAccountId: 'NVTEST', conversationId: 'CHAT-TEST', name: 'Kỹ thuật viên thử',
