@@ -1,19 +1,19 @@
 -- ============================================================================
--- LongManLoc Service Center — schema SQL Server / Azure SQL Database (D-077).
--- Chuyển từ TrungTamBaoHanhDB_MySQL_v2.sql: 47 bảng nghiệp vụ, 2 bảng chat, 3 bảng thống kê truy cập, 1 bảng duyệt đánh giá và 1 bảng cấu hình thời gian, CHỈ lưu dữ liệu:
+-- Soopi — schema SQL Server / Azure SQL Database (D-077).
+-- 47 bảng nghiệp vụ, 2 bảng chat, 3 bảng thống kê truy cập, 1 bảng duyệt đánh giá và 1 bảng cấu hình thời gian, CHỈ lưu dữ liệu:
 -- không stored procedure, không trigger, không view, không event. Nghiệp vụ (máy trạng thái, lịch sử trạng thái,
--- tổng tiền báo giá, hạn bảo hành linh kiện, đối soát thu tiền, sinh mã) do Spring Boot thực hiện.
+-- tổng tiền báo giá, hạn bảo hành linh kiện, đối soát thu tiền, sinh mã) do backend .NET thực hiện.
 --
--- Chạy trên database TRỐNG có collation Latin1_General_100_CI_AI (không phân biệt hoa thường và dấu, như
--- utf8mb4_unicode_ci của MySQL). Script không tạo/xóa database, không nạp dữ liệu.
---   sqlcmd -S <server> -d <database> -U <quản trị> -I -b -i db/sqlserver/01_schema.sql
+-- Chạy trên database TRỐNG có collation Latin1_General_100_CI_AI (không phân biệt hoa thường và dấu).
+-- Script không tạo/xóa database, không nạp dữ liệu.
+--   sqlcmd -S <server> -d <database> -U <quản trị> -I -b -i database/01_schema.sql
 --
--- Khác MySQL (xem docs/02-ky-thuat/DECISIONS.md D-077 → D-081):
---   * VARCHAR/TEXT → NVARCHAR, JSON → NVARCHAR(MAX) + ISJSON, DATETIME → DATETIME2(0) giờ Việt Nam, TINYINT(1) → BIT.
---   * Cột sinh bỏ; "một phiếu mở mỗi thiết bị", "một báo giá hiệu lực", "một yêu cầu xuất đang chờ", "SĐT khách
---     đang hoạt động" là filtered unique index. ConMo, ThanhTien thành cột thường do Java ghi, có CHECK đối chiếu.
+-- Quy ước (docs/02-ky-thuat/DECISIONS.md D-077 → D-081):
+--   * Chuỗi NVARCHAR, JSON là NVARCHAR(MAX) + ISJSON, thời điểm DATETIME2(0) giờ Việt Nam, cờ BIT.
+--   * "Một phiếu mở mỗi thiết bị", "một báo giá hiệu lực", "một yêu cầu xuất đang chờ", "SĐT khách
+--     đang hoạt động" là filtered unique index. ConMo, ThanhTien là cột thường do backend ghi, có CHECK đối chiếu.
 --   * UNIQUE trên cột cho phép NULL (SQL Server chỉ cho một NULL) → filtered unique index WHERE ... IS NOT NULL.
---   * REGEXP trong CHECK → LIKE.
+--   * Kiểm định dạng trong CHECK dùng LIKE.
 -- ============================================================================
 
 SET ANSI_NULLS ON;
@@ -367,7 +367,7 @@ CREATE TABLE TepDinhKem (
 -- ----------------------------------------------------------------------------
 -- 1.4 TIẾP NHẬN & ĐIỀU PHỐI
 -- Ticket (C#) kiểm tra chuyển trạng thái; TicketStore cập nhật phiếu và ghi LichSuTrangThai_ThietBi trong cùng transaction.
--- ConMo = máy còn ở trung tâm; Java ghi cùng TrangThaiXuLy, CHECK bảo đảm hai cột không lệch nhau.
+-- ConMo = máy còn ở trung tâm; backend ghi cùng TrangThaiXuLy, CHECK bảo đảm hai cột không lệch nhau.
 -- ----------------------------------------------------------------------------
 CREATE TABLE PhieuTiepNhan (
     MaPhieuTN               NVARCHAR(30)  PRIMARY KEY,
@@ -606,7 +606,7 @@ CREATE TABLE LinhKien (
     CONSTRAINT CK_LinhKien_Ke CHECK (KeChinh LIKE 'KHO-[A-Z]-[0-9][0-9]-[0-9][0-9]')
 );
 
--- Bất biến (Java bảo đảm, truy vấn đối soát kiểm tra): LinhKien.SoLuongTon = SUM(TonKhoTheoKe.SoLuong)
+-- Bất biến (backend bảo đảm, truy vấn đối soát kiểm tra): LinhKien.SoLuongTon = SUM(TonKhoTheoKe.SoLuong)
 CREATE TABLE TonKhoTheoKe (
     MaLK     NVARCHAR(30) NOT NULL,
     MaKe     NVARCHAR(20) NOT NULL,

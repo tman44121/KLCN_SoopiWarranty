@@ -2,7 +2,7 @@ import { usePage } from "../usePage";
 import controller from "../behaviors/login.js";
 import { BrandLogo, Icon, PasswordInput, STEP_LABELS, useAuthScale } from "../customer";
 
-/* Giao diện đăng nhập của web khách KLCN; id/name và data-* giữ nguyên vì login.js (nhân viên + khách) gắn vào đó. */
+/* Giao diện đăng nhập; id/name và data-* giữ nguyên vì login.js (nhân viên + khách) gắn vào đó. */
 export default function LoginPage() {
   usePage("login", {}, "Đăng nhập — Soopi", controller);
   const scaled = useAuthScale();

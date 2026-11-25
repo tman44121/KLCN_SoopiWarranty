@@ -14,7 +14,7 @@ public sealed record TicketFilter(
     DateTimeOffset Now, DateTimeOffset AtRiskUntil);
 
 /// <summary>
-/// Aggregate Ticket trên PhieuTiepNhan và các bảng con (như JpaTicketRepository). Mỗi lần lưu:
+/// Aggregate Ticket trên PhieuTiepNhan và các bảng con. Mỗi lần lưu:
 /// <list type="bullet">
 /// <item>dòng phiếu mang trạng thái hiện tại và ConMo; PhienBan luôn tăng và được kiểm (optimistic lock), kể cả khi chỉ thêm
 /// ghi chú hay kết quả sửa chữa — lệch phiên bản thì TransactionRunner thử lại;</item>
@@ -105,7 +105,7 @@ public sealed class TicketStore(Sql sql, Services.Tickets.TicketProgressNotifier
         }
     }
 
-    /// <summary>Cùng dạng dữ liệu cũ: 'Trạng thái đổi từ "A" sang "B"' kèm ghi chú riêng của thao tác (nếu có).</summary>
+    /// <summary>Dạng 'Trạng thái đổi từ "A" sang "B"' kèm ghi chú riêng của thao tác (nếu có).</summary>
     private static string TransitionText(TicketStatus previous, StatusHistory entry)
     {
         var text = $"{DefaultTransitionText} \"{previous.SqlLabel()}\" sang \"{entry.Status.SqlLabel()}\"";

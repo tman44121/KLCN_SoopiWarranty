@@ -3,7 +3,7 @@ import { usePage } from "../usePage";
 import controller from "../behaviors/customer-portal.js";
 import { CustomerFooter, CustomerHeader, Icon } from "../customer";
 
-/* Tra cứu công khai theo giao diện trang Tra cứu của web khách KLCN. id và data-* giữ nguyên vì customer-portal.js gắn vào. */
+/* Tra cứu công khai. id và data-* giữ nguyên vì customer-portal.js gắn vào. */
 export default function PortalPage() {
   usePage("portal", {}, "Soopi — Tra cứu bảo hành & sửa chữa", controller);
   return (

@@ -43,7 +43,7 @@ public class IdentityTests
     [Fact]
     public void PasswordHasher_VerifiesHashWrittenBySpring()
     {
-        // Hash của tài khoản demo "letan" / "1234" trong db/sqlserver/03_demo_data.sql (Spring DelegatingPasswordEncoder).
+        // Hash của tài khoản demo "letan" / "1234" trong database/03_demo_data.sql.
         const string spring = "{bcrypt}$2a$12$PEe08usM2pa/C6eajRuCFu1ZW2P32x.ywki5/UAB/OK43j.H7fyLm";
         Assert.True(PasswordHasher.Matches("1234", spring));
         Assert.False(PasswordHasher.Matches("12345", spring));

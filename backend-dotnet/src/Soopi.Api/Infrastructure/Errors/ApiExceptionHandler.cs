@@ -6,7 +6,7 @@ using Soopi.Api.Domain.Shared;
 
 namespace Soopi.Api.Infrastructure.Errors;
 
-/// <summary>Tương đương ApiErrorHandler (Java): mọi ngoại lệ thành Problem Details có mã nghiệp vụ.</summary>
+/// <summary>Mọi ngoại lệ thành Problem Details có mã nghiệp vụ.</summary>
 public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken cancellationToken)

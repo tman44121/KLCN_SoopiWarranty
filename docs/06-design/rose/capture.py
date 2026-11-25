@@ -49,10 +49,16 @@ class OffscreenLarge:
     def __enter__(self):
         self.main = rose_main_hwnd()
         self.placement = win32gui.GetWindowPlacement(self.main)
-        if self.placement[1] == win32con.SW_SHOWMAXIMIZED:
+        sw = user32.GetSystemMetrics(78) + user32.GetSystemMetrics(76)  # virtual screen right edge
+        if self.placement[1] == win32con.SW_SHOWMINIMIZED:
+            # restore straight to an off-screen rectangle so nothing flashes on the user's screen
+            flags, show, minpos, maxpos, _ = self.placement
+            win32gui.SetWindowPlacement(self.main, (flags, win32con.SW_SHOWNOACTIVATE, minpos, maxpos,
+                                                    (sw + 50, 0, sw + 50 + self.size[0], self.size[1])))
+            time.sleep(0.4)
+        elif self.placement[1] == win32con.SW_SHOWMAXIMIZED:
             win32gui.ShowWindow(self.main, win32con.SW_SHOWNOACTIVATE)
         flags = win32con.SWP_NOZORDER | win32con.SWP_NOACTIVATE
-        sw = user32.GetSystemMetrics(78) + user32.GetSystemMetrics(76)  # virtual screen right edge
         win32gui.SetWindowPos(self.main, 0, sw + 50, 0, self.size[0], self.size[1], flags)
         time.sleep(0.4)
         return self

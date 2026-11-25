@@ -1,4 +1,4 @@
--- Sinh bởi tools/MySqlToSqlServer.java — không sửa tay.
+-- Dữ liệu tham chiếu — không sửa tay.
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 SET NOCOUNT ON;

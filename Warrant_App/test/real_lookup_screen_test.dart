@@ -247,7 +247,7 @@ void main() {
             expect(tester.takeException(), isNull);
             if (isTicket) {
               expect(find.text('Báo giá: BG-2026-1016-00002'), findsOneWidget);
-              expect(find.text('1320000 VNĐ'), findsOneWidget);
+              expect(find.text('1.320.000 đ'), findsOneWidget);
             }
           },
         );

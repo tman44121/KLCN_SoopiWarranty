@@ -40,9 +40,11 @@ Set-Location ..
 ### Máy mới: tạo database từ script
 
 Thư mục `database/` có script SQL Server mới nhất (lấy từ `warranty-system-mysql/db/sqlserver`): `01_schema.sql`
-(53 bảng), `02_reference_data.sql`, `03_demo_data.sql` (tài khoản demo, xem [TAI_KHOAN_DEMO.md](TAI_KHOAN_DEMO.md)),
+(56 bảng), `02_reference_data.sql`, `03_demo_data.sql` (tài khoản demo, xem [TAI_KHOAN_DEMO.md](TAI_KHOAN_DEMO.md)),
 `04_app_user.sql` (tài khoản ứng dụng cho production) và file ghép `TrungTamBaoHanhDB_SqlServer.sql` (= 01 + 02 + 03,
 tự tạo database `TrungTamBaoHanhDB` collation `Latin1_General_100_CI_AI`).
+`Script.sql` (= 01 + 02, tạo database, 56 bảng và dữ liệu tham chiếu, không có dữ liệu mẫu) là bản gộp dùng cho
+thiết kế dữ liệu trong báo cáo và cho máy cần database sạch.
 
 Database tạo từ một bản script trước (còn trạng thái phiếu `CANCELLED`, `YeuCauBaoHanh` chưa có cột `MaKH`, chưa có
 quyền quản lý tài khoản khách, nhãn thông báo `CUSTOM_ANNOUNCEMENT` hoặc các cột nhận xét/thời điểm đánh giá khách) phải nâng cấp trước khi chạy backend hiện tại — giữ nguyên dữ liệu, chạy lại nhiều lần

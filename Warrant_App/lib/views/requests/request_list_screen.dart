@@ -104,12 +104,7 @@ class _RealHistoryState extends State<_RealHistory> {
       0,
       (sum, ticket) => sum + ticket.paidAmount,
     );
-    final paidLabel = totalPaid
-        .toStringAsFixed(0)
-        .replaceAllMapped(
-          RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-          (match) => '${match[1]}.',
-        );
+    final paidLabel = soopiMoney(totalPaid);
     final requestRows = requests.requests;
     int count(String group) =>
         rows.where((t) => ticketInGroup(group, t.status)).length;
@@ -136,7 +131,7 @@ class _RealHistoryState extends State<_RealHistory> {
                   const SizedBox(height: 14),
                   if (tickets.loaded && tickets.error == null) ...[
                     Text(
-                      'Tổng tiền đã chi: $paidLabel đ',
+                      'Tổng tiền đã chi: $paidLabel',
                       style: AppText.cardTitle,
                     ),
                     const SizedBox(height: 14),

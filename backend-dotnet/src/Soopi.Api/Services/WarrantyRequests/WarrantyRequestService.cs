@@ -81,7 +81,7 @@ public sealed class WarrantyRequestSubmissionService(
             return request.Code;
         });
 
-    /// <summary>Luật của NewWarrantyRequest (Java): đủ trường, khung giờ hợp lệ, SĐT/IMEI/Serial chuẩn hóa.</summary>
+    /// <summary>Luật của yêu cầu bảo hành mới: đủ trường, khung giờ hợp lệ, SĐT/IMEI/Serial chuẩn hóa.</summary>
     public static NewWarrantyRequest Validated(string code, SubmissionCommand c, DateTimeOffset now, TimeSettings? times = null)
     {
         BusinessHours.RequireRange(c.PreferredFrom, c.PreferredTo, times);

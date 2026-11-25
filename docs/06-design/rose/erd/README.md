@@ -35,3 +35,14 @@ trường SEQ, mục lục và danh mục hình/bảng bằng Word, xuất PDF v
 
 Ảnh PNG/SVG và DOT có thể sửa lại nằm trong thư mục `rose/erd_20261103` cạnh báo
 cáo tại thư mục `doc`. Nội dung UML khác và mô hình Rational Rose được giữ nguyên.
+
+Lượt sửa 11/11/2026 theo góp ý GVHD: `erd_conceptual.mjs` vẽ 12 ERD mức khái niệm
+(không khóa ngoại, không bảng trung gian, quan hệ n-n nối thẳng, có tên quan hệ) và 12
+mô hình dữ liệu quan hệ (PK gạch chân, FK in nghiêng) vào `rose/erd_20261111`.
+`render_svg.py` đổi SVG sang PNG bằng PyMuPDF và tự vẽ gạch chân khóa chính.
+
+```powershell
+npm install @hpcc-js/wasm-graphviz@1.6.1   # trong thư mục tạm, không thêm vào ứng dụng
+node docs/06-design/rose/erd/erd_conceptual.mjs docs/06-design/rose/erd/schema.json <thu-muc-hinh>
+python docs/06-design/rose/erd/render_svg.py <thu-muc-hinh>
+```

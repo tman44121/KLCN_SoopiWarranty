@@ -162,7 +162,7 @@ public sealed class CustomerAccountAdminService(
 
     /// <summary>
     /// Tên đăng nhập của khách là SĐT: đổi SĐT hồ sơ thì đổi theo (gọi trong transaction của CustomerService). Tài khoản có tên
-    /// đăng nhập khác SĐT cũ (dữ liệu cũ, VD "kh.tuan") giữ nguyên tên.
+    /// đăng nhập khác SĐT (VD "kh.tuan") giữ nguyên tên.
     /// </summary>
     internal async Task<long?> FollowPhoneAsync(long? accountId, string oldPhone, string newPhone)
     {

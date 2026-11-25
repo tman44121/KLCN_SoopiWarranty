@@ -66,7 +66,7 @@ public sealed partial class EmployeeAdminService(
                 BlankToNull(command.Email),
                 BlankToNull(command.Specialty),
                 command.Skills?.ToList() ?? [],
-                command.MaxActiveTickets is { } max ? Positive(max) : 10,
+                command.MaxActiveTickets is { } max ? TicketLimit(max) : 10,
                 true,
                 "ACTIVE",
                 "HCM",
@@ -99,7 +99,7 @@ public sealed partial class EmployeeAdminService(
                 Email = command.Email is null ? current.Email : BlankToNull(command.Email),
                 Specialty = command.Specialty is null ? current.Specialty : BlankToNull(command.Specialty),
                 Skills = command.Skills?.ToList() ?? current.Skills,
-                MaxActiveTickets = command.MaxActiveTickets is { } max ? Positive(max) : current.MaxActiveTickets,
+                MaxActiveTickets = command.MaxActiveTickets is { } max ? TicketLimit(max) : current.MaxActiveTickets,
                 OnSite = command.OnSite ?? current.OnSite,
                 WorkStatus = command.WorkStatus ?? current.WorkStatus,
             };
@@ -219,7 +219,8 @@ public sealed partial class EmployeeAdminService(
     {
         var roles = account is null ? "—" : string.Join(", ", account.Roles.Select(role => role.Label()).Order(StringComparer.Ordinal));
         var status = account is null ? "" : account.Status == AccountStatus.LOCKED ? " — Đã khóa" : " — Đang hoạt động";
-        return record.Code + " — " + record.FullName + " — " + roles + status;
+        return record.Code + " — " + record.FullName + " — " + roles + status
+            + " — Tối đa " + record.MaxActiveTickets + " phiếu — " + (record.OnSite ? "Có mặt tại trạm" : "Không có mặt tại trạm");
     }
 
     private static HashSet<Role> RequireStaffRoles(IReadOnlySet<Role>? roles) =>
@@ -232,7 +233,12 @@ public sealed partial class EmployeeAdminService(
 
     private static string? BlankToNull(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static int Positive(int value) => value < 1 ? throw new DomainException(ErrorCode.VALIDATION_FAILED) : value;
+    public const int MaxTicketLimit = 30;
+
+    /// <summary>Số phiếu tối đa một KTV nhận cùng lúc: 1–30.</summary>
+    public static int TicketLimit(int value) => value is < 1 or > MaxTicketLimit
+        ? throw DomainException.Invalid($"Số phiếu tối đa phải từ 1 đến {MaxTicketLimit}.")
+        : value;
 
     private static bool Matches(EmployeeAccountView view, string needle) =>
         view.EmployeeId.ToLowerInvariant().Contains(needle, StringComparison.Ordinal)

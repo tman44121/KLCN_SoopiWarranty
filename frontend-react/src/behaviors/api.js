@@ -209,7 +209,7 @@ export default function initialize(global = window) {
   const patch = (path, body, opts) => request("PATCH", path, Object.assign({ body }, opts));
   const enc = encodeURIComponent;
 
-  /** multipart có part "data" là JSON (D-032): Blob kiểu application/json để Spring bind @RequestPart. */
+  /** multipart có part "data" là JSON (D-032): Blob kiểu application/json. */
   function multipart(data, files) {
     const form = new FormData();
     form.append("data", new Blob([JSON.stringify(data)], { type: "application/json" }));

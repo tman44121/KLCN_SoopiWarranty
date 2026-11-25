@@ -129,7 +129,7 @@ public sealed class CatalogStore(Sql sql)
         return query is not null && await sql.ScalarAsync(query, id) is not null;
     }
 
-    /// <summary>Đổi body JSON sang giá trị thường (string, decimal, bool, null, list, map) như Map của Jackson.</summary>
+    /// <summary>Đổi body JSON sang giá trị thường (string, decimal, bool, null, list, map).</summary>
     public static object? Plain(JsonElement element) => element.ValueKind switch
     {
         JsonValueKind.String => element.GetString(),

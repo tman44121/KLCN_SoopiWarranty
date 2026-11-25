@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Soopi.Api.Domain.Shared;
 
-/// <summary>String.isBlank / String.trim của Java, khác .NET với NBSP và ký tự điều khiển.</summary>
+/// <summary>Kiểm rỗng/trim chỉ theo khoảng trắng ASCII và ký tự điều khiển; NBSP không bị coi là khoảng trắng.</summary>
 public static class JavaText
 {
     private static readonly char[] TrimCharacters = Enumerable.Range(0, 33).Select(value => (char)value).ToArray();

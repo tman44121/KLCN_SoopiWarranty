@@ -74,14 +74,16 @@ export default function initialize() {
       ${kv("Trạng thái", fmt.badgeOf(L.ACCOUNT_STATUS, employee.accountStatus))}
       ${kv("Số điện thoại", html`<span class="mono">${employee.phone}</span>`)}
       ${kv("Lần đăng nhập gần nhất", employee.lastLoginAt ? fmt.dateTime(employee.lastLoginAt) : "—")}
+      ${isTechnician(employee) ? html`${kv("Số phiếu tối đa", `${employee.maxActiveTickets} phiếu`)}${kv("Có mặt tại trạm", employee.onSite ? "Có" : "Không")}` : ""}
     </div>`;
     $("[data-emp-modal-actions]").innerHTML = !canManageEmployee(employee)
       ? html`<p class="cell-muted">Chỉ quản trị gốc mới được thay đổi vai trò, khóa/mở khóa hoặc đặt lại mật khẩu của quản trị viên.</p>`
       : html`
       <button type="button" class="btn btn--secondary" data-emp-action="roles">Sửa vai trò</button>
+      ${isTechnician(employee) ? html`<button type="button" class="btn btn--secondary" data-emp-action="work">Sửa phân công</button>` : ""}
       <button type="button" class="btn btn--secondary" data-emp-action="reset">Đặt lại mật khẩu</button>
       <button type="button" class="btn ${locked ? "btn--primary" : "btn--destructive"}" data-emp-action="lock">${locked ? "Mở khóa tài khoản" : "Khóa tài khoản"}</button>`;
-    const actions = { roles: () => editRoles(code), reset: () => resetPassword(code), lock: () => toggleLock(code) };
+    const actions = { roles: () => editRoles(code), work: () => editWork(code), reset: () => resetPassword(code), lock: () => toggleLock(code) };
     $("[data-emp-modal-actions]").querySelectorAll("[data-emp-action]").forEach((button) => button.addEventListener("click", () => {
       close("[data-emp-modal]");
       actions[button.dataset.empAction]();
@@ -106,6 +108,41 @@ export default function initialize() {
       await ui.busy(button, () => api.admin.changeRoles(editingEmployee.employeeId, selected));
       close("[data-edit-roles-modal]");
       window.showToast("Đã cập nhật vai trò.", "success");
+      loadEmployees();
+    } catch (error) { ui.showError(error); }
+  }
+
+  const isTechnician = (employee) => employee.roles.some((role) => role.code === "TECHNICIAN");
+
+  /** Số phiếu tối đa hợp lệ (số nguyên 1–30, khớp kiểm tra ở API) hoặc null. */
+  function ticketLimit(value) {
+    const number = Number(value);
+    return Number.isInteger(number) && number >= 1 && number <= 30 ? number : null;
+  }
+
+  function editWork(code) {
+    editingEmployee = state.employees.find((employee) => employee.employeeId === code);
+    if (!canManageEmployee(editingEmployee)) return window.showToast("Chỉ quản trị gốc mới được thay đổi tài khoản quản trị.", "error");
+    $("[data-edit-work-subtitle]").textContent = `${editingEmployee.fullName} — ${code}`;
+    $("[data-edit-work-max]").value = editingEmployee.maxActiveTickets;
+    $("[data-edit-work-onsite]").checked = editingEmployee.onSite;
+    showWorkError(false);
+    open("[data-edit-work-modal]");
+  }
+
+  function showWorkError(visible) {
+    $("[data-edit-work-max-error]").hidden = !visible;
+    $("[data-edit-work-max]").toggleAttribute("aria-invalid", visible);
+  }
+
+  async function saveWork(button) {
+    const maxActiveTickets = ticketLimit($("[data-edit-work-max]").value);
+    showWorkError(maxActiveTickets === null);
+    if (maxActiveTickets === null) return $("[data-edit-work-max]").focus();
+    try {
+      await ui.busy(button, () => api.admin.updateEmployee(editingEmployee.employeeId, { maxActiveTickets, onSite: $("[data-edit-work-onsite]").checked }));
+      close("[data-edit-work-modal]");
+      window.showToast(`Đã cập nhật phân công của ${editingEmployee.fullName}.`, "success");
       loadEmployees();
     } catch (error) { ui.showError(error); }
   }
@@ -351,9 +388,11 @@ export default function initialize() {
     const username = $("[data-add-emp-username]").value.trim();
     const phone = $("[data-add-emp-phone]").value.trim();
     const selected = checked($("[data-add-emp-roles]"));
+    const maxActiveTickets = ticketLimit($("[data-add-emp-max]").value);
     if (!fullName || !username || !phone || !selected.length) return window.showToast("Vui lòng nhập đủ họ tên, tên đăng nhập, số điện thoại và vai trò.", "error");
+    if (maxActiveTickets === null) return window.showToast("Số phiếu tối đa phải từ 1 đến 30.", "error");
     try {
-      const result = await ui.busy(button, () => api.admin.createEmployee({ fullName, phone, email: null, specialty: null, skills: [], maxActiveTickets: 10, username, roles: selected }));
+      const result = await ui.busy(button, () => api.admin.createEmployee({ fullName, phone, email: null, specialty: null, skills: [], maxActiveTickets, username, roles: selected }));
       close("[data-add-employee-drawer]");
       window.showToast(`Đã tạo ${result.employee.employeeId}. Mật khẩu tạm thời: ${result.temporaryPassword}`, "success");
       loadEmployees();
@@ -450,8 +489,8 @@ export default function initialize() {
       if (again) again.focus();
     };
     row.classList.add("is-editing");
-    row.querySelector("[data-price-cell]").innerHTML = html`<input type="number" class="text-field price-input" min="0" step="1"
-      inputmode="numeric" required value="${Number(item[config.field] ?? 0)}" aria-label="Giá mới cho ${item.name} (đồng)">`;
+    row.querySelector("[data-price-cell]").innerHTML = html`<input type="text" class="text-field price-input" data-money
+      inputmode="numeric" required value="${fmt.moneyText(Number(item[config.field] ?? 0))}" aria-label="Giá mới cho ${item.name} (đồng)">`;
     row.querySelector("[data-price-actions]").innerHTML = html`<div class="price-actions">
       <button type="button" class="btn btn--primary btn--sm" data-price-save>Lưu</button>
       <button type="button" class="btn btn--secondary btn--sm" data-price-cancel>Hủy</button></div>`;
@@ -463,7 +502,7 @@ export default function initialize() {
     input.select();
     const submit = async () => {
       if (saving) return;
-      const value = input.valueAsNumber;
+      const value = fmt.moneyValue(input);
       input.setCustomValidity(Number.isFinite(value) && value >= 0 ? "" : "Nhập số tiền từ 0 đ trở lên.");
       if (!input.reportValidity()) return;
       const amount = Math.round(value);
@@ -862,9 +901,9 @@ export default function initialize() {
     $("[data-open-add-brand]").addEventListener("click", () => { checks($("[data-add-brand-categories]"), state.categories.map((item) => [item._id, item.name]), [], "brand-category"); open("[data-add-brand-drawer]"); });
     $("[data-add-brand-submit]").addEventListener("click", (event) => { const name = $("[data-add-brand-name]").value.trim(); const categoryCodes = checked($("[data-add-brand-categories]")); if (name && categoryCodes.length) createCatalog("brands", { code: slug(name), name, categoryCodes, active: true }, "[data-add-brand-drawer]", event.currentTarget); });
     $("[data-open-add-sku]").addEventListener("click", () => open("[data-add-sku-drawer]"));
-    $("[data-add-sku-submit]").addEventListener("click", (event) => { const code = $("[data-add-sku-code]").value.trim().toUpperCase(); const name = $("[data-add-sku-name]").value.trim(); const price = Number($("[data-add-sku-price]").value); if (code && name && Number.isFinite(price)) createCatalog("parts", { code, name, categoryCode: $("[data-add-sku-category]").value, brandName: $("[data-add-sku-brand]").value.trim(), unit: "Cái", costPrice: 0, servicePrice: price, minLevel: 0, primaryBin: $("[data-add-sku-bin]").value.trim() || "KHO-A-99-99", warrantyMonths: 0, supplierId: "NCC-001", active: true }, "[data-add-sku-drawer]", event.currentTarget); });
+    $("[data-add-sku-submit]").addEventListener("click", (event) => { const code = $("[data-add-sku-code]").value.trim().toUpperCase(); const name = $("[data-add-sku-name]").value.trim(); const price = fmt.moneyValue($("[data-add-sku-price]")) || 0; if (code && name && Number.isFinite(price)) createCatalog("parts", { code, name, categoryCode: $("[data-add-sku-category]").value, brandName: $("[data-add-sku-brand]").value.trim(), unit: "Cái", costPrice: 0, servicePrice: price, minLevel: 0, primaryBin: $("[data-add-sku-bin]").value.trim() || "KHO-A-99-99", warrantyMonths: 0, supplierId: "NCC-001", active: true }, "[data-add-sku-drawer]", event.currentTarget); });
     $("[data-open-add-service]").addEventListener("click", () => open("[data-add-service-drawer]"));
-    $("[data-add-service-submit]").addEventListener("click", (event) => { const name = $("[data-add-svc-name]").value.trim(); const price = Number($("[data-add-svc-price]").value); if (name && Number.isFinite(price)) createCatalog("service-prices", { code: `DV-${slug(name)}`, name, categoryCode: $("[data-add-svc-category]").value, price, active: true }, "[data-add-service-drawer]", event.currentTarget); });
+    $("[data-add-service-submit]").addEventListener("click", (event) => { const name = $("[data-add-svc-name]").value.trim(); const price = fmt.moneyValue($("[data-add-svc-price]")) || 0; if (name && Number.isFinite(price)) createCatalog("service-prices", { code: `DV-${slug(name)}`, name, categoryCode: $("[data-add-svc-category]").value, price, active: true }, "[data-add-service-drawer]", event.currentTarget); });
     $("[data-open-add-policy]").addEventListener("click", () => open("[data-add-policy-drawer]"));
     $("[data-add-policy-submit]").addEventListener("click", (event) => { const brandText = $("[data-add-policy-brand]").value.trim(); const brand = state.brands.find((item) => item._id === brandText.toUpperCase() || item.name.toLowerCase() === brandText.toLowerCase()); const months = Number($("[data-add-policy-months]").value); if (brand && months > 0) createCatalog("warranty-policies", { scope: "BRAND", brandId: brand._id, name: `Bảo hành ${brand.name} ${months} tháng`, warrantyMonths: months, conditions: $("[data-add-policy-note]").value.trim(), rejectionCases: "", distributor: brand.name, active: true }, "[data-add-policy-drawer]", event.currentTarget); else window.showToast("Vui lòng nhập đúng hãng đã có trong danh mục và thời hạn hợp lệ.", "error"); });
   }
@@ -874,9 +913,11 @@ export default function initialize() {
     $("[data-add-employee-submit]").addEventListener("click", (event) => createEmployee(event.currentTarget));
     $("[data-edit-roles-save]").addEventListener("click", (event) => saveRoles(event.currentTarget));
     bindClose("add-employee", "[data-add-employee-drawer]"); bindClose("edit-roles", "[data-edit-roles-modal]");
+    $("[data-edit-work-save]").addEventListener("click", (event) => saveWork(event.currentTarget));
+    bindClose("edit-work", "[data-edit-work-modal]");
     $("[data-emp-modal-close]").addEventListener("click", () => close("[data-emp-modal]"));
     // Esc đóng hộp thoại nằm trên cùng (hộp con như Sửa liên hệ/Gộp hồ sơ trước drawer chi tiết khách).
-    const ESCAPE_ORDER = ["[data-cust-contact-modal]", "[data-cust-merge-modal]", "[data-edit-roles-modal]", "[data-emp-modal]",
+    const ESCAPE_ORDER = ["[data-cust-contact-modal]", "[data-cust-merge-modal]", "[data-edit-roles-modal]", "[data-edit-work-modal]", "[data-emp-modal]",
       "[data-cust-drawer]", "[data-add-employee-drawer]", "[data-add-category-drawer]", "[data-add-brand-drawer]", "[data-add-sku-drawer]",
       "[data-add-service-drawer]", "[data-add-policy-drawer]"];
     document.addEventListener("keydown", (event) => {

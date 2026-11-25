@@ -140,6 +140,7 @@ public sealed class AssignmentService(
             var actor = actors.Current;
             await staff.RequireActiveWithRoleAsync(actor.EmployeeId, Role.DISPATCHER);
             var technician = await staff.RequireActiveWithRoleAsync(technicianId, Role.TECHNICIAN);
+            await RequireCapacityAsync(technician);
             var ticket = await views.RequireAsync(ticketCode);
             ticket.Assign(await codes.NextAsync(BusinessCodeType.Assignment), await codes.NextAsync(BusinessCodeType.RepairOrder), actor.EmployeeId!,
                 technicianId, priority, note, clock.GetUtcNow(), actor);
@@ -159,6 +160,7 @@ public sealed class AssignmentService(
             var actor = actors.Current;
             await staff.RequireActiveWithRoleAsync(actor.EmployeeId, Role.DISPATCHER);
             var technician = await staff.RequireActiveWithRoleAsync(technicianId, Role.TECHNICIAN);
+            await RequireCapacityAsync(technician);
             var ticket = await views.RequireAsync(ticketCode);
             var previous = ticket.Reassign(actor.EmployeeId!, technicianId, note, clock.GetUtcNow());
             await tickets.SaveAsync(ticket);
@@ -167,6 +169,20 @@ public sealed class AssignmentService(
             await notifications.ForAccountAsync(technician.AccountId, "TICKET_ASSIGNED", $"Bạn được giao phiếu {ticketCode}.", "/technician", ticketCode);
             return await views.ViewAsync(ticket, actor);
         });
+    }
+
+    // ponytail: đếm rồi mới giao, không khóa theo KTV; hai lượt phân công đồng thời có thể vượt 1 phiếu, cần khóa dòng NhanVien nếu điều đó quan trọng.
+    private async Task RequireCapacityAsync(StaffMember technician)
+    {
+        var now = clock.GetUtcNow();
+        var active = (await tickets.TechnicianLoadsAsync(now, now)).GetValueOrDefault(technician.Code, TechnicianLoad.None).Active;
+        RequireCapacity(active, technician.MaxActiveTickets);
+    }
+
+    /// <summary>KTV đã nhận đủ số phiếu tối đa (cùng cách đếm với màn tải công việc) thì không giao thêm.</summary>
+    public static void RequireCapacity(long active, int maxActiveTickets)
+    {
+        if (active >= maxActiveTickets) throw new DomainException(ErrorCode.TECHNICIAN_OVERLOADED, active, maxActiveTickets);
     }
 }
 

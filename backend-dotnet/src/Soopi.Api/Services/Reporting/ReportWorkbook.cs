@@ -215,7 +215,7 @@ public static partial class ReportWorkbook
 
     private static XElement Styles() => new(S + "styleSheet",
         new XElement(S + "numFmts", new XAttribute("count", 3),
-            NumberFormat(164, "#,##0.00 \"đ\""), NumberFormat(165, "0.0,,\" triệu ₫\""), NumberFormat(166, "0.0\" giờ\"")),
+            NumberFormat(164, "#,##0 \"đ\""), NumberFormat(165, "0.0,,\" triệu đ\""), NumberFormat(166, "0.0\" giờ\"")),
         new XElement(S + "fonts", new XAttribute("count", 8),
             Font(11, "29354A"), Font(11, "FFFFFF", true), Font(18, "FFFFFF", true), Font(12, "FFFFFF", true),
             Font(25, "29354A", true), Font(9, "62716C"), Font(12, "29354A", true), Font(12, "62716C")),

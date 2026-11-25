@@ -38,17 +38,19 @@ try {
 
     // Esc hủy, không gửi gì; focus trở lại nút Sửa giá.
     await panel.getByRole('button', { name: 'Sửa giá Màn hình thử' }).click();
-    const input = panel.getByRole('spinbutton', { name: 'Giá mới cho Màn hình thử (đồng)' });
-    assert.equal(await input.inputValue(), '1200000');
+    const input = panel.getByRole('textbox', { name: 'Giá mới cho Màn hình thử (đồng)' });
+    assert.equal(await input.inputValue(), '1.200.000');
     await input.fill('5');
     await input.press('Escape');
     assert.equal(puts.length, 0);
     assert.equal(await panel.getByRole('button', { name: 'Sửa giá Màn hình thử' }).evaluate(e => e === document.activeElement), true);
     assert.match(await panel.locator('[data-price-cell]').innerText(), /1\.200\.000/);
 
-    // Số âm bị chặn ở client.
+    // Ô tiền chỉ nhận chữ số và tự thêm dấu chấm; để trống thì bị chặn ở client.
     await panel.getByRole('button', { name: 'Sửa giá Màn hình thử' }).click();
-    await input.fill('-1');
+    await input.fill('-12a3456');
+    assert.equal(await input.inputValue(), '123.456');
+    await input.fill('');
     await input.press('Enter');
     assert.equal(puts.length, 0);
     assert.equal(await input.evaluate(e => e.validationMessage), 'Nhập số tiền từ 0 đ trở lên.');
@@ -78,7 +80,7 @@ try {
     await s.page.getByRole('tab', { name: /Giá dịch vụ/ }).click();
     const services$ = s.page.locator('#catalog-panel-services');
     await services$.getByRole('button', { name: 'Sửa giá Công sửa thử' }).click();
-    await services$.getByRole('spinbutton').fill('180000');
+    await services$.getByRole('textbox').fill('180000');
     await services$.getByRole('button', { name: 'Lưu' }).click();
     await services$.locator('[data-price-cell]').filter({ hasText: '180.000' }).waitFor();
     assert.deepEqual(puts.at(-1), { path: 'service-prices/DV-1', body: { price: 180000 } });

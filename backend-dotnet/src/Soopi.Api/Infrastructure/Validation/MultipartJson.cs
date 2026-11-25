@@ -15,7 +15,7 @@ public sealed class RequestValidationException(IReadOnlyList<FieldErrorView> fie
 }
 
 /// <summary>
-/// Như @Valid @RequestPart("data") của Spring: part "data" là JSON (Blob application/json từ web, hoặc trường văn bản từ app),
+/// Part "data" là JSON (Blob application/json từ web, hoặc trường văn bản từ app),
 /// tệp ở các part còn lại. Ràng buộc đặt trên thuộc tính (<c>[property: NotBlank]</c>) vì DTO này không qua model binding.
 /// </summary>
 public static class MultipartJson
@@ -75,7 +75,7 @@ public static class MultipartJson
         return content;
     }
 
-    /// <summary>Kiểm ràng buộc trên thuộc tính, đi sâu vào thuộc tính là record lồng (như @Valid lồng của Bean Validation).</summary>
+    /// <summary>Kiểm ràng buộc trên thuộc tính, đi sâu vào thuộc tính là record lồng.</summary>
     private static List<FieldErrorView> Validate(object value, string prefix)
     {
         var results = new List<ValidationResult>();

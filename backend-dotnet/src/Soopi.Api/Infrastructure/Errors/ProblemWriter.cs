@@ -7,7 +7,7 @@ namespace Soopi.Api.Infrastructure.Errors;
 
 public sealed record FieldErrorView(string Field, string Message);
 
-/// <summary>Lỗi RFC 9457 giống ApiErrorHandler của bản Java: type/title/status/detail/instance + code, correlationId, fieldErrors.</summary>
+/// <summary>Lỗi RFC 9457: type/title/status/detail/instance + code, correlationId, fieldErrors.</summary>
 public static class ProblemWriter
 {
     private const string ErrorBase = "https://longmanloc.vn/errors/";

@@ -1,6 +1,6 @@
 namespace Soopi.Api.Infrastructure.Security;
 
-/// <summary>Khóa cấu hình "Security" (bản Java: app.security.*).</summary>
+/// <summary>Khóa cấu hình "Security".</summary>
 public sealed class SecurityOptions
 {
     public string AllowedOrigins { get; set; } = "";

@@ -66,7 +66,7 @@ Không có EF migration hay tự tạo schema. Bản build React được phục
 | Lý do các lựa chọn đã chốt | [DECISIONS](../02-ky-thuat/DECISIONS.md) |
 | Tiến độ và bằng chứng tương đương | [PROGRESS](../handoff/PROGRESS.md), [MIGRATION_VERIFICATION](../handoff/MIGRATION_VERIFICATION.md) |
 | Chi tiết frontend và audit giao diện | [Frontend README](frontend-react/README.md), [UI_AUDIT](../06-design/UI_AUDIT.md) |
-| Chạy oracle/đối chiếu mà không ghi DB | [Verification README](../04-van-hanh/verification/README.md) |
+| Kiểm chứng mà không ghi DB | [Verification README](../04-van-hanh/verification/README.md) |
 
 ## Kiểm tra
 

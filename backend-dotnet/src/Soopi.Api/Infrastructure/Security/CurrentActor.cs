@@ -5,7 +5,7 @@ namespace Soopi.Api.Infrastructure.Security;
 
 /// <summary>
 /// Người dùng của request (tài khoản đăng nhập hoặc portal token), do JwtBearer dựng ở <see cref="AuthSetup"/>. Kiểm quyền
-/// ở tầng service như @PreAuthorize("hasAuthority('PERM_…')") của bản Java: thiếu quyền → 403 ACCESS_DENIED.
+/// ở tầng service: thiếu quyền → 403 ACCESS_DENIED.
 /// </summary>
 public sealed class CurrentActor(IHttpContextAccessor http)
 {

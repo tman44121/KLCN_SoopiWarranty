@@ -464,7 +464,7 @@ export default function initialize() {
       },
       reportedIssue: el.symptom.value.trim(),
       promisedReturnAt: el.promised.value ? businessInstant(el.promised.value).toISOString() : null,
-      estimatedCost: el.estimatedCost.value ? Number(el.estimatedCost.value) : null,
+      estimatedCost: el.estimatedCost.value ? fmt.moneyValue(el.estimatedCost) : null,
       slaLevel: el.sla.value,
     };
   }

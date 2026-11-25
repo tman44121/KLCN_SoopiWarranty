@@ -4,8 +4,8 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 namespace Soopi.Api.Data;
 
 /// <summary>
-/// SQL Server mặc định chờ khóa vô hạn; hết 10 s báo lỗi 1222 → TransactionRunner thử lại (bản Java đặt bằng
-/// connection-init-sql của Hikari). Gắn vào đầu mỗi lệnh thay vì một lượt riêng khi mở kết nối, để không tốn thêm một
+/// SQL Server mặc định chờ khóa vô hạn; hết 10 s báo lỗi 1222 → TransactionRunner thử lại.
+/// Gắn vào đầu mỗi lệnh thay vì một lượt riêng khi mở kết nối, để không tốn thêm một
 /// vòng mạng tới database ở xa.
 /// </summary>
 public sealed class LockTimeoutInterceptor : DbCommandInterceptor

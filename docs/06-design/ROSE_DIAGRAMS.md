@@ -230,3 +230,28 @@ Nguồn và cách chạy: [erd/README.md](rose/erd/README.md). Ảnh và DOT/SVG
 ở `D:\huit\khoaluan\doc\rose\erd_20261103`; không ghi đè bộ hình ngày 30/10.
 Báo cáo đầu ra: `BaoCao_KLCN_QuanLyTrungTamBaoHanhDienTu_CapNhatERD_20261103.docx`,
 dựa trên bản cập nhật kiểm kê cùng ngày. UML và mô hình Rose giữ nguyên.
+
+## 11. Bổ sung ngày 08/11/2026
+
+Sáu sơ đồ Rose mới (`NEW_20261108` trong `diagrams_klcn.py`): hoạt động và tuần tự cho cấu hình thời gian và bảo vệ,
+điều chỉnh giá trong danh mục, kiểm kê kho. Mô hình và ảnh lưu riêng ở `D:\huit\khoaluan\doc\rose\bo_sung_20261108`,
+không ghi đè `KLCN_SoopiWarranty.mdl` cũ.
+
+- `capture.OffscreenLarge` khôi phục Rose đang thu nhỏ thẳng ra vị trí ngoài màn hình rồi mới chụp (trước đó vùng vẽ chỉ cao
+  20 px và `capture_full` lỗi chia cho 0), chụp xong trả cửa sổ về trạng thái cũ.
+- `rosedraw.build_activity` nhận `object_w` theo từng sơ đồ; `AD_UC_CauHinhThoiGian` dùng lane 1900 và ô đối tượng 340 để tên
+  bảng `CauHinhThoiGian` nằm trên một dòng.
+- `update_report_1108.py` ghi báo cáo mới từ bản `HoanChinh_20261106` (chương 2 giữ nguyên): mục 3.3.22–3.3.23, sơ đồ kiểm kê ở
+  3.3.14.4, CSDL 56 bảng/135 CHECK, bảng cấu trúc `CauHinhThoiGian`, ảnh giao diện mới ở 4.2.2.2, số liệu kiểm thử chương 5,
+  kết luận. Sau đó cập nhật trường và mục lục bằng Word (`Fields.Update`, `TablesOfContents.Update`).
+
+```powershell
+$env:ROSETLB_DIR = '<thư mục chứa rosetlb.py>'
+python run_all.py D:\huit\khoaluan\doc\rose\bo_sung_20261108 AD_UC_CauHinhThoiGian SD_UC_CauHinhThoiGian AD_UC_SuaGiaDanhMuc SD_UC_SuaGiaDanhMuc AD_UC_KiemKe SD_UC_KiemKe
+$env:DOCLIB_DIR = '<thư mục chứa doclib.py>'
+python update_report_1108.py <HoanChinh_20261106.docx> <CapNhat_20261108.docx> D:\huit\khoaluan\doc\rose\bo_sung_20261108 <thư mục ảnh giao diện>
+```
+
+Ảnh giao diện chương 4 chụp từ web local (API dev, tài khoản demo trong TAI_KHOAN_DEMO.md) bằng `shots_admin_1108.mjs`, `shots_retake_1108.mjs` (Hình 4.13–4.17, 4.24–4.25, 4.31–4.32) và `shot_reviews_1108.mjs`; các script chỉ mở hộp thoại, không lưu dữ liệu.
+
+Sơ đồ use case tổng quát (Hình 3.1) chưa thêm ba use case mới vì hình này do nhóm tự bố trí trong Rose, không nằm trong pipeline.

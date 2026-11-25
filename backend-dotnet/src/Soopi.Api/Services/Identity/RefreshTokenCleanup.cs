@@ -3,7 +3,7 @@ using Soopi.Api.Data;
 
 namespace Soopi.Api.Services.Identity;
 
-/// <summary>Thay event ev_DonDepRefreshToken của bản MySQL: 02:00 giờ Việt Nam mỗi ngày xóa refresh token hết hạn quá 7 ngày.</summary>
+/// <summary>02:00 giờ Việt Nam mỗi ngày xóa refresh token hết hạn quá 7 ngày.</summary>
 public sealed class RefreshTokenCleanup(IServiceScopeFactory scopes, TimeProvider clock, ILogger<RefreshTokenCleanup> logger) : BackgroundService
 {
     private static readonly TimeSpan KeepAfterExpiry = TimeSpan.FromDays(7);

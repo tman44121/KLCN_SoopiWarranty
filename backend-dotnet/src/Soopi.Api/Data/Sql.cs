@@ -6,12 +6,12 @@ using Microsoft.EntityFrameworkCore.Storage;
 namespace Soopi.Api.Data;
 
 /// <summary>
-/// Tương đương JdbcTemplate: chạy T-SQL viết tay trên cùng kết nối và transaction của AppDbContext. Tham số theo vị trí
-/// dấu <c>?</c> (giữ nguyên câu SQL của bản Java); DateTimeOffset được ghi thành giờ Việt Nam (DbTime).
+/// Chạy T-SQL viết tay trên cùng kết nối và transaction của AppDbContext. Tham số theo vị trí dấu <c>?</c>;
+/// DateTimeOffset được ghi thành giờ Việt Nam (DbTime).
 /// </summary>
 public sealed class Sql(AppDbContext db)
 {
-    /// <summary>Đang trong transaction ghi: đọc chứng từ kèm khóa (UPDLOCK, HOLDLOCK) như PESSIMISTIC_WRITE của Java.</summary>
+    /// <summary>Đang trong transaction ghi: đọc chứng từ kèm khóa (UPDLOCK, HOLDLOCK).</summary>
     public bool InTransaction => db.Database.CurrentTransaction is not null;
 
     public string LockHint => InTransaction ? " WITH (UPDLOCK, HOLDLOCK)" : "";
@@ -45,7 +45,7 @@ public sealed class Sql(AppDbContext db)
     }
 
     /// <summary>
-    /// Nhiều câu SELECT trong một lượt tới DB (thay ConcurrentReads của Java): câu SQL dùng sẵn tên @p0, @p1… cho
+    /// Nhiều câu SELECT trong một lượt tới DB: câu SQL dùng sẵn tên @p0, @p1… cho
     /// <paramref name="args"/>; mỗi result set lần lượt đưa cho một <paramref name="readers"/>.
     /// </summary>
     public async Task ReadBatchAsync(string sql, IReadOnlyList<object?> args, params Action<DbDataReader>[] readers)

@@ -26,7 +26,7 @@ public static class ValidationProblems
         return new ObjectResult(problem) { StatusCode = 400, ContentTypes = { "application/problem+json" } };
     }
 
-    /// <summary>"Customer.NewCustomer.Phone" → "customer.newCustomer.phone", "Lines[0].Sku" → "lines[0].sku" như Spring.</summary>
+    /// <summary>"Customer.NewCustomer.Phone" → "customer.newCustomer.phone", "Lines[0].Sku" → "lines[0].sku".</summary>
     private static string FieldPath(string key) =>
         string.Join('.', key.Split('.').Select(segment => segment.Length == 0 ? segment : char.ToLowerInvariant(segment[0]) + segment[1..]));
 }

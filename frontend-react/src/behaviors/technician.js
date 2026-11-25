@@ -386,8 +386,8 @@ export default function initialize() {
                   </select></td>
                   <td><input type="text" data-q="description" value="${line.description}" placeholder="Mô tả hạng mục" aria-label="Nội dung" /></td>
                   <td><input type="number" min="1" data-q="quantity" value="${line.quantity}" aria-label="Số lượng" /></td>
-                  <td><input type="number" min="0" step="1000" data-q="unitPrice" value="${line.unitPrice}" aria-label="Đơn giá" /></td>
-                  <td><input type="number" min="0" step="1000" data-q="laborFee" value="${line.laborFee}" aria-label="Tiền công" /></td>
+                  <td><input type="text" inputmode="numeric" data-money data-q="unitPrice" value="${fmt.moneyText(line.unitPrice)}" aria-label="Đơn giá (đồng)" /></td>
+                  <td><input type="text" inputmode="numeric" data-money data-q="laborFee" value="${fmt.moneyText(line.laborFee)}" aria-label="Tiền công (đồng)" /></td>
                   <td><button type="button" class="item-row__remove" data-remove-line="${i}" aria-label="Xoá dòng">×</button></td>
                 </tr>`)}</tbody>
             </table>
@@ -698,7 +698,8 @@ export default function initialize() {
       const line = d.lines[Number(row.getAttribute("data-quote-line"))];
       row.querySelectorAll("[data-q]").forEach((input) => {
         input.addEventListener("input", () => {
-          line[input.getAttribute("data-q")] = input.value;
+          // Ô tiền lưu số (rỗng giữ "" = chưa nhập), ô khác lưu chuỗi.
+          line[input.getAttribute("data-q")] = input.hasAttribute("data-money") && input.value !== "" ? fmt.moneyValue(input) : input.value;
           refreshTotal();
         });
       });

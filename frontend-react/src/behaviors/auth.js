@@ -24,7 +24,7 @@ export default function initialize() {
 
   function loginHref() { return "/login"; }
 
-  /** Landing dạng gốc ("index.html", "pages/x.html") → đường dẫn đúng từ trang hiện tại. */
+  /** Landing ("index.html", "pages/x.html") → đường dẫn đúng từ trang hiện tại. */
   function resolveLanding(landing) { return internalRoute(landing) || "/login"; }
 
   function roleCodes(user) {

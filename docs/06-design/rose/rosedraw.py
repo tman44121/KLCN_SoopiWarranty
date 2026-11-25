@@ -95,7 +95,7 @@ def build_activity(cat, spec, classes=None):
             views[nid].Width = ACT_MIN_W  # wider node: Rose wraps the name instead of cutting it with "..."
         place(views[nid], lane, row, col)
     for ov, lane, row, col in obj_views:
-        ov.Width = OBJECT_W
+        ov.Width = spec.get('object_w', OBJECT_W)
         ov.XPosition = int(lw * lane + lw / 2 + col * (OBJECT_DX - (LANE_W - lw) / 2))
         ov.YPosition = TOP + row * ROW_H
     return d

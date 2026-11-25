@@ -33,9 +33,9 @@ và luồng ghi DB thật; chưa nghiệm thu toàn bộ nghiệp vụ. Tên Soo
 Bằng chứng lưu trong:
 
 - [Endpoint appendix](../02-ky-thuat/ENDPOINTS.md): toàn bộ 114 endpoint, controller Java/.NET.
-- [Kết quả đối chiếu](../../verification/results.json): route, quyền, lỗi, tham chiếu 47 bảng, SHA-256 WAR,
+- Kết quả đối chiếu `verification/results.json` (đã gỡ khỏi repo cùng script so sánh): route, quyền, lỗi, tham chiếu 47 bảng, SHA-256 WAR,
   44 so sánh HTTP thực tế, giữ raw diff và cờ `field_error_order_only`, đủ 114 API operation trong OpenAPI.
-- [Metadata DB đọc thực tế](../../verification/schema-dev.json): **47 bảng, 404 cột**; không chứa dữ liệu khách/tài khoản.
+- Metadata DB đọc thực tế `verification/schema-dev.json` (đã gỡ): **47 bảng, 404 cột**; không chứa dữ liệu khách/tài khoản.
 - [JSON Java](../../contract-snapshots/java.json), [JSON .NET](../../contract-snapshots/dotnet.json): **28 GET + 16 POST bị từ chối mỗi backend**,
   health/catalog, thiếu token, bearer sai/rỗng, sai method, URL không tồn tại và khác hoa thường.
   Không có access token thật; Correlation ID cố định `stage4-readonly`.

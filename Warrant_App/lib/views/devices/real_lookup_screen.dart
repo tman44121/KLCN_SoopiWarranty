@@ -8,6 +8,7 @@ import '../../models/portal_ticket_models.dart';
 import '../../services/i_api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../../widgets/soopi_ui.dart';
 
 /// YC/TN details require ownership; Serial/IMEI uses only the public summary.
 class RealLookupScreen extends StatefulWidget {
@@ -518,7 +519,7 @@ class _RealLookupScreenState extends State<RealLookupScreen> {
               ),
             ),
             Text(
-              '${quote.grandTotal} VNĐ',
+              soopiMoney(quote.grandTotal),
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,

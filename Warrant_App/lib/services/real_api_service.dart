@@ -181,13 +181,22 @@ class RealApiService implements IApiService {
         }
       }
     }
+    // Không đưa thông báo kỹ thuật của Dio (tiếng Anh) lên giao diện.
+    final status = e.response?.statusCode;
     final message =
         (e.response?.data is Map<String, dynamic>
             ? (e.response!.data as Map<String, dynamic>)['message'] as String?
             : null) ??
-        e.message ??
-        'Đã xảy ra lỗi không mong muốn.';
-    throw ApiException(message, statusCode: e.response?.statusCode);
+        switch (status) {
+          401 => 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn.',
+          403 => 'Bạn không có quyền thực hiện thao tác này.',
+          404 => 'Không tìm thấy dịch vụ hoặc dữ liệu yêu cầu.',
+          429 => 'Bạn thao tác quá nhanh. Vui lòng thử lại sau.',
+          final code? when code >= 500 =>
+            'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.',
+          _ => 'Đã xảy ra lỗi không mong muốn.',
+        };
+    throw ApiException(message, statusCode: status);
   }
 
   @override

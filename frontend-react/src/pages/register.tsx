@@ -30,7 +30,7 @@ function serverFieldErrors(error: { code?: string; detail?: string; message?: st
   return result;
 }
 
-/* Đăng ký tài khoản khách (giao diện web khách KLCN). SĐT là tên đăng nhập; backend xác thực email bằng OTP gửi qua email
+/* Đăng ký tài khoản khách. SĐT là tên đăng nhập; backend xác thực email bằng OTP gửi qua email
    (/auth/mobile/otp). Đăng ký xong đăng nhập phiên web (cookie refresh) rồi thu hồi refresh token kiểu mobile mà /register
    trả về. */
 export default function RegisterPage() {

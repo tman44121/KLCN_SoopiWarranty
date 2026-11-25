@@ -5,8 +5,8 @@ using Soopi.Api.Data.Entities;
 namespace Soopi.Api.Data;
 
 /// <summary>
-/// Map vào schema có sẵn db/sqlserver/01_schema.sql (không migration, không tạo/sửa bảng). Chỉ các bảng mà bản Java
-/// dùng JPA được khai báo entity; các bảng còn lại truy cập bằng <see cref="Sql"/>.
+/// Map vào schema có sẵn database/01_schema.sql (không migration, không tạo/sửa bảng). Bảng nghiệp vụ chính có entity;
+/// các bảng còn lại truy cập bằng <see cref="Sql"/>.
 /// </summary>
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
@@ -109,7 +109,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(p => p.Type).HasColumnName("LoaiThu");
             entity.Property(p => p.PaidAt).HasColumnName("NgayThu");
             entity.Property(p => p.PayerName).HasColumnName("NguoiNopTien");
-            // Payment.@PostLoad chỉ bỏ scale khi số tiền nguyên; giữ phần lẻ như dữ liệu Java.
+            // Số tiền nguyên bỏ phần thập phân; số lẻ giữ nguyên.
             entity.Property(p => p.Amount).HasColumnName("SoTienThu")
                 .HasConversion(value => value, value => decimal.Truncate(value) == value ? decimal.Round(value, 0) : value)
                 .HasPrecision(18, 2);

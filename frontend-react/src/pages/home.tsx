@@ -221,7 +221,7 @@ export default function HomePage() {
 
         <PublicReviewsPanel />
 
-        {/* NHÓM THIẾT BỊ (dải thương hiệu của bản cũ) */}
+        {/* NHÓM THIẾT BỊ */}
         {catalog.categories.length > 0 && (
           <section className="brands-ribbon-section" aria-labelledby="home-categories">
             <h2 className="brands-header-text" id="home-categories">Nhóm thiết bị được tiếp nhận bảo hành tại Soopi</h2>
@@ -383,7 +383,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* TRẠM DỊCH VỤ (thay địa chỉ/hotline cố định của bản cũ) */}
+        {/* TRẠM DỊCH VỤ */}
         {catalog.stations.length > 0 && (
           <section className="extend-features-section" id="tram-dich-vu">
             <div className="section-container">

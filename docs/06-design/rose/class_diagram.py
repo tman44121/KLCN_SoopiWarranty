@@ -1,8 +1,9 @@
 """Draw the analysis class diagram (report 3.4) in the open Rose model and capture it.
 
 Usage: python class_diagram.py <workdir>
-Adds category "LopPhanTich" with diagram "CD_LopPhanTich" to <workdir>/KLCN_SoopiWarranty.mdl (replacing an older one),
-saves the model and writes <workdir>/CD_LopPhanTich.png.
+Adds category "LopPhanTich" to <workdir>/KLCN_SoopiWarranty.mdl (replacing an older one) with two diagrams, so the
+text stays readable at 15 cm: CD_LopPhanTich_1 (tiếp nhận và xử lý) and CD_LopPhanTich_2 (báo giá, kho và bàn giao).
+Saves the model and writes <workdir>/CD_LopPhanTich_1.png and _2.png.
 """
 import os, sys, time
 import rosedraw as rd
@@ -55,8 +56,19 @@ ASSOCS = [  # (class A, multiplicity at A, class B, multiplicity at B)
     ('PhieuNhapKho', '0..n', 'LinhKien', '1..n'),
     ('NhaCungCap', '1', 'PhieuNhapKho', '0..n'),
 ]
-COL_W, ROW_H, X0, Y0 = 1000, 760, 450, 330
-NAME, CAT = 'CD_LopPhanTich', 'LopPhanTich'
+COL_W, ROW_H, X0, Y0 = 1450, 1000, 650, 450
+FONT = 18  # in khổ 15 cm vẫn đọc được (một hình 19 lớp cỡ 12 trước đây quá nhỏ)
+CAT = 'LopPhanTich'
+DIAGRAMS = {  # name: {class: (column, row)}
+    'CD_LopPhanTich_1': {'YeuCauBaoHanh': (0, 0), 'KhachHang': (1, 0), 'ThietBi': (2, 0),
+                         'NhanVien': (0, 1), 'PhieuTiepNhan': (1, 1), 'SanPham': (2, 1),
+                         'PhanCong': (0, 2), 'PhieuKiemTra': (1, 2), 'ChinhSachBaoHanh': (2, 2),
+                         'PhieuSuaChua': (0, 3), 'KetQuaSuaChua': (1, 3)},
+    'CD_LopPhanTich_2': {'HoaDon_PhieuThu': (0, 0), 'PhieuTiepNhan': (1, 0), 'PhieuBanGiao': (2, 0),
+                         'PhieuXuatKho': (0, 1), 'PhieuBaoGia': (1, 1),
+                         'LinhKien': (0, 2), 'ChiTietBaoGia': (1, 2),
+                         'PhieuNhapKho': (0, 3), 'NhaCungCap': (1, 3)},
+}
 
 
 def main(workdir):
@@ -80,45 +92,53 @@ def main(workdir):
         for a, t in attrs:
             c.AddAttribute(a, t, '')
         cls[name] = c
-    d = cat.AddClassDiagram(NAME)
-    d.Activate()
-    for c in cls.values():
-        d.AddClass(c)
-    views = {name: d.GetClassView(c) for name, c in cls.items()}
+    assocs = []
     for a, ma, b, mb in ASSOCS:
         assoc = cls[a].AddAssociation('', cls[b].GetQualifiedName())  # sequence diagrams reuse these class names
         for role, mult in ((assoc.GetCorrespondingRole(cls[a]), ma), (assoc.GetOtherRole(cls[a]), mb)):
             role.Cardinality = mult
             role.Navigable = False  # analysis level: plain association line
-        d.AddAssociation(assoc)
-    for name, (col, row, _) in CLASSES.items():
-        v = views[name]
-        v.StereotypeDisplay = 1  # label: <<entity>> text, keeps the attribute compartment
-        v.Font.Size = 12  # the 19-class diagram is scaled down to the page width
-        v.XPosition = X0 + col * COL_W
-        v.YPosition = int(Y0 + row * ROW_H)
-    d.AutosizeAll()
+        assocs.append((a, b, assoc))
+    for name, layout in DIAGRAMS.items():
+        d = cat.AddClassDiagram(name)
+        d.Activate()
+        for c in layout:
+            d.AddClass(cls[c])
+        for a, b, assoc in assocs:
+            if a in layout and b in layout:
+                d.AddAssociation(assoc)
+        for c, (col, row) in layout.items():
+            v = d.GetClassView(cls[c])
+            v.StereotypeDisplay = 1  # label: <<entity>> text, keeps the attribute compartment
+            v.SuppressOperations = True  # analysis classes have no operations: no empty compartment
+            rd.rosetlb.IRoseView_Font(v.Font._oleobj_).Size = FONT  # v.Font.Size is ignored through late binding
+            v.XPosition = X0 + col * COL_W
+            v.YPosition = int(Y0 + row * ROW_H)
+        d.AutosizeAll()
     m.Save()
-    # the API zoom setter is ignored and Rose locks the open .mdl: write zoom 150 into a copy, open the copy,
+    # the API zoom setter is ignored and Rose locks the open .mdl: write zoom into a copy, open the copy,
     # then save it back over the model
     text = open(model_path, encoding='latin-1').read()
-    k = text.index('(object ClassDiagram "%s"' % NAME)
-    z = text.index('zoom', k)
-    end = text.index('\n', z)
-    text = text[:z] + 'zoom       \t%d' % rd.ZOOM + text[end:]
+    for name in DIAGRAMS:
+        k = text.index('(object ClassDiagram "%s"' % name)
+        z = text.index('zoom', k)
+        end = text.index(chr(10), z)
+        text = text[:z] + 'zoom       ' + chr(9) + '%d' % rd.ZOOM + text[end:]
     zoomed = os.path.join(workdir, 'KLCN_SoopiWarranty_cd.mdl')
     open(zoomed, 'w', encoding='latin-1').write(text)
     r.OpenModel(zoomed)
     time.sleep(1)
     m = r.CurrentModel
-    d = next(m.RootCategory.Categories.GetAt(i) for i in range(1, m.RootCategory.Categories.Count + 1)
-             if m.RootCategory.Categories.GetAt(i).Name == CAT).ClassDiagrams.GetAt(1)
+    cat = next(m.RootCategory.Categories.GetAt(i) for i in range(1, m.RootCategory.Categories.Count + 1)
+               if m.RootCategory.Categories.GetAt(i).Name == CAT)
     with capture.OffscreenLarge():
-        png = os.path.join(workdir, NAME + '.png')
-        capture.capture_full(d, png)
-        capture.crop_content(png)
+        for i in range(1, cat.ClassDiagrams.Count + 1):
+            d = cat.ClassDiagrams.GetAt(i)
+            png = os.path.join(workdir, d.Name + '.png')
+            capture.capture_full(d, png)
+            capture.crop_content(png)
+            print('ok', png)
     m.SaveAs(model_path)
-    print('ok', png)
 
 
 if __name__ == '__main__':

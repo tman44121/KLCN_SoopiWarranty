@@ -7,7 +7,7 @@ namespace Soopi.Api.Data;
 /// <summary>
 /// Chạy một use case trong một transaction READ COMMITTED (database bật READ_COMMITTED_SNAPSHOT). Xung đột phiên bản
 /// (optimistic lock) và deadlock/lock timeout được thử lại tối đa 3 lần rồi mới báo CONCURRENT_MODIFICATION. Gọi lồng
-/// thì tham gia transaction bên ngoài (như PROPAGATION_REQUIRED của Spring). Việc đăng ký bằng <see cref="AfterCommit"/>
+/// thì tham gia transaction bên ngoài. Việc đăng ký bằng <see cref="AfterCommit"/>
 /// chỉ chạy sau khi commit.
 /// </summary>
 public sealed class TransactionRunner(AppDbContext db)
