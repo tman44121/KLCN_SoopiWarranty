@@ -5184,10 +5184,6 @@ a.method-card:hover {
   font-size: 20px;
   color: var(--kh-forest);
   font-weight: 900;
-  font-family: var(--kh-font-mono, monospace);
-}
-
-.quote-grand-amount {
   white-space: nowrap;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
