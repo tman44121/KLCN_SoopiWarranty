@@ -581,6 +581,74 @@ def lanes_w(spec, w, branch_dx=250):
     return spec
 
 
+# Bổ sung 08/11/2026: các use case mới chưa có sơ đồ trong báo cáo (cấu hình thời gian và bảo vệ, sửa giá danh mục, kiểm kê kho).
+NEW_20261108 = [
+    ('UC_CauHinhThoiGian', 'Cấu hình thời gian và bảo vệ hệ thống',
+     lanes_w(branch_flow('AD_UC_CauHinhThoiGian', '', ['QuanTriVien', 'HeThong'], 0,
+                 [('Mo Cau hinh thoi gian', 0), ('Sua SLA, gio lam viec, muc bao ve', 0), ('Bam Luu cau hinh', 0)],
+                 'Kiem tra gioi han, thu tu SLA va han phien', ('Bao loi, giu du lieu da nhap', 1),
+                 [('Luu CauHinhThoiGian, ghi nhat ky', 1), ('Xoa bo nho dem cau hinh', 1), ('Thong bao da luu', 0)],
+                 objects=[('CauHinhThoiGian', 1, 6, 1, 'g0')], bad_back='b1'), 1900, 280),  # lane và ô đối tượng rộng hơn cho tên bảng dài
+     seq('SD_UC_CauHinhThoiGian', '', [('QuanTriVien', A), ('UI_QuanTri', B), ('TimeSettingsController', C),
+                                       ('CauHinhThoiGian', E), ('NhatKyThaoTac', E)],
+         [('QuanTriVien', 'UI_QuanTri', 'Mo Cau hinh thoi gian', 0),
+          ('UI_QuanTri', 'TimeSettingsController', 'LayCauHinhQuanTri()', 0),
+          ('TimeSettingsController', 'CauHinhThoiGian', 'DocCauHinh(Id = 1)', 0),
+          ('CauHinhThoiGian', 'TimeSettingsController', 'SLA, gio lam viec, bao ve', R),
+          ('TimeSettingsController', 'UI_QuanTri', 'Cau hinh hien tai', R),
+          ('QuanTriVien', 'UI_QuanTri', 'Sua gia tri, bam Luu', 0),
+          ('UI_QuanTri', 'TimeSettingsController', 'CapNhatCauHinh(duLieu)', 0),
+          ('TimeSettingsController', 'TimeSettingsController', 'KiemTraGioiHan()', 0),
+          ('TimeSettingsController', 'CauHinhThoiGian', 'MERGE(Id = 1)', 0),
+          ('TimeSettingsController', 'NhatKyThaoTac', 'GhiNhatKy(TIME_SETTINGS_UPDATED)', 0),
+          ('TimeSettingsController', 'TimeSettingsController', 'XoaBoNhoDem()', 0),
+          ('TimeSettingsController', 'UI_QuanTri', 'Cau hinh da luu', R),
+          ('UI_QuanTri', 'QuanTriVien', 'Thong bao da luu', R)])),
+    ('UC_SuaGiaDanhMuc', 'Điều chỉnh giá trong danh mục',
+     branch_flow('AD_UC_SuaGiaDanhMuc', '', ['QuanTriVien', 'HeThong'], 0,
+                 [('Mo tab Linh kien hoac Dich vu', 0), ('Bam Sua gia tren dong', 0), ('Nhap gia moi, nhan Enter', 0)],
+                 'Kiem tra so tien khong am va quyen', ('Bao loi, giu o nhap', 1),
+                 [('Cap nhat gia danh muc, ghi nhat ky', 1), ('Hien thi gia moi tren bang', 0)],
+                 objects=[('LinhKien', 1, 6, 1, 'g0')], bad_back='b2'),
+     seq('SD_UC_SuaGiaDanhMuc', '', [('QuanTriVien', A), ('UI_QuanTri', B), ('CatalogController', C), ('LinhKien', E),
+                                     ('NhatKyThaoTac', E)],
+         [('QuanTriVien', 'UI_QuanTri', 'Bam Sua gia, nhap gia moi', 0),
+          ('UI_QuanTri', 'CatalogController', 'CapNhatGia(sku, giaTinhKhach)', 0),
+          ('CatalogController', 'LinhKien', 'TimTheoSKU(sku)', 0),
+          ('LinhKien', 'CatalogController', 'giaCu', R),
+          ('CatalogController', 'LinhKien', 'CapNhat(giaTinhKhach)', 0),
+          ('CatalogController', 'NhatKyThaoTac', 'GhiNhatKy(CATALOG_UPDATED, giaCu, giaMoi)', 0),
+          ('CatalogController', 'UI_QuanTri', 'Gia moi', R),
+          ('UI_QuanTri', 'QuanTriVien', 'Hien thi gia moi', R)])),
+    ('UC_KiemKe', 'Kiểm kê kho',
+     branch_flow('AD_UC_KiemKe', '', ['ThuKho', 'HeThong'], 0,
+                 [('Tai danh sach theo nhom hoac ke', 0), ('Nhap so dem, ly do neu lech', 0), ('Bam Lap phieu kiem ke', 0)],
+                 'Kiem tra so dem, ma ke, dong trung, ly do', ('Bao loi, yeu cau sua', 1),
+                 [('Luu phieu PENDING kem ton he thong', 1), ('Doi chieu chi tiet, bam Duyet', 0),
+                  ('Dieu chinh ton theo chenh lech', 1)],
+                 objects=[('PhieuKiemKe', 1, 6, 1, 'g0')], bad_back='b1'),
+     seq('SD_UC_KiemKe', '', [('ThuKho', A), ('UI_KhoVatTu', B), ('InventoryController', C), ('TonKhoTheoKe', E),
+                              ('PhieuKiemKe', E), ('ChiTietKiemKe', E)],
+         [('ThuKho', 'UI_KhoVatTu', 'Chon nhom hoac ke can kiem', 0),
+          ('UI_KhoVatTu', 'InventoryController', 'LayBangKiemKe(nhom, ke)', 0),
+          ('InventoryController', 'TonKhoTheoKe', 'LayTonTheoKe()', 0),
+          ('TonKhoTheoKe', 'InventoryController', 'dsTonHeThong', R),
+          ('InventoryController', 'UI_KhoVatTu', 'Bang kiem ke', R),
+          ('ThuKho', 'UI_KhoVatTu', 'Nhap so dem, ly do chenh lech', 0),
+          ('UI_KhoVatTu', 'InventoryController', 'LapPhieuKiemKe(dsDong)', 0),
+          ('InventoryController', 'PhieuKiemKe', 'Them(phieu, PENDING)', 0),
+          ('InventoryController', 'ChiTietKiemKe', 'Them(soHeThong, soThucTe)', 0),
+          ('InventoryController', 'UI_KhoVatTu', 'Ma phieu KK', R),
+          ('ThuKho', 'UI_KhoVatTu', 'Bam Duyet phieu', 0),
+          ('UI_KhoVatTu', 'InventoryController', 'DuyetKiemKe(maPhieu)', 0),
+          ('InventoryController', 'TonKhoTheoKe', 'CongChenhLech(thucTe, heThong)', 0),
+          ('InventoryController', 'PhieuKiemKe', 'CapNhat(COMPLETED)', 0),
+          ('InventoryController', 'UI_KhoVatTu', 'Da dieu chinh ton', R),
+          ('UI_KhoVatTu', 'ThuKho', 'Hien thi ket qua', R)])),
+]
+NEW_20261108[0][2]['object_w'] = 340  # ô CauHinhThoiGian đủ rộng để tên bảng nằm trên một dòng
+
+
 # Business activity diagrams of chapter 2 (SuonWord 2.4): every action sits in the lane of the person who does it.
 CH2_ACT = [
     lanes_w(act('AD_2_2_2_1', 'Sơ đồ hoạt động quy trình Yêu cầu và Tiếp nhận bảo hành',
@@ -723,6 +791,6 @@ CH2_ACT = [
 
 def all_specs():
     specs = list(CH2) + CH2_ACT
-    for _, _, ad, sd in F + EXTRA:
+    for _, _, ad, sd in F + EXTRA + NEW_20261108:
         specs += [ad, sd]
     return specs
