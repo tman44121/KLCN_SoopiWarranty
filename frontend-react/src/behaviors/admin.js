@@ -74,14 +74,16 @@ export default function initialize() {
       ${kv("Trạng thái", fmt.badgeOf(L.ACCOUNT_STATUS, employee.accountStatus))}
       ${kv("Số điện thoại", html`<span class="mono">${employee.phone}</span>`)}
       ${kv("Lần đăng nhập gần nhất", employee.lastLoginAt ? fmt.dateTime(employee.lastLoginAt) : "—")}
+      ${isTechnician(employee) ? html`${kv("Số phiếu tối đa", `${employee.maxActiveTickets} phiếu`)}${kv("Có mặt tại trạm", employee.onSite ? "Có" : "Không")}` : ""}
     </div>`;
     $("[data-emp-modal-actions]").innerHTML = !canManageEmployee(employee)
       ? html`<p class="cell-muted">Chỉ quản trị gốc mới được thay đổi vai trò, khóa/mở khóa hoặc đặt lại mật khẩu của quản trị viên.</p>`
       : html`
       <button type="button" class="btn btn--secondary" data-emp-action="roles">Sửa vai trò</button>
+      ${isTechnician(employee) ? html`<button type="button" class="btn btn--secondary" data-emp-action="work">Sửa phân công</button>` : ""}
       <button type="button" class="btn btn--secondary" data-emp-action="reset">Đặt lại mật khẩu</button>
       <button type="button" class="btn ${locked ? "btn--primary" : "btn--destructive"}" data-emp-action="lock">${locked ? "Mở khóa tài khoản" : "Khóa tài khoản"}</button>`;
-    const actions = { roles: () => editRoles(code), reset: () => resetPassword(code), lock: () => toggleLock(code) };
+    const actions = { roles: () => editRoles(code), work: () => editWork(code), reset: () => resetPassword(code), lock: () => toggleLock(code) };
     $("[data-emp-modal-actions]").querySelectorAll("[data-emp-action]").forEach((button) => button.addEventListener("click", () => {
       close("[data-emp-modal]");
       actions[button.dataset.empAction]();
@@ -106,6 +108,41 @@ export default function initialize() {
       await ui.busy(button, () => api.admin.changeRoles(editingEmployee.employeeId, selected));
       close("[data-edit-roles-modal]");
       window.showToast("Đã cập nhật vai trò.", "success");
+      loadEmployees();
+    } catch (error) { ui.showError(error); }
+  }
+
+  const isTechnician = (employee) => employee.roles.some((role) => role.code === "TECHNICIAN");
+
+  /** Số phiếu tối đa hợp lệ (số nguyên 1–30, khớp kiểm tra ở API) hoặc null. */
+  function ticketLimit(value) {
+    const number = Number(value);
+    return Number.isInteger(number) && number >= 1 && number <= 30 ? number : null;
+  }
+
+  function editWork(code) {
+    editingEmployee = state.employees.find((employee) => employee.employeeId === code);
+    if (!canManageEmployee(editingEmployee)) return window.showToast("Chỉ quản trị gốc mới được thay đổi tài khoản quản trị.", "error");
+    $("[data-edit-work-subtitle]").textContent = `${editingEmployee.fullName} — ${code}`;
+    $("[data-edit-work-max]").value = editingEmployee.maxActiveTickets;
+    $("[data-edit-work-onsite]").checked = editingEmployee.onSite;
+    showWorkError(false);
+    open("[data-edit-work-modal]");
+  }
+
+  function showWorkError(visible) {
+    $("[data-edit-work-max-error]").hidden = !visible;
+    $("[data-edit-work-max]").toggleAttribute("aria-invalid", visible);
+  }
+
+  async function saveWork(button) {
+    const maxActiveTickets = ticketLimit($("[data-edit-work-max]").value);
+    showWorkError(maxActiveTickets === null);
+    if (maxActiveTickets === null) return $("[data-edit-work-max]").focus();
+    try {
+      await ui.busy(button, () => api.admin.updateEmployee(editingEmployee.employeeId, { maxActiveTickets, onSite: $("[data-edit-work-onsite]").checked }));
+      close("[data-edit-work-modal]");
+      window.showToast(`Đã cập nhật phân công của ${editingEmployee.fullName}.`, "success");
       loadEmployees();
     } catch (error) { ui.showError(error); }
   }
@@ -351,9 +388,11 @@ export default function initialize() {
     const username = $("[data-add-emp-username]").value.trim();
     const phone = $("[data-add-emp-phone]").value.trim();
     const selected = checked($("[data-add-emp-roles]"));
+    const maxActiveTickets = ticketLimit($("[data-add-emp-max]").value);
     if (!fullName || !username || !phone || !selected.length) return window.showToast("Vui lòng nhập đủ họ tên, tên đăng nhập, số điện thoại và vai trò.", "error");
+    if (maxActiveTickets === null) return window.showToast("Số phiếu tối đa phải từ 1 đến 30.", "error");
     try {
-      const result = await ui.busy(button, () => api.admin.createEmployee({ fullName, phone, email: null, specialty: null, skills: [], maxActiveTickets: 10, username, roles: selected }));
+      const result = await ui.busy(button, () => api.admin.createEmployee({ fullName, phone, email: null, specialty: null, skills: [], maxActiveTickets, username, roles: selected }));
       close("[data-add-employee-drawer]");
       window.showToast(`Đã tạo ${result.employee.employeeId}. Mật khẩu tạm thời: ${result.temporaryPassword}`, "success");
       loadEmployees();
@@ -874,9 +913,11 @@ export default function initialize() {
     $("[data-add-employee-submit]").addEventListener("click", (event) => createEmployee(event.currentTarget));
     $("[data-edit-roles-save]").addEventListener("click", (event) => saveRoles(event.currentTarget));
     bindClose("add-employee", "[data-add-employee-drawer]"); bindClose("edit-roles", "[data-edit-roles-modal]");
+    $("[data-edit-work-save]").addEventListener("click", (event) => saveWork(event.currentTarget));
+    bindClose("edit-work", "[data-edit-work-modal]");
     $("[data-emp-modal-close]").addEventListener("click", () => close("[data-emp-modal]"));
     // Esc đóng hộp thoại nằm trên cùng (hộp con như Sửa liên hệ/Gộp hồ sơ trước drawer chi tiết khách).
-    const ESCAPE_ORDER = ["[data-cust-contact-modal]", "[data-cust-merge-modal]", "[data-edit-roles-modal]", "[data-emp-modal]",
+    const ESCAPE_ORDER = ["[data-cust-contact-modal]", "[data-cust-merge-modal]", "[data-edit-roles-modal]", "[data-edit-work-modal]", "[data-emp-modal]",
       "[data-cust-drawer]", "[data-add-employee-drawer]", "[data-add-category-drawer]", "[data-add-brand-drawer]", "[data-add-sku-drawer]",
       "[data-add-service-drawer]", "[data-add-policy-drawer]"];
     document.addEventListener("keydown", (event) => {

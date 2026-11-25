@@ -710,6 +710,15 @@ export default function AdminPage() {
             </span>
           </div>
           <div className="form-field">
+            <label htmlFor="add-emp-max">
+              {"Số phiếu tối đa"}
+            </label>
+            <input type="number" id="add-emp-max" data-add-emp-max="" min="1" max="30" step="1" defaultValue="10" inputMode="numeric" />
+            <p className="cell-muted cell-muted--sm">
+              {"Số phiếu kỹ thuật viên xử lý cùng lúc (1–30); chỉ dùng khi nhân viên có vai trò Kỹ thuật viên."}
+            </p>
+          </div>
+          <div className="form-field">
             <label>
               {"Vai trò"}
               <span className="required-mark">
@@ -904,6 +913,57 @@ export default function AdminPage() {
           </button>
           <button type="button" className="btn btn--primary" data-edit-roles-save="">
             {"Cập nhật vai trò"}
+          </button>
+        </div>
+      </div>
+    </div>
+    <div className="modal-overlay" data-edit-work-modal="" hidden={true} role="dialog" aria-modal="true" aria-labelledby="edit-work-title">
+      <div className="modal">
+        <div className="modal__header">
+          <div>
+            <div className="modal__title" id="edit-work-title">
+              {"Sửa phân công"}
+            </div>
+            <div className="modal__subtitle" data-edit-work-subtitle="">
+              {"—"}
+            </div>
+          </div>
+          <button type="button" className="modal__close" data-edit-work-close="" aria-label="Đóng">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M5 5l10 10M15 5L5 15">
+              </path>
+            </svg>
+          </button>
+        </div>
+        <div className="modal__body">
+          <div className="form-field">
+            <label htmlFor="edit-work-max">
+              {"Số phiếu tối đa"}
+              <span className="required-mark">
+                {"*"}
+              </span>
+            </label>
+            <input type="number" id="edit-work-max" data-edit-work-max="" min="1" max="30" step="1" inputMode="numeric" aria-describedby="edit-work-max-hint" />
+            <span className="form-field__error" data-edit-work-max-error="" hidden={true}>
+              {"Số phiếu tối đa phải từ 1 đến 30."}
+            </span>
+            <p className="cell-muted cell-muted--sm" id="edit-work-max-hint">
+              {"Số phiếu kỹ thuật viên xử lý cùng lúc (1–30). Hạ thấp hơn số phiếu đang làm thì các phiếu đó giữ nguyên, nhưng kỹ thuật viên hiện \"Quá tải\" và không được giao thêm."}
+            </p>
+          </div>
+          <div className="checkbox-row">
+            <input type="checkbox" id="edit-work-onsite" data-edit-work-onsite="" />
+            <label htmlFor="edit-work-onsite">
+              {"Có mặt tại trạm"}
+            </label>
+          </div>
+        </div>
+        <div className="modal__footer">
+          <button type="button" className="btn btn--secondary" data-edit-work-cancel="">
+            {"Hủy"}
+          </button>
+          <button type="button" className="btn btn--primary" data-edit-work-save="">
+            {"Lưu phân công"}
           </button>
         </div>
       </div>

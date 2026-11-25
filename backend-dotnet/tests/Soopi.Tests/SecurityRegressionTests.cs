@@ -169,6 +169,67 @@ public class SecurityRegressionTests
         Assert.Contains(connection.Commands, c => c.Sql.Contains("UPDATE") && c.Sql.Contains("[RefreshToken]") && c.InTransaction);
         Assert.Equal(["commit"], connection.Transactions);
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(31)]
+    public void TicketLimit_AcceptsOnlyOneToThirty(int value)
+    {
+        Assert.Equal(ErrorCode.VALIDATION_FAILED, Assert.Throws<DomainException>(() => EmployeeAdminService.TicketLimit(value)).Code);
+        Assert.Equal(1, EmployeeAdminService.TicketLimit(1));
+        Assert.Equal(30, EmployeeAdminService.TicketLimit(30));
+    }
+
+    [Fact]
+    public async Task EmployeeUpdate_SavesTicketLimitAndOnSiteAndAuditsBothValues()
+    {
+        var audits = new List<string?>();
+        using var connection = new RecordingConnection(sql =>
+        {
+            if (sql.Contains("[TaiKhoan_VaiTro]")) return Table(("MaTaiKhoan", 1L), ("MaVaiTro", "TECHNICIAN"), ("Parent", 1L));
+            if (sql.Contains("SELECT a.*")) return AccountRow();
+            if (sql.Contains("FROM NhanVien")) return Table(("MaNV", "NV-1"), ("HoTen", "Staff"), ("SDT", "0901234567"), ("Email", null),
+                ("ChuyenMon", null), ("KyNang", "[]"), ("SoPhieuToiDa", 10), ("CoMatTaiTram", true), ("TrangThaiLamViec", "ACTIVE"),
+                ("MaTram", "HCM"), ("MaTaiKhoan", 1L));
+            return Table(("Result", 1));
+        })
+        {
+            Executing = command =>
+            {
+                if (command.CommandText.Contains("INSERT INTO NhatKyThaoTac"))
+                    audits.AddRange(command.Parameters.Cast<System.Data.Common.DbParameter>().Select(p => p.Value as string));
+            },
+        };
+        using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlServer(connection).Options);
+        var sql = new Sql(db); var accounts = new AccountStore(db);
+        var service = new EmployeeAdminService(db, new EmployeeRecordStore(sql), accounts, new AccountPolicy(accounts),
+            new SecurityVersionCache(new MemoryCache(new MemoryCacheOptions()), null!), null!, Actors(Role.ADMIN), new TransactionRunner(db),
+            new AuditService(sql, TimeProvider.System), Options.Create(new SecurityOptions()), TimeProvider.System);
+
+        var result = await service.UpdateAsync("NV-1", new Soopi.Api.DTOs.Identity.EmployeeUpdateRequest(null, null, null, null, null, 15, false, null));
+
+        Assert.Equal(15, result.MaxActiveTickets);
+        Assert.False(result.OnSite);
+        Assert.Contains(connection.Commands, c => c.Sql.Contains("SoPhieuToiDa") && c.InTransaction);
+        Assert.Contains(audits, value => value?.Contains("Tối đa 10 phiếu — Có mặt tại trạm") == true);
+        Assert.Contains(audits, value => value?.Contains("Tối đa 15 phiếu — Không có mặt tại trạm") == true);
+        var tooMany = new Soopi.Api.DTOs.Identity.EmployeeUpdateRequest(null, null, null, null, null, 31, null, null);
+        Assert.Equal(ErrorCode.VALIDATION_FAILED, (await Assert.ThrowsAsync<DomainException>(() => service.UpdateAsync("NV-1", tooMany))).Code);
+    }
+
+    [Theory]
+    [InlineData(9, 10, false)]
+    [InlineData(10, 10, true)]
+    [InlineData(15, 10, true)]
+    public void Assignment_RejectsTechnicianAtOrOverTicketLimit(long active, int max, bool rejected)
+    {
+        var error = Record.Exception(() => Soopi.Api.Services.Tickets.AssignmentService.RequireCapacity(active, max));
+        if (!rejected) { Assert.Null(error); return; }
+        var domain = Assert.IsType<DomainException>(error);
+        Assert.Equal(ErrorCode.TECHNICIAN_OVERLOADED, domain.Code);
+        Assert.Equal(new object?[] { active, max }, domain.Arguments);
+    }
+
     [Fact]
     public void AccountUpdates_CompareOriginalSecurityVersion()
     {

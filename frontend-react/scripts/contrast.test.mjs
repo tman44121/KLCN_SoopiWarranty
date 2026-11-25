@@ -95,6 +95,7 @@ test('muted text never sits on a tinted background in the same rule', () => {
 
 test('status badges differ by icon, not colour alone', () => {
   globalThis.window = globalThis;
+  globalThis.document ??= { addEventListener() {} }; // labels.js gắn bộ định dạng ô tiền vào document; Node không có DOM.
   initializeHtml(globalThis);
   initializeLabels();
   const { badge } = globalThis.LML_FMT;
