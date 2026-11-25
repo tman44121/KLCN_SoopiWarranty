@@ -421,13 +421,6 @@ for d in rnd.sample(candidates[:args.tickets], k=args.tickets // 12):
     if old > START - timedelta(days=60):
         plan.append((d, old.replace(hour=rnd.randint(8, 16))))
 plan.sort(key=lambda p: p[1])
-diagnosis_cases = {}
-if args.workflow_cases:
-    for d, t in plan:
-        if d["expires"] >= t.date() and t < NOW - timedelta(days=7) and id(d) not in diagnosis_cases and t == max(pt for pd, pt in plan if pd is d):
-            diagnosis_cases[id(d)] = len(diagnosis_cases) == 0
-            if len(diagnosis_cases) == 2:
-                break
 # Ngày kích hoạt bảo hành phải trước lần nhận máy đầu tiên
 first_intake = {}
 for d, t in plan:
@@ -437,6 +430,14 @@ for d in devices:
     if ft and d["activated"] > ft.date() - timedelta(days=7):
         d["activated"] = ft.date() - timedelta(days=rnd.randint(15, 700))
         d["expires"] = add_months(d["activated"], d["months"])
+# Chọn sau khi chỉnh ngày kích hoạt: ca "miễn phí" phải còn hạn bảo hành đúng lúc nhận máy.
+diagnosis_cases = {}
+if args.workflow_cases:
+    for d, t in plan:
+        if d["expires"] >= t.date() and t < NOW - timedelta(days=7) and id(d) not in diagnosis_cases and t == max(pt for pd, pt in plan if pd is d):
+            diagnosis_cases[id(d)] = len(diagnosis_cases) == 0
+            if len(diagnosis_cases) == 2:
+                break
 
 tickets = []
 history, assignments, reassign, inspections, quotes, quote_lines = [], [], [], [], [], []
@@ -466,7 +467,7 @@ for d, t0 in plan:
     free = in_warranty and rnd.random() < 0.85
     forced_diagnosis = args.workflow_cases and is_last and id(d) in diagnosis_cases
     if forced_diagnosis:
-        free = diagnosis_cases[id(d)]
+        free = diagnosis_cases[id(d)] and in_warranty
     water = in_warranty and not free and rnd.random() < 0.6
     part_codes = parts_by_type[d["type"]]
     part = part_codes[fault[3]] if fault[3] is not None else None
@@ -597,7 +598,10 @@ for d, t0 in plan:
             reason = f"Thiết bị đã hết hạn bảo hành từ {d['expires'].isoformat()}."
         pkt = {"code": None, "t": tdg, "ticket": tk, "tech": tech, "findings": fault[1], "checklist": checklist,
                "water": 1 if water else 0, "class": "FREE_WARRANTY" if free else "OUT_OF_WARRANTY", "reason": reason,
-               "fix": fault[2]}
+               "fix": fault[2],
+               # Phân loại khác lúc nhận máy (còn bảo hành mà tính phí) bắt buộc có ghi chú phân loại lại.
+               "reclass": f"Phân loại lại so với lúc nhận máy: {reason}" if in_warranty and not free else None}
+        assert not free or in_warranty, f"{tk['t0']}: chẩn đoán miễn phí cho máy hết bảo hành"
         inspections.append(pkt)
         log(tdg, (tech, STAFF[tech][0], "TECHNICIAN"), "INSPECTION_RECORDED", "Lưu kết quả kiểm tra", "TICKET", tk,
             "Đang chẩn đoán", "Đã chẩn đoán — " + ("Trong bảo hành" if free else "Ngoài bảo hành"))
@@ -952,7 +956,7 @@ insert("PhieuKiemTra", ["MaPhieuKT", "MaPhieuTN", "MaKTV", "NgayKiemTra", "KetQu
                         "TinhTrangVaoNuoc", "PhanLoaiBaoHanh", "LyDoNgoaiBaoHanh", "HuongKhacPhucDeXuat", "GhiChuPhanLoaiLai",
                         "SoLanSuaPhanLoai", "NgayCapNhat"],
        [(p["code"], p["ticket"]["code"], p["tech"], p["t"], p["findings"], p["checklist"], p["water"], p["class"], p["reason"],
-         p["fix"], None, 0, None) for p in inspections])
+         p["fix"], p["reclass"], 0, None) for p in inspections])
 insert("PhieuBaoGia", ["MaBaoGia", "MaPhieuTN", "MaPhieuKT", "MaKTVLap", "NgayLapBaoGia", "HanHieuLuc", "MaDichVu",
                        "TongTienLinhKien", "TongTienCong", "ThueVAT", "TongTienThanhToan", "TrangThaiDuyetNoiBo", "MaNVQuanLyDuyet",
                        "NgayDuyetNoiBo", "GhiChuDuyet", "KhachXacNhan", "NgayKhachXacNhan", "LyDoKhachTuChoi", "KenhXacNhan",
