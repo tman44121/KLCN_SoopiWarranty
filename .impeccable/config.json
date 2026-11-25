@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-11-09T02:36:18.985Z",
+        "reason": "Project type system: docs/06-design/DESIGN.md sets Inter as body font"
+      },
+      {
+        "rule": "overused-font",
+        "value": "plus jakarta sans",
+        "createdAt": "2026-11-09T02:36:19.347Z",
+        "reason": "Project type system: docs/06-design/DESIGN.md sets Plus Jakarta Sans as heading font"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "chat-typing-bounce",
+        "createdAt": "2026-11-09T02:36:19.694Z",
+        "reason": "Typing-indicator dots keyframe with ease-in-out timing; name only, not bounce/elastic easing"
+      }
+    ]
+  }
+}
